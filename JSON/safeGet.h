@@ -89,5 +89,4 @@ class JSafe : public jsonValue {
 	}
 private:
 	JSafe();
-	bool dummy = false;
 };
