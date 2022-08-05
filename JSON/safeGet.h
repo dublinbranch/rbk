@@ -54,12 +54,12 @@ class JSafe : public jsonValue {
 				}
 
 				if (!ok) {
-					throw QString("%1 is not an int, or directly convertible in an aritmetic type, it is a string %2").arg(key).arg(QString(qb));
+					throw QString("%1 is not an int, or directly convertible in an aritmetic type, it is a string %2").arg(key,QString(qb));
 				}
 				return res;
 			}
 			default:
-				throw QString("%1 is not an int, or directly convertible in an aritmetic type,, it is a %2").arg(key).arg(printType(type));
+				throw QString("%1 is not an int, or directly convertible in an aritmetic type,, it is a %2").arg(key,printType(type));
 			}
 		} else {
 			return 0;

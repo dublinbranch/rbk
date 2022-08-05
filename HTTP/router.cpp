@@ -13,6 +13,7 @@
 #include <map>
 #include <rbk/fmtExtra/customformatter.h>
 #include <string>
+#include "PMFCGI.h"
 
 using namespace std;
 

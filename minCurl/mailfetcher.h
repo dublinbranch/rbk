@@ -44,8 +44,8 @@ class MailFetcher {
 	void             logMailResponse(QString curlCode, QString curlError, QString mail);
 	std::vector<int> getMailIds(bool printError);
 	QByteArray       getRawMail(int mailId, bool verbose, bool printError);
-	bool             copyMailOnServer(int mailId, const QString& destinationFolder);
-	bool             moveMailOnServer(int mailId, const QString& destinationFolder);
+	bool             copyMailOnServer(int mailId);
+	bool             moveMailOnServer(int mailId);
 	bool             deleteMailOnServer(int mailId);
 };
 

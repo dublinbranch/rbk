@@ -47,6 +47,7 @@ FileGetRes fileGetContents2(const QString& fileName, bool quiet = true, uint max
 bool fileAppendContents(const QString& pay, const QString& fileName);
 bool fileAppendContents(const QByteArray& pay, const QString& fileName);
 bool fileAppendContents(const std::string& pay, const QString& fileName);
+bool fileAppendContents(const std::string& pay, const std::string& fileName);
 
 QByteArray sha512(const QByteArray& original, bool urlSafe = true);
 

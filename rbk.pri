@@ -1,6 +1,9 @@
 #this will enable certain ip based function on localeV2, of course you will need to provide a max mind db handler
 #DEFINES += localeWithMaxMind
 
+include(config.pri)
+
+
 CONFIG += object_parallel_to_source
 
 	
@@ -20,6 +23,7 @@ DISTFILES += \
 	$$PWD/minCurl/README.md
 
 HEADERS += \
+    $$PWD/HTTP/beastConfig.h \
     $$PWD/JSON/JSONReaderConst.h \
     $$PWD/JSON/jsonreader.h \
 	$$PWD/caching/apcu2.h \
@@ -79,6 +83,8 @@ SOURCES += \
     $$PWD/thread/threadstatush.cpp \
     $$PWD/thread/tmonitoring.cpp
 
+
+defined(WITH_HTTP,var) {
 #HTTP part
 DEFINES += BOOST_BEAST_USE_STD_STRING_VIEW=1
 
@@ -94,6 +100,7 @@ HEADERS += \
     $$PWD/HTTP/beast.h \
     $$PWD/HTTP/router.h \
     $$PWD/HTTP/url.h \
+}
 	
 SOURCES += \
 	$$PWD/QStacker/exceptionv2.cpp \

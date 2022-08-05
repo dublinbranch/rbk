@@ -192,7 +192,7 @@ QByteArray MailFetcher::getRawMail(int mailId, bool verbose, bool printError) {
 	return mail;
 }
 
-bool MailFetcher::copyMailOnServer(int mailId, const QString& destinationFolder) {
+bool MailFetcher::copyMailOnServer(int mailId) {
 	CurlCallResult curlResult;
 	auto           mailUrl = QSL("%1;MAILINDEX=%2")
 	                   .arg(config.folderUrl)
@@ -243,12 +243,12 @@ bool MailFetcher::deleteMailOnServer(int mailId) {
 	return ok3;
 }
 
-bool MailFetcher::moveMailOnServer(int mailId, const QString& destinationFolder) {
+bool MailFetcher::moveMailOnServer(int mailId) {
 	if (!config.moveToProcessedFolderAfterDownload) {
 		return true;
 	}
 
-	auto ok = copyMailOnServer(mailId, destinationFolder);
+	auto ok = copyMailOnServer(mailId);
 	if (!ok) {
 		// do not delete the original one because we were not able to copy it
 		return false;
@@ -276,7 +276,7 @@ std::vector<Mail> MailFetcher::fetch(bool verbose, bool printError) {
 		}
 
 		returnMe.push_back({mailId, mail, true});
-		moveMailOnServer(mailId, config.processedFolderName);
+		moveMailOnServer(mailId);
 	}
 
 	return returnMe;

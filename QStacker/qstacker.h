@@ -21,7 +21,7 @@ Q_REQUIRED_RESULT QString     QStacker16Light(uint skip = 5, QStackerOpt opt = Q
 /**
  * @brief StackerMinLevel is used to cut away the initial part of the stack trace
  * execially when running a thread there is a lot of stuff
- * It must be the name of the folder from which the code has been compiled
+ * It must be the name of the program, or the folder from which the code has been compiled
  */
 inline std::string StackerMinLevel;
 inline uint        stackerMaxFrame = 99;

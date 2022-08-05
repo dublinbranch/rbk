@@ -1,7 +1,11 @@
 #pragma once
 
+//we will INTENTIONALLY NOT INCLUDE 
+//#include "rbk/fmtExtra/includeMe.h"
+//as this will include a lot of qt stuff
+
 #include "rbk/QStacker/exceptionv2.h"
-#include "rbk/fmtExtra/includeMe.h"
+#include "fmt/core.h"
 #include <map>
 
 template <typename K, typename V, typename _Compare = std::less<K>>
