@@ -485,6 +485,11 @@ void Beast::listen() {
 
 		threadStatus.pool.insert({t->get_id(), status});
 	}
+
+	// Block until all the threads exit
+	for (auto& t : threads) {
+		t->join();
+	}
 }
 
 void Beast::listen(const BeastConf& conf) {
