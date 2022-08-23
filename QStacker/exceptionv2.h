@@ -1,12 +1,14 @@
 #ifndef EXCEPTIONV2_H
 #define EXCEPTIONV2_H
 
-#include <QByteArray>
-#include <QString>
+#include "rbk/misc/sourcelocation.h"
 #include <exception>
-#include <source_location>
+#include <string>
 
 #define QSL(str) QStringLiteral(str)
+
+class QString;
+class QByteArray;
 
 class ExceptionV2 : public std::exception {
       public:
@@ -17,7 +19,7 @@ class ExceptionV2 : public std::exception {
 	//This will force the exception to print immediately in case is a "bad error" that we need to be informed about
 	bool forcePrint = false;
 	//This will SKIP printing when we handle the exception, in case is a minor thing and just save in the log
-	bool skipCatchPrint = false;
+	bool skipPrint = false;
 
 	ExceptionV2() = default;
 	ExceptionV2(const QString& _msg, uint skip = 4);
@@ -25,23 +27,23 @@ class ExceptionV2 : public std::exception {
 	ExceptionV2(const std::string& _msg, uint skip = 4);
 
 	static ExceptionV2 raw(const std::string& _msg);
-	static ExceptionV2 location(const std::string& _msg, const std::source_location location =
-	                                                         std::source_location::current());
+	static ExceptionV2 location(const std::string& _msg, const sourceLocation location =
+	                                                         sourceLocation::current());
 
-	static ExceptionV2 location(const QString& _msg, const std::source_location location =
-	                                                     std::source_location::current());
-    
-    __attribute__((no_sanitize("address"))) static bool isExceptionV2Derived(void *ptr);
-    
-	virtual const QString& getLogFile() const noexcept;;
+	static ExceptionV2 location(const QString& _msg, const sourceLocation location =
+	                                                     sourceLocation::current());
+
+	__attribute__((no_sanitize("address"))) static bool isExceptionV2Derived(void* ptr);
+
+	virtual const std::string getLogFile() const noexcept;
+
 	const char* what() const noexcept override;
 
 	void setMsg(const QByteArray& newMsg);
 	void setMsg(const std::string& newMsg);
 
       protected:
-	QByteArray msg;
-	QString    logFile = QSL("stdException.log");
+	std::string msg;
 
       private:
 };

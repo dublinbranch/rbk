@@ -4,9 +4,7 @@
 #include <QDateTime>
 #include <mutex>
 
-extern const std::string twilioAPIurl;
-Twilio::Twilio() {
-}
+extern const char* twilioAPIurl;
 
 void Twilio::call() {
 	Twilio t;

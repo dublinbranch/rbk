@@ -30,10 +30,11 @@ struct PMFCGI {
 	//server name, if needed must be forwarded by nginx else will be 127.0.0.1 from the header
 
 	void        extractCookies();
-	std::string serializeMsg(const QByteArray& msg) const;
+	std::string serializeMsg(const QByteArray& msg, bool light = false) const;
 	std::string serializeMsg(const char* msg) const;
 	std::string serializeMsg(const QString& msg) const;
 	std::string serialize() const;
+	std::string serializeBase() const;
 
 	/*
 	 * 0 ->	debug not active

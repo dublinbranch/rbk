@@ -13,8 +13,6 @@
 //
 //------------------------------------------------------------------------------
 
-#include <boost/algorithm/string.hpp>
-#include <boost/asio/bind_executor.hpp>
 #include <boost/asio/dispatch.hpp>
 #include <boost/asio/signal_set.hpp>
 #include <boost/asio/strand.hpp>
@@ -23,7 +21,7 @@
 
 #include <QCommandLineParser>
 #include <QDebug>
-#include <algorithm>
+#include <fmt/color.h>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -31,26 +29,22 @@
 #include <thread>
 #include <vector>
 
-#include "fmt/color.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/QStacker/httpexception.h"
-#include "rbk/filesystem//filefunction.h"
+#include "rbk/QStacker/qstacker.h"
+#include "rbk/filesystem/filefunction.h"
 #include "rbk/fmtExtra/includeMe.h"
-#include "rbk/minMysql/ClickHouseException.h"
 #include "rbk/misc/b64.h"
+#include "rbk/rand/randutil.h"
 #include "rbk/string/UTF8Util.h"
 #include "rbk/thread/threadstatush.h"
 
-#include "rbk/HTTP/PMFCGI.h"
-#include "rbk/HTTP/router.h"
-#include "rbk/defines/stringDefine.h"
+#include "PMFCGI.h"
+#include "beast.h"
+#include "router.h"
 
 extern ThreadStatus                       threadStatus;
 extern thread_local ThreadStatus::Status* localThreadStatus;
-
-bool skipCatchPrint(const ExceptionV2& exception) {
-	return 1;
-};
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http  = beast::http;          // from <boost/beast/http.hpp>
@@ -60,189 +54,183 @@ using namespace std;
 
 void init();
 
-// This function produces an HTTP response for the given
-// request. The type of the response object depends on the
-// contents of the request, so the interface requires the
-// caller to pass a generic lambda for receiving the response.
-template <
-    class Body, class Allocator,
-    class Send>
+static const std::vector<std::string> errorPrefix{
+    "SRLY Bad",
+    "Inappropriate",
+    "Interesting",
+    "Unxepectedly Bad",
+    "Predicatable",
+    "Boring"
+    "OMG!",
+    "Another",
+    "Again an",
+    "Is time for another"
+    "Look mom an"};
+
+string_view randomErrorPrefix() {
+	auto s = errorPrefix.size();
+	auto r = rand(0, s - 1);
+	return errorPrefix[r];
+}
+string randomError() {
+	static const std::string s = " Internal Server Error!";
+	std::string              e(randomErrorPrefix());
+	e.append(s);
+	return e;
+}
+
+http::response<http::string_body> quickResponse(string&& msg, http::status status = http::status::internal_server_error, string mime = "text/html") {
+	http::response<http::string_body> res;
+	res.body() = msg;
+	res.content_length(res.body().size());
+	res.result(status);
+	res.set(http::field::content_type, mime);
+	return res;
+}
+
+void send(beast::tcp_stream& stream, const http::response<http::string_body>& msg) {
+	//afaik performance are the same...
+	//	beast::error_code ec;
+	//	http::write(
+	//	    stream,
+	//	    move(msg),
+	//	    ec);
+
+	//Weird trick to force the buffer to be kept alive
+	struct Cry {
+		http::response<http::string_body> msg;
+	};
+
+	auto cry = make_shared<Cry>();
+	cry->msg = move(msg);
+
+	http::async_write(
+	    stream,
+	    cry->msg,
+	    [&stream, cry](beast::error_code ec, std::size_t) {
+		    (void)cry;
+		    stream.socket().shutdown(tcp::socket::shutdown_send, ec);
+	    });
+}
+
+void sendResponseToClient(beast::tcp_stream& stream, Payload& payload) {
+	if (payload.alreadySent) {
+		return;
+	}
+
+	payload.alreadySent = true;
+	auto size           = payload.html.size();
+
+	http::response<http::string_body> res;
+	res.body() = std::move(payload.html);
+	res.content_length(size);
+	res.result(static_cast<http::status>(payload.statusCode));
+	res.set(http::field::content_type, payload.mime);
+
+	for (auto& [key, value] : payload.headers) {
+		res.set(key, value);
+	}
+
+	//No idea if is ok to have keep alive for an internal thing ? Benefit will be negligible
+	res.keep_alive(false);
+
+	//equivalente to fastcgi_close
+	send(stream, move(res));
+	registerFlushTime();
+}
+
+template <class Body, class Allocator>
 void handle_request(
-    PMFCGI&                                              status,
+    beast::tcp_stream&                                   stream,
     http::request<Body, http::basic_fields<Allocator>>&& req,
-    Send&&                                               send) {
+    const BeastConf*                                     conf) {
 
 	localThreadStatus->state = ThreadState::Immediate;
-	/*
-	 * phase 1
-	 * execute immediate
-	 */
+	requestBeging();
+
 	Payload payload;
+	Router  router;
+	PMFCGI  status;
 
-	Router router;
 	try {
-		try {
-			status.path = req.target();
-			status.body = req.body();
+		try { //Yes exception can throw exceptions!
 
+			status.remoteIp = stream.socket().remote_endpoint().address().to_string();
+			status.path     = req.target();
 			if (!isValidUTF8(status.path)) {
-				throw ExceptionV2(QSL("Invalid utf8 in key %1").arg(base64this(status.path)));
+				throw ExceptionV2(QSL("Invalid utf8 in the PATH %1").arg(base64this(status.path)));
 			}
 
-			auto& header = req.base();
-			for (auto& h : header) {
+			//check for the body (a POST) are done later
+			status.body = req.body();
+
+			for (auto& h : req.base()) {
 				status.headers.add(h.name_string(), h.value());
 			}
 			status.extractCookies();
 
+			/*
+			 * phase 1
+			 * execute immediate
+			 */
 			payload = router.immediate(status);
-		} catch (const HttpException& e) {
-			payload.mime       = "text/html";
-			payload.html       = status.serializeMsg(e.what());
-			payload.statusCode = 400;
-			if (!skipCatchPrint(e)) {
-				fmt::print("\n------\n{}", payload.html);
-			}
-			//			fileAppendContents("\n------\n " + payload.html, QSL("%1/httpException.log").arg(conf().log.folder));
+
+			/*
+			 * phase 2
+			 * send response to client
+			 */
+			sendResponseToClient(stream, payload);
+
+			/*
+			 * phase 3
+			 * execute deferred
+			 * slow stuff, logging
+			 */
+			localThreadStatus->state = ThreadState::Deferred;
+			router.deferred();
+
 		} catch (const exception& e) {
+			payload.mime       = "text/html";
+			payload.statusCode = 500;
+
 			auto msg = status.serializeMsg(e.what());
-			fmt::print("\n------\n{}", msg);
 
-			auto exceptionP = dynamic_cast<const ClickHouseException*>(&e);
-			auto logFile    = QSL("stdException.log");
-			if (exceptionP) {
-				logFile = QSL("clickhouse.log");
-			}
-			//			fileAppendContents("\n------\n " + msg, QSL("%1/%2")
-			//			                                            .arg(conf().log.folder)
-			//			                                            .arg(logFile));
-
-			if (status.debug > 0) {
-				// debug
-				payload.html       = msg;
-				payload.statusCode = 400;
+			string file;
+			if (auto e2 = dynamic_cast<const ExceptionV2*>(&e); e2) {
+				if (auto HE = dynamic_cast<const HttpException*>(&e); HE) {
+					payload.html       = msg;
+					payload.statusCode = 400;
+				}
+				if (!e2->skipPrint) {
+					fmt::print("\n------\n{}", msg);
+				}
+				file = conf->configFolder + "/" + e2->getLogFile();
 			} else {
-				// normal execution
-				payload.html       = "Internal server error"s;
-				payload.statusCode = 500;
+				payload.html = randomError();
+				file         = conf->configFolder + "/stdException.log";
+				fmt::print("\n------\n{}", msg);
 			}
+
+			fileAppendContents("\n------\n " + msg, file);
+
 		} catch (...) {
 			auto msg = status.serializeMsg("unkown exception");
 			fmt::print("\n------\n{}", msg);
-			//			fileAppendContents("\n------\n " + msg, QSL("%1/unkException.log").arg(conf().log.folder));
-
-			if (status.debug > 0) {
-				// debug
-				payload.html       = msg;
-				payload.statusCode = 400;
-			} else {
-				// normal execution
-				payload.html       = "Internal server error"s;
-				payload.statusCode = 500;
-			}
+			fileAppendContents("\n------\n " + msg, conf->configFolder + "/unkException.log");
 		}
-	} catch (const exception& e) {
-		//		fileAppendContents("\n------\n " + QString(e.what()), QSL("%1/%2")
-		//		                                                          .arg(conf().log.folder)
-		//		                                                          .arg("stdException.log"));
 
-		if (status.debug > 0) {
-			// debug
-			payload.html       = e.what();
-			payload.statusCode = 400;
-		} else {
-			// normal execution
-			payload.html       = "Internal server error, double exception"s;
-			payload.statusCode = 500;
-		}
+		//in case the exception happened before the socket close during the immediate stage
+		sendResponseToClient(stream, payload);
+	}
+
+	//also the serialize is error prone in case of badly messed request
+	catch (const exception& e) {
+		auto msg = status.serializeMsg(e.what(), true);
+		fileAppendContents("\n------\n " + msg, conf->configFolder + "/stdException.log");
 	} catch (...) {
-		payload.html       = "Internal server error, double exception"s;
-		payload.statusCode = 500;
+		auto msg = status.serializeMsg("unkown exception", true);
+		fileAppendContents("\n------\n " + msg, conf->configFolder + "/unkException.log");
 	}
-
-	localThreadStatus->state  = ThreadState::Deferred;
-	auto sendResponseToClient = [&]() {
-		http::response<http::string_body> res;
-		res.content_length(payload.html.size());
-		res.body() = std::move(payload.html);
-		res.result(static_cast<http::status>(payload.statusCode));
-		res.set(http::field::content_type, payload.mime);
-
-		for (auto& [key, value] : payload.headers) {
-			res.set(key, value);
-		}
-
-		//No idea if is ok to have keep alive for an internal thing ? Benefit will be negligible
-		res.keep_alive(false);
-
-		//equivalente to fastcgi_close
-		send(std::move(res));
-		registerFlushTime();
-	};
-
-	/*
-	 * phase 2
-	 * send response to client
-	 */
-	if (!status.debug) {
-		// normal execution
-		// first we send the result to the client and then, we execute deferred
-		sendResponseToClient();
-	}
-
-	/*
-	 * phase 3
-	 * execute deferred
-	 */
-
-	//slow stuff, logging ecc ecc
-	try {
-		router.deferred();
-	} catch (const HttpException& e) {
-		auto msg = status.serializeMsg(e.what());
-		if (status.debug) {
-			if (!skipCatchPrint(e)) {
-				fmt::print("\n------\n{}", msg);
-			}
-		}
-
-		//fileAppendContents("\n------\n " + msg, QSL("%1/httpException.log").arg(conf().log.folder));
-	} catch (const exception& e) {
-		std::string msg = status.serializeMsg(e.what());
-		if (status.debug) {
-			fmt::print("\n------\n{}", msg);
-		}
-
-		auto exceptionP = dynamic_cast<const ClickHouseException*>(&e);
-		auto logFile    = QSL("stdException.log");
-		if (exceptionP) {
-			logFile = QSL("clickhouse.log");
-		}
-
-		//		fileAppendContents("\n------\n " + msg, QSL("%1/%2")
-		//		                                            .arg(conf().log.folder)
-		//		                                            .arg(logFile));
-	} catch (...) {
-		auto type = currentExceptionTypeName();
-		auto err  = QSL("unkown exception, type is %1").arg(type);
-		auto msg  = status.serializeMsg(err);
-
-		if (status.debug) {
-			payload.html += msg;
-			payload.statusCode = 400;
-			payload.mime       = "text/html";
-
-			fmt::print("\n------\n{}", msg);
-		}
-
-		//	fileAppendContents("\n------\n " + msg, QSL("%1/unkException.log").arg(conf().log.folder));
-	}
-
-	// only if debug active we send response here
-	if (status.debug) {
-		sendResponseToClient();
-	}
-	//-----------------------------
 
 	return;
 }
@@ -256,88 +244,12 @@ void fail(beast::error_code ec, char const* what) {
 
 // Handles an HTTP server connection
 class http_session : public std::enable_shared_from_this<http_session> {
-	// This queue is used for HTTP pipelining.
-	class queue {
-		enum {
-			// Maximum number of responses we will queue
-			limit = 8
-		};
+	//We change compared to the reference implementation the http_pipelining support
+	//for our use case IS PROBABLY NEVER USED
 
-		// The type-erased, saved work item
-		struct work {
-			virtual ~work()           = default;
-			virtual void operator()() = 0;
-		};
-
-		http_session&                      self_;
-		std::vector<std::unique_ptr<work>> items_;
-
-	      public:
-		explicit queue(http_session& self)
-		    : self_(self) {
-			static_assert(limit > 0, "queue limit must be positive");
-			items_.reserve(limit);
-		}
-
-		// Returns `true` if we have reached the queue limit
-		bool
-		is_full() const {
-			return items_.size() >= limit;
-		}
-
-		// Called when a message finishes sending
-		// Returns `true` if the caller should initiate a read
-		bool
-		on_write() {
-			BOOST_ASSERT(!items_.empty());
-			auto const was_full = is_full();
-			items_.erase(items_.begin());
-			if (!items_.empty())
-				(*items_.front())();
-			return was_full;
-		}
-
-		// Called by the HTTP handler to send a response.
-		template <bool isRequest, class Body, class Fields>
-		void
-		operator()(http::message<isRequest, Body, Fields>&& msg) {
-			// This holds a work item
-			struct work_impl : work {
-				http_session&                          self_;
-				http::message<isRequest, Body, Fields> msg_;
-
-				work_impl(
-				    http_session&                            self,
-				    http::message<isRequest, Body, Fields>&& msg)
-				    : self_(self), msg_(std::move(msg)) {
-				}
-
-				void
-				operator()() {
-					http::async_write(
-					    self_.stream_,
-					    msg_,
-					    beast::bind_front_handler(
-					        &http_session::on_write,
-					        self_.shared_from_this(),
-					        msg_.need_eof()));
-				}
-			};
-
-			// Allocate and store the work
-			items_.push_back(
-			    boost::make_unique<work_impl>(self_, std::move(msg)));
-
-			// If there was no previous work, start this one
-			if (items_.size() == 1)
-				(*items_.front())();
-		}
-	};
-
-	beast::tcp_stream                  stream_;
-	beast::flat_buffer                 buffer_;
-	std::shared_ptr<std::string const> doc_root_;
-	queue                              queue_;
+	beast::tcp_stream  stream_;
+	beast::flat_buffer buffer_;
+	const BeastConf*   conf = nullptr;
 
 	// The parser is stored in an optional container so we can
 	// construct it from scratch it at the beginning of each new message.
@@ -345,9 +257,8 @@ class http_session : public std::enable_shared_from_this<http_session> {
 
       public:
 	// Take ownership of the socket
-	http_session(
-	    tcp::socket&& socket)
-	    : stream_(std::move(socket)), queue_(*this) {
+	http_session(tcp::socket&& socket, const BeastConf* _conf)
+	    : stream_(std::move(socket)), conf(_conf) {
 	}
 
 	// Start the session
@@ -404,20 +315,12 @@ class http_session : public std::enable_shared_from_this<http_session> {
 				return fail(ec, "read");
 			}
 
-			PMFCGI status;
-			status.remoteIp = stream_.socket().remote_endpoint().address().to_string();
-			// Send the response
-			requestBeging();
-			handle_request(status, parser_->release(), queue_);
+			handle_request(stream_, parser_->release(), conf);
 		} catch (...) {
-			//TODO e qui ?
+			send(stream_, quickResponse(randomError()));
 		}
 
 		requestEnd();
-
-		// If we aren't at the queue limit, try to pipeline another request
-		if (!queue_.is_full())
-			do_read();
 	}
 
 	void
@@ -431,12 +334,6 @@ class http_session : public std::enable_shared_from_this<http_session> {
 			// This means we should close the connection, usually because
 			// the response indicated the "Connection: close" semantic.
 			return do_close();
-		}
-
-		// Inform the queue that a write completed
-		if (queue_.on_write()) {
-			// Read another request
-			do_read();
 		}
 	}
 
@@ -456,12 +353,14 @@ class http_session : public std::enable_shared_from_this<http_session> {
 class listener : public std::enable_shared_from_this<listener> {
 	net::io_context& ioc_;
 	tcp::acceptor    acceptor_;
+	const BeastConf* conf;
 
       public:
 	listener(
 	    net::io_context& ioc,
-	    tcp::endpoint    endpoint)
-	    : ioc_(ioc), acceptor_(net::make_strand(ioc)) {
+	    tcp::endpoint    endpoint,
+	    const BeastConf* conf_)
+	    : ioc_(ioc), acceptor_(net::make_strand(ioc)), conf(conf_) {
 		beast::error_code ec;
 
 		// Open the acceptor
@@ -481,14 +380,13 @@ class listener : public std::enable_shared_from_this<listener> {
 		// Bind to the server address
 		acceptor_.bind(endpoint, ec);
 		if (ec) {
-			auto msg = fmt::format(fmt::emphasis::bold | fg(fmt::color::red),
-			                       "Can not bind to {}:{} \n", endpoint.address().to_string(), endpoint.port());
-			throw msg;
+			fmt::print(stderr, fmt::emphasis::bold | fg(fmt::color::red),
+			           "Can not bind to {}:{} \n", endpoint.address().to_string(), endpoint.port());
+			exit(2);
 		}
 
 		// Start listening for connections
-		acceptor_.listen(
-		    net::socket_base::max_listen_connections, ec);
+		acceptor_.listen(net::socket_base::max_listen_connections, ec);
 		if (ec) {
 			fail(ec, "listen");
 			return;
@@ -528,7 +426,8 @@ class listener : public std::enable_shared_from_this<listener> {
 		} else {
 			// Create the http session and run it
 			std::make_shared<http_session>(
-			    std::move(socket))
+			    std::move(socket),
+			    conf)
 			    ->run();
 		}
 
@@ -537,105 +436,68 @@ class listener : public std::enable_shared_from_this<listener> {
 	}
 };
 
-//------------------------------------------------------------------------------
-
-int main(int argc, char* argv[]) {
-	QCoreApplication application(argc, argv);
-
-	// commandline parser
-	QCommandLineParser parser;
-	parser.addHelpOption();
-	parser.addVersionOption();
-	parser.addOption({{"M", "executionMode"}, "standard / hc", "string", "standard"});
-	parser.addOption({{"C", "configFile"}, "any valid json file", "string", "config.json"});
-	parser.process(application);
-
-	//ConfigManager::fromFile(parser.value("configFile"));
-
-	//	if (parser.value("executionMode") == "hc1") {
-	//		executeHc1();
-	//		sleep(conf().sleepAfterHcSection);
-	//		return EXIT_SUCCESS;
-	//	}
-
-	//	init();
-
-	//	if (parser.value("executionMode") == "hc") {
-	//		executeHc();
-	//		sleep(conf().sleepAfterHcSection);
-	//		return EXIT_SUCCESS;
-	//	}
-
+void Beast::listen() {
+	okToRun();
 	// The io_context is required for all I/O
-	//net::io_context httpTrafficIOC{conf().workerLimit};
-	net::io_context httpTrafficIOC{5};
-
-	net::io_context monitoringIOC{2}; //we do not really need a lot of power to monitor
+	IOC = new net::io_context{conf.worker};
 
 	// Create and launch a listening port
-	std::make_shared<listener>(
-	    httpTrafficIOC,
-	    //  tcp::endpoint{net::ip::make_address(conf().listeningAddress), (u_short)conf().listeningPort})
-	    tcp::endpoint{net::ip::make_address("127.0.0.1"), 1984})
-	    ->run();
+	listener_p = std::make_shared<listener>(
+	    *IOC,
+	    tcp::endpoint{net::ip::make_address(conf.address), conf.port},
+	    &conf);
 
-	// Create and launch the MONITORING listening port
-	std::make_shared<listener>(
-	    monitoringIOC,
-	    //tcp::endpoint{net::ip::make_address(conf().listeningAddress), (u_short)conf().monitoringPort})
-	    tcp::endpoint{net::ip::make_address("127.0.0.1"), 1985})
-	    ->run();
+	listener_p->run();
 
-	// Capture SIGINT and SIGTERM to perform a clean shutdown
-	net::signal_set signals2block(httpTrafficIOC, SIGINT, SIGTERM);
-	net::signal_set signals2block2(monitoringIOC, SIGINT, SIGTERM);
-	signals2block.async_wait(
+	// Capture SIGINT to perform a clean shutdown
+	//(if not already captured by other, which is quite rare so not under config)
+	auto signals2block = new net::signal_set(*IOC, SIGINT, SIGTERM);
+
+	signals2block->async_wait(
 	    [&](beast::error_code const&, int) {
 		    // Stop the `io_context`. This will cause `run()`
 		    // to return immediately, eventually destroying the
 		    // `io_context` and all of the sockets in it.
-		    httpTrafficIOC.stop();
-	    });
-	signals2block2.async_wait(
-	    [&](beast::error_code const&, int) {
-		    // Stop the `io_context`. This will cause `run()`
-		    // to return immediately, eventually destroying the
-		    // `io_context` and all of the sockets in it.
-		    monitoringIOC.stop();
+		    fmt::print("Stopping\n");
+		    IOC->stop();
+		    //remove the handler ?, else the next ctrl c will not terminate the program ?
+		    signals2block->remove(SIGINT);
 	    });
 
-	//fmt::print("Ready listening on {}:{} and monitoring on {}\n", conf().listeningAddress, conf().listeningPort, conf().monitoringPort);
-	fmt::print("Ready listening\n"); // on {}:{} and monitoring on {}\n", conf().listeningAddress, conf().listeningPort, conf().monitoringPort);
+	signals2block_p = signals2block;
+	fmt::print("Ready listening on {}:{}\n", conf.address, conf.port);
+
 	// Run the I/O service on the requested number of threads
-	std::vector<std::thread> v;
-	//v.reserve(conf().workerLimit + 2);
-	//for (auto i = conf().workerLimit; i > 0; --i) {
-	for (auto i = 5; i > 0; --i) {
+	for (auto i = conf.worker; i > 0; --i) {
 		auto status = threadStatus.newStatus();
 
-		auto& t = v.emplace_back(
-		    [&httpTrafficIOC, status] {
+		auto& t = threads.emplace_back(new std::thread(
+		    [status, this] {
 			    //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
 			    status->tid       = gettid();
 			    localThreadStatus = status;
 			    //and than launch to io handler
-			    httpTrafficIOC.run();
-		    });
+			    IOC->run();
+		    }));
 
 		status->state = ThreadState::Idle;
 		status->info  = "just created";
 
-		threadStatus.pool.insert({t.get_id(), status});
+		threadStatus.pool.insert({t->get_id(), status});
 	}
+}
 
-	//2 thread are ok for monitoring
-	v.emplace_back([&monitoringIOC] { monitoringIOC.run(); });
-	monitoringIOC.run();
+void Beast::listen(const BeastConf& conf) {
+	this->conf = conf;
+	listen();
+}
 
-	// Block until all the threads exit
-	for (auto& t : v) {
-		t.join();
+#include <fmt/color.h>
+
+void Beast::okToRun() const {
+	if (conf.configFolder.empty()) {
+		string str = "missing config file to run the Beast HTTP server, set one" + stacker();
+		fmt::print(stderr, fg(fmt::color::red), str);
+		exit(2);
 	}
-
-	return EXIT_SUCCESS;
 }

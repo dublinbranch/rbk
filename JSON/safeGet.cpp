@@ -70,5 +70,5 @@ const rapidjson::GenericValue<rapidjson::UTF8<>>& rapidfunkz::safeGet(const rapi
 	*/
 
 JSafe::JSafe(){
-	dummy = true;
+	
 }

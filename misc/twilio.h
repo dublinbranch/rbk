@@ -3,7 +3,6 @@
 
 class Twilio {
       public:
-	Twilio();
 	static void call();
 	void        callInner();
 

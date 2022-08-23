@@ -1,7 +1,11 @@
 #pragma once
 
+//we will INTENTIONALLY NOT INCLUDE
+//#include "rbk/fmtExtra/includeMe.h"
+//as this will include a lot of qt stuff
+
+#include "fmt/core.h"
 #include "rbk/QStacker/exceptionv2.h"
-#include "rbk/fmtExtra/includeMe.h"
 #include <map>
 
 template <typename K, typename V, typename _Compare = std::less<K>>
@@ -70,17 +74,12 @@ class mapV2 : public std::map<K, V, _Compare> {
 		return v;
 	}
 
-	void getOptional(const K& key, V& dest) {
+	bool getOptional(const K& key, V& dest) {
 		if (auto found = get(key); found) {
 			dest = *found.val;
+			return true;
 		}
-	}
-
-	template <class T>
-	void getOptional(const K& key, T& dest) {
-		if (auto found = get(key); found) {
-			dest = *found.val;
-		}
+		return false;
 	}
 
 	[[nodiscard]] const auto& operator[](const K& k) const {

@@ -1,5 +1,5 @@
-#include "backward.hpp"
 #include "rbk/QStacker/qstacker.h"
+#include "backward.hpp"
 #include <QString>
 #include <mutex>
 
@@ -43,13 +43,13 @@ std::string stacker(uint skip, QStackerOpt opt) {
 		if (start == std::string::npos) {
 			return str;
 		}
-		//TODO search properly, the path can be different -.-
-		//we are pre pended by        '#2    Source "../' = 17
-		start = start - 17;
+		//we now have to find the line start, which is 1 char after the previous \n
+
+		start = str.rfind('\n', start);
 		if (opt.prependReturn) {
-			str = "\n" + str.substr(start);
-		} else {
 			str = str.substr(start);
+		} else {
+			str = str.substr(start + 1);
 		}
 	}
 	return str;
@@ -96,10 +96,17 @@ extern "C" {
 //                 std::type_info* pvtinfo,
 //                 void (*dest)(void*)) {
 
-void __cxa_throw(
+#if defined(__clang__)
+void __attribute__((__noreturn__)) __cxa_throw(
+    void*           thrown_exception,
+    std::type_info* pvtinfo,
+    void (*dest)(void*)) {
+#else
+void __attribute__((__noreturn__)) __cxa_throw(
     void* thrown_exception,
     void* pvtinfo,
     void (*dest)(void*)) {
+#endif
 
 	exceptionThrown++;
 

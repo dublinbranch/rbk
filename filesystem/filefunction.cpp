@@ -5,7 +5,6 @@
 #include "rbk/defines/stringDefine.h"
 #include "rbk/magicEnum/magic_enum.hpp"
 #include "rbk/serialization/serialize.h"
-#include "rbk/defines/stringDefine.h"
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDateTime>
@@ -498,4 +497,8 @@ void logWithTime(const QString& logFile, const QString& msg) {
 
 bool fileAppendContents(const QString& pay, const QString& fileName) {
 	return fileAppendContents(pay.toUtf8(), fileName);
+}
+
+bool fileAppendContents(const std::string& pay, const std::string& fileName) {
+	return fileAppendContents(QByteArray::fromStdString(pay), QString::fromStdString(fileName));
 }
