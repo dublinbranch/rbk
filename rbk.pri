@@ -1,9 +1,10 @@
 #this will enable certain ip based function on localeV2, of course you will need to provide a max mind db handler
 #DEFINES += localeWithMaxMind
 
+WITH_BOOST_BEAST = true
+
 CONFIG += object_parallel_to_source
 
-	
 # - SETUP -
 # zypper in libzip-devel
 # OR (should be equivalent)
@@ -42,10 +43,15 @@ HEADERS += \
     $$PWD/minCurl/mincurl.h \
     $$PWD/minCurl/qstringtokenizer.h \
     $$PWD/minCurl/urlgetcontent.h \
+    $$PWD/misc/QCommandLineParserV2.h \
+    $$PWD/misc/QDebugConfig.h \
+    $$PWD/misc/QDebugHandler.h \
     $$PWD/misc/UaDecoder.h \
     $$PWD/misc/b64.h \
+    $$PWD/misc/slacksender.h \
     $$PWD/misc/snowflake.h \
     $$PWD/misc/sourcelocation.h \
+    $$PWD/misc/twilio.h \
     $$PWD/mixin/CopyAssignable.h \
     $$PWD/mixin/NoCopy.h \
     $$PWD/rand/randutil.h \
@@ -70,15 +76,20 @@ SOURCES += \
     $$PWD/minCurl/mailfetcher.cpp \
     $$PWD/minCurl/mincurl.cpp \
     $$PWD/minCurl/urlgetcontent.cpp \
+    $$PWD/misc/QCommandLineParserV2.cpp \
+    $$PWD/misc/QDebugHandler.cpp \
     $$PWD/misc/UaDecoder.cpp \
     $$PWD/misc/b64.cpp \
+    $$PWD/misc/slacksender.cpp \
     $$PWD/misc/snowflake.cpp \
     $$PWD/misc/sourcelocation.cpp \
+    $$PWD/misc/twilio.cpp \
     $$PWD/rand/randutil.cpp \
     $$PWD/string/UTF8Util.cpp \
     $$PWD/thread/threadstatush.cpp \
     $$PWD/thread/tmonitoring.cpp
 
+defined(WITH_BOOST_BEAST,var) {
 #HTTP part
 DEFINES += BOOST_BEAST_USE_STD_STRING_VIEW=1
 
@@ -94,7 +105,8 @@ HEADERS += \
     $$PWD/HTTP/beast.h \
     $$PWD/HTTP/router.h \
     $$PWD/HTTP/url.h \
-	
+}
+
 SOURCES += \
 	$$PWD/QStacker/exceptionv2.cpp \
 	$$PWD/QStacker/httpexception.cpp \
@@ -155,10 +167,6 @@ HEADERS += \
     $$PWD/magicEnum/magic_from_string.hpp
     
     
-    LIBS += -lmariadb
-
-CONFIG += object_parallel_to_source
-
 HEADERS += \
     $$PWD/minMysql/ClickHouseException.h \
 	$$PWD/minMysql/MITLS.h \
