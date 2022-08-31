@@ -11,6 +11,10 @@ DEFINES += COMPILATION_TIME='\\"$(shell TZ=UTC date +\"%Y-%m-%dT%T\")\\"'
 #this should speed up the update of the submodule info
 CONFIG += resources_big
 
+#except slows down everything immensely -.- so when needed I will just bump before putting live
+#usually only Roy leaves this one as is only relevant for live code
+#DEFINES += SmolHack1=0'$(shell touch '$$PWD'/gitTrick/buffer.cpp)'
+
 #this one need to be stored in a file as contain newline and other complex char, same stuff as above cache all!
 DEFINES += SmolHack2=0'$(shell git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)'
 
