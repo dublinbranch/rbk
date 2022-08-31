@@ -39,6 +39,7 @@ DISTFILES += \
 	$$PWD/minCurl/README.md
 
 HEADERS += \
+	$$PWD/rand/clampednormaldistribution.h \
     $$PWD/HTTP/beastConfig.h \
     $$PWD/JSON/JSONReaderConst.h \
     $$PWD/JSON/jsonreader.h \
@@ -84,6 +85,7 @@ HEADERS += \
     $$PWD/thread/tmonitoring.h
 
 SOURCES += \
+	$$PWD/rand/clampednormaldistribution.cpp \
     $$PWD/JSON/jsonreader.cpp \
     $$PWD/SpaceShipOP/implementation.cpp \
     $$PWD/caching/apcu2.cpp \
