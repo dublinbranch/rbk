@@ -70,27 +70,27 @@ class QueryParams : public mapV2<QString, QString> {
 	}
 
 	template <class T>
-	void rq(const QStringList& keys, T& t) const {
+	void swapRq(const QStringList& keys, T& t) const {
 		for (auto& key : keys) {
 			if (swap(key, t)) {
 				return;
 			}
 		}
-		throw HttpException(QSL("Required parameter is %1 missing").arg(keys.join(" or ")));
+		throw HttpException(QSL("Required parameter %1 is missing").arg(keys.join(" or ")));
 	}
 
 	template <class T>
-	void rq(const QString& key, T& t) const {
+	void swapRq(const QString& key, T& t) const {
 		if (swap(key, t)) {
 			return;
 		}
-		throw HttpException(QSL("Required parameter %1 missing").arg(key));
+		throw HttpException(QSL("Required parameter %1 is missing").arg(key));
 	}
 
 	template <class T>
-	T rq(const QString& key) const {
+	T swapRq(const QString& key) const {
 		T t;
-		rq(key, t);
+		swapRq(key, t);
 		return t;
 	}
 

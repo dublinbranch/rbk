@@ -1,5 +1,4 @@
-#ifndef ROUTER_H
-#define ROUTER_H
+#pragma once
 
 #include "rbk/HTTP/Payload.h"
 #include <memory>
@@ -53,4 +52,3 @@ class Router {
 };
 
 mapV2<std::string, RequestBase*> getDefaultRouting();
-#endif // ROUTER_H

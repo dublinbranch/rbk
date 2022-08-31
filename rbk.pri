@@ -3,10 +3,21 @@
 
 include(config.pri)
 
-
 CONFIG += object_parallel_to_source
 
-	
+DEFINES += GIT_STATUS='\\"$(shell git -C '$$_PRO_FILE_PWD_' describe  --always --dirty --abbrev=99)\\"'
+DEFINES += COMPILATION_TIME='\\"$(shell TZ=UTC date +\"%Y-%m-%dT%T\")\\"'
+
+#this should speed up the update of the submodule info
+CONFIG += resources_big
+
+#this one need to be stored in a file as contain newline and other complex char, same stuff as above cache all!
+DEFINES += SmolHack2=0'$(shell git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)'
+
+#QT is amazing, it can easily embedd and later read such file
+RESOURCES     = $$PWD/gitTrick/resources.qrc
+
+
 # - SETUP -
 # zypper in libzip-devel
 # OR (should be equivalent)
@@ -20,12 +31,17 @@ DISTFILES += \
 	$$PWD/GeoLite2PP/libgeolite2++.a \
 	$$PWD/JSON/LICENSE \
 	$$PWD/JSON/README.md \
+	$$PWD/SpaceShipOP/LICENSE.md \
+	$$PWD/SpaceShipOP/README.md \
+	$$PWD/SpaceShipOP/qspaceship.pri \
 	$$PWD/minCurl/README.md
 
 HEADERS += \
     $$PWD/HTTP/beastConfig.h \
     $$PWD/JSON/JSONReaderConst.h \
     $$PWD/JSON/jsonreader.h \
+    $$PWD/SpaceShipOP/qdateship.h \
+    $$PWD/SpaceShipOP/qstringship.h \
 	$$PWD/caching/apcu2.h \
 	$$PWD/dateTime/qDateTimeUtil.h \
 	$$PWD/dateTime/qdatetimev2.h \
@@ -38,6 +54,7 @@ HEADERS += \
     $$PWD/filesystem/filefunction.h \
     $$PWD/filesystem/folder.h \
     $$PWD/fmtExtra/customformatter.h \
+    $$PWD/gitTrick/buffer.h \
     $$PWD/hash/crc.h \
     $$PWD/locale/localev2.h \
     $$PWD/minCurl/curlpp.h \
@@ -46,10 +63,15 @@ HEADERS += \
     $$PWD/minCurl/mincurl.h \
     $$PWD/minCurl/qstringtokenizer.h \
     $$PWD/minCurl/urlgetcontent.h \
+    $$PWD/misc/QCommandLineParserV2.h \
+    $$PWD/misc/QDebugConfig.h \
+    $$PWD/misc/QDebugHandler.h \
     $$PWD/misc/UaDecoder.h \
     $$PWD/misc/b64.h \
+    $$PWD/misc/slacksender.h \
     $$PWD/misc/snowflake.h \
     $$PWD/misc/sourcelocation.h \
+    $$PWD/misc/twilio.h \
     $$PWD/mixin/CopyAssignable.h \
     $$PWD/mixin/NoCopy.h \
     $$PWD/rand/randutil.h \
@@ -61,12 +83,14 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/JSON/jsonreader.cpp \
+    $$PWD/SpaceShipOP/implementation.cpp \
     $$PWD/caching/apcu2.cpp \
     $$PWD/caching/apcuTest.cpp \
     $$PWD/dateTime/qDateTimeUtil.cpp \
     $$PWD/filesystem/filefunction.cpp \
     $$PWD/filesystem/folder.cpp \
     $$PWD/fmtExtra/customformatter.cpp \
+    $$PWD/gitTrick/buffer.cpp \
     $$PWD/hash/crc.cpp \
     $$PWD/locale/localev2.cpp \
     $$PWD/minCurl/curlpp.cpp \
@@ -74,17 +98,21 @@ SOURCES += \
     $$PWD/minCurl/mailfetcher.cpp \
     $$PWD/minCurl/mincurl.cpp \
     $$PWD/minCurl/urlgetcontent.cpp \
+    $$PWD/misc/QCommandLineParserV2.cpp \
+    $$PWD/misc/QDebugHandler.cpp \
     $$PWD/misc/UaDecoder.cpp \
     $$PWD/misc/b64.cpp \
+    $$PWD/misc/slacksender.cpp \
     $$PWD/misc/snowflake.cpp \
     $$PWD/misc/sourcelocation.cpp \
+    $$PWD/misc/twilio.cpp \
     $$PWD/rand/randutil.cpp \
     $$PWD/string/UTF8Util.cpp \
     $$PWD/thread/threadstatush.cpp \
     $$PWD/thread/tmonitoring.cpp
 
 
-defined(WITH_HTTP,var) {
+defined(WITH_BOOST_BEAST,var) {
 #HTTP part
 DEFINES += BOOST_BEAST_USE_STD_STRING_VIEW=1
 
@@ -101,7 +129,7 @@ HEADERS += \
     $$PWD/HTTP/router.h \
     $$PWD/HTTP/url.h \
 }
-	
+
 SOURCES += \
 	$$PWD/QStacker/exceptionv2.cpp \
 	$$PWD/QStacker/httpexception.cpp \
@@ -162,10 +190,6 @@ HEADERS += \
     $$PWD/magicEnum/magic_from_string.hpp
     
     
-    LIBS += -lmariadb
-
-CONFIG += object_parallel_to_source
-
 HEADERS += \
     $$PWD/minMysql/ClickHouseException.h \
 	$$PWD/minMysql/MITLS.h \
@@ -187,6 +211,12 @@ DISTFILES += /
 DISTFILES += \
 	$$PWD/README.md 
 	
+defined(HAS_QT_NETWORK, var) {
+	HEADERS += $$PWD/qhostaddress.h 
+	SOURCES += $$PWD/qhostaddress.cpp 
+}
+
+
 LIBS += -ldw
 LIBS += -ldl
 LIBS += -lfmt
