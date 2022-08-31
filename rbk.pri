@@ -17,6 +17,8 @@ DEFINES += SmolHack2=0'$(shell git -C '$$_PRO_FILE_PWD_' submodule foreach git d
 #QT is amazing, it can easily embedd and later read such file
 RESOURCES     = $$PWD/gitTrick/resources.qrc
 
+#In case you drop in a project who used the older folder structure, this can save some time (add in the config.pri)
+#INCLUDEPATH += $$PWD/
 
 # - SETUP -
 # zypper in libzip-devel
