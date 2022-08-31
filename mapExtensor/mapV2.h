@@ -74,7 +74,8 @@ class mapV2 : public std::map<K, V, _Compare> {
 		return v;
 	}
 
-	bool getOptional(const K& key, V& dest) {
+
+	bool getOptional(const K& key, V& dest) const {
 		if (auto found = get(key); found) {
 			dest = *found.val;
 			return true;
