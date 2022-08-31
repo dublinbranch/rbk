@@ -8,7 +8,7 @@ struct BeastConf {
 	mapV2<std::string, RequestBase*> routing;
 	mapV2<std::string, std::string>  defaultHeader;
 
-	std::string configFolder;
+	std::string logFolder;
 
 	int         worker  = 1;
 	std::string address = "127.0.0.1";

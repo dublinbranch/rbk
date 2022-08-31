@@ -204,10 +204,10 @@ void handle_request(
 				if (!e2->skipPrint) {
 					fmt::print("\n------\n{}", msg);
 				}
-				file = conf->configFolder + "/" + e2->getLogFile();
+				file = conf->logFolder + "/" + e2->getLogFile();
 			} else {
 				payload.html = randomError();
-				file         = conf->configFolder + "/stdException.log";
+				file         = conf->logFolder + "/stdException.log";
 				fmt::print("\n------\n{}", msg);
 			}
 
@@ -216,7 +216,7 @@ void handle_request(
 		} catch (...) {
 			auto msg = status.serializeMsg("unkown exception");
 			fmt::print("\n------\n{}", msg);
-			fileAppendContents("\n------\n " + msg, conf->configFolder + "/unkException.log");
+			fileAppendContents("\n------\n " + msg, conf->logFolder + "/unkException.log");
 		}
 
 		//in case the exception happened before the socket close during the immediate stage
@@ -226,10 +226,10 @@ void handle_request(
 	//also the serialize is error prone in case of badly messed request
 	catch (const exception& e) {
 		auto msg = status.serializeMsg(e.what(), true);
-		fileAppendContents("\n------\n " + msg, conf->configFolder + "/stdException.log");
+		fileAppendContents("\n------\n " + msg, conf->logFolder + "/stdException.log");
 	} catch (...) {
 		auto msg = status.serializeMsg("unkown exception", true);
-		fileAppendContents("\n------\n " + msg, conf->configFolder + "/unkException.log");
+		fileAppendContents("\n------\n " + msg, conf->logFolder + "/unkException.log");
 	}
 
 	return;
@@ -500,7 +500,7 @@ void Beast::listen(const BeastConf& conf) {
 #include <fmt/color.h>
 
 void Beast::okToRun() const {
-	if (conf.configFolder.empty()) {
+	if (conf.logFolder.empty()) {
 		string str = "missing config file to run the Beast HTTP server, set one" + stacker();
 		fmt::print(stderr, fg(fmt::color::red), str);
 		exit(2);
