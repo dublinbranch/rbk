@@ -16,9 +16,10 @@ CONFIG += resources_big
 #DEFINES += SmolHack1=0'$(shell touch '$$PWD'/gitTrick/buffer.cpp)'
 
 #this one need to be stored in a file as contain newline and other complex char, same stuff as above cache all!
+#sometime, for some reason is not able to auto create the file, just touch rbk/gitTrick/submoduleInfo
 DEFINES += SmolHack2=0'$(shell git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)'
 
-#QT is amazing, it can easily embedd and later read such file
+#QT is amazing, it can easily embedd and later read such file, there is not noticeable penalty in linking time for this operation
 RESOURCES     = $$PWD/gitTrick/resources.qrc
 
 #In case you drop in a project who used the older folder structure, this can save some time (add in the config.pri)

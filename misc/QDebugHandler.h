@@ -1,7 +1,6 @@
 #pragma once
-#include "config.h"
-#include <QDebug>
 #include "QDebugConfig.h"
+#include <QDebug>
 
 void commonInitialization(const NanoSpammerConfig* _config);
 
