@@ -45,6 +45,7 @@ DISTFILES += \
 
 HEADERS += \
     $$PWD/dateTime/util.h \
+    $$PWD/minMysql/sqlRow.h \
 	$$PWD/rand/clampednormaldistribution.h \
     $$PWD/HTTP/beastConfig.h \
     $$PWD/JSON/JSONReaderConst.h \

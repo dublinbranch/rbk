@@ -384,7 +384,7 @@ sqlResult DB::queryDeadlockRepeater(const QByteArray& sql, uint maxTry) const {
 		}
 		qWarning().noquote() << "too many trial to resolve deadlock, fix your code!" + QStacker16();
 		cxaNoStack = true;
-		throw MyError::deadlock;
+		throw DBException("Deadlock for " + sql, DBException::DeadLock);
 	}
 	return result;
 }
