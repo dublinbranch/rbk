@@ -155,7 +155,7 @@ CurlKeeper::~CurlKeeper() {
 }
 
 CurlKeeper::operator CURL*() const {
-	return curl;
+	return get();
 }
 
 CURL* CurlKeeper::get() const {
