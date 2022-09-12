@@ -93,7 +93,7 @@ std::vector<int> MailFetcher::getMailIds(bool printError) {
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result.result);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, QBWriter);
 	curl_easy_setopt(curl, CURLOPT_URL, config.folderUrl.data());
-	curl_easy_setopt(curl, CURLOPT_VERBOSE, true);
+	curl_easy_setopt(curl, CURLOPT_VERBOSE, false);
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, config.searchQuery.data()); /* Perform the fetch */
 
 	if (config.skipSslVerification) {
@@ -308,9 +308,20 @@ QStringList MailFetcher::extractAttachmentsFromBuffer(const QByteArray& buffer, 
 	//todo creare una funzione che ritorna anche error message ecc
 	filePutContents(buffer, fname);
 
-	MailFetcher::extractAttachmentsFromFile(fname, outputFolderName);
+	MailFetcher::extractAttachmentsFromFile(fname, finalFolder);
 
-	QDir directory(finalFolder);
-	auto files = directory.entryList(QDir::Files);
-	return files;
+	unlink(fname.toStdString().c_str());
+
+	QDir        directory(finalFolder);
+	auto        files = directory.entryList(QDir::Files);
+	QStringList ok;
+	for (auto& file : files) {
+		//those 2 are the readable mail message, one the html, one the plaintext
+		if (file == "textfile1" || file == "textfile0") {
+			continue;
+		}
+		file = finalFolder + "/" + file;
+		ok.append(file);
+	}
+	return ok;
 }
