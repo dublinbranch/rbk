@@ -2,10 +2,9 @@
 
 #include "curl/curl.h"
 #include "rbk/mapExtensor/mapV2.h"
+#include "rbk/mixin/NoCopy.h"
 #include <QByteArray>
 #include <QString>
-
-#define QSL(str) QStringLiteral(str)
 
 using CURL = void;
 class QString;
@@ -42,22 +41,9 @@ size_t QBWriter(void* contents, size_t size, size_t nmemb, QByteArray* userp);
 // same but with std::string
 size_t STDWriter(void* contents, size_t size, size_t nmemb, std::string* userp);
 
-#ifndef NonCopyable_H
-#define NonCopyable_H
-
-class NonCopyable {
-      protected:
-	NonCopyable()  = default;
-	~NonCopyable() = default;
-
-	NonCopyable(const NonCopyable&)            = delete;
-	NonCopyable& operator=(const NonCopyable&) = delete;
-};
-#endif //NonCopyable_H
-
 // cry
 struct curl_slist;
-class CurlHeader : private NonCopyable {
+class CurlHeader : public NoCopy {
       public:
 	~CurlHeader();
 	void              add(QString header);
@@ -72,7 +58,7 @@ class CurlHeader : private NonCopyable {
 	struct curl_slist* chunk = nullptr;
 };
 
-class CurlForm : private NonCopyable {
+class CurlForm : private NoCopy {
       public:
 	CurlForm(CURL* _curl);
 
@@ -92,7 +78,7 @@ class CurlForm : private NonCopyable {
 	CURL*      curl = nullptr;
 };
 
-class CurlKeeper : private NonCopyable {
+class CurlKeeper : private NoCopy {
       public:
 	CurlKeeper();
 	~CurlKeeper();

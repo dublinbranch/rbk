@@ -50,6 +50,13 @@ class mapV2 : public std::map<K, V, _Compare> {
 		}
 		throw ExceptionV2(fmt::format("key {} not found in {}", k, __PRETTY_FUNCTION__));
 	}
+	
+	[[nodiscard]] auto& rqRef(const K& k) const {
+		if (auto iter = this->find(k); iter != this->end()) {
+			return iter->second;
+		}
+		throw ExceptionV2(fmt::format("key {} not found in {}", k, __PRETTY_FUNCTION__));
+	}
 
 	[[nodiscard]] auto take(const K& k) {
 		if (auto iter = this->find(k); iter != this->end()) {
