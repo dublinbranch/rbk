@@ -495,6 +495,13 @@ void logWithTime(const QString& logFile, const QString& msg) {
 	fileAppendContents(logMsg.toUtf8(), logFile);
 }
 
+void logWithTime(const QString& logFile, const std::string& msg) {
+	auto now    = QDateTime::currentDateTimeUtc().toString(mysqlDateTimeFormat).toStdString();
+	auto logMsg = now + "UTC\n" + msg + "\n";
+
+	fileAppendContents(logMsg, logFile);
+}
+
 bool fileAppendContents(const QString& pay, const QString& fileName) {
 	return fileAppendContents(pay.toUtf8(), fileName);
 }

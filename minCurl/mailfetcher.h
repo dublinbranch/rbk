@@ -6,11 +6,11 @@
 #include <vector>
 
 struct MailFetcherConfig {
-	QString username;
-	QString password;
+	std::string username;
+	std::string password;
 	// imap query to search the mail that will be downloaded
-	QString searchQuery;
-	QString folderUrl;
+	std::string searchQuery;
+	std::string folderUrl;
 
 	bool    logExecution = false;
 	QString logFile;
@@ -34,11 +34,14 @@ class MailFetcher {
 	}
 	std::vector<Mail> fetch(bool verbose, bool printError);
 
+	static void        extractAttachmentsFromFile(const QString& rawMailFileName, const QString& outputFolderName);
+	static QStringList extractAttachmentsFromBuffer(const QByteArray& buffer, const QString& outputFolderName);
+
       private:
 	CurlKeeper        curl;
 	MailFetcherConfig config;
 
-	void             logSearchQuery(QString _username, QString _password, QString _folderUrl, QString _searchQuery);
+	void             logSearchQuery();
 	void             logSearchResponse(QString curlCode, QString curlError, QString result);
 	void             logMailQuery(QString mailUrl);
 	void             logMailResponse(QString curlCode, QString curlError, QString mail);
