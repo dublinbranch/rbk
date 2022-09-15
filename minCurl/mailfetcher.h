@@ -25,6 +25,11 @@ struct Mail {
 	int64_t    id = 0;
 	QByteArray content;
 	bool       ok = false;
+
+	int64_t getArrivalTime() const;
+
+      private:
+	//int64_t arrivalTime = 0;
 };
 
 class MailFetcher {
@@ -33,6 +38,8 @@ class MailFetcher {
 		this->config = conf;
 	}
 	std::vector<Mail> fetch(bool verbose, bool printError);
+	std::vector<int>  getMailIds(bool printError);
+	QByteArray        getRawMail(int mailId, bool verbose, bool printError);
 
 	static void        extractAttachmentsFromFile(const QString& rawMailFileName, const QString& outputFolderName);
 	static QStringList extractAttachmentsFromBuffer(const QByteArray& buffer, const QString& outputFolderName);
@@ -41,15 +48,14 @@ class MailFetcher {
 	CurlKeeper        curl;
 	MailFetcherConfig config;
 
-	void             logSearchQuery();
-	void             logSearchResponse(QString curlCode, QString curlError, QString result);
-	void             logMailQuery(QString mailUrl);
-	void             logMailResponse(QString curlCode, QString curlError, QString mail);
-	std::vector<int> getMailIds(bool printError);
-	QByteArray       getRawMail(int mailId, bool verbose, bool printError);
-	bool             copyMailOnServer(int mailId);
-	bool             moveMailOnServer(int mailId);
-	bool             deleteMailOnServer(int mailId);
+	void logSearchQuery();
+	void logSearchResponse(QString curlCode, QString curlError, QString result);
+	void logMailQuery(QString mailUrl);
+	void logMailResponse(QString curlCode, QString curlError, QString mail);
+
+	bool copyMailOnServer(int mailId);
+	bool moveMailOnServer(int mailId);
+	bool deleteMailOnServer(int mailId);
 };
 
 #endif // MAILFETCHER_H

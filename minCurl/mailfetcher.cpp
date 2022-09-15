@@ -74,7 +74,7 @@ mail (truncated) = %3
 	logWithTime(config.logFile, msg);
 }
 
-// "mailIdList" is returned in descending order, so that when we process it we start from the greatest id
+//SORT BY DESC = std::sort(mailIdList.begin(), mailIdList.end(), std::greater<int>());
 std::vector<int> MailFetcher::getMailIds(bool printError) {
 	CURLcode       res = CURLE_OK;
 	CurlCallResult result;
@@ -151,7 +151,6 @@ searchQuery = {}
 	for (auto& stringId : stringIdList) {
 		mailIdList.push_back(stringId.toInt());
 	}
-	std::sort(mailIdList.begin(), mailIdList.end(), std::greater<int>());
 	return mailIdList;
 }
 
@@ -324,4 +323,23 @@ QStringList MailFetcher::extractAttachmentsFromBuffer(const QByteArray& buffer, 
 		ok.append(file);
 	}
 	return ok;
+}
+
+int64_t Mail::getArrivalTime() const {
+	throw ExceptionV2("function NOT IMPLEMENTED");
+	/**
+	 * Something like
+    Received: by 2002:a05:6400:22c3:0:0:0:0 with SMTP id x3csp400663ecf;
+	    Thu, 15 Sep 2022 04:20:05 -0700 (PDT)
+    So find Received: by and take two newline
+	 */
+	//	if (arrivalTime) {
+	//		return arrivalTime;
+	//	}
+	auto temp  = content.indexOf("Received: by");
+	auto start = content.indexOf('\n', temp);
+	auto end   = content.indexOf('\n', start + 1);
+	auto line  = content.mid(start, end - start).simplified().trimmed();
+	//what is the name of such datetime format
+	QDateTime::fromString(line, "");
 }
