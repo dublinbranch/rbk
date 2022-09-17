@@ -66,7 +66,7 @@ std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringLi
 std::vector<QStringRef> readCSVRowRef(const QStringRef& line, const QChar& separator = ',', const QChar& escape = 0x0);
 std::vector<QStringRef> readCSVRow(const QString& line, const QChar& separator = ',', const QChar& escape = 0x0);
 
-QVector<QByteArray> csvExploder(QByteArray line, const char separator = 0);
+std::vector<QByteArray> csvExploder(QByteArray line, const char separator = 0);
 
 void checkFileLock(QString path, uint minDelay = 5);
 

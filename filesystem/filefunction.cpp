@@ -182,7 +182,7 @@ QString sha1QS(const QString& original, bool urlSafe) {
 	return sha1(original, urlSafe);
 }
 
-QVector<QByteArray> csvExploder(QByteArray line, const char separator) {
+std::vector<QByteArray> csvExploder(QByteArray line, const char separator) {
 	// The csv we receive is trash sometimes
 	line.replace(QBL("\r"), QByteArray());
 	line.replace(QBL("\n"), QByteArray());
@@ -196,7 +196,7 @@ QVector<QByteArray> csvExploder(QByteArray line, const char separator) {
 	if (separator) {
 		sep = boost::escaped_list_separator<char>('\\', separator, '\"');
 	}
-	QVector<QByteArray>      final;
+	std::vector<QByteArray>  final;
 	std::vector<std::string> vec2;
 	auto                     cry = line.toStdString();
 	try {
@@ -209,7 +209,7 @@ QVector<QByteArray> csvExploder(QByteArray line, const char separator) {
 	}
 	// Cry
 	for (auto&& l : vec2) {
-		final.append(QByteArray::fromStdString(l));
+		final.push_back(QByteArray::fromStdString(l));
 	}
 	return final;
 }
