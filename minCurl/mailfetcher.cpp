@@ -2,26 +2,28 @@
 #include "mincurl.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/filesystem/filefunction.h"
+#include "rbk/filesystem/folder.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
+#include <QDateTime>
 #include <QDebug>
+#include <QDir>
+#include <QProcess>
 #include <curl/curl.h>
 
-void MailFetcher::logSearchQuery(QString _username, QString _password, QString _folderUrl, QString _searchQuery) {
+void MailFetcher::logSearchQuery() {
 	if (!config.logExecution) {
 		return;
 	}
 
-	QString skel = R"(- request -
-username = %1
-password = %2
-folderUrl = %3
-searchQuery = %4
-)";
-	auto    msg  = skel
-	               .arg(_username)
-	               .arg(_password)
-	               .arg(_folderUrl)
-	               .arg(_searchQuery);
+	auto msg = fmt::format(R"(
+- request -
+username = {}
+password = {}
+folderUrl = {}
+searchQuery = {}
+)",
+	                       config.username, config.password, config.folderUrl, config.searchQuery);
+
 	logWithTime(config.logFile, msg);
 }
 
@@ -72,7 +74,7 @@ mail (truncated) = %3
 	logWithTime(config.logFile, msg);
 }
 
-// "mailIdList" is returned in descending order, so that when we process it we start from the greatest id
+//SORT BY DESC = std::sort(mailIdList.begin(), mailIdList.end(), std::greater<int>());
 std::vector<int> MailFetcher::getMailIds(bool printError) {
 	CURLcode       res = CURLE_OK;
 	CurlCallResult result;
@@ -81,17 +83,18 @@ std::vector<int> MailFetcher::getMailIds(bool printError) {
 	 * search query
 	 * find the id of the mail we want to download
 	 */
-	logSearchQuery(config.username, config.password, config.folderUrl, config.searchQuery);
+	logSearchQuery();
 
 	char errbuf[CURL_ERROR_SIZE] = {0};
 
 	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
-	curl_easy_setopt(curl, CURLOPT_USERNAME, config.username.toLocal8Bit().data());
-	curl_easy_setopt(curl, CURLOPT_PASSWORD, config.password.toLocal8Bit().data());
+	curl_easy_setopt(curl, CURLOPT_USERNAME, config.username.data());
+	curl_easy_setopt(curl, CURLOPT_PASSWORD, config.password.data());
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result.result);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, QBWriter);
-	curl_easy_setopt(curl, CURLOPT_URL, config.folderUrl.toLocal8Bit().data());
-	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, config.searchQuery.toLocal8Bit().data()); /* Perform the fetch */
+	curl_easy_setopt(curl, CURLOPT_URL, config.folderUrl.data());
+	curl_easy_setopt(curl, CURLOPT_VERBOSE, false);
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, config.searchQuery.data()); /* Perform the fetch */
 
 	if (config.skipSslVerification) {
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
@@ -113,23 +116,24 @@ std::vector<int> MailFetcher::getMailIds(bool printError) {
 			// se curl danno errori
 			// mettere loop con N tentativi
 
-			QString errSkel = R"(
+			auto msg = fmt::format(R"(
 curl_easy_perform() failed!
-res = %1
-curl string error = %2
-username = %3
-password = %4
-folderUrl = %5
-searchQuery = %6
-)";
-			auto    err     = errSkel
-			               .arg(res)
-			               .arg(curl_easy_strerror(res))
-			               .arg(config.username)
-			               .arg(config.password)
-			               .arg(config.folderUrl)
-			               .arg(config.searchQuery);
-			qWarning().noquote() << err << QStacker16Light();
+res = {}
+curl string error = {}
+username = {}
+password = {}
+folderUrl = {}
+searchQuery = {}
+)",
+
+			                       res,
+			                       curl_easy_strerror(res),
+			                       config.username,
+			                       config.password,
+			                       config.folderUrl,
+			                       config.searchQuery);
+
+			qWarning().noquote() << msg.data() << QStacker16Light();
 		}
 		return {};
 	}
@@ -147,19 +151,16 @@ searchQuery = %6
 	for (auto& stringId : stringIdList) {
 		mailIdList.push_back(stringId.toInt());
 	}
-	std::sort(mailIdList.begin(), mailIdList.end(), std::greater<int>());
 	return mailIdList;
 }
 
 QByteArray MailFetcher::getRawMail(int mailId, bool verbose, bool printError) {
-	auto mailUrl = QSL("%1;MAILINDEX=%2")
-	                   .arg(config.folderUrl)
-	                   .arg(mailId);
+	auto mailUrl = fmt::format("{};MAILINDEX={}", config.folderUrl, mailId);
 
 	CurlCallResult mailResult;
 	char           errbuf[CURL_ERROR_SIZE] = {0};
 	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
-	curl_easy_setopt(curl, CURLOPT_URL, mailUrl.toLocal8Bit().data());
+	curl_easy_setopt(curl, CURLOPT_URL, mailUrl.data());
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, NULL);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &mailResult.result);
 
@@ -167,24 +168,23 @@ QByteArray MailFetcher::getRawMail(int mailId, bool verbose, bool printError) {
 
 	// response
 
-	auto    mail = mailResult.result;
-	QString msg;
+	auto        mail = mailResult.result;
+	std::string msg;
 
 	if (res != CURLE_OK) {
-		msg = QSL("curl_easy_perform() failed: mailUrl = %1, curlError = %2, errBuff = %3")
-		          .arg(mailUrl)
-		          .arg(curl_easy_strerror(res))
-		          .arg(errbuf);
+		msg = fmt::format("curl_easy_perform() failed: mailUrl = {}, curlError = {}, errBuff = {}",
+		                  mailUrl,
+		                  curl_easy_strerror(res), errbuf);
 
 		if (printError) {
-			qWarning().noquote() << msg << QStacker16Light();
+			qWarning().noquote() << msg.data() << QStacker16Light();
 		}
 		return QByteArray();
 	} else {
-		msg = QSL("mailUrl = %1 , errBuff = %2").arg(mailUrl).arg(errbuf);
+		msg = fmt::format("mailUrl = {} , errBuff = {}", mailUrl, errbuf);
 	}
 
-	logMailResponse(asString(res), msg, mail);
+	logMailResponse(asString(res), msg.data(), mail);
 
 	if (verbose) {
 		qDebug().noquote() << mail;
@@ -194,11 +194,9 @@ QByteArray MailFetcher::getRawMail(int mailId, bool verbose, bool printError) {
 
 bool MailFetcher::copyMailOnServer(int mailId) {
 	CurlCallResult curlResult;
-	auto           mailUrl = QSL("%1;MAILINDEX=%2")
-	                   .arg(config.folderUrl)
-	                   .arg(mailId);
+	auto           mailUrl = fmt::format("{};MAILINDEX={}", config.folderUrl, mailId);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &curlResult.result);
-	curl_easy_setopt(curl, CURLOPT_URL, mailUrl.toLocal8Bit().data());
+	curl_easy_setopt(curl, CURLOPT_URL, mailUrl.data());
 	// copy command is:
 	// COPY <mailId> <destinationFolder>
 	// e.g.
@@ -216,11 +214,9 @@ bool MailFetcher::copyMailOnServer(int mailId) {
 
 bool MailFetcher::deleteMailOnServer(int mailId) {
 	CurlCallResult curlResult;
-	auto           mailUrl = QSL("%1;MAILINDEX=%2")
-	                   .arg(config.folderUrl)
-	                   .arg(mailId);
+	auto           mailUrl = fmt::format("{};MAILINDEX={}", config.folderUrl, mailId);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &curlResult.result);
-	curl_easy_setopt(curl, CURLOPT_URL, mailUrl.toLocal8Bit().data());
+	curl_easy_setopt(curl, CURLOPT_URL, mailUrl.data());
 	auto flagAsDeleted = QSL("STORE %1 +Flags \\Deleted")
 	                         .arg(mailId);
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, flagAsDeleted.toLocal8Bit().data());
@@ -231,7 +227,7 @@ bool MailFetcher::deleteMailOnServer(int mailId) {
 
 	CurlCallResult curlResult2;
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &curlResult2.result);
-	curl_easy_setopt(curl, CURLOPT_URL, mailUrl.toLocal8Bit().data());
+	curl_easy_setopt(curl, CURLOPT_URL, mailUrl.data());
 	auto expungeCommand = QSL("EXPUNGE");
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, expungeCommand.toLocal8Bit().data());
 
@@ -280,4 +276,70 @@ std::vector<Mail> MailFetcher::fetch(bool verbose, bool printError) {
 	}
 
 	return returnMe;
+}
+
+void MailFetcher::extractAttachmentsFromFile(const QString& rawMailFileName, const QString& outputFolderName) {
+	QProcess    process;
+	QStringList params;
+	params << "-i" << rawMailFileName;
+	params << "-d" << outputFolderName;
+	auto env = QProcessEnvironment::systemEnvironment();
+	env.remove("LD_LIBRARY_PATH");
+	process.setProcessEnvironment(env);
+	process.start("ripmime", params);
+	process.waitForFinished(9999999);
+	QByteArray errorMsg = process.readAllStandardError();
+	QByteArray msg      = process.readAllStandardOutput();
+
+	if (process.error() != QProcess::ProcessError::UnknownError || !errorMsg.isEmpty() || !msg.isEmpty()) {
+		//https://github.com/inflex/ripMIME
+		qCritical().noquote() << "error invoking ripmime, are you sure it exist?\nto install see\nhttps://s22.trott.pw/dev_wiki/index.php?title=Ripmime" + errorMsg + msg + process.errorString();
+		throw 1;
+	}
+}
+
+QStringList MailFetcher::extractAttachmentsFromBuffer(const QByteArray& buffer, const QString& outputFolderName) {
+	auto finalFolder = outputFolderName + "/" + QString::number(QDateTime::currentDateTime().toMSecsSinceEpoch());
+	mkdir(outputFolderName);
+	mkdir(finalFolder);
+	auto fname = finalFolder + "/buffer";
+
+	//todo creare una funzione che ritorna anche error message ecc
+	filePutContents(buffer, fname);
+
+	MailFetcher::extractAttachmentsFromFile(fname, finalFolder);
+
+	unlink(fname.toStdString().c_str());
+
+	QDir        directory(finalFolder);
+	auto        files = directory.entryList(QDir::Files);
+	QStringList ok;
+	for (auto& file : files) {
+		//those 2 are the readable mail message, one the html, one the plaintext
+		if (file == "textfile1" || file == "textfile0") {
+			continue;
+		}
+		file = finalFolder + "/" + file;
+		ok.append(file);
+	}
+	return ok;
+}
+
+int64_t Mail::getArrivalTime() const {
+	throw ExceptionV2("function NOT IMPLEMENTED");
+	/**
+	 * Something like
+    Received: by 2002:a05:6400:22c3:0:0:0:0 with SMTP id x3csp400663ecf;
+	    Thu, 15 Sep 2022 04:20:05 -0700 (PDT)
+    So find Received: by and take two newline
+	 */
+	//	if (arrivalTime) {
+	//		return arrivalTime;
+	//	}
+	auto temp  = content.indexOf("Received: by");
+	auto start = content.indexOf('\n', temp);
+	auto end   = content.indexOf('\n', start + 1);
+	auto line  = content.mid(start, end - start).simplified().trimmed();
+	//what is the name of such datetime format
+	QDateTime::fromString(line, "");
 }

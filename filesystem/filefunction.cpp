@@ -182,7 +182,7 @@ QString sha1QS(const QString& original, bool urlSafe) {
 	return sha1(original, urlSafe);
 }
 
-QVector<QByteArray> csvExploder(QByteArray line, const char separator) {
+std::vector<QByteArray> csvExploder(QByteArray line, const char separator) {
 	// The csv we receive is trash sometimes
 	line.replace(QBL("\r"), QByteArray());
 	line.replace(QBL("\n"), QByteArray());
@@ -196,7 +196,7 @@ QVector<QByteArray> csvExploder(QByteArray line, const char separator) {
 	if (separator) {
 		sep = boost::escaped_list_separator<char>('\\', separator, '\"');
 	}
-	QVector<QByteArray>      final;
+	std::vector<QByteArray>  final;
 	std::vector<std::string> vec2;
 	auto                     cry = line.toStdString();
 	try {
@@ -209,7 +209,7 @@ QVector<QByteArray> csvExploder(QByteArray line, const char separator) {
 	}
 	// Cry
 	for (auto&& l : vec2) {
-		final.append(QByteArray::fromStdString(l));
+		final.push_back(QByteArray::fromStdString(l));
 	}
 	return final;
 }
@@ -493,6 +493,13 @@ void logWithTime(const QString& logFile, const QString& msg) {
 	auto logMsg = QSL("%1 UTC\n%2\n")
 	                  .arg(now, msg);
 	fileAppendContents(logMsg.toUtf8(), logFile);
+}
+
+void logWithTime(const QString& logFile, const std::string& msg) {
+	auto now    = QDateTime::currentDateTimeUtc().toString(mysqlDateTimeFormat).toStdString();
+	auto logMsg = now + "UTC\n" + msg + "\n";
+
+	fileAppendContents(logMsg, logFile);
 }
 
 bool fileAppendContents(const QString& pay, const QString& fileName) {

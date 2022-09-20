@@ -66,7 +66,7 @@ std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringLi
 std::vector<QStringRef> readCSVRowRef(const QStringRef& line, const QChar& separator = ',', const QChar& escape = 0x0);
 std::vector<QStringRef> readCSVRow(const QString& line, const QChar& separator = ',', const QChar& escape = 0x0);
 
-QVector<QByteArray> csvExploder(QByteArray line, const char separator = 0);
+std::vector<QByteArray> csvExploder(QByteArray line, const char separator = 0);
 
 void checkFileLock(QString path, uint minDelay = 5);
 
@@ -77,3 +77,4 @@ bool softlink(const QString& source, const QString& dest, bool quiet = false);
 QString hardlink(const QString& source, const QString& dest, HLParam param = HLParam::eraseOld);
 
 void logWithTime(const QString& logFile, const QString& msg);
+void logWithTime(const QString& logFile, const std::string& msg);
