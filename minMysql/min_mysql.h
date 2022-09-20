@@ -119,6 +119,7 @@ struct DB {
 	void      setMaxQueryTime(uint time) const;
 	sqlResult query(const char* sql) const;
 	sqlResult query(const QString& sql) const;
+	sqlResult query(const std::string& sql) const;
 	// simulateErr is just for testing
 	sqlResult query(const QByteArray& sql, int simulateErr = 0) const;
 

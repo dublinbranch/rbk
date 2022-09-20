@@ -88,6 +88,10 @@ sqlResult DB::query(const QString& sql) const {
 	return query(copy);
 }
 
+sqlResult DB::query(const std::string& sql) const {
+	return query(QByteArray::fromStdString(sql));
+}
+
 sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 	ResetAfterUse reset1(localThreadStatus->state, ThreadState::MyQuery);
 	localThreadStatus->sql = sql;
