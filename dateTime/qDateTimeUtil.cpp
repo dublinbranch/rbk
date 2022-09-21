@@ -18,8 +18,12 @@
 	return neu;
 }
 
-QDateTime hourlyFloor(const QDateTime& time) {
-	return QDateTime::fromSecsSinceEpoch((time.toSecsSinceEpoch() / 3600) * 3600);
+QDateTime hourlyFloor(QDateTime time) {
+	auto t = time.time();
+	auto h = t.hour();
+	t.setHMS(h, 0, 0);
+	time.setTime(t);
+	return time;
 }
 
 //--------------------------------------------------------------------------------------
