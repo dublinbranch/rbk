@@ -1,8 +1,10 @@
 #ifndef CUSTOMFORMATTER_H
 #define CUSTOMFORMATTER_H
 
-#include <QString>
+//Looks like is not possible to have those function in a .cpp file for the moment
+
 #include "fmt/format.h"
+#include <QString>
 
 template <>
 struct fmt::formatter<QString> {
@@ -39,7 +41,7 @@ struct fmt::formatter<QString> {
 	// Formats the point p using the parsed format specification (presentation)
 	// stored in this formatter.
 	template <typename FormatContext>
-	auto format(const QString& p, FormatContext& ctx) {
+	auto format(const QString& p, FormatContext& ctx) const {
 		// auto format(const point &p, FormatContext &ctx) -> decltype(ctx.out()) // c++11
 		// ctx.out() is an output iterator to write to.
 		return format_to(
@@ -48,9 +50,6 @@ struct fmt::formatter<QString> {
 		    p.toStdString());
 	}
 };
-
-
-
 
 template <>
 struct fmt::formatter<QByteArray> {
@@ -87,7 +86,7 @@ struct fmt::formatter<QByteArray> {
 	// Formats the point p using the parsed format specification (presentation)
 	// stored in this formatter.
 	template <typename FormatContext>
-	auto format(const QByteArray& p, FormatContext& ctx) {
+	auto format(const QByteArray& p, FormatContext& ctx) const {
 		// auto format(const point &p, FormatContext &ctx) -> decltype(ctx.out()) // c++11
 		// ctx.out() is an output iterator to write to.
 		return format_to(

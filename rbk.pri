@@ -45,6 +45,7 @@ DISTFILES += \
 
 HEADERS += \
     $$PWD/dateTime/util.h \
+    $$PWD/hash/salt.h \
     $$PWD/minMysql/sqlRow.h \
 	$$PWD/rand/clampednormaldistribution.h \
     $$PWD/HTTP/beastConfig.h \
@@ -93,6 +94,7 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/dateTime/util.cpp \
+    $$PWD/hash/salt.cpp \
 	$$PWD/rand/clampednormaldistribution.cpp \
     $$PWD/JSON/jsonreader.cpp \
     $$PWD/SpaceShipOP/implementation.cpp \
