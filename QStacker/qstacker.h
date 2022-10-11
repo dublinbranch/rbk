@@ -3,6 +3,8 @@
 
 #include "exceptionv2.h"
 #include <QByteArray>
+#include "CxaLevel.h"
+
 //Used to monitor how many exception are beeing thrown over time by hacheck, a few are ok, too many no!
 inline std::atomic<uint> exceptionThrown{0};
 
@@ -28,14 +30,7 @@ inline uint        stackerMaxFrame = 99;
 // Next throw will not append stack trace, reset after use
 inline thread_local bool cxaNoStack = false;
 
-enum class CxaLevel {
-	// TODO in theory I should tweak ABORT, and always force print here the stacktrace generated inside __cxa
-	// lot of food for thought
-	none, // this will NOT forcefully print the stack on throw
-	warn,
-	debug,
-	critical
-};
+
 // what level shall we use ? reset after use as critical
 inline thread_local CxaLevel cxaLevel = CxaLevel::critical;
 

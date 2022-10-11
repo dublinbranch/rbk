@@ -522,7 +522,7 @@ QString DBConf::getInfo(bool passwd) const {
 
 void DBConf::setWarningSuppression(std::vector<QString> regexes) {
 	for (auto& str : regexes) {
-		warningSuppression.append(make_shared<QRegularExpression>(str));
+		warningSuppression.push_back(make_shared<QRegularExpression>(str));
 	}
 }
 
@@ -751,7 +751,6 @@ void SQLBuffering::flush() {
 		// this is UTF16, but MySQL run in UTF8, so can be lower or bigger (rare vey rare but possible)
 		// small safety margin + increase size for UTF16 -> UTF8 conversion
 		if ((query.size() * 1.3) > maxPacket * 0.75) {
-			buffer.clear();
 			conn->queryDeadlockRepeater(query.toUtf8());
 			query.clear();
 		}
@@ -845,17 +844,17 @@ sqlResult DB::getWarning(bool useSuppressionList) const {
 		return ok;
 	}
 	auto res = query(QBL("SHOW WARNINGS"));
-	if (!useSuppressionList || conf.warningSuppression.isEmpty()) {
+	if (!useSuppressionList || conf.warningSuppression.empty()) {
 		return res;
 	}
-	for (auto iter = res.begin(); iter != res.end(); ++iter) {
-		auto msg = iter->value(QBL("Message"), BSQL_NULL);
-		for (auto rx : conf.warningSuppression) {
-			auto p = rx->pattern();
+	for (const auto& row : res) {
+		auto msg = row.value(QBL("Message"), BSQL_NULL);
+		for (auto& rx : conf.warningSuppression) {
+			//auto p = rx->pattern();
 			if (rx->match(msg).hasMatch()) {
 				break;
 			} else {
-				ok.append(*iter);
+				ok.append(row);
 			}
 		}
 	}

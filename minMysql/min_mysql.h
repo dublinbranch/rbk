@@ -1,7 +1,7 @@
 #pragma once
 
+#include "DBConf.h"
 #include "MITLS.h"
-#include "rbk/QStacker/qstacker.h"
 #include "rbk/defines//stringDefine.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/mapExtensor/qmapV2.h"
@@ -66,38 +66,6 @@ struct SQLLogger {
 	bool flushed  = false;
 	// the invoking class
 	const DB* db = nullptr;
-};
-
-class QRegularExpression;
-struct DBConf {
-	DBConf();
-	QByteArray host = "127.0.0.1";
-	QByteArray pass;
-	QByteArray user;
-	QByteArray sock;
-	int64_t    cacheId = 0;
-	bool       ssl     = false;
-	// Usually set false for operation that do not have to be replicated
-	bool writeBinlog = true;
-	// This header is quite big, better avoid the inclusio
-	QList<std::shared_ptr<QRegularExpression>> warningSuppression;
-
-	uint readTimeout     = 0;
-	uint port            = 3306;
-	bool logSql          = false;
-	bool logError        = false;
-	bool pingBeforeQuery = true; // So if the connection is broken will be re-established
-	// In certain case not beeing able to connect is bad, in other not and we just go ahead, retry later...
-	CxaLevel connErrorVerbosity = CxaLevel::none;
-
-	// Corpus munus
-	QByteArray getDefaultDB() const;
-	void       setDefaultDB(const QByteArray& value);
-	QString    getInfo(bool passwd = false) const;
-	void       setWarningSuppression(std::vector<QString> regex);
-
-      private:
-	QByteArray defaultDB;
 };
 
 /**

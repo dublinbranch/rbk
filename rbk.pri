@@ -44,8 +44,11 @@ DISTFILES += \
 	$$PWD/minCurl/README.md
 
 HEADERS += \
+    $$PWD/QStacker/CxaLevel.h \
     $$PWD/dateTime/util.h \
+    $$PWD/fmtExtra/dynamic.h \
     $$PWD/hash/salt.h \
+    $$PWD/minMysql/DBConf.h \
     $$PWD/minMysql/sqlRow.h \
 	$$PWD/rand/clampednormaldistribution.h \
     $$PWD/HTTP/beastConfig.h \
@@ -65,6 +68,7 @@ HEADERS += \
     $$PWD/filesystem/filefunction.h \
     $$PWD/filesystem/folder.h \
     $$PWD/fmtExtra/customformatter.h \
+	$$PWD/fmtExtra/includeMe.h \
     $$PWD/gitTrick/buffer.h \
     $$PWD/hash/crc.h \
     $$PWD/locale/localev2.h \

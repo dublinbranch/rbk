@@ -1,4 +1,5 @@
 #include "tmonitoring.h"
+#include "rbk/QStacker/qstacker.h"
 #include "rbk/minMysql/min_mysql.h"
 #include "threadstatush.h"
 #include <atomic>
@@ -27,11 +28,11 @@ struct ATiming {
 
 		total += localThreadStatus->time.total();
 		flush += localThreadStatus->time.flush;
-//		auto& st = s7DB.state.get();
-//		sqlFetch += st.totFetchTime;
-//		sqlServer += st.totServerTime;
-//		sqlDone += st.queryExecuted;
-//		sqlReconnect += st.reconnection;
+		//		auto& st = s7DB.state.get();
+		//		sqlFetch += st.totFetchTime;
+		//		sqlServer += st.totServerTime;
+		//		sqlDone += st.queryExecuted;
+		//		sqlReconnect += st.reconnection;
 	}
 	void clear() {
 		total        = 0;
@@ -123,10 +124,10 @@ void requestBeging() {
 	m30.bump();
 	m300.bump();
 	//dk.reset();
-//	s7DB.state.get().totFetchTime  = 0;
-//	s7DB.state.get().totServerTime = 0;
-//	s7DB.state.get().reconnection  = 0;
-//	s7DB.state.get().queryExecuted = 0;
+	//	s7DB.state.get().totFetchTime  = 0;
+	//	s7DB.state.get().totServerTime = 0;
+	//	s7DB.state.get().reconnection  = 0;
+	//	s7DB.state.get().queryExecuted = 0;
 }
 
 void requestEnd() {
