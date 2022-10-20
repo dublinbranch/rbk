@@ -282,9 +282,9 @@ std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringLi
 	    //  ,    "   \n    ?  eof
 	    {1, 2, -1, 0, -1}, // 0: parsing (store char)
 	    {1, 2, -1, 0, -1}, // 1: parsing (store column)
-	    {3, 4, 3, 3, -2},  // 2: quote entered (no-op)
+	    {3, 4, 3, 3, -2},  // 2: quote entered 
 	    {3, 4, 3, 3, -2},  // 3: parsing inside quotes (store char)
-	    {1, 3, -1, 0, -1}, // 4: quote exited (no-op)
+	    {1, 3, -1, 0, -1}, // 4: quote exited 
 	                       // -1: end of row, store column, success
 	                       // -2: eof inside quotes
 	};
@@ -322,6 +322,9 @@ std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringLi
 		switch (actualState) {
 		case 4:
 			blockEnd = pos - 1;
+			break;
+		case 2:
+			currentBlockStart = pos;
 			break;
 		case 0:
 		case 3:
