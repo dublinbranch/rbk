@@ -44,6 +44,7 @@ DISTFILES += \
 	$$PWD/minCurl/README.md
 
 HEADERS += \
+    $$PWD/HTTP/select2.h \
     $$PWD/QStacker/CxaLevel.h \
     $$PWD/dateTime/util.h \
     $$PWD/fmtExtra/dynamic.h \
@@ -97,6 +98,7 @@ HEADERS += \
     $$PWD/thread/tmonitoring.h
 
 SOURCES += \
+    $$PWD/HTTP/select2.cpp \
     $$PWD/dateTime/util.cpp \
     $$PWD/hash/salt.cpp \
 	$$PWD/rand/clampednormaldistribution.cpp \

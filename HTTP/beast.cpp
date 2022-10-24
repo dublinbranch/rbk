@@ -173,7 +173,7 @@ void handle_request(
 			 * phase 1
 			 * execute immediate
 			 */
-			payload = router.immediate(status);
+			payload = router.immediate(status, conf);
 
 			/*
 			 * phase 2

@@ -97,6 +97,7 @@ struct DB {
 	sqlRow queryCacheLine(const QString& sql, uint ttl = 3600, bool required = false);
 	sqlRow queryCacheLine2(const QString& sql, uint ttl = 3600, bool required = false);
 
+	sqlResult queryCache2(const std::string& sql, uint ttl, bool required = false);
 	sqlResult queryCache2(const QString& sql, uint ttl, bool required = false);
 	//Try to read data from cache, if expired read from DB, if db unavailable use the cache, if all fail throw error
 	sqlResult queryORcache(const QString& sql, uint ttl, bool required = false);

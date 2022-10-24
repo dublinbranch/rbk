@@ -253,6 +253,10 @@ sqlRow DB::queryCacheLine2(const QString& sql, uint ttl, bool required) {
 	}
 }
 
+sqlResult DB::queryCache2(const std::string& sql, uint ttl, bool required) {
+	return queryCache2(QString::fromStdString(sql), ttl, required);
+}
+
 sqlRow DB::queryCacheLine(const QString& sql, uint ttl, bool required) {
 	return queryCacheLine2(sql, ttl, required);
 }
@@ -573,6 +577,11 @@ st_mysql* DB::connect() const {
 		my_bool falseNonSense = 0;
 
 		mysql_options(conn, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &falseNonSense);
+		//Needed as of 2022-10 as new mariadb version deprecated older cypher
+		mysql_optionsv(conn, MARIADB_OPT_TLS_VERSION, (void*)"TLSv1.2,TLSv1.3");
+		//Needed as of 2022-10 as new mariadb requires stronger cypher
+		unsigned int cipher_strength = 128;
+		mysql_optionsv(conn, MARIADB_OPT_TLS_CIPHER_STRENGTH, (void*)&cipher_strength);
 
 		// Default timeout during connection and operation is Infinite o.O
 		// In a real worild if after 5 sec we still have no conn, is clearly an error!

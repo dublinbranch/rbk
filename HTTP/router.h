@@ -38,11 +38,12 @@ but the note is here
 	virtual ~RequestBase() = default;
 };
 
+class BeastConf;
 class Router {
       public:
 	//Il principio è meno cose da fare meno errori possono esserci
 	//Tutte le cose STRETTAMENTE NECESSARIE a mostrare il risultato in pagina
-	Payload immediate(PMFCGI& status);
+	Payload immediate(PMFCGI& status, const BeastConf*);
 
 	//Tutto il resto che magari può dare errori o eccezioni
 	void deferred();

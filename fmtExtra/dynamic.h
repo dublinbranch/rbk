@@ -14,4 +14,9 @@ std::string format(const std::string_view& fmt, T&&... args) {
 	return fmt::vformat(fmt, fmt::make_format_args(args...));
 }
 
+template <typename... T>
+std::string F(const std::string_view& fmt, T&&... args) {
+	return fmt::vformat(fmt, fmt::make_format_args(args...));
+}
+
 #endif // DYNAMIC_H
