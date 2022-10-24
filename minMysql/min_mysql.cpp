@@ -710,10 +710,10 @@ SQLBuffering::~SQLBuffering() {
 }
 
 void SQLBuffering::append(const QString& sql) {
-	buffer.append(sql);
 	if (sql.isEmpty()) {
 		return;
 	}
+	buffer.append(sql);
 	// 0 disable flushing, 1 disable buffering
 	if (bufferSize && (uint)buffer.size() >= bufferSize) {
 		flush();
