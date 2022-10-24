@@ -1,5 +1,6 @@
 #include "salt.h"
 #include "rbk/misc/b64.h"
+#include "sha.h"
 #include <QDateTime>
 
 std::string salt(size_t lenght, std::string) {
@@ -11,5 +12,7 @@ QString salt(QString, size_t lenght) {
 }
 
 QString saltQS(size_t lenght) {
-	return toBase64(QString::number(QDateTime::currentMSecsSinceEpoch())).left(lenght);
+	auto ts = QDateTime::currentMSecsSinceEpoch() + rand();
+	auto n  = QByteArray::number(ts);
+	return sha1(n).left(lenght);
 }

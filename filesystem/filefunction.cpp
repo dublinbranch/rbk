@@ -5,8 +5,6 @@
 #include "rbk/defines/stringDefine.h"
 #include "rbk/magicEnum/magic_enum.hpp"
 #include "rbk/serialization/serialize.h"
-#include <QCoreApplication>
-#include <QCryptographicHash>
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
@@ -119,25 +117,6 @@ bool fileAppendContents(const QByteArray& pay, const QString& fileName) {
 	return true;
 }
 
-QByteArray sha512(const QByteArray& original, bool urlSafe) {
-	auto sha1 = QCryptographicHash::hash(original, QCryptographicHash::Algorithm::Sha512);
-	if (urlSafe) {
-		return sha1.toBase64(QByteArray::Base64Option::Base64UrlEncoding | QByteArray::Base64Option::OmitTrailingEquals);
-	}
-	return sha1;
-}
-
-QByteArray sha1(const QByteArray& original, bool urlSafe) {
-	auto sha1 = QCryptographicHash::hash(original, QCryptographicHash::Algorithm::Sha1);
-	if (urlSafe) {
-		return sha1.toBase64(QByteArray::Base64Option::Base64UrlEncoding | QByteArray::Base64Option::OmitTrailingEquals);
-	}
-	return sha1;
-}
-QByteArray sha1(const QString& original, bool urlSafe) {
-	return sha1(original.toUtf8(), urlSafe);
-}
-
 // returns the (unzipped) content of a zipped file.
 // zipped = content of the zipped file
 QByteArray unzip1(QByteArray zipped) {
@@ -176,10 +155,6 @@ QByteArray unzip1(QByteArray zipped) {
 	// some error
 	qDebug().noquote() << "something strange with that zip file" << QStacker16();
 	return QByteArray();
-}
-
-QString sha1QS(const QString& original, bool urlSafe) {
-	return sha1(original, urlSafe);
 }
 
 std::vector<QByteArray> csvExploder(QByteArray line, const char separator) {

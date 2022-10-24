@@ -49,6 +49,7 @@ HEADERS += \
     $$PWD/dateTime/util.h \
     $$PWD/fmtExtra/dynamic.h \
     $$PWD/hash/salt.h \
+    $$PWD/hash/sha.h \
     $$PWD/minMysql/DBConf.h \
     $$PWD/minMysql/sqlRow.h \
 	$$PWD/rand/clampednormaldistribution.h \
@@ -101,6 +102,7 @@ SOURCES += \
     $$PWD/HTTP/select2.cpp \
     $$PWD/dateTime/util.cpp \
     $$PWD/hash/salt.cpp \
+    $$PWD/hash/sha.cpp \
 	$$PWD/rand/clampednormaldistribution.cpp \
     $$PWD/JSON/jsonreader.cpp \
     $$PWD/SpaceShipOP/implementation.cpp \

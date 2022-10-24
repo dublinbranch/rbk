@@ -49,12 +49,6 @@ bool fileAppendContents(const QByteArray& pay, const QString& fileName);
 bool fileAppendContents(const std::string& pay, const QString& fileName);
 bool fileAppendContents(const std::string& pay, const std::string& fileName);
 
-QByteArray sha512(const QByteArray& original, bool urlSafe = true);
-
-QByteArray sha1(const QByteArray& original, bool urlSafe = true);
-QByteArray sha1(const QString& original, bool urlSafe = true);
-QString    sha1QS(const QString& original, bool urlSafe = true);
-
 QByteArray unzip1(QByteArray zipped);
 
 /**

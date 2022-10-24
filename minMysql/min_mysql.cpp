@@ -5,6 +5,7 @@
 #include "rbk/RAII//resetAfterUse.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/filesystem/folder.h"
+#include "rbk/hash/sha.h"
 #include "rbk/serialization/serialize.h"
 #include "rbk/thread/threadstatush.h"
 #include "utilityfunctions.h"
