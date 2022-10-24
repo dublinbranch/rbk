@@ -44,10 +44,12 @@ DISTFILES += \
 	$$PWD/minCurl/README.md
 
 HEADERS += \
+    $$PWD/BoostJson/extra.h \
     $$PWD/HTTP/select2.h \
     $$PWD/QStacker/CxaLevel.h \
     $$PWD/dateTime/util.h \
     $$PWD/fmtExtra/dynamic.h \
+    $$PWD/fmtExtra/fromEnum.h \
     $$PWD/hash/salt.h \
     $$PWD/hash/sha.h \
     $$PWD/minMysql/DBConf.h \
@@ -99,6 +101,7 @@ HEADERS += \
     $$PWD/thread/tmonitoring.h
 
 SOURCES += \
+    $$PWD/BoostJson/extra.cpp \
     $$PWD/HTTP/select2.cpp \
     $$PWD/dateTime/util.cpp \
     $$PWD/hash/salt.cpp \
