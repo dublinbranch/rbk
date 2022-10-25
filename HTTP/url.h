@@ -115,7 +115,15 @@ class Url {
 	 * @brief get3lvl
 	 * @return the 3rd level subdomain so in case of www.miao.it will be www
 	 */
-	QString get3lvl();
+	QString get3lvl() const;
+	/**
+	 * @brief get2lvl
+	 * @return the 2rd level subdomain so in case of www.miao.it will be miao
+	 */
+	QString get2lvl() const;
+
+	QString getNlvl(int pos) const;
+
 	struct DS {
 		QString domain;
 		QString subDomain;

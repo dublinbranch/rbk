@@ -21,15 +21,23 @@ std::string Url::prettyPrint() const {
 	return buffer;
 }
 
-QString Url::get3lvl() {
+QString Url::get3lvl() const {
+	return getNlvl(3);
+}
+
+QString Url::get2lvl() const {
+	return getNlvl(2);
+}
+
+QString Url::getNlvl(int pos) const {
 	//for now let's start assuming we do not have nonsense in the url
 	auto path = url.host().split('.');
 	auto s    = path.size();
-	if (s < 3) {
+	if (s < pos) {
 		return QString();
 	}
 
-	return path.at(s - 3);
+	return path.at(s - pos);
 }
 
 QString QueryParams::join() const {

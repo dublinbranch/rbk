@@ -4,14 +4,10 @@
 #include <QString>
 
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QString& t) {
-	// Store a complex number as a 2-element array
-	// with the real part followed by the imaginary part
 	jv = {t.toStdString()};
 }
 
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QByteArray& t) {
-	// Store a complex number as a 2-element array
-	// with the real part followed by the imaginary part
 	jv = {t.toStdString()};
 }
 

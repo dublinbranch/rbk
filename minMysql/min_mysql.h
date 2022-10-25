@@ -72,8 +72,17 @@ struct SQLLogger {
  * @brief The DB struct
  */
 class FetchVisitor;
+
 struct DB {
       public:
+	
+	struct Opt {
+		uint ttl            = 60;
+		bool noCacheOnEmpty = false;
+		bool required       = false;
+	};
+	
+	
 	DB() = default;
 	DB(const DBConf& _conf);
 	~DB();
@@ -96,6 +105,9 @@ struct DB {
 
 	sqlRow queryCacheLine(const QString& sql, uint ttl = 3600, bool required = false);
 	sqlRow queryCacheLine2(const QString& sql, uint ttl = 3600, bool required = false);
+	sqlRow queryCacheLine2(const std::string& sql, uint ttl = 3600, bool required = false);
+
+	sqlResult queryCache2(const std::string& sql, const Opt& opt);
 
 	sqlResult queryCache2(const std::string& sql, uint ttl, bool required = false);
 	sqlResult queryCache2(const QString& sql, uint ttl, bool required = false);

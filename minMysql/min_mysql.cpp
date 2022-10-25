@@ -254,6 +254,15 @@ sqlRow DB::queryCacheLine2(const QString& sql, uint ttl, bool required) {
 	}
 }
 
+sqlRow DB::queryCacheLine2(const std::string& sql, uint ttl, bool required) {
+	return queryCacheLine2(QString::fromStdString(sql), ttl, required);
+}
+
+sqlResult DB::queryCache2(const std::string& sql, const Opt& opt) {
+	state.get().noCacheOnEmpty = opt.noCacheOnEmpty;
+	return queryCache2(QString::fromStdString(sql), opt.ttl, opt.required);
+}
+
 sqlResult DB::queryCache2(const std::string& sql, uint ttl, bool required) {
 	return queryCache2(QString::fromStdString(sql), ttl, required);
 }
