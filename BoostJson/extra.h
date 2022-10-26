@@ -14,5 +14,7 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, QByt
 
 template <isEnum T>
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const T& t) {
-	jv = {asSWString(t)};
+	jv = asSWString(t);
 }
+
+void pretty_print(std::string& res, boost::json::value const& jv, std::string indent = nullptr);
