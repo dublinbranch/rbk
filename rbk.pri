@@ -45,7 +45,6 @@ DISTFILES += \
 
 HEADERS += \
     $$PWD/BoostJson/extra.h \
-    $$PWD/HTTP/select2.h \
     $$PWD/QStacker/CxaLevel.h \
     $$PWD/dateTime/util.h \
     $$PWD/fmtExtra/dynamic.h \
@@ -102,7 +101,6 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/BoostJson/extra.cpp \
-    $$PWD/HTTP/select2.cpp \
     $$PWD/dateTime/util.cpp \
     $$PWD/hash/salt.cpp \
     $$PWD/hash/sha.cpp \
@@ -146,8 +144,10 @@ SOURCES += \
     $$PWD/HTTP/beast.cpp \
     $$PWD/HTTP/router.cpp \
     $$PWD/HTTP/url.cpp \
+    $$PWD/HTTP/select2.cpp \
 	
 HEADERS += \
+    $$PWD/HTTP/select2.h \
     $$PWD/HTTP/PMFCGI.h \
     $$PWD/HTTP/Payload.h \
     $$PWD/HTTP/beast.h \

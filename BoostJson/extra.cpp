@@ -1,4 +1,6 @@
 #include "extra.h"
+//one off include to compile what is needed and avoid linking external stuff
+#include <boost/json/src.hpp>
 
 #include <QByteArray>
 #include <QString>
