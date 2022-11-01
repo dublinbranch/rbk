@@ -60,10 +60,8 @@ HEADERS += \
     $$PWD/SpaceShipOP/qdateship.h \
     $$PWD/SpaceShipOP/qstringship.h \
 	$$PWD/caching/apcu2.h \
-	$$PWD/dateTime/qDateTimeUtil.h \
 	$$PWD/dateTime/qdatetimev2.h \
     $$PWD/dateTime/timespecV2.h \
-	$$PWD/dateTime/timezone.h \
     $$PWD/GeoLite2PP/GeoLite2PP_error_category.hpp \
     $$PWD/RAII/resetAfterUse.h \
     $$PWD/defines/stringDefine.h \
@@ -109,7 +107,6 @@ SOURCES += \
     $$PWD/SpaceShipOP/implementation.cpp \
     $$PWD/caching/apcu2.cpp \
     $$PWD/caching/apcuTest.cpp \
-    $$PWD/dateTime/qDateTimeUtil.cpp \
     $$PWD/filesystem/filefunction.cpp \
     $$PWD/filesystem/folder.cpp \
     $$PWD/fmtExtra/customformatter.cpp \
