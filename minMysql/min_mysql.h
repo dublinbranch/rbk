@@ -89,6 +89,8 @@ struct DB {
 	void      closeConn() const;
 	st_mysql* connect() const;
 	bool      tryConnect() const;
+	
+	sqlRow    queryLine(const std::string& sql) const;
 	sqlRow    queryLine(const char* sql) const;
 	sqlRow    queryLine(const QString& sql) const;
 	sqlRow    queryLine(const QByteArray& sql) const;

@@ -5,6 +5,7 @@
 #include "rbk/RAII//resetAfterUse.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/filesystem/folder.h"
+#include "rbk/fmtExtra/customformatter.h"
 #include "rbk/hash/sha.h"
 #include "rbk/serialization/serialize.h"
 #include "rbk/thread/threadstatush.h"
@@ -69,6 +70,12 @@ sqlRow DB::queryLine(const char* sql) const {
 
 sqlRow DB::queryLine(const QString& sql) const {
 	return queryLine(sql.toUtf8());
+}
+
+sqlRow DB::queryLine(const std::string& sql) const {
+	QByteArray temp;
+	temp.setRawData(sql.c_str(), sql.size());
+	return queryLine(temp);
 }
 
 sqlRow DB::queryLine(const QByteArray& sql) const {
@@ -233,7 +240,7 @@ sqlRow DB::queryCacheLine(const QString& sql, bool on, QString name, uint ttl, b
 sqlRow DB::queryCacheLine2(const QString& sql, uint ttl, bool required) {
 	auto res = queryCache2(sql, ttl);
 	if (auto r = res.size(); r > 1) {
-		auto   msg = QSL("invalid number of row for %1, expected 1, got %2 \n").arg(sql).arg(r);
+		auto   msg = QSL("invalid number of row for: %1\nExpected 1, got %2 \n").arg(sql).arg(r);
 		QDebug dbg(&msg);
 		for (int i = 0; i < 3; i++) {
 			if (!res.empty()) {
@@ -950,9 +957,8 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 		sqlLogger->error = mysql_error(conn);
 	}
 	if (error) {
-		qWarning().noquote() << "Mysql error for " << lastSQL << "error was " << mysql_error(conn) << " code: " << error << QStacker(3);
-		cxaNoStack = true;
-		throw error;
+		auto msg = fmt::format("Mysql error for:\n{} \n----------\nError was:\n{}\nCode:{}", lastSQL.get(), mysql_error(conn), error);
+		throw ExceptionV2();
 	}
 
 	return res;

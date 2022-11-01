@@ -17,4 +17,5 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, cons
 	jv = asSWString(t);
 }
 
-void pretty_print(std::string& res, boost::json::value const& jv, std::string indent = nullptr);
+void        pretty_print(std::string& res, boost::json::value const& jv, std::string* indent = nullptr);
+std::string pretty_print(boost::json::value const& jv);

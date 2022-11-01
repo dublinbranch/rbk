@@ -57,77 +57,85 @@ void tag_invoke( const bj::value_from_tag&, bj::value& jv, customer const& c )
 */
 
 using namespace boost;
-void pretty_print(std::string& res, const boost::json::value& jv, std::string indent) {
+void pretty_print(std::string& os, json::value const& jv, std::string* indent) {
+	std::string indent_;
+	if (!indent)
+		indent = &indent_;
 	switch (jv.kind()) {
 	case json::kind::object: {
-		res += "{\n";
-		indent.append(4, ' ');
+		os += "{\n";
+		indent->append(4, ' ');
 		auto const& obj = jv.get_object();
 		if (!obj.empty()) {
 			auto it = obj.begin();
 			for (;;) {
-				res += indent + json::serialize(it->key()) + " : ";
-				pretty_print(res, it->value(), indent);
+				os += * indent + json::serialize(it->key()) + " : ";
+				pretty_print(os, it->value(), indent);
 				if (++it == obj.end())
 					break;
-				res += ",\n";
+				os += ",\n";
 			}
 		}
-		res += "\n";
-		indent.resize(indent.size() - 4);
-		res += indent + "}";
+		os += "\n";
+		indent->resize(indent->size() - 4);
+		os += *indent + "}";
 		break;
 	}
 
 	case json::kind::array: {
-		res += "[\n";
-		indent.append(4, ' ');
+		os += "[\n";
+		indent->append(4, ' ');
 		auto const& arr = jv.get_array();
 		if (!arr.empty()) {
 			auto it = arr.begin();
 			for (;;) {
-				res += indent;
-				pretty_print(res, *it, indent);
+				os += *indent;
+				pretty_print(os, *it, indent);
 				if (++it == arr.end())
 					break;
-				res += ",\n";
+				os += ",\n";
 			}
 		}
-		res += "\n";
-		indent.resize(indent.size() - 4);
-		res += indent + "]";
+		os += "\n";
+		indent->resize(indent->size() - 4);
+		os += *indent + "]";
 		break;
 	}
 
 	case json::kind::string: {
-		res += json::serialize(jv.get_string());
+		os += json::serialize(jv.get_string());
 		break;
 	}
 
 	case json::kind::uint64:
-		res += jv.get_uint64();
+		os += jv.get_uint64();
 		break;
 
 	case json::kind::int64:
-		res += jv.get_int64();
+		os += jv.get_int64();
 		break;
 
 	case json::kind::double_:
-		res += jv.get_double();
+		os += jv.get_double();
 		break;
 
 	case json::kind::bool_:
 		if (jv.get_bool())
-			res += "true";
+			os += "true";
 		else
-			res += "false";
+			os += "false";
 		break;
 
 	case json::kind::null:
-		res += "null";
+		os += "null";
 		break;
 	}
 
-	if (indent.empty())
-		res += "\n";
+	if (indent->empty())
+		os += "\n";
+}
+std::string pretty_print(const boost::json::value& jv) {
+	std::string res;
+	pretty_print(res, jv);
+	return res;
 }
