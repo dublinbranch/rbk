@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+class QString;
+
 namespace Select2 {
 /*
  {
@@ -24,16 +26,17 @@ namespace Select2 {
 */
 
 struct Row {
+	Row(const std::string& id_, const std::string& text_);
+	Row(const QString& id_, const QString& text_);
 	std::string id;
 	std::string text;
 };
 
 struct Result {
-	bool             pagination;
+	bool             pagination = false;
 	std::vector<Row> rows;
-	std::string toResultJSON() const;
+	std::string      toResultJSON() const;
 };
-
 
 } // namespace Select2
 

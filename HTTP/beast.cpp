@@ -33,6 +33,7 @@
 #include "rbk/QStacker/httpexception.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/filesystem/filefunction.h"
+#include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/misc/b64.h"
 #include "rbk/rand/randutil.h"
@@ -89,28 +90,11 @@ http::response<http::string_body> quickResponse(string&& msg, http::status statu
 }
 
 void send(beast::tcp_stream& stream, const http::response<http::string_body>& msg) {
-	//afaik performance are the same...
-	//	beast::error_code ec;
-	//	http::write(
-	//	    stream,
-	//	    move(msg),
-	//	    ec);
-
-	//Weird trick to force the buffer to be kept alive
-	struct Cry {
-		http::response<http::string_body> msg;
-	};
-
-	auto cry = make_shared<Cry>();
-	cry->msg = move(msg);
-
-	http::async_write(
+	beast::error_code ec;
+	http::write(
 	    stream,
-	    cry->msg,
-	    [&stream, cry](beast::error_code ec, std::size_t) {
-		    (void)cry;
-		    stream.socket().shutdown(tcp::socket::shutdown_send, ec);
-	    });
+	    move(msg),
+	    ec);
 }
 
 void sendResponseToClient(beast::tcp_stream& stream, Payload& payload) {
@@ -505,4 +489,5 @@ void Beast::okToRun() const {
 		fmt::print(stderr, fg(fmt::color::red), str);
 		exit(2);
 	}
+	RBK::mkdir(conf.logFolder);
 }

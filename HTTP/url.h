@@ -12,7 +12,7 @@
 class QueryParams : public mapV2<QString, QString> {
       public:
 	//Una inutile scocciatura che QueryParams non fa vedere il suo contenuto!
-
+	//Todo proponi un Pretty Printer per QTCreator ?
 	/**
 	 * @brief setQuery
 	 * @param val
@@ -76,7 +76,7 @@ class QueryParams : public mapV2<QString, QString> {
 				return;
 			}
 		}
-		throw HttpException(QSL("Required parameter %1 is missing").arg(keys.join(" or ")));
+		throw HttpException(QSL("Required parameter %1 is missing (or empty)").arg(keys.join(" or ")));
 	}
 
 	template <class T>
@@ -84,7 +84,7 @@ class QueryParams : public mapV2<QString, QString> {
 		if (swap(key, t)) {
 			return;
 		}
-		throw HttpException(QSL("Required parameter %1 is missing").arg(key));
+		throw HttpException(QSL("Required parameter %1 is missing (or empty)").arg(key));
 	}
 
 	template <class T>

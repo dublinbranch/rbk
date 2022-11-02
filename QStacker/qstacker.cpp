@@ -1,12 +1,12 @@
 #include "rbk/QStacker/qstacker.h"
 #include "backward.hpp"
-#include <QString>
-#include <mutex>
-
+#include "rbk/string/util.h"
 #include <QDebug>
 #include <QString>
+#include <boost/algorithm/string.hpp>
 #include <dlfcn.h>
 #include <execinfo.h>
+#include <mutex>
 
 std::string stacker(uint skip, QStackerOpt opt) {
 	/** For loading from an arbitrary position
@@ -38,12 +38,29 @@ std::string stacker(uint skip, QStackerOpt opt) {
 
 	//Remove all the stuff before our process (if set)
 	if (!StackerMinLevel.empty()) {
+		//After we move to Qt 6 we will use QByteArrayView which is just better
 
 		auto start = str.find(StackerMinLevel);
 		if (start == std::string::npos) {
 			return str;
 		}
-		//we now have to find the line start, which is 1 char after the previous \n
+		//we now have to find the line
+		auto end = str.find('\n', start);
+		//start is 1 char after the previous \n
+		start = str.rfind('\n', start);
+
+		auto row = subView(str, start, end);
+		//to remove the asio noise
+		if (row.contains("rbk/HTTP/beast.cpp:") && row.contains("operator()")) {
+			start = str.find(StackerMinLevel, end);
+			if (start == std::string::npos) { //in case of expection INSIDE the asio / beast stack
+				if (opt.prependReturn) {
+					str = str.substr(start);
+				} else {
+					str = str.substr(start + 1);
+				}
+			}
+		}
 
 		start = str.rfind('\n', start);
 		if (opt.prependReturn) {
