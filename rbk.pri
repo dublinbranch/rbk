@@ -3,6 +3,9 @@
 
 include(config.pri)
 
+QMAKE_CXXFLAGS += -std=gnu++2b
+QMAKE_CXXFLAGS += -Wall -Wextra -Wshadow -Wshadow-local -Wshadow-compatible-local
+
 CONFIG += object_parallel_to_source
 
 DEFINES += GIT_STATUS='\\"$(shell git -C '$$_PRO_FILE_PWD_' describe  --always --dirty --abbrev=99)\\"'
