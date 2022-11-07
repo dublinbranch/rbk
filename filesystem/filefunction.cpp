@@ -257,9 +257,9 @@ std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringLi
 	    //  ,    "   \n    ?  eof
 	    {1, 2, -1, 0, -1}, // 0: parsing (store char)
 	    {1, 2, -1, 0, -1}, // 1: parsing (store column)
-	    {3, 4, 3, 3, -2},  // 2: quote entered 
+	    {3, 4, 3, 3, -2},  // 2: quote entered
 	    {3, 4, 3, 3, -2},  // 3: parsing inside quotes (store char)
-	    {1, 3, -1, 0, -1}, // 4: quote exited 
+	    {1, 3, -1, 0, -1}, // 4: quote exited
 	                       // -1: end of row, store column, success
 	                       // -2: eof inside quotes
 	};
@@ -335,15 +335,15 @@ std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringLi
 }
 
 std::vector<QStringRef> readCSVRow(const QString& line, const QChar& separator, const QChar& escape) {
-	return readCSVRowRef(QStringRef(&line), separator, escape);
+	return readCSVRow(QStringRef(&line), separator, escape);
 }
 
-std::vector<QStringRef> readCSVRowRef(const QStringRef& line, const QChar& separator, const QChar& escape) {
+std::vector<QStringRef> readCSVRow(const QStringRef& line, const QChar& separator, const QChar& escape) {
 	std::vector<QStringRef> part;
 	if (line.isEmpty()) {
 		return part;
 	}
-	part.reserve(10);
+	part.reserve(1024);
 	// Quando si ESCE dal quote, non avanzare di pos, altrimenti diventa "ciao" -> ciao"
 	// questo innesca il problema che se vi è ad esempio ciao,"miao""bau",altro
 	// invece di avere ciao, miaobau, altro non funge perché il range NON é CONTIGUO -.-, ma viene ritornato ad esempio ciao, miao, bau, altro
@@ -384,17 +384,17 @@ std::vector<QStringRef> readCSVRowRef(const QStringRef& line, const QChar& separ
 
 	auto le = line.length();
 	while (actualState >= 0) {
-		if (pos >= le)
+		if (pos >= le) {
 			event = 4;
-		else {
+		} else {
 			ch = line[pos];
-			if (ch == separator)
+			if (ch == separator) {
 				event = 0;
-			else if (ch == escape) {
+			} else if (ch == escape) {
 				event = 1;
-			} else if (ch == newline)
+			} else if (ch == newline) {
 				event = 2;
-			else
+			} else
 				event = 3;
 		}
 		pos++;

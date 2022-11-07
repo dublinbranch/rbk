@@ -57,7 +57,7 @@ QByteArray unzip1(QByteArray zipped);
 //Much slower but more flexible, is that ever used ?
 std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringList& separator = {","}, const QStringList& escape = {"\""});
 //Quite fast expecially if optimizer is on
-std::vector<QStringRef> readCSVRowRef(const QStringRef& line, const QChar& separator = ',', const QChar& escape = 0x0);
+std::vector<QStringRef> readCSVRow(const QStringRef& line, const QChar& separator = ',', const QChar& escape = 0x0);
 std::vector<QStringRef> readCSVRow(const QString& line, const QChar& separator = ',', const QChar& escape = 0x0);
 
 std::vector<QByteArray> csvExploder(QByteArray line, const char separator = 0);
