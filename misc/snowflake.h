@@ -1,9 +1,10 @@
 #ifndef SNOWFLAKE_H
 #define SNOWFLAKE_H
 
+//This is named after https://en.wikipedia.org/wiki/Snowflake_ID 
+
 #include "rbk/dateTime/timespecV2.h"
 #include "rbk/mixin/NoCopy.h"
-#include "rbk/dateTime/qDateTimeUtil.h"
 #include <atomic>
 class Snowflake : public NoCopy {
 	using u64 = uint64_t;
