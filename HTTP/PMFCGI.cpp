@@ -124,3 +124,17 @@ void Payload::setStandardHeaders(bool addCors) {
 		headers.insert({"Access-Control-Allow-Origin", "*"});
 	}
 }
+
+mapV2<QString, QString> decodePost(const std::string& form) {
+	mapV2<QString, QString> res;
+	auto                    copy = QString::fromStdString(form);
+	auto                    rows = copy.splitRef('&');
+	for (auto& row : rows) {
+		auto pair = row.split('=');
+		if (pair.size() != 2) {
+			throw HttpException("invalid line in post" + row);
+		}
+		res[pair[0].toString()] = pair[1].toString();
+	}
+	return res;
+}

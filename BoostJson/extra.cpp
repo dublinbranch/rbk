@@ -2,8 +2,11 @@
 //one off include to compile what is needed and avoid linking external stuff
 #include <boost/json/src.hpp>
 
+#include "rbk/minMysql/sqlRow.h"
 #include <QByteArray>
 #include <QString>
+
+using namespace std;
 
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QString& t) {
 	jv = t.toStdString();
@@ -69,7 +72,7 @@ void pretty_print(std::string& os, json::value const& jv, std::string* indent) {
 		if (!obj.empty()) {
 			auto it = obj.begin();
 			for (;;) {
-				os += * indent + json::serialize(it->key()) + " : ";
+				os += *indent + json::serialize(it->key()) + " : ";
 				pretty_print(os, it->value(), indent);
 				if (++it == obj.end())
 					break;
@@ -108,22 +111,23 @@ void pretty_print(std::string& os, json::value const& jv, std::string* indent) {
 	}
 
 	case json::kind::uint64:
-		os += jv.get_uint64();
+		os += std::to_string(jv.get_uint64());
 		break;
 
 	case json::kind::int64:
-		os += jv.get_int64();
+		os += std::to_string(jv.get_int64());
 		break;
 
 	case json::kind::double_:
-		os += jv.get_double();
+		os += std::to_string(jv.get_double());
 		break;
 
 	case json::kind::bool_:
-		if (jv.get_bool())
+		if (jv.get_bool()) {
 			os += "true";
-		else
+		} else {
 			os += "false";
+		}
 		break;
 
 	case json::kind::null:
@@ -131,11 +135,23 @@ void pretty_print(std::string& os, json::value const& jv, std::string* indent) {
 		break;
 	}
 
-	if (indent->empty())
+	if (indent->empty()) {
 		os += "\n";
+	}
 }
 std::string pretty_print(const boost::json::value& jv) {
 	std::string res;
 	pretty_print(res, jv);
 	return res;
+}
+
+json::value asNull(const sqlRow& row, std::string_view key) {
+
+	QByteArray k;
+	k.setRawData(key.data(), key.size());
+	auto v = row.rq<QByteArray>(k);
+	if (v == BSQL_NULL) {
+		return nullptr;
+	}
+	return {v.toStdString()};
 }

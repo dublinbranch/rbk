@@ -77,7 +77,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 
 	// Sooo many time we need a QString back
-	QString g16(const QByteArray& key, const QString def) const {
+	QString g16(const QByteArray& key, const QString& def) const {
 		QString val;
 		get2(key, val, def);
 		return val;
