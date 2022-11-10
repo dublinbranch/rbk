@@ -155,3 +155,11 @@ json::value asNull(const sqlRow& row, std::string_view key) {
 	}
 	return {v.toStdString()};
 }
+
+QString QS(const boost::json::string &cry) {
+    return QString::fromLatin1(cry.data(), cry.size());
+}
+
+QString QS(const boost::json::value *value) {
+    return QS(value->as_string());
+}

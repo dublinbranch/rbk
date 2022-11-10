@@ -20,6 +20,9 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, cons
 void        pretty_print(std::string& res, boost::json::value const& jv, std::string* indent = nullptr);
 std::string pretty_print(boost::json::value const& jv);
 
-class sqlRow;
+QString QS(const boost::json::string& cry);
 
+QString QS(const boost::json::value* value);
+
+class sqlRow;
 boost::json::value asNull(const sqlRow& row, std::string_view key);

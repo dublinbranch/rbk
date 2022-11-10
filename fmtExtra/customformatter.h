@@ -7,6 +7,32 @@
 #include <QString>
 
 template <>
+struct fmt::formatter<QStringRef> {
+	char presentation = 'f';
+
+	// Parses format specifications of the form ['f' | 'e'].
+	constexpr auto parse(format_parse_context& ctx) {
+		auto it = ctx.begin(), end = ctx.end();
+		if (it != end && (*it == 'f' || *it == 'e'))
+			presentation = *it++;
+		if (it != end && *it != '}')
+			throw format_error("invalid format");
+		return it;
+	}
+
+	template <typename FormatContext>
+	auto format(const QStringRef& p, FormatContext& ctx) const {
+		// auto format(const point &p, FormatContext &ctx) -> decltype(ctx.out()) // c++11
+		// ctx.out() is an output iterator to write to.
+
+		return format_to(
+		    ctx.out(),
+		    "{}",
+		    p.string()->toStdString());
+	}
+};
+
+template <>
 struct fmt::formatter<QString> {
 	// Presentation format: 'f' - fixed, 'e' - exponential.
 	char presentation = 'f';

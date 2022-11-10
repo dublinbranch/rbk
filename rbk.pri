@@ -1,7 +1,7 @@
 #this will enable certain ip based function on localeV2, of course you will need to provide a max mind db handler
+#put those in PRO file of the project!
 #DEFINES += localeWithMaxMind
-
-include(config.pri)
+#WITH_BOOST_BEAST = true
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -36,7 +36,8 @@ CONFIG += resources_big
 
 #this one need to be stored in a file as contain newline and other complex char, same stuff as above cache all!
 #sometime, for some reason is not able to auto create the file, just touch rbk/gitTrick/submoduleInfo
-DEFINES += SmolHack2=0'$(shell git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)'
+system(git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)
+#DEFINES += SmolHack2=0'$(shell git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)'
 
 #QT is amazing, it can easily embedd and later read such file, there is not noticeable penalty in linking time for this operation
 RESOURCES     = $$PWD/gitTrick/resources.qrc
