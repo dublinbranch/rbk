@@ -55,4 +55,6 @@ void requestBeging();
 void requestEnd();
 void registerFlushTime();
 
+mapV2<QString, QString> decodePost(const std::string &form);
+
 #endif // PMFCGI_H
