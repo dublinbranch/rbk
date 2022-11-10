@@ -70,6 +70,7 @@ HEADERS += \
     $$PWD/fmtExtra/fromEnum.h \
     $$PWD/hash/salt.h \
     $$PWD/hash/sha.h \
+	$$PWD/locale/codes.h \
     $$PWD/minMysql/DBConf.h \
     $$PWD/minMysql/sqlRow.h \
 	$$PWD/rand/clampednormaldistribution.h \
@@ -123,6 +124,7 @@ SOURCES += \
     $$PWD/dateTime/util.cpp \
     $$PWD/hash/salt.cpp \
     $$PWD/hash/sha.cpp \
+	$$PWD/locale/codes.cpp \
 	$$PWD/rand/clampednormaldistribution.cpp \
     $$PWD/JSON/jsonreader.cpp \
     $$PWD/SpaceShipOP/implementation.cpp \
