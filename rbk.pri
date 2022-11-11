@@ -69,6 +69,7 @@ HEADERS += \
     $$PWD/QStacker/CxaLevel.h \
     $$PWD/dateTime/util.h \
     $$PWD/fmtExtra/dynamic.h \
+    $$PWD/fmtExtra/echo.h \
     $$PWD/fmtExtra/fromEnum.h \
     $$PWD/hash/salt.h \
     $$PWD/hash/sha.h \
@@ -124,6 +125,7 @@ SOURCES += \
     $$PWD/BoostJson/extra.cpp \
 	$$PWD/asanOption.cpp \
     $$PWD/dateTime/util.cpp \
+    $$PWD/fmtExtra/echo.cpp \
     $$PWD/hash/salt.cpp \
     $$PWD/hash/sha.cpp \
 	$$PWD/locale/codes.cpp \
