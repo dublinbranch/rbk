@@ -81,8 +81,8 @@ const mapV2<QByteArray, quint16>& getNationISO2() {
 	        {"FO", 74},
 	        {"FR", 75},
 	        {"GA", 76},
-	        {"GB", 77},
-	        {"UK", 77},
+	        {"GB", 77}, //this is the geographic toponim of the main island
+	        {"UK", 77}, //UK this is the actual politic entity (which comprise GB and many more island ecc)
 	        {"GD", 78},
 	        {"GE", 79},
 	        {"GF", 80},
