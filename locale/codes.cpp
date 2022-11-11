@@ -1,5 +1,6 @@
 #include "codes.h"
 
+//This whole table is wrong and leftover of aggressive optimization in gaisensha where each nation was a bit in a 256bit register, we just use to check if a 2 letter code is valid
 const mapV2<QByteArray, quint16>& getNationISO2() {
 	const static mapV2<QByteArray, quint16> nations =
 	    {{
@@ -81,6 +82,7 @@ const mapV2<QByteArray, quint16>& getNationISO2() {
 	        {"FR", 75},
 	        {"GA", 76},
 	        {"GB", 77},
+	        {"UK", 77},
 	        {"GD", 78},
 	        {"GE", 79},
 	        {"GF", 80},
