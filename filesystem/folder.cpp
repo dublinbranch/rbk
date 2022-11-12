@@ -16,12 +16,21 @@ bool mkdir(const QString& dirName) {
 	}
 	return true;
 }
+namespace RBK {
+bool mkdir(const std::string& dirName) {
+	return mkdir(QString::fromStdString(dirName));
+}
+
+bool mkdir(const char* dirName) {
+	return mkdir(QString(dirName));
+}
+} // namespace RBK
 
 void cleanFolder(const QString& folder) {
 	auto dir = QDir(folder);
 	dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
 	auto files = dir.entryList();
-	for (auto file : files) {
+	for (const auto& file : files) {
 		dir.remove(file);
 	}
 }

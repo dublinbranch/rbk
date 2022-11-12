@@ -1,9 +1,8 @@
-#ifndef ROUTER_H
-#define ROUTER_H
+#pragma once
 
-#include "PMFCGI.h"
 #include "rbk/HTTP/Payload.h"
 #include <memory>
+#include <rbk/mapExtensor/mapV2.h>
 
 struct PMFCGI;
 class RequestBase {
@@ -14,13 +13,37 @@ class RequestBase {
 	virtual Payload immediate(PMFCGI& status) = 0;
 	//You are not required to do something after
 	virtual void deferred(){};
+	//https://stackoverflow.com/questions/10024796/c-virtual-functions-but-no-virtual-destructors
+	/**
+	 * #include <iostream>
+
+class Base {};
+class Derived: public Base { public: ~Derived() { std::cout << "Aargh\n"; } };
+
+int main() {
+  Base* b = new Derived();
+  Derived* d = new Derived();
+
+  delete d;
+  delete b;
+}
+
+This prints:
+
+Aargh
+
+Yep, only once. Now I hardly believe this will ever happen in our case to rely on the dtor
+but the note is here
+*/
+	virtual ~RequestBase() = default;
 };
 
+class BeastConf;
 class Router {
       public:
 	//Il principio è meno cose da fare meno errori possono esserci
 	//Tutte le cose STRETTAMENTE NECESSARIE a mostrare il risultato in pagina
-	Payload immediate(PMFCGI& status);
+	Payload immediate(PMFCGI& status, const BeastConf*);
 
 	//Tutto il resto che magari può dare errori o eccezioni
 	void deferred();
@@ -29,5 +52,4 @@ class Router {
 	std::shared_ptr<RequestBase> operation = nullptr;
 };
 
-mapV2<std::string, RequestBase *> getDefaultRouting();
-#endif // ROUTER_H
+mapV2<std::string, RequestBase*> getDefaultRouting();

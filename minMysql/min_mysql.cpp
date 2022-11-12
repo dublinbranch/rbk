@@ -5,6 +5,8 @@
 #include "rbk/RAII//resetAfterUse.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/filesystem/folder.h"
+#include "rbk/fmtExtra/customformatter.h"
+#include "rbk/hash/sha.h"
 #include "rbk/serialization/serialize.h"
 #include "rbk/thread/threadstatush.h"
 #include "utilityfunctions.h"
@@ -70,6 +72,12 @@ sqlRow DB::queryLine(const QString& sql) const {
 	return queryLine(sql.toUtf8());
 }
 
+sqlRow DB::queryLine(const std::string& sql) const {
+	QByteArray temp;
+	temp.setRawData(sql.c_str(), sql.size());
+	return queryLine(temp);
+}
+
 sqlRow DB::queryLine(const QByteArray& sql) const {
 	auto res = query(sql);
 	if (res.empty()) {
@@ -86,6 +94,10 @@ sqlResult DB::query(const QString& sql) const {
 	//I have no idea but libasan reported the error if is inlined o.O ?
 	auto copy = sql.toUtf8();
 	return query(copy);
+}
+
+sqlResult DB::query(const std::string& sql) const {
+	return query(QByteArray::fromStdString(sql));
 }
 
 sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
@@ -228,7 +240,7 @@ sqlRow DB::queryCacheLine(const QString& sql, bool on, QString name, uint ttl, b
 sqlRow DB::queryCacheLine2(const QString& sql, uint ttl, bool required) {
 	auto res = queryCache2(sql, ttl);
 	if (auto r = res.size(); r > 1) {
-		auto   msg = QSL("invalid number of row for %1, expected 1, got %2 \n").arg(sql).arg(r);
+		auto   msg = QSL("invalid number of row for: %1\nExpected 1, got %2 \n").arg(sql).arg(r);
 		QDebug dbg(&msg);
 		for (int i = 0; i < 3; i++) {
 			if (!res.empty()) {
@@ -247,6 +259,19 @@ sqlRow DB::queryCacheLine2(const QString& sql, uint ttl, bool required) {
 			return {};
 		}
 	}
+}
+
+sqlRow DB::queryCacheLine2(const std::string& sql, uint ttl, bool required) {
+	return queryCacheLine2(QString::fromStdString(sql), ttl, required);
+}
+
+sqlResult DB::queryCache2(const std::string& sql, const Opt& opt) {
+	state.get().noCacheOnEmpty = opt.noCacheOnEmpty;
+	return queryCache2(QString::fromStdString(sql), opt.ttl, opt.required);
+}
+
+sqlResult DB::queryCache2(const std::string& sql, uint ttl, bool required) {
+	return queryCache2(QString::fromStdString(sql), ttl, required);
 }
 
 sqlRow DB::queryCacheLine(const QString& sql, uint ttl, bool required) {
@@ -384,7 +409,7 @@ sqlResult DB::queryDeadlockRepeater(const QByteArray& sql, uint maxTry) const {
 		}
 		qWarning().noquote() << "too many trial to resolve deadlock, fix your code!" + QStacker16();
 		cxaNoStack = true;
-		throw MyError::deadlock;
+		throw DBException("Deadlock for " + sql, DBException::DeadLock);
 	}
 	return result;
 }
@@ -518,7 +543,7 @@ QString DBConf::getInfo(bool passwd) const {
 
 void DBConf::setWarningSuppression(std::vector<QString> regexes) {
 	for (auto& str : regexes) {
-		warningSuppression.append(make_shared<QRegularExpression>(str));
+		warningSuppression.push_back(make_shared<QRegularExpression>(str));
 	}
 }
 
@@ -569,6 +594,11 @@ st_mysql* DB::connect() const {
 		my_bool falseNonSense = 0;
 
 		mysql_options(conn, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &falseNonSense);
+		//Needed as of 2022-10 as new mariadb version deprecated older cypher
+		mysql_optionsv(conn, MARIADB_OPT_TLS_VERSION, (void*)"TLSv1.2,TLSv1.3");
+		//Needed as of 2022-10 as new mariadb requires stronger cypher
+		unsigned int cipher_strength = 128;
+		mysql_optionsv(conn, MARIADB_OPT_TLS_CIPHER_STRENGTH, (void*)&cipher_strength);
 
 		// Default timeout during connection and operation is Infinite o.O
 		// In a real worild if after 5 sec we still have no conn, is clearly an error!
@@ -697,10 +727,10 @@ SQLBuffering::~SQLBuffering() {
 }
 
 void SQLBuffering::append(const QString& sql) {
-	buffer.append(sql);
 	if (sql.isEmpty()) {
 		return;
 	}
+	buffer.append(sql);
 	// 0 disable flushing, 1 disable buffering
 	if (bufferSize && (uint)buffer.size() >= bufferSize) {
 		flush();
@@ -747,7 +777,6 @@ void SQLBuffering::flush() {
 		// this is UTF16, but MySQL run in UTF8, so can be lower or bigger (rare vey rare but possible)
 		// small safety margin + increase size for UTF16 -> UTF8 conversion
 		if ((query.size() * 1.3) > maxPacket * 0.75) {
-			buffer.clear();
 			conn->queryDeadlockRepeater(query.toUtf8());
 			query.clear();
 		}
@@ -841,17 +870,17 @@ sqlResult DB::getWarning(bool useSuppressionList) const {
 		return ok;
 	}
 	auto res = query(QBL("SHOW WARNINGS"));
-	if (!useSuppressionList || conf.warningSuppression.isEmpty()) {
+	if (!useSuppressionList || conf.warningSuppression.empty()) {
 		return res;
 	}
-	for (auto iter = res.begin(); iter != res.end(); ++iter) {
-		auto msg = iter->value(QBL("Message"), BSQL_NULL);
-		for (auto rx : conf.warningSuppression) {
-			auto p = rx->pattern();
+	for (const auto& row : res) {
+		auto msg = row.value(QBL("Message"), BSQL_NULL);
+		for (auto& rx : conf.warningSuppression) {
+			//auto p = rx->pattern();
 			if (rx->match(msg).hasMatch()) {
 				break;
 			} else {
-				ok.append(*iter);
+				ok.append(row);
 			}
 		}
 	}
@@ -928,9 +957,8 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 		sqlLogger->error = mysql_error(conn);
 	}
 	if (error) {
-		qWarning().noquote() << "Mysql error for " << lastSQL << "error was " << mysql_error(conn) << " code: " << error << QStacker(3);
-		cxaNoStack = true;
-		throw error;
+		auto msg = fmt::format("Mysql error for:\n{} \n----------\nError was:\n{}\nCode:{}", lastSQL.get(), mysql_error(conn), error);
+		throw ExceptionV2();
 	}
 
 	return res;

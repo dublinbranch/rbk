@@ -12,14 +12,4 @@ class CopyAssignable {
 	//Needed to exist so is easy to reset with *this = X();
 	//CopyAssignable& operator=(const CopyAssignable&) = delete;
 };
-
-class NoCopy {
-      protected:
-	NoCopy()  = default;
-	~NoCopy() = default;
-
-	NoCopy(const NoCopy&) = delete;
-	NoCopy& operator=(const NoCopy&) = delete;
-};
-
 #endif

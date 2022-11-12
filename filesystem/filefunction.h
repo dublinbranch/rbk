@@ -47,12 +47,7 @@ FileGetRes fileGetContents2(const QString& fileName, bool quiet = true, uint max
 bool fileAppendContents(const QString& pay, const QString& fileName);
 bool fileAppendContents(const QByteArray& pay, const QString& fileName);
 bool fileAppendContents(const std::string& pay, const QString& fileName);
-
-QByteArray sha512(const QByteArray& original, bool urlSafe = true);
-
-QByteArray sha1(const QByteArray& original, bool urlSafe = true);
-QByteArray sha1(const QString& original, bool urlSafe = true);
-QString    sha1QS(const QString& original, bool urlSafe = true);
+bool fileAppendContents(const std::string& pay, const std::string& fileName);
 
 QByteArray unzip1(QByteArray zipped);
 
@@ -62,10 +57,10 @@ QByteArray unzip1(QByteArray zipped);
 //Much slower but more flexible, is that ever used ?
 std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringList& separator = {","}, const QStringList& escape = {"\""});
 //Quite fast expecially if optimizer is on
-std::vector<QStringRef> readCSVRowRef(const QStringRef& line, const QChar& separator = ',', const QChar& escape = 0x0);
+std::vector<QStringRef> readCSVRow(const QStringRef& line, const QChar& separator = ',', const QChar& escape = 0x0);
 std::vector<QStringRef> readCSVRow(const QString& line, const QChar& separator = ',', const QChar& escape = 0x0);
 
-QVector<QByteArray> csvExploder(QByteArray line, const char separator = 0);
+std::vector<QByteArray> csvExploder(QByteArray line, const char separator = 0);
 
 void checkFileLock(QString path, uint minDelay = 5);
 
@@ -76,3 +71,4 @@ bool softlink(const QString& source, const QString& dest, bool quiet = false);
 QString hardlink(const QString& source, const QString& dest, HLParam param = HLParam::eraseOld);
 
 void logWithTime(const QString& logFile, const QString& msg);
+void logWithTime(const QString& logFile, const std::string& msg);

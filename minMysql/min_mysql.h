@@ -1,24 +1,15 @@
 #pragma once
 
+#include "DBConf.h"
 #include "MITLS.h"
-#include "rbk/QStacker/qstacker.h"
 #include "rbk/defines//stringDefine.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/mapExtensor/qmapV2.h"
 #include "rbk/misc/b64.h"
+#include "sqlRow.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QStringList>
-
-#ifndef QBL
-#define QBL(str) QByteArrayLiteral(str)
-#define QSL(str) QStringLiteral(str)
-#endif
-
-enum MyError : unsigned int {
-	noError  = 0,
-	deadlock = 1213
-};
 
 class DBException : public ExceptionV2 {
       public:
@@ -39,139 +30,6 @@ QString nullOnZero(uint v);
 
 struct st_mysql;
 struct st_mysql_res;
-
-class sqlRow : public QMapV2<QByteArray, QByteArray> {
-      public:
-	bool fromCache = false;
-
-	template <typename D>
-	void rq(const QByteArray& key, D& dest, const D* def = nullptr) const {
-		QByteArray temp;
-		//If the value is found perform the conversion
-		if (getReal(key, temp)) {
-			swap(temp, dest);
-		}
-		//Else just return the default if is set
-		if (def) {
-			dest = *def;
-		}
-	}
-
-	template <typename T>
-	T rq(const QByteArray& key) const {
-		QByteArray temp;
-		get(key, temp);
-		T t2;
-		swap(temp, t2);
-		return t2;
-	}
-
-	QDateTime asDateTime(const QByteArray& key) const;
-
-	template <typename D>
-	[[deprecated("use rq")]] void get2(const QByteArray& key, D& dest) const {
-		rq(key, dest);
-	}
-
-	// To avoid conversion back and forth QBytearray of the default value and the his result
-	template <typename D>
-	bool get2(const QByteArray& key, D& dest, const D& def) const {
-		if (auto v = this->fetch(key); v) {
-			swap(*v.value, dest);
-			return true;
-		}
-		dest = def;
-		return false;
-	}
-
-	template <typename D>
-	bool getIfNotNull(const QByteArray& key, D& dest, const D& def) const {
-		auto iter = find(key);
-		if (iter == end()) {
-			dest = def;
-			return false;
-		}
-		if (iter.value().toUpper() == "NULL") {
-			dest = def;
-			return false;
-		}
-		swap(iter.value(), dest);
-		return true;
-	}
-
-	template <typename D>
-	D get2(const QByteArray& key) const {
-		QByteArray temp;
-		D          temp2;
-		get(key, temp);
-		swap(temp, temp2);
-		return temp2;
-	}
-
-	// Sooo many time we need a QString back
-	QString g16(const QByteArray& key) const {
-		return get2<QString>(key);
-	}
-
-	// Sooo many time we need a QString back
-	QString g16(const QByteArray& key, const QString def) const {
-		QString val;
-		get2(key, val, def);
-		return val;
-	}
-	// When you can not use operator <<
-	QString serialize() const;
-
-      private:
-	template <typename D>
-	void swap(const QByteArray& source, D& dest) const {
-		if constexpr (std::is_same<D, QString>::value) {
-			dest = QString(source);
-			return;
-		} else if constexpr (std::is_same<D, QByteArray>::value) {
-			dest = source;
-			return;
-		} else if constexpr (std::is_same<D, std::string>::value) {
-			dest = source.toStdString();
-			return;
-		} else if constexpr (std::is_same<D, QDate>::value) {
-			dest = QDate::fromString(source, mysqlDateFormat);
-			return;
-		} else if constexpr (std::is_same<D, QDateTime>::value) {
-			dest = QDateTime::fromString(source, mysqlDateTimeFormat);
-			return;
-		} else if constexpr (std::is_enum_v<D>) {
-			auto s = source.toStdString();
-			magic_enum::fromString(s, dest);
-			return;
-		} else if constexpr (std::is_arithmetic_v<D>) {
-			bool ok = false;
-			if constexpr (std::is_floating_point_v<D>) {
-				dest = source.toDouble(&ok);
-			} else if constexpr (std::is_signed_v<D>) {
-				dest = source.toLongLong(&ok);
-			} else if constexpr (std::is_unsigned_v<D>) {
-				dest = source.toULongLong(&ok);
-			}
-			if (!ok) {
-				// last chanche NULL is 0 in case we are numeric right ?
-				if (source == QBL("NULL")) {
-					if constexpr (std::is_arithmetic_v<D>) {
-						dest = 0;
-						return;
-					}
-				}
-				throw QSL("Impossible to convert %1 as a number").arg(QString(source));
-			}
-		} else {
-			// poor man static assert that will also print for which type it failed
-			typedef typename D::something_made_up X;
-
-			X y;     // To avoid complain that X is defined but not used
-			(void)y; // TO avoid complain that y is unused
-		}
-	}
-};
 
 QString asString(const sqlRow& row);
 
@@ -210,50 +68,29 @@ struct SQLLogger {
 	const DB* db = nullptr;
 };
 
-class QRegularExpression;
-struct DBConf {
-	DBConf();
-	QByteArray host = "127.0.0.1";
-	QByteArray pass;
-	QByteArray user;
-	QByteArray sock;
-	int64_t    cacheId = 0;
-	bool       ssl     = false;
-	// Usually set false for operation that do not have to be replicated
-	bool writeBinlog = true;
-	// This header is quite big, better avoid the inclusio
-	QList<std::shared_ptr<QRegularExpression>> warningSuppression;
-
-	uint readTimeout     = 0;
-	uint port            = 3306;
-	bool logSql          = false;
-	bool logError        = false;
-	bool pingBeforeQuery = true; // So if the connection is broken will be re-established
-	// In certain case not beeing able to connect is bad, in other not and we just go ahead, retry later...
-	CxaLevel connErrorVerbosity = CxaLevel::none;
-
-	// Corpus munus
-	QByteArray getDefaultDB() const;
-	void       setDefaultDB(const QByteArray& value);
-	QString    getInfo(bool passwd = false) const;
-	void       setWarningSuppression(std::vector<QString> regex);
-
-      private:
-	QByteArray defaultDB;
-};
-
 /**
  * @brief The DB struct
  */
 class FetchVisitor;
+
 struct DB {
       public:
+	
+	struct Opt {
+		uint ttl            = 60;
+		bool noCacheOnEmpty = false;
+		bool required       = false;
+	};
+	
+	
 	DB() = default;
 	DB(const DBConf& _conf);
 	~DB();
 	void      closeConn() const;
 	st_mysql* connect() const;
 	bool      tryConnect() const;
+	
+	sqlRow    queryLine(const std::string& sql) const;
 	sqlRow    queryLine(const char* sql) const;
 	sqlRow    queryLine(const QString& sql) const;
 	sqlRow    queryLine(const QByteArray& sql) const;
@@ -261,6 +98,7 @@ struct DB {
 	void      setMaxQueryTime(uint time) const;
 	sqlResult query(const char* sql) const;
 	sqlResult query(const QString& sql) const;
+	sqlResult query(const std::string& sql) const;
 	// simulateErr is just for testing
 	sqlResult query(const QByteArray& sql, int simulateErr = 0) const;
 
@@ -269,7 +107,11 @@ struct DB {
 
 	sqlRow queryCacheLine(const QString& sql, uint ttl = 3600, bool required = false);
 	sqlRow queryCacheLine2(const QString& sql, uint ttl = 3600, bool required = false);
+	sqlRow queryCacheLine2(const std::string& sql, uint ttl = 3600, bool required = false);
 
+	sqlResult queryCache2(const std::string& sql, const Opt& opt);
+
+	sqlResult queryCache2(const std::string& sql, uint ttl, bool required = false);
 	sqlResult queryCache2(const QString& sql, uint ttl, bool required = false);
 	//Try to read data from cache, if expired read from DB, if db unavailable use the cache, if all fail throw error
 	sqlResult queryORcache(const QString& sql, uint ttl, bool required = false);

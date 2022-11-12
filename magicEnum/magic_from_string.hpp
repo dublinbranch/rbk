@@ -1,9 +1,9 @@
 #pragma once
 
-#include "rbk/QStacker/exceptionv2.h"
 #include "fmt/format.h"
 #include "fmt/ranges.h"
 #include "magic_enum.hpp"
+#include "rbk/QStacker/exceptionv2.h"
 #include <QByteArray>
 #include <QString>
 #include <concepts>
@@ -76,7 +76,11 @@ template <typename T>
 concept isEnum = std::is_enum_v<T>;
 
 template <isEnum T>
-// [[nodiscard]] emette un warning se viene ignorato il valore ritornato della funzione
 [[nodiscard]] QString asString(T t) {
 	return magic_enum::enum_nameQS(t);
+}
+
+template <isEnum T>
+[[nodiscard]] std::string_view asSWString(T t) {
+	return magic_enum::enum_name(t);
 }

@@ -1,9 +1,11 @@
 #ifndef LOCALEV2_H
 #define LOCALEV2_H
 
+#include "rbk/SpaceShipOP/qstringship.h"
+#include "rbk/mapExtensor/mapV2.h"
 #include <QString>
-#include <rbk/SpaceShipOP/qstringship.h>
-#define QSL(str) QStringLiteral(str)
+
+//#define QSL(str) QStringLiteral(str)
 
 class Locale {
       public:
@@ -11,8 +13,11 @@ class Locale {
 	QString language;
 	// weak chekc when constructing the this obj (no exception if mkt and HAL both empty)
 	bool weakCheck = false;
+	//small tweak for our logic, it means for this nations this is the main language
+	bool main = false;
 
 	Locale() = default;
+	Locale(const QString& nat, const QString& lang);
 	Locale(const QStringRef& nat, const QStringRef& lang);
 	Locale(const QString& string, QString* ip = nullptr);
 	bool    fromString(const QString& string, QString* ip = nullptr);
@@ -29,4 +34,9 @@ class Locale {
  */
 Locale decodeLocale(const QString& locale, QString* ip = nullptr);
 
+using Nation = QString;
+
+class DB;
+const mapV2<Nation, QVector<Locale>>& localeDB(DB& db);
+const mapV2<Nation, QString>&         languageDB(DB& db);
 #endif // LOCALEV2_H

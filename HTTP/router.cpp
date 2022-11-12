@@ -1,4 +1,6 @@
 #include "router.h"
+#include "PMFCGI.h"
+#include "beastConfig.h"
 #include "rbk/HTTP/Payload.h"
 #include "rbk/QStacker/httpexception.h"
 #include "rbk/caching/apcu2.h"
@@ -61,9 +63,9 @@ mapV2<std::string, RequestBase*> getDefaultRouting() {
 	}};
 }
 
-Payload Router::immediate(PMFCGI& status) {
-
-	auto path = status.path.substr(1);
+Payload Router::immediate(PMFCGI& status, const BeastConf* conf) {
+	Url  url(status.path);
+	auto path = url.url.path().toStdString().substr(1);
 
 	//	if (isUserAgentBlacklisted(dk.originalInvocationUrl)) {
 	//		Payload p;
@@ -72,7 +74,7 @@ Payload Router::immediate(PMFCGI& status) {
 	//		return p;
 	//	}
 
-	if (auto v = getDefaultRouting().get(path); v) {
+	if (auto v = conf->routing.get(path); v) {
 		//Single catch point in case of fatal excpetion
 		Payload p;
 		try {

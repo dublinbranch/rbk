@@ -21,6 +21,11 @@ HttpException::HttpException(const char* _msg, bool _error, const QByteArray _da
 	data  = _data;
 }
 
+const std::string HttpException::getLogFile() const noexcept {
+	static const std::string addr = "HttpException.log";
+	return addr;
+}
+
 // for testing
 void testHttpException() {
 	auto e1 = HttpException("e1");

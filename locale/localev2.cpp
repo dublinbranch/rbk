@@ -1,14 +1,22 @@
 #include "localev2.h"
 #include "rbk/GeoLite2PP/GeoLite2PP.hpp"
 #include "rbk/QStacker/httpexception.h"
+#include "rbk/minMysql/min_mysql.h"
 #include "rbk/serialization/asstring.h"
+#include <mutex>
 
 #ifdef localeWithMaxMind
 extern GeoLite2PP::DB* mmdb;
 #endif
 
+using namespace std;
 Locale::Locale(const QString& string, QString* ip) {
 	*this = decodeLocale(string, ip);
+}
+
+Locale::Locale(const QString& nat, const QString& lang) {
+	nation   = nat.toUpper();
+	language = lang.toLower();
 }
 
 Locale::Locale(const QStringRef& nat, const QStringRef& lang) {
@@ -141,4 +149,37 @@ Locale decodeLocale(const QString& locale, QString* ip) {
 
 bool Locale::isNull() {
 	return nation.isEmpty() and language.isEmpty();
+}
+
+const mapV2<Nation, QVector<Locale>>& localeDB(DB& db) {
+	static mapV2<Nation, QVector<Locale>> final;
+	if (final.empty()) {
+		//No need for lock control, just init ad beginning of program and is fine
+		string sql = "SELECT nation, language, isMain FROM SCCE_Common.locale ORDER BY language ASC";
+		auto   res = db.query(sql);
+		for (auto& row : res) {
+			auto   nat  = row.rq<QString>("nation");
+			auto   lang = row.rq<QString>("language");
+			Locale l(nat, lang);
+			row.rq("isMain", l.main);
+
+			final[nat].push_back(move(l));
+		}
+	}
+	return final;
+}
+
+const mapV2<Nation, QString>& languageDB(DB& db) {
+	static mapV2<Nation, QString> final;
+	if (final.empty()) {
+		//No need for lock control, just init ad beginning of program and is fine
+		string sql = "SELECT code, name FROM SCCE_Common.language ORDER BY code ASC";
+		auto   res = db.query(sql);
+		for (auto& row : res) {
+			auto code   = row.rq<QString>("code");
+			auto name   = row.rq<QString>("name");
+			final[code] = name;
+		}
+	}
+	return final;
 }

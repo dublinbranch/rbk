@@ -16,6 +16,7 @@ class ResetAfterUse {
 		//Keep a reference
 		this->variable = &key;
 	}
+	//OF COURSE you must use the returned value! else will be destroyed immediately
 	[[nodiscard]] ResetAfterUse(K& key, const K& value) {
 		set(key, value);
 	}

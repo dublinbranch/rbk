@@ -1,7 +1,6 @@
-#ifndef QDATETIMEUTIL_H
-#define QDATETIMEUTIL_H
-
+#pragma once
 #include <QDateTime>
+#include <QTime>
 #include <QTimeZone>
 
 //--------------------------------------------------------------------------------------
@@ -25,14 +24,34 @@ const QDateTime unixMidnight = QDateTime::fromSecsSinceEpoch(0, Qt::UTC);
 //small fuction for computin the seconds till the midnight if the current day
 qint64 getSecondsUntilMidnight(const QTimeZone& time_zone);
 
-class QDateTime2 : public QDateTime {
-      public:
-	QDateTime2(const QDateTime& val)
-	    : QDateTime(val){};
-	QDateTime2() = default;
-	QDateTime getNextMidnight() const;
-	QDateTime getMidnight() const;
-	qint64    secToNextMidnight() const;
-};
+bool isBefore(const QTime& time);
 
-#endif // QDATETIMEUTIL_H
+ushort getCurHour(const QTimeZone& t);
+
+ushort getCurMinute();
+
+class QDateTime;
+QDateTime getToday();
+QDateTime getYesterday();
+qint64    getYesterdayTS();
+/**
+ * @brief getMidnightTS
+ * @param deltaDays for past day use negative value
+ * @param tz
+ * @return
+ */
+qint64 getMidnightTS(int deltaDays, const QTimeZone* tz = nullptr);
+/**
+ * @brief getMidnight
+ * @param deltaDays for past day use negative value
+ * @param tz
+ * @return
+ */
+QDateTime getMidnight(int deltaDays, const QTimeZone* tz = nullptr);
+QDateTime getMidnight(QDateTime day);
+QDateTime getNextMidnight();
+qint64    secToNextMidnight();
+ushort    getCurHour(QTimeZone t = UTC);
+ushort    getCurMinute();
+qint64    getCurrentTS();
+qint64    getCurrentMTS();

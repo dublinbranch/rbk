@@ -4,7 +4,14 @@
 #include "ffCommon.h"
 #include <QString>
 
-bool        mkdir(const QString& dirName);
+namespace RBK {
+//Inside namespace to avoid clash with the standard posix function
+bool mkdir(const std::string& dirName);
+bool mkdir(const char* dirName);
+} // namespace RBK
+
+bool mkdir(const QString& dirName);
+
 void        cleanFolder(const QString& folder);
 QString     getMostRecent(const QString pathDir, const QString& filter);
 QStringList search(const QString& path);

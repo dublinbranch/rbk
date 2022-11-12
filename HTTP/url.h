@@ -12,7 +12,7 @@
 class QueryParams : public mapV2<QString, QString> {
       public:
 	//Una inutile scocciatura che QueryParams non fa vedere il suo contenuto!
-
+	//Todo proponi un Pretty Printer per QTCreator ?
 	/**
 	 * @brief setQuery
 	 * @param val
@@ -70,27 +70,27 @@ class QueryParams : public mapV2<QString, QString> {
 	}
 
 	template <class T>
-	void rq(const QStringList& keys, T& t) const {
+	void swapRq(const QStringList& keys, T& t) const {
 		for (auto& key : keys) {
 			if (swap(key, t)) {
 				return;
 			}
 		}
-		throw HttpException(QSL("Required parameter is %1 missing").arg(keys.join(" or ")));
+		throw HttpException(QSL("Required parameter %1 is missing (or empty)").arg(keys.join(" or ")));
 	}
 
 	template <class T>
-	void rq(const QString& key, T& t) const {
+	void swapRq(const QString& key, T& t) const {
 		if (swap(key, t)) {
 			return;
 		}
-		throw HttpException(QSL("Required parameter %1 missing").arg(key));
+		throw HttpException(QSL("Required parameter %1 is missing (or empty)").arg(key));
 	}
 
 	template <class T>
-	T rq(const QString& key) const {
+	T swapRq(const QString& key) const {
 		T t;
-		rq(key, t);
+		swapRq(key, t);
 		return t;
 	}
 
@@ -115,7 +115,15 @@ class Url {
 	 * @brief get3lvl
 	 * @return the 3rd level subdomain so in case of www.miao.it will be www
 	 */
-	QString get3lvl();
+	QString get3lvl() const;
+	/**
+	 * @brief get2lvl
+	 * @return the 2rd level subdomain so in case of www.miao.it will be miao
+	 */
+	QString get2lvl() const;
+
+	QString getNlvl(int pos) const;
+
 	struct DS {
 		QString domain;
 		QString subDomain;

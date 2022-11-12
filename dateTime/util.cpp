@@ -1,10 +1,63 @@
-#include <QTimeZone>
-#include <math.h>
-#include <sys/time.h>
-
-#include "qDateTimeUtil.h"
+#include "util.h"
 #include "timespecV2.h"
-//--------------------------------------------------------------------------------------
+#include <math.h>
+
+bool isBefore(const QTime& time) {
+	auto now = QDateTime::currentDateTime().time();
+	return now < time;
+}
+
+ushort getCurHour(const QTimeZone& t) {
+	return QDateTime::currentDateTime().toTimeZone(t).time().hour();
+}
+
+ushort getCurMinute() {
+	return QDateTime::currentDateTime().time().minute();
+}
+
+QDateTime getToday() {
+	auto      ora = QDate::currentDate();
+	QDateTime cry;
+	cry.setDate(ora);
+	return cry;
+}
+
+QDateTime getYesterday() {
+	auto      ieri = QDate::currentDate().addDays(-1);
+	QDateTime cry;
+	cry.setDate(ieri);
+	return cry;
+}
+
+qint64 getYesterdayTS() {
+	return getYesterday().toSecsSinceEpoch();
+}
+
+QDateTime getMidnight(QDateTime day) {
+	day.setTime({0, 0, 0});
+	return day;
+}
+
+QDateTime getMidnight(int deltaDays, const QTimeZone* tz) {
+	if (!tz) {
+		tz = &UTC;
+	}
+	int       d    = deltaDays * 1;
+	auto      ieri = QDate::currentDate().addDays(d);
+	QDateTime cry;
+	cry.setTimeZone(*tz);
+	cry.setDate(ieri);
+	return cry;
+}
+
+qint64 getMidnightTS(int deltaDays, const QTimeZone* tz) {
+	return getMidnight(deltaDays, tz).toSecsSinceEpoch();
+}
+
+ushort getCurHour(QTimeZone t) {
+	return QDateTime::currentDateTime().toTimeZone(t).time().hour();
+}
+
 [[nodiscard]] QDateTime alterTz(const QDateTime& old, const QTimeZone& tz) {
 	QDateTime neu;
 	neu.setTimeZone(tz);
@@ -18,8 +71,12 @@
 	return neu;
 }
 
-QDateTime hourlyFloor(const QDateTime& time) {
-	return QDateTime::fromSecsSinceEpoch((time.toSecsSinceEpoch() / 3600) * 3600);
+QDateTime hourlyFloor(QDateTime time) {
+	auto t = time.time();
+	auto h = t.hour();
+	t.setHMS(h, 0, 0);
+	time.setTime(t);
+	return time;
 }
 
 //--------------------------------------------------------------------------------------
@@ -86,18 +143,12 @@ TimespecV2::operator double() const {
 	return time;
 }
 
-QDateTime QDateTime2::getNextMidnight() const {
-	auto midnight = currentDateTime().addDays(1);
+QDateTime getNextMidnight() {
+	auto midnight = QDateTime::currentDateTime().addDays(1);
 	midnight.setTime(QTime{0, 0, 0});
 	return midnight;
 }
 
-QDateTime QDateTime2::getMidnight() const {
-	auto midnight = *this;
-	midnight.setTime(QTime{0, 0, 0});
-	return midnight;
-}
-
-qint64 QDateTime2::secToNextMidnight() const {
-	return currentDateTime().secsTo(getNextMidnight());
+qint64 secToNextMidnight() {
+	return QDateTime::currentDateTime().secsTo(getNextMidnight());
 }

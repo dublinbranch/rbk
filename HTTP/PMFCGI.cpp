@@ -76,9 +76,15 @@ void PMFCGI::extractCookies() {
 	}
 }
 
-std::string PMFCGI::serializeMsg(const QByteArray& msg) const {
-	auto ts    = QDateTime::currentDateTime().toString(mysqlDateTimeFormat);
-	auto aft   = serialize();
+std::string PMFCGI::serializeMsg(const QByteArray& msg, bool light) const {
+	auto   ts = QDateTime::currentDateTime().toString(mysqlDateTimeFormat);
+	string aft;
+	if (light) {
+		auto aft = serializeBase();
+	} else {
+		auto aft = serialize();
+	}
+
 	auto final = fmt::format("@ {} Error: {} \n Status: {}", ts, msg, aft);
 	return final;
 }
@@ -92,7 +98,7 @@ std::string PMFCGI::serializeMsg(const QString& msg) const {
 }
 
 string PMFCGI::serialize() const {
-
+	//add ip
 	//	auto res = fmt::format("Get:\n{}\nRefUrl: {}\nRefurl2: {}\nHeaders:\n{}\nCookies:\n{}",
 	//	                       Url(path, false).prettyPrint(),
 	//	                       dk.url.prettyPrint(),
@@ -101,6 +107,10 @@ string PMFCGI::serialize() const {
 	//	                       cookies.serialize(QStringList(), true, true));
 	//	return res;
 	return {};
+}
+
+string PMFCGI::serializeBase() const {
+	return "remote ip and plain text url and header should be enought";
 }
 
 #include "Payload.h"
@@ -113,4 +123,18 @@ void Payload::setStandardHeaders(bool addCors) {
 	if (addCors) {
 		headers.insert({"Access-Control-Allow-Origin", "*"});
 	}
+}
+
+mapV2<QString, QString> decodePost(const std::string& form) {
+	mapV2<QString, QString> res;
+	auto                    copy = QString::fromStdString(form);
+	auto                    rows = copy.splitRef('&');
+	for (auto& row : rows) {
+		auto pair = row.split('=');
+		if (pair.size() != 2) {
+			throw HttpException("invalid line in post" + row);
+		}
+		res[pair[0].toString()] = pair[1].toString();
+	}
+	return res;
 }
