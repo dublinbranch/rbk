@@ -35,9 +35,9 @@ class ExceptionV2 : public std::exception {
 
 	__attribute__((no_sanitize("address"))) static bool isExceptionV2Derived(void* ptr);
 
-	virtual const std::string getLogFile() const noexcept;
+	[[nodiscard]] virtual const std::string getLogFile() const noexcept;
 
-	const char* what() const noexcept override;
+	[[nodiscard]] const char* what() const noexcept override;
 
 	void setMsg(const QByteArray& newMsg);
 	void setMsg(const std::string& newMsg);
