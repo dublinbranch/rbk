@@ -80,9 +80,9 @@ std::string PMFCGI::serializeMsg(const QByteArray& msg, bool light) const {
 	auto   ts = QDateTime::currentDateTime().toString(mysqlDateTimeFormat);
 	string aft;
 	if (light) {
-		auto aft = serializeBase();
+		aft = serializeBase();
 	} else {
-		auto aft = serialize();
+		aft = serialize();
 	}
 
 	auto final = fmt::format("@ {} Error: {} \n Status: {}", ts, msg, aft);
@@ -125,16 +125,16 @@ void Payload::setStandardHeaders(bool addCors) {
 	}
 }
 
-mapV2<QString, QString> decodePost(const std::string& form) {
-	mapV2<QString, QString> res;
-	auto                    copy = QString::fromStdString(form);
-	auto                    rows = copy.splitRef('&');
+multiMapV2<QString, QString> decodePost(const std::string& form) {
+	multiMapV2<QString, QString> res;
+	auto                         copy = QString::fromStdString(form);
+	auto                         rows = copy.splitRef('&');
 	for (auto& row : rows) {
 		auto pair = row.split('=');
 		if (pair.size() != 2) {
 			throw HttpException("invalid line in post" + row);
 		}
-		res[pair[0].toString()] = pair[1].toString();
+		res.insert({pair[0].toString(), pair[1].toString()});
 	}
 	return res;
 }

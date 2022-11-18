@@ -6,6 +6,7 @@
 
 #include "fmt/core.h"
 #include "rbk/QStacker/exceptionv2.h"
+#include "rbk/misc/swapType.h"
 #include <map>
 
 template <typename K, typename V, typename _Compare = std::less<K>>
@@ -50,7 +51,13 @@ class mapV2 : public std::map<K, V, _Compare> {
 		}
 		throw ExceptionV2(fmt::format("key {} not found in {}", k, __PRETTY_FUNCTION__));
 	}
-	
+
+	template <typename T>
+	T rq(const K& k) {
+		auto v = rq(k);
+		return swapType<T>(v);
+	}
+
 	[[nodiscard]] auto& rqRef(const K& k) const {
 		if (auto iter = this->find(k); iter != this->end()) {
 			return iter->second;
@@ -80,7 +87,6 @@ class mapV2 : public std::map<K, V, _Compare> {
 		}
 		return v;
 	}
-
 
 	bool getOptional(const K& key, V& dest) const {
 		if (auto found = get(key); found) {
@@ -128,15 +134,28 @@ class multiMapV2 : public std::multimap<K, V> {
 		struct Founded {
 			const V* val   = nullptr;
 			bool     found = false;
-			         operator bool() const {
-				         return found;
+
+			explicit operator bool() const {
+				return found;
 			}
 		};
 
 		if (auto iter = this->find(k); iter != this->end()) {
 			return Founded{&iter->second, true};
-		} else {
-			return Founded();
 		}
+		return Founded();
+	}
+
+	[[nodiscard]] auto rq(const K& k) const {
+		if (auto iter = this->find(k); iter != this->end()) {
+			return iter->second;
+		}
+		throw ExceptionV2(fmt::format("key {} not found in {}", k, __PRETTY_FUNCTION__));
+	}
+
+	template <typename T>
+	T rq(const K& k) {
+		auto v = rq(k);
+		return swapType<T>(v);
 	}
 };

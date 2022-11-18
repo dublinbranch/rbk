@@ -28,7 +28,7 @@ class JSafe : public jsonValue {
 	JSafe(const JSafe&)            = delete;
 
 	static JSafe getDummy(){
-		return JSafe();
+		return {};
 	}
 
 	template <typename V>
