@@ -20,7 +20,7 @@ class listener;
 struct Beast {
 	vectorV2<std::thread*> threads;
 	void                   listen();
-	void                   listen(const BeastConf& conf);
+	void                   listen(const BeastConf& conf_);
 	BeastConf              conf;
 
       private:

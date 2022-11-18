@@ -93,7 +93,7 @@ void send(beast::tcp_stream& stream, const http::response<http::string_body>& ms
 	beast::error_code ec;
 	http::write(
 	    stream,
-	    move(msg),
+	    std::move(msg),
 	    ec);
 }
 
@@ -478,8 +478,8 @@ void Beast::listen() {
 	}
 }
 
-void Beast::listen(const BeastConf& conf) {
-	this->conf = conf;
+void Beast::listen(const BeastConf& conf_) {
+	this->conf = conf_;
 	listen();
 }
 

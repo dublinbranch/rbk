@@ -25,8 +25,7 @@ QString queryEssay(const sqlRow& row, bool brief) {
 	}
 
 	return QSL("for %1 s : %2 ")
-	           .arg(time)
-	           .arg(info) +
+	           .arg(time,info) +
 	       "\n";
 }
 

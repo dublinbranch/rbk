@@ -47,7 +47,7 @@ class sqlResult : public QList<sqlRow> {
 
 QStringList getIdList(const sqlResult& sqlRes, const QString& idName);
 
-struct DB;
+class DB;
 struct DBConf;
 
 struct SQLLogger {
@@ -58,7 +58,7 @@ struct SQLLogger {
 	qint64           serverTime;
 	qint64           fetchTime;
 	const QByteArray sql;
-	const sqlResult* res = nullptr;
+	sqlResult        res;
 	QString          error;
 	// TODO questi due leggili dal conf dell db*
 	bool logSql   = false;
@@ -73,27 +73,25 @@ struct SQLLogger {
  */
 class FetchVisitor;
 
-struct DB {
+class DB {
       public:
-	
 	struct Opt {
 		uint ttl            = 60;
 		bool noCacheOnEmpty = false;
 		bool required       = false;
 	};
-	
-	
+
 	DB() = default;
 	DB(const DBConf& _conf);
 	~DB();
 	void      closeConn() const;
 	st_mysql* connect() const;
 	bool      tryConnect() const;
-	
-	sqlRow    queryLine(const std::string& sql) const;
-	sqlRow    queryLine(const char* sql) const;
-	sqlRow    queryLine(const QString& sql) const;
-	sqlRow    queryLine(const QByteArray& sql) const;
+
+	sqlRow queryLine(const std::string& sql) const;
+	sqlRow queryLine(const char* sql) const;
+	sqlRow queryLine(const QString& sql) const;
+	sqlRow queryLine(const QByteArray& sql) const;
 
 	void      setMaxQueryTime(uint time) const;
 	sqlResult query(const char* sql) const;

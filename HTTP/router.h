@@ -38,7 +38,7 @@ but the note is here
 	virtual ~RequestBase() = default;
 };
 
-class BeastConf;
+struct BeastConf;
 class Router {
       public:
 	//Il principio è meno cose da fare meno errori possono esserci

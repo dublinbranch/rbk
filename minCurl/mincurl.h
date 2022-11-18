@@ -147,7 +147,7 @@ CurlCallResult urlGetContent2(const char* url, bool quiet = false, CURL* curl = 
 // TODO rifare la funzione e ritornare un oggetto composito per sapere se è andato a buon fine
 CurlCallResult urlPostContent(const QByteArray& url, const QByteArray post, bool quiet = false, CURL* curl = nullptr);
 
-enum Severity {
+enum class Severity {
 	none,
 	_qDebug,
 	_qInfo,
