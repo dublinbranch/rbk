@@ -105,7 +105,7 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 	localThreadStatus->sql = sql;
 
 	if (sql.isEmpty()) {
-		return sqlResult();
+		return {};
 	}
 	auto conn = getConn();
 	if (conn == nullptr) {
