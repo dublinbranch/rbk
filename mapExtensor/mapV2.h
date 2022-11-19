@@ -45,6 +45,15 @@ class mapV2 : public std::map<K, V, _Compare> {
 		return Founded();
 	}
 
+	template <typename T>
+	[[nodiscard]] bool get(const K& k, T& t) const {
+		if (auto iter = this->find(k); iter != this->end()) {
+			swapType(iter->second, t);
+			return true;
+		}
+		return false;
+	}
+
 	[[nodiscard]] auto rq(const K& k) const {
 		if (auto iter = this->find(k); iter != this->end()) {
 			return iter->second;
@@ -53,9 +62,29 @@ class mapV2 : public std::map<K, V, _Compare> {
 	}
 
 	template <typename T>
-	T rq(const K& k) {
+	T rq(const K& k) const {
 		auto v = rq(k);
 		return swapType<T>(v);
+	}
+
+	template <class T>
+	bool get(const QStringList& keys, T& t) const {
+		for (const auto& key : keys) {
+			if (get(key, t)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	template <class T>
+	void rq(const QStringList& keys, T& t) const {
+		for (const auto& key : keys) {
+			if (swap(key, t)) {
+				return;
+			}
+		}
+		throw HttpException(QSL("Required parameter %1 is missing (or empty)").arg(keys.join(" or ")));
 	}
 
 	[[nodiscard]] auto& rqRef(const K& k) const {
@@ -97,11 +126,7 @@ class mapV2 : public std::map<K, V, _Compare> {
 	}
 
 	[[nodiscard]] const auto& operator[](const K& k) const {
-		if (auto iter = this->find(k); iter != this->end()) {
-			return iter->second;
-		} else {
-			throw ExceptionV2(fmt::format("key {} not found in {}", k, __PRETTY_FUNCTION__));
-		}
+		return rqRef(k);
 	}
 	/*
 	 *For obscure reason the compiler elect to use the const version, ignoring the base class NON const one
