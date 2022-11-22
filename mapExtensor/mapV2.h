@@ -9,8 +9,8 @@
 #include "rbk/misc/swapType.h"
 #include <map>
 
-template <typename K, typename V, typename _Compare = std::less<K>>
-class mapV2 : public std::map<K, V, _Compare> {
+template <typename K, typename V, typename Compare = std::less<K>>
+class mapV2 : public std::map<K, V, Compare> {
       public:
 	struct Founded {
 		const V* val   = nullptr;

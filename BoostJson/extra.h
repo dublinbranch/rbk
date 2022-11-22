@@ -26,3 +26,5 @@ QString QS(const boost::json::value* value);
 
 class sqlRow;
 boost::json::value asNull(const sqlRow& row, std::string_view key);
+
+bool insertIfNotNull(boost::json::object &target, const sqlRow& row, std::string_view key);
