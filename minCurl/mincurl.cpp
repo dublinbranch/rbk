@@ -171,7 +171,7 @@ CURL* CurlKeeper::get() const {
 [[nodiscard]] Header parseHeader(const QStringView headers) {
 	Header header;
 	auto   lines = QStringTokenizer{headers, u"\r\n"};
-	auto   c     = lines.toContainer();
+	//auto   c     = lines.toContainer();
 	// qDebug() << c;
 	for (auto& line : lines) {
 		// QString c = line.toString(); //debug symbol are broken for stringview -.-

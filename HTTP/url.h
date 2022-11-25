@@ -18,34 +18,6 @@ class QueryParams : public mapV2<QString, QString> {
 	 * @param val
 	 */
 	void setQuery(const QString& val);
-	template <class T>
-	bool swap(const QString& key, T& t) const {
-		auto found = mapV2::get(key);
-		if (found.found) {
-
-			if constexpr (std::is_integral_v<T>) {
-				bool ok = false;
-				t       = found.val->toLongLong(&ok);
-				if (ok) {
-					return true;
-				} else {
-					throw HttpException(QSL("Impossible to convert %1 to int (was %2)").arg(key, *found.val));
-				}
-			} else if constexpr (std::is_floating_point_v<T>) {
-				bool ok = false;
-				t       = found.val->toDouble(&ok);
-				if (ok) {
-					return true;
-				} else {
-					throw HttpException(QSL("Impossible to convert %1 to float (was %2)").arg(key, *found.val));
-				}
-			} else {
-				t = *found.val;
-				return true;
-			}
-		}
-		return false;
-	}
 
 	QString get64(const QString& key) const;
 	bool    get64(const QString& key, QString& value) const;
@@ -56,41 +28,6 @@ class QueryParams : public mapV2<QString, QString> {
 		if (swap(key, t)) {
 			return t;
 		}
-		return t;
-	}
-
-	template <class T>
-	bool swap(const QStringList& keys, T& t) const {
-		for (auto& key : keys) {
-			if (swap(key, t)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	template <class T>
-	void swapRq(const QStringList& keys, T& t) const {
-		for (auto& key : keys) {
-			if (swap(key, t)) {
-				return;
-			}
-		}
-		throw HttpException(QSL("Required parameter %1 is missing (or empty)").arg(keys.join(" or ")));
-	}
-
-	template <class T>
-	void swapRq(const QString& key, T& t) const {
-		if (swap(key, t)) {
-			return;
-		}
-		throw HttpException(QSL("Required parameter %1 is missing (or empty)").arg(key));
-	}
-
-	template <class T>
-	T swapRq(const QString& key) const {
-		T t;
-		swapRq(key, t);
 		return t;
 	}
 

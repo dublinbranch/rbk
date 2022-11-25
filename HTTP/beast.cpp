@@ -93,7 +93,7 @@ void send(beast::tcp_stream& stream, const http::response<http::string_body>& ms
 	beast::error_code ec;
 	http::write(
 	    stream,
-	    move(msg),
+	    std::move(msg),
 	    ec);
 }
 
@@ -133,8 +133,9 @@ void handle_request(
 	requestBeging();
 
 	Payload payload;
-	Router  router;
-	PMFCGI  status;
+	payload.setStandardHeaders();
+	Router router;
+	PMFCGI status;
 
 	try {
 		try { //Yes exception can throw exceptions!
@@ -157,7 +158,7 @@ void handle_request(
 			 * phase 1
 			 * execute immediate
 			 */
-			payload = router.immediate(status, conf);
+			router.immediate(status, conf, payload);
 
 			/*
 			 * phase 2
@@ -311,8 +312,9 @@ class http_session : public std::enable_shared_from_this<http_session> {
 	on_write(bool close, beast::error_code ec, std::size_t bytes_transferred) {
 		boost::ignore_unused(bytes_transferred);
 
-		if (ec)
+		if (ec) {
 			return fail(ec, "write");
+		}
 
 		if (close) {
 			// This means we should close the connection, usually because
@@ -476,8 +478,8 @@ void Beast::listen() {
 	}
 }
 
-void Beast::listen(const BeastConf& conf) {
-	this->conf = conf;
+void Beast::listen(const BeastConf& conf_) {
+	this->conf = conf_;
 	listen();
 }
 

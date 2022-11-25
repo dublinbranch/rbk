@@ -2,6 +2,7 @@
 #include "rbk/defines/stringDefine.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/mapExtensor/qmapV2.h"
+#include "rbk/misc/swapType.h"
 
 class sqlRow : public QMapV2<QByteArray, QByteArray> {
       public:
@@ -12,7 +13,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 		QByteArray temp;
 		//If the value is found perform the conversion
 		if (getReal(key, temp)) {
-			swap(temp, dest);
+			swapType(temp, dest);
 		}
 		//Else just return the default if is set
 		if (def) {
@@ -27,11 +28,11 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 
 	template <typename T>
-	T rq(const QByteArray& key) const {
+	[[nodiscard]] T rq(const QByteArray& key) const {
 		QByteArray temp;
 		get(key, temp);
 		T t2;
-		swap(temp, t2);
+		swapType(temp, t2);
 		return t2;
 	}
 
@@ -46,7 +47,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	template <typename D>
 	bool get2(const QByteArray& key, D& dest, const D& def) const {
 		if (auto v = this->fetch(key); v) {
-			swap(*v.value, dest);
+			swapType(*v.value, dest);
 			return true;
 		}
 		dest = def;
@@ -64,7 +65,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 			dest = def;
 			return false;
 		}
-		swap(iter.value(), dest);
+		swapType(iter.value(), dest);
 		return true;
 	}
 
@@ -73,7 +74,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 		QByteArray temp;
 		D          temp2;
 		get(key, temp);
-		swap(temp, temp2);
+		swapType(temp, temp2);
 		return temp2;
 	}
 
@@ -90,54 +91,4 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 	// When you can not use operator <<
 	QString serialize() const;
-
-      private:
-	template <typename D>
-	void swap(const QByteArray& source, D& dest) const {
-		if constexpr (std::is_same<D, QString>::value) {
-			dest = QString(source);
-			return;
-		} else if constexpr (std::is_same<D, QByteArray>::value) {
-			dest = source;
-			return;
-		} else if constexpr (std::is_same<D, std::string>::value) {
-			dest = source.toStdString();
-			return;
-		} else if constexpr (std::is_same<D, QDate>::value) {
-			dest = QDate::fromString(source, mysqlDateFormat);
-			return;
-		} else if constexpr (std::is_same<D, QDateTime>::value) {
-			dest = QDateTime::fromString(source, mysqlDateTimeFormat);
-			return;
-		} else if constexpr (std::is_enum_v<D>) {
-			auto s = source.toStdString();
-			magic_enum::fromString(s, dest);
-			return;
-		} else if constexpr (std::is_arithmetic_v<D>) {
-			bool ok = false;
-			if constexpr (std::is_floating_point_v<D>) {
-				dest = source.toDouble(&ok);
-			} else if constexpr (std::is_signed_v<D>) {
-				dest = source.toLongLong(&ok);
-			} else if constexpr (std::is_unsigned_v<D>) {
-				dest = source.toULongLong(&ok);
-			}
-			if (!ok) {
-				// last chanche NULL is 0 in case we are numeric right ?
-				if (source == QBL("NULL")) {
-					if constexpr (std::is_arithmetic_v<D>) {
-						dest = 0;
-						return;
-					}
-				}
-				throw QSL("Impossible to convert %1 as a number").arg(QString(source));
-			}
-		} else {
-			// poor man static assert that will also print for which type it failed
-			typedef typename D::something_made_up X;
-
-			X y;     // To avoid complain that X is defined but not used
-			(void)y; // TO avoid complain that y is unused
-		}
-	}
 };

@@ -105,7 +105,7 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 	localThreadStatus->sql = sql;
 
 	if (sql.isEmpty()) {
-		return sqlResult();
+		return {};
 	}
 	auto conn = getConn();
 	if (conn == nullptr) {
@@ -677,7 +677,7 @@ st_mysql* DB::connect() const {
 		/***/
 	}
 
-	query(QBL("SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';"));
+	query(QBL("SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY';"));
 	query(QBL("SET time_zone='UTC'"));
 	if (!conf.writeBinlog) {
 		query(QBL("SET sql_log_bin = 0"));
@@ -895,10 +895,6 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 	sqlResult res;
 	res.reserve(512);
 
-	if (sqlLogger) {
-		sqlLogger->res = &res;
-	}
-
 	auto conn = getConn();
 	// If you batch more than two select, you are crazy, just the first one will be returned and you will be in bad situation later
 	// this iteration is just if you batch mulitple update, result is NULL, but mysql insist that you fetch them...
@@ -956,10 +952,13 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 	unsigned int error = mysql_errno(conn);
 	if (error && sqlLogger) {
 		sqlLogger->error = mysql_error(conn);
+		//There should be a better way...
+		sqlLogger->res = res;
 	}
+
 	if (error) {
 		auto msg = fmt::format("Mysql error for:\n{} \n----------\nError was:\n{}\nCode:{}", lastSQL.get(), mysql_error(conn), error);
-		throw ExceptionV2();
+		throw ExceptionV2(msg);
 	}
 
 	return res;
@@ -1076,11 +1075,11 @@ void SQLLogger::flush() {
 	file.write(buff.leftJustified(20, ' ').append("Fetch: " + QByteArray::number(fetch, 'E', 3)) + "\n" + sql);
 	if (!error.isEmpty()) {
 		file.write(QBL("\nError: ") + error.toUtf8());
-		if (res && !res->isEmpty()) {
+		if (!res.isEmpty()) {
 			file.write("\n");
 			// nice trick to use qDebug operator << on a custom stream!
 			QDebug dbg(&file);
-			dbg << (*res);
+			dbg << (res);
 		}
 	}
 

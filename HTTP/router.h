@@ -8,9 +8,9 @@ struct PMFCGI;
 class RequestBase {
       public:
 	//factory
-	virtual std::shared_ptr<RequestBase> create() const = 0;
+	[[nodiscard]] virtual std::shared_ptr<RequestBase> create() const = 0;
 	//You are required to do something
-	virtual Payload immediate(PMFCGI& status) = 0;
+	virtual void immediate(PMFCGI& status, Payload& payload) = 0;
 	//You are not required to do something after
 	virtual void deferred(){};
 	//https://stackoverflow.com/questions/10024796/c-virtual-functions-but-no-virtual-destructors
@@ -38,12 +38,12 @@ but the note is here
 	virtual ~RequestBase() = default;
 };
 
-class BeastConf;
+struct BeastConf;
 class Router {
       public:
 	//Il principio è meno cose da fare meno errori possono esserci
 	//Tutte le cose STRETTAMENTE NECESSARIE a mostrare il risultato in pagina
-	Payload immediate(PMFCGI& status, const BeastConf*);
+	void immediate(PMFCGI& status, const BeastConf*, Payload& payload);
 
 	//Tutto il resto che magari può dare errori o eccezioni
 	void deferred();

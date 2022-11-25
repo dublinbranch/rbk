@@ -76,6 +76,7 @@ HEADERS += \
 	$$PWD/locale/codes.h \
     $$PWD/minMysql/DBConf.h \
     $$PWD/minMysql/sqlRow.h \
+    $$PWD/misc/swapType.h \
 	$$PWD/rand/clampednormaldistribution.h \
     $$PWD/HTTP/beastConfig.h \
     $$PWD/JSON/JSONReaderConst.h \

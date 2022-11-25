@@ -156,10 +156,21 @@ json::value asNull(const sqlRow& row, std::string_view key) {
 	return {v.toStdString()};
 }
 
-QString QS(const boost::json::string &cry) {
-    return QString::fromLatin1(cry.data(), cry.size());
+QString QS(const boost::json::string& cry) {
+	return QString::fromLatin1(cry.data(), cry.size());
 }
 
-QString QS(const boost::json::value *value) {
-    return QS(value->as_string());
+QString QS(const boost::json::value* value) {
+	return QS(value->as_string());
+}
+
+bool insertIfNotNull(boost::json::object& target, const sqlRow& row, std::string_view key) {
+	QByteArray k;
+	k.setRawData(key.data(), key.size());
+	auto v = row.rq<QByteArray>(k);
+	if (v == BSQL_NULL) {
+		return false;
+	}
+	target[key] = v.toStdString();
+	return true;
 }

@@ -24,10 +24,8 @@ class Echo : public RequestBase {
 		return make_shared<Echo>();
 	}
 
-	Payload immediate(PMFCGI& status) override {
-		Payload payload;
+	void immediate(PMFCGI& status, Payload& payload) override {
 		payload.html = status.serialize();
-		return payload;
 	}
 };
 
@@ -39,16 +37,15 @@ class Status : public RequestBase {
 
 	// for local testing
 	// 127.0.0.1:1984/Z4DgMzxU1gKlwhedSGeERZVeId4QRwDHDejwn3PKRQhdVLrzCg2ww
-	Payload immediate(PMFCGI& status) override {
+	void immediate(PMFCGI& status, Payload& payload) override {
 		(void)status;
-		Payload payload;
+
 		payload.html = composeStatus();
 
 		payload.html += "<h1>Cache Info</h1>\n";
 		payload.html += APCU::getInstance()->info();
 
 		payload.mime = "text/html";
-		return payload;
 	}
 };
 
@@ -63,7 +60,7 @@ mapV2<std::string, RequestBase*> getDefaultRouting() {
 	}};
 }
 
-Payload Router::immediate(PMFCGI& status, const BeastConf* conf) {
+void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) {
 	Url  url(status.path);
 	auto path = url.url.path().toStdString().substr(1);
 
@@ -76,25 +73,21 @@ Payload Router::immediate(PMFCGI& status, const BeastConf* conf) {
 
 	if (auto v = conf->routing.get(path); v) {
 		//Single catch point in case of fatal excpetion
-		Payload p;
 		try {
 			//readDebugParam();
 			// inside obj is a ptr, but also the value, so is a **
 			operation = (*(v.val))->create();
-			p         = operation->immediate(status);
-
+			operation->immediate(status, payload);
+			return;
 		} catch (std::exception& e) {
 			//addFlag(dk.errorCode, DkError::minorException);
 			//exception type will be preserved
 			throw;
 		}
 		//dk.processingEnd.setNow();
-		return p;
 	}
-	Payload p;
-	p.html       = fmt::format("invalid path >>> {} <<< no routing available", path);
-	p.statusCode = 400;
-	return p;
+	payload.html       = fmt::format("invalid path >>> {} <<< no routing available", path);
+	payload.statusCode = 400;
 }
 
 //bool Router::isUserAgentBlacklisted(const Url& url) {

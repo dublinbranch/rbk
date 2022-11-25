@@ -6,10 +6,11 @@
 
 #include "fmt/core.h"
 #include "rbk/QStacker/exceptionv2.h"
+#include "rbk/misc/swapType.h"
 #include <map>
 
-template <typename K, typename V, typename _Compare = std::less<K>>
-class mapV2 : public std::map<K, V, _Compare> {
+template <typename K, typename V, typename Compare = std::less<K>>
+class mapV2 : public std::map<K, V, Compare> {
       public:
 	struct Founded {
 		const V* val   = nullptr;
@@ -44,13 +45,48 @@ class mapV2 : public std::map<K, V, _Compare> {
 		return Founded();
 	}
 
+	template <typename T>
+	[[nodiscard]] bool get(const K& k, T& t) const {
+		if (auto iter = this->find(k); iter != this->end()) {
+			swapType(iter->second, t);
+			return true;
+		}
+		return false;
+	}
+
 	[[nodiscard]] auto rq(const K& k) const {
 		if (auto iter = this->find(k); iter != this->end()) {
 			return iter->second;
 		}
 		throw ExceptionV2(fmt::format("key {} not found in {}", k, __PRETTY_FUNCTION__));
 	}
-	
+
+	template <typename T>
+	T rq(const K& k) const {
+		auto v = rq(k);
+		return swapType<T>(v);
+	}
+
+	template <class T>
+	bool get(const QStringList& keys, T& t) const {
+		for (const auto& key : keys) {
+			if (get(key, t)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	template <class T>
+	void rq(const QStringList& keys, T& t) const {
+		for (const auto& key : keys) {
+			if (swap(key, t)) {
+				return;
+			}
+		}
+		throw HttpException(QSL("Required parameter %1 is missing (or empty)").arg(keys.join(" or ")));
+	}
+
 	[[nodiscard]] auto& rqRef(const K& k) const {
 		if (auto iter = this->find(k); iter != this->end()) {
 			return iter->second;
@@ -81,7 +117,6 @@ class mapV2 : public std::map<K, V, _Compare> {
 		return v;
 	}
 
-
 	bool getOptional(const K& key, V& dest) const {
 		if (auto found = get(key); found) {
 			dest = *found.val;
@@ -91,11 +126,7 @@ class mapV2 : public std::map<K, V, _Compare> {
 	}
 
 	[[nodiscard]] const auto& operator[](const K& k) const {
-		if (auto iter = this->find(k); iter != this->end()) {
-			return iter->second;
-		} else {
-			throw ExceptionV2(fmt::format("key {} not found in {}", k, __PRETTY_FUNCTION__));
-		}
+		return rqRef(k);
 	}
 	/*
 	 *For obscure reason the compiler elect to use the const version, ignoring the base class NON const one
@@ -128,15 +159,28 @@ class multiMapV2 : public std::multimap<K, V> {
 		struct Founded {
 			const V* val   = nullptr;
 			bool     found = false;
-			         operator bool() const {
-				         return found;
+
+			explicit operator bool() const {
+				return found;
 			}
 		};
 
 		if (auto iter = this->find(k); iter != this->end()) {
 			return Founded{&iter->second, true};
-		} else {
-			return Founded();
 		}
+		return Founded();
+	}
+
+	[[nodiscard]] auto rq(const K& k) const {
+		if (auto iter = this->find(k); iter != this->end()) {
+			return iter->second;
+		}
+		throw ExceptionV2(fmt::format("key {} not found in {}", k, __PRETTY_FUNCTION__));
+	}
+
+	template <typename T>
+	T rq(const K& k) {
+		auto v = rq(k);
+		return swapType<T>(v);
 	}
 };

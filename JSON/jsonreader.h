@@ -289,7 +289,7 @@ class JSONReader {
 	bool parse(const char* raw);
 
 	template <typename Type>
-	void getta(const char* path, Type& def) {
+	bool getta(const char* path, Type& def) {
 		const auto& ptr = rapidjson::Pointer(path);
 		if (!ptr.IsValid()) {
 			throw ExceptionV2(QSL("invalid json path: ") + path + QSL(" Error: ") + asString(ptr.GetParseErrorCode()));
@@ -298,8 +298,18 @@ class JSONReader {
 		if (val) {
 			swapper(val, def);
 			rapidjson::Pointer(path).Erase(json);
+			return true;
 		}
+		return false;
 	}
+
+	template <typename Type>
+	Type rq(const char* path) {
+		Type type;
+		getta(path, type);
+		return type;
+	}
+
 	QByteArray subJsonRender(rapidjson::Value* el);
 
 	QByteArray jsonRender();

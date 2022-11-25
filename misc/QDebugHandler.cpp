@@ -19,9 +19,7 @@ QString getHeader1() {
 	auto time           = QDateTime::currentDateTime().toString(Qt::ISODate);
 	auto warningHeader1 = QSL("@ %1 From %2 @ %3 rev %4")
 	                          .arg(time)
-	                          .arg(QCoreApplication::applicationName())
-	                          .arg(config->instanceName)
-	                          .arg(GIT_STATUS_buffer);
+	                          .arg(QCoreApplication::applicationName(), config->instanceName, GIT_STATUS_buffer);
 	return warningHeader1;
 }
 
