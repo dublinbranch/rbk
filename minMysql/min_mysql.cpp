@@ -238,6 +238,7 @@ sqlRow DB::queryCacheLine(const QString& sql, bool on, QString name, uint ttl, b
 }
 
 sqlRow DB::queryCacheLine2(const QString& sql, uint ttl, bool required) {
+	//TODO forward the check into query cache line ?
 	auto res = queryCache2(sql, ttl);
 	if (auto r = res.size(); r > 1) {
 		auto   msg = QSL("invalid number of row for: %1\nExpected 1, got %2 \n").arg(sql).arg(r);

@@ -2,7 +2,6 @@
 
 #include "ffCommon.h"
 #include <QFile>
-#include <QSaveFile>
 
 inline const QString FSDateTimeFormat             = "yyyy-MM-dd_HH:mm:ss";
 inline const QString FSDateTimeMilliSecondsFormat = "yyyy-MM-dd_HH:mm:ss.zzz";

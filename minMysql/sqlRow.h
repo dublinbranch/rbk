@@ -20,6 +20,12 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 		}
 	}
 
+	QByteArray rq(const QByteArray& key) const {
+		QByteArray temp;
+		get(key, temp);
+		return temp;
+	}
+
 	template <typename T>
 	T rq(const QByteArray& key) const {
 		QByteArray temp;
