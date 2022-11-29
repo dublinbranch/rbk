@@ -78,7 +78,6 @@ HEADERS += \
     $$PWD/minMysql/sqlRow.h \
     $$PWD/misc/swapType.h \
 	$$PWD/rand/clampednormaldistribution.h \
-    $$PWD/HTTP/beastConfig.h \
     $$PWD/JSON/JSONReaderConst.h \
     $$PWD/JSON/jsonreader.h \
     $$PWD/SpaceShipOP/qdateship.h \
@@ -160,6 +159,10 @@ SOURCES += \
     $$PWD/thread/threadstatush.cpp \
     $$PWD/thread/tmonitoring.cpp
 
+SOURCES += $$PWD/HTTP/url.cpp 
+	
+HEADERS += $$PWD/HTTP/url.h 
+	
 
 defined(WITH_BOOST_BEAST,var) {
 #HTTP part
@@ -169,16 +172,15 @@ SOURCES += \
     $$PWD/HTTP/PMFCGI.cpp \
     $$PWD/HTTP/beast.cpp \
     $$PWD/HTTP/router.cpp \
-    $$PWD/HTTP/url.cpp \
     $$PWD/HTTP/select2.cpp \
 	
 HEADERS += \
+    $$PWD/HTTP/beastConfig.h \
     $$PWD/HTTP/select2.h \
     $$PWD/HTTP/PMFCGI.h \
     $$PWD/HTTP/Payload.h \
     $$PWD/HTTP/beast.h \
     $$PWD/HTTP/router.h \
-    $$PWD/HTTP/url.h \
 }
 
 SOURCES += \

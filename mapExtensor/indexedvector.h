@@ -3,16 +3,18 @@
 #include <map>
 #include <stdint.h>
 
+//This is to keep the same interface of a vector, but behave internally more like a map for faster access
+
 template <class T>
 concept isIterable = requires(const T& t) {
-	t.begin();
-	t.end();
-};
+	                     t.begin();
+	                     t.end();
+                     };
 
 template <class T>
 concept isIndexedVector = requires(const T& t) {
-	t.isIndexedVector;
-};
+	                          t.isIndexedVector;
+                          };
 
 template <class T>
 class indexedVector {
@@ -30,17 +32,17 @@ class indexedVector {
 	}
 	void push_back(const T& r) {
 		constexpr bool hasRty = requires() {
-			r.rty;
-		};
+			                        r.rty;
+		                        };
 		constexpr bool hasRty_ptr = requires() {
-			r->rty;
-		};
+			                            r->rty;
+		                            };
 		constexpr bool hasHeader = requires() {
-			r.header.rty;
-		};
+			                           r.header.rty;
+		                           };
 		constexpr bool hasHeader_ptr = requires() {
-			r->header.rty;
-		};
+			                               r->header.rty;
+		                               };
 
 		//Due to an orrible error that Roy did we now need this hack, well not entirely
 		if constexpr (hasRty) {
