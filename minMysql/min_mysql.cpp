@@ -416,6 +416,10 @@ sqlResult DB::queryDeadlockRepeater(const QByteArray& sql, uint maxTry) const {
 }
 
 void DB::pingCheck(st_mysql*& conn) const {
+	// can be disabled in local host to run a bit faster on laggy connection
+	if (!conf.pingBeforeQuery) {
+		return;
+	}
 	SQLLogger sqlLogger("PING", conf.logError, this);
 	auto      oldConnId = mysql_thread_id(conn);
 
@@ -426,10 +430,7 @@ void DB::pingCheck(st_mysql*& conn) const {
 			qDebug() << "detected mysql reconnection";
 		}
 	});
-	// can be disabled in local host to run a bit faster on laggy connection
-	if (!conf.pingBeforeQuery) {
-		return;
-	}
+	
 	int connRetry = 0;
 	// Those will not emit an error, only the last one
 	for (; connRetry < 5; connRetry++) {
