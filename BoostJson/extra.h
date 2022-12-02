@@ -23,6 +23,7 @@ std::string pretty_print(boost::json::value const& jv);
 QString QS(const boost::json::string& cry);
 
 QString QS(const boost::json::value* value);
+QString QS(const boost::json::value& value);
 
 class sqlRow;
 boost::json::value asNull(const sqlRow& row, std::string_view key);

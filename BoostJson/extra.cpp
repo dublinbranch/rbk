@@ -164,6 +164,10 @@ QString QS(const boost::json::value* value) {
 	return QS(value->as_string());
 }
 
+QString QS(const boost::json::value& value) {
+	return QS(value.as_string());
+}
+
 bool insertIfNotNull(boost::json::object& target, const sqlRow& row, std::string_view key) {
 	QByteArray k;
 	k.setRawData(key.data(), key.size());
