@@ -49,10 +49,21 @@ RESOURCES     = $$PWD/gitTrick/resources.qrc
 # - SETUP -
 # zypper in libzip-devel
 # OR (should be equivalent)
-# if compile error because not found "maxminddb.h" file (included in GeoLite2PP.hpp) then install "libmaxminddb-devel" package in YaST2
 LIBS += -lzip
-LIBS += -L'$$PWD/GeoLite2PP' -lgeolite2++
+#to execute
+#zypper in libmaxminddb0 
+#to develop libmaxminddb-devel
 LIBS += -lmaxminddb
+# if compile error because not found "maxminddb.h" file (included in GeoLite2PP.hpp) then install "libmaxminddb-devel" package in YaST2F
+LIBS += -L'$$PWD/GeoLite2PP' -lgeolite2++
+
+
+LIBS += -ldw
+LIBS += -ldl
+LIBS += -lfmt
+LIBS += -lcurl
+#zypper in libmariadb3
+LIBS += -lmariadb
 
 DISTFILES += \
 	$$PWD/GeoLite2PP/README.md \
@@ -268,10 +279,3 @@ defined(HAS_QT_NETWORK, var) {
 	HEADERS += $$PWD/qhostaddress.h 
 	SOURCES += $$PWD/qhostaddress.cpp 
 }
-
-
-LIBS += -ldw
-LIBS += -ldl
-LIBS += -lfmt
-LIBS += -lcurl
-LIBS += -lmariadb
