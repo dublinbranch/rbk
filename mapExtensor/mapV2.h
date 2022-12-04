@@ -58,7 +58,7 @@ class mapV2 : public std::map<K, V, Compare> {
 		if (auto iter = this->find(k); iter != this->end()) {
 			return iter->second;
 		}
-		throw ExceptionV2(fmt::format("key {} not found in {}", k, __PRETTY_FUNCTION__));
+		throw ExceptionV2(fmt::format("key >>>{}<<< not found in {}", k, __PRETTY_FUNCTION__));
 	}
 
 	template <typename T>
@@ -91,7 +91,7 @@ class mapV2 : public std::map<K, V, Compare> {
 		if (auto iter = this->find(k); iter != this->end()) {
 			return iter->second;
 		}
-		throw ExceptionV2(fmt::format("key {} not found in {}", k, __PRETTY_FUNCTION__));
+		throw ExceptionV2(fmt::format("key >>>{}<<< not found in {}", k, __PRETTY_FUNCTION__));
 	}
 
 	[[nodiscard]] auto take(const K& k) {

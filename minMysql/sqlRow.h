@@ -36,6 +36,19 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 		return t2;
 	}
 
+	/**
+	 * @brief rqe is specific for int type enum
+	 * @param key
+	 * @return
+	 */
+	template <isEnum T>
+	[[nodiscard]] T rqe(const QByteArray& key) const {
+		QByteArray temp;
+		get(key, temp);
+		T t2 = T(temp.toInt());
+		return t2;
+	}
+
 	QDateTime asDateTime(const QByteArray& key) const;
 
 	template <typename D>
