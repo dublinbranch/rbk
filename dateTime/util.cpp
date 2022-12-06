@@ -54,10 +54,6 @@ qint64 getMidnightTS(int deltaDays, const QTimeZone* tz) {
 	return getMidnight(deltaDays, tz).toSecsSinceEpoch();
 }
 
-ushort getCurHour(QTimeZone t) {
-	return QDateTime::currentDateTime().toTimeZone(t).time().hour();
-}
-
 [[nodiscard]] QDateTime alterTz(const QDateTime& old, const QTimeZone& tz) {
 	QDateTime neu;
 	neu.setTimeZone(tz);

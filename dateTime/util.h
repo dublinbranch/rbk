@@ -51,7 +51,7 @@ QDateTime getMidnight(int deltaDays, const QTimeZone* tz = nullptr);
 QDateTime getMidnight(QDateTime day);
 QDateTime getNextMidnight();
 qint64    secToNextMidnight();
-ushort    getCurHour(QTimeZone t = UTC);
+ushort    getCurHour(const QTimeZone &t = UTC);
 ushort    getCurMinute();
 qint64    getCurrentTS();
 qint64    getCurrentMTS();
