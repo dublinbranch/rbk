@@ -34,14 +34,19 @@ struct FPCRes {
 	                       operator bool();
 };
 
+//I do really need to find a solution to this nonsense!
 FPCRes filePutContents(const QString& pay, const QString& fileName);
 FPCRes filePutContents(const QByteArray& pay, const QString& fileName);
 FPCRes filePutContents(const std::string& pay, const QString& fileName);
+FPCRes filePutContents(const std::string& pay, const std::string& fileName);
+FPCRes filePutContents(const QByteArray& pay, const std::string& fileName);
+FPCRes filePutContents(const QByteArray& pay, const char* fileName);
 
 QByteArray fileGetContents(const QString& fileName, bool quiet = true);
 QByteArray fileGetContents(const QString& fileName, bool quiet, bool& success);
 
 FileGetRes fileGetContents2(const QString& fileName, bool quiet = true, uint maxAge = 0);
+FileGetRes fileGetContents2(const std::string& fileName, bool quiet = true, uint maxAge = 0);
 
 bool fileAppendContents(const QString& pay, const QString& fileName);
 bool fileAppendContents(const QByteArray& pay, const QString& fileName);

@@ -9,6 +9,8 @@
 #include <concepts>
 #include <vector>
 
+//Todo is possible to do magic_enum::enum_name(INVALID_VALUE) which will silently fail and return an empty string, not what we want!
+
 namespace magic_enum {
 template <typename Type>
 std::vector<Type> getEnabled(const Type& t) {

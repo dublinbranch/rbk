@@ -144,6 +144,10 @@ const curl_slist* CurlHeader::get() const {
 	return chunk;
 }
 
+void CurlHeader::set(CurlKeeper& marx) const {
+	curl_easy_setopt(marx, CURLOPT_HTTPHEADER, get());
+}
+
 CurlKeeper::CurlKeeper() {
 	curl = curl_easy_init();
 }

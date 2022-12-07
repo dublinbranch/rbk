@@ -4,7 +4,8 @@
 #include <QDebug>
 #include <QMap>
 
-//This whole table is wrong and leftover of aggressive optimization in gaisensha where each nation was a bit in a 256bit register, we just use to check if a 2 letter code is valid
+//This whole table is wrong and leftover of aggressive optimization in gaisensha where each nation was a bit in a 256bit register
+//we now just use to check if a 2 letter code is valid Nation
 const mapV2<QByteArray, quint16>& getNationISO2() {
 	const static mapV2<QByteArray, quint16> nations =
 	    {{

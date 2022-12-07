@@ -43,6 +43,7 @@ size_t STDWriter(void* contents, size_t size, size_t nmemb, std::string* userp);
 
 // cry
 struct curl_slist;
+struct CurlKeeper;
 class CurlHeader : public NoCopy {
       public:
 	~CurlHeader();
@@ -51,6 +52,7 @@ class CurlHeader : public NoCopy {
 	void              add(const char* header);
 	void              clear();
 	const curl_slist* get() const;
+	void              set(CurlKeeper& curl) const;
 
 	[[deprecated("use get")]] const curl_slist* getChunk() const;
 

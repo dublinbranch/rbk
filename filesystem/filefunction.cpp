@@ -70,6 +70,10 @@ QByteArray fileGetContents(const QString& fileName, bool quiet) {
 	return x;
 }
 
+FileGetRes fileGetContents2(const std::string& fileName, bool quiet, uint maxAge) {
+	return fileGetContents2(QString::fromStdString(fileName), quiet, maxAge);
+}
+
 FileGetRes fileGetContents2(const QString& fileName, bool quiet, uint maxAge) {
 	FileGetRes res;
 	if (maxAge) {
@@ -226,6 +230,18 @@ FPCRes filePutContents(const QString& pay, const QString& fileName) {
 
 FPCRes filePutContents(const std::string& pay, const QString& fileName) {
 	return filePutContents(QByteArray::fromStdString(pay), fileName);
+}
+
+FPCRes filePutContents(const std::string& pay, const std::string& fileName) {
+	return filePutContents(QByteArray::fromStdString(pay), QString::fromStdString(fileName));
+}
+
+FPCRes filePutContents(const QByteArray& pay, const std::string& fileName) {
+	return filePutContents(pay, QString::fromStdString(fileName));
+}
+
+FPCRes filePutContents(const QByteArray& pay, const char* fileName) {
+	return filePutContents(pay, QString(fileName));
 }
 
 bool fileAppendContents(const std::string& pay, const QString& fileName) {

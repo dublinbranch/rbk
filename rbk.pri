@@ -80,13 +80,13 @@ HEADERS += \
     $$PWD/QStacker/CxaLevel.h \
     $$PWD/dateTime/util.h \
     $$PWD/fmtExtra/dynamic.h \
-    $$PWD/fmtExtra/echo.h \
     $$PWD/fmtExtra/fromEnum.h \
     $$PWD/hash/salt.h \
     $$PWD/hash/sha.h \
 	$$PWD/locale/codes.h \
     $$PWD/minMysql/DBConf.h \
     $$PWD/minMysql/sqlRow.h \
+    $$PWD/misc/echo.h \
     $$PWD/misc/swapType.h \
 	$$PWD/rand/clampednormaldistribution.h \
     $$PWD/JSON/JSONReaderConst.h \
@@ -136,10 +136,10 @@ SOURCES += \
     $$PWD/BoostJson/extra.cpp \
 	$$PWD/asanOption.cpp \
     $$PWD/dateTime/util.cpp \
-    $$PWD/fmtExtra/echo.cpp \
     $$PWD/hash/salt.cpp \
     $$PWD/hash/sha.cpp \
 	$$PWD/locale/codes.cpp \
+    $$PWD/misc/echo.cpp \
 	$$PWD/rand/clampednormaldistribution.cpp \
     $$PWD/JSON/jsonreader.cpp \
     $$PWD/SpaceShipOP/implementation.cpp \
