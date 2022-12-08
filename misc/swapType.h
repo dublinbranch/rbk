@@ -40,10 +40,8 @@ void swapType(const QByteArray& source, D& dest) {
 		if (!ok) {
 			// last chanche NULL is 0 in case we are numeric right ?
 			if (source == QBL("NULL")) {
-				if constexpr (std::is_arithmetic_v<D>) {
-					dest = 0;
-					return;
-				}
+				dest = 0;
+				return;
 			}
 			throw QSL("Impossible to convert %1 as a number").arg(QString(source));
 		}
