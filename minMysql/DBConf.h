@@ -17,6 +17,8 @@ struct DBConf {
 	bool       ssl     = false;
 	// Usually set false for operation that do not have to be replicated
 	bool writeBinlog = true;
+	//sometimes we connect with low privileges or weird limit like in GCP
+	bool noSqlMode = false;
 	// This header is quite big, better avoid the inclusion
 	std::vector<std::shared_ptr<QRegularExpression>> warningSuppression;
 

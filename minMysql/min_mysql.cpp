@@ -430,7 +430,7 @@ void DB::pingCheck(st_mysql*& conn) const {
 			qDebug() << "detected mysql reconnection";
 		}
 	});
-	
+
 	int connRetry = 0;
 	// Those will not emit an error, only the last one
 	for (; connRetry < 5; connRetry++) {
@@ -678,7 +678,10 @@ st_mysql* DB::connect() const {
 		/***/
 	}
 
-	query(QBL("SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY';"));
+	if (!conf.noSqlMode) {
+		query(QBL("SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY';"));
+	}
+
 	query(QBL("SET time_zone='UTC'"));
 	if (!conf.writeBinlog) {
 		query(QBL("SET sql_log_bin = 0"));
