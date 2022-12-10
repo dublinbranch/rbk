@@ -122,6 +122,7 @@ struct CurlCallResult {
 	long       httpCode = 0;
 	bool       ok       = false;
 	QString    packDbgMsg(bool extraInfo = false) const;
+	bool       fromCache = false;
 };
 
 /**
@@ -148,6 +149,21 @@ CurlCallResult urlGetContent2(const QString& url, bool quiet = false, CURL* curl
 CurlCallResult urlGetContent2(const char* url, bool quiet = false, CURL* curl = nullptr);
 // TODO rifare la funzione e ritornare un oggetto composito per sapere se è andato a buon fine
 CurlCallResult urlPostContent(const QByteArray& url, const QByteArray post, bool quiet = false, CURL* curl = nullptr);
+
+template <typename T1, typename T2>
+CurlCallResult urlGetCached(const T1& url, const T2 fileName, bool on, bool quiet = false, CURL* curl = nullptr) {
+	CurlCallResult res;
+	if (on) {
+		res.result    = fileGetContents2(fileName).content;
+		res.fromCache = true;
+	}
+	if (res.result.isEmpty()) {
+		res = urlGetContent2(url, quiet, curl);
+		filePutContents(res.result, fileName);
+		res.fromCache = false;
+	}
+	return res;
+}
 
 enum class Severity {
 	none,

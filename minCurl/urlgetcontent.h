@@ -7,10 +7,11 @@
 #include <curl/curl.h>
 
 class UrlGetContent {
-	  public:
+      public:
 	long httpCode = 0;
 
-	UrlGetContent(const QByteArray& _url, bool _quiet, int _category, int _timeOut = 60, CURL* _curl = nullptr);
+	UrlGetContent() = default;
+	UrlGetContent(const QByteArray& _url, bool _quiet = false, int _category = 0, int _timeOut = 60, CURL* _curl = nullptr);
 	QByteArray execute(ErrorLog* eLog = nullptr);
 	QString    sql;
 
@@ -19,7 +20,7 @@ class UrlGetContent {
 
 	CURLcode getCurlCode() const;
 
-	  private:
+      private:
 	QByteArray url;
 	bool       quiet    = false;
 	int        category = 0;

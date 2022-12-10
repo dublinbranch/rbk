@@ -281,8 +281,8 @@ CurlCallResult urlGetContent2(const QByteArray& url, bool quiet, CURL* curl, boo
 	if (result.errorCode == CURLE_OK) {
 		result.ok = true;
 
-		char* ip = nullptr;
-		if (curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ip) && ip) {
+		char* ip;
+		if (CURLcode res = curl_easy_getinfo(useMe, CURLINFO_PRIMARY_IP, &ip); res == CURLE_OK && ip) {
 			result.ip.fromLocal8Bit(ip);
 		} else {
 			result.ip = "127.0.0.1";
@@ -291,7 +291,8 @@ CurlCallResult urlGetContent2(const QByteArray& url, bool quiet, CURL* curl, boo
 		curl_easy_getinfo(useMe, CURLINFO_RESPONSE_CODE, &result.httpCode);
 		result.header = parseHeader(result.headerRaw);
 	} else if (!quiet) {
-		qDebug().noquote() << "For:" << url << "\n " << errbuf << QStacker16Light();
+		qDebug().noquote() << "For:" << url << "\n " << curl_easy_strerror(result.errorCode) << "\n"
+		                   << errbuf << QStacker16Light();
 	}
 
 	if (LTS) {
