@@ -9,6 +9,8 @@ class HttpException : public ExceptionV2 {
 	// false -> normal output
 	// true -> error message
 	bool error = false;
+
+	unsigned statusCode = 400;
 	// normal output
 	QByteArray data;
 

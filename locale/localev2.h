@@ -37,6 +37,6 @@ Locale decodeLocale(const QString& locale, QString* ip = nullptr);
 using Nation = QString;
 
 class DB;
-const mapV2<Nation, QVector<Locale>>& localeDB(DB& db);
-const mapV2<Nation, QString>&         languageDB(DB& db);
+const mapV2<Nation, QVector<Locale>>& localeDB(DB* db);
+const mapV2<Nation, QString>&         languageDB(DB* db);
 #endif // LOCALEV2_H

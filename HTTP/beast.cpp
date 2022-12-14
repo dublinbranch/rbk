@@ -184,7 +184,7 @@ void handle_request(
 			if (auto e2 = dynamic_cast<const ExceptionV2*>(&e); e2) {
 				if (auto HE = dynamic_cast<const HttpException*>(&e); HE) {
 					payload.html       = msg;
-					payload.statusCode = 400;
+					payload.statusCode = HE->statusCode;
 				}
 				if (!e2->skipPrint) {
 					fmt::print("\n------\n{}", msg);

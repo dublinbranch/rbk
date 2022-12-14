@@ -183,4 +183,14 @@ class multiMapV2 : public std::multimap<K, V> {
 		auto v = rq(k);
 		return swapType<T>(v);
 	}
+
+	template <typename T, typename C>
+	T rq(const K& k, C* callback) {
+		if (auto v = get(k); v) {
+			return swapType<T>(*(v.val));
+		}
+		(*callback)(k);
+		//this line is normally never execute as the passed lambda supposedly throw a custom exception on miss
+		return {};
+	}
 };

@@ -151,12 +151,12 @@ bool Locale::isNull() {
 	return nation.isEmpty() and language.isEmpty();
 }
 
-const mapV2<Nation, QVector<Locale>>& localeDB(DB& db) {
+const mapV2<Nation, QVector<Locale>>& localeDB(DB* db) {
 	static mapV2<Nation, QVector<Locale>> final;
 	if (final.empty()) {
 		//No need for lock control, just init ad beginning of program and is fine
 		string sql = "SELECT nation, language, isMain FROM SCCE_Common.locale ORDER BY language ASC";
-		auto   res = db.query(sql);
+		auto   res = db->query(sql);
 		for (auto& row : res) {
 			auto   nat  = row.rq<QString>("nation");
 			auto   lang = row.rq<QString>("language");
@@ -169,12 +169,12 @@ const mapV2<Nation, QVector<Locale>>& localeDB(DB& db) {
 	return final;
 }
 
-const mapV2<Nation, QString>& languageDB(DB& db) {
+const mapV2<Nation, QString>& languageDB(DB* db) {
 	static mapV2<Nation, QString> final;
 	if (final.empty()) {
 		//No need for lock control, just init ad beginning of program and is fine
 		string sql = "SELECT code, name FROM SCCE_Common.language ORDER BY code ASC";
-		auto   res = db.query(sql);
+		auto   res = db->query(sql);
 		for (auto& row : res) {
 			auto code   = row.rq<QString>("code");
 			auto name   = row.rq<QString>("name");
