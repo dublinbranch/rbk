@@ -1,6 +1,7 @@
 #pragma once
 
 #include "curl/curl.h"
+#include "rbk/filesystem/filefunction.h"
 #include "rbk/mapExtensor/mapV2.h"
 #include "rbk/mixin/NoCopy.h"
 #include <QByteArray>
