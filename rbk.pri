@@ -65,6 +65,25 @@ LIBS += -lcurl
 #zypper in libmariadb3
 LIBS += -lmariadb
 
+defined(WITH_BOOST_BEAST,var) {
+#HTTP part
+DEFINES += BOOST_BEAST_USE_STD_STRING_VIEW=1
+
+SOURCES += \
+    $$PWD/HTTP/PMFCGI.cpp \
+    $$PWD/HTTP/beast.cpp \
+    $$PWD/HTTP/router.cpp \
+    $$PWD/HTTP/select2.cpp \
+	
+HEADERS += \
+    $$PWD/HTTP/beastConfig.h \
+    $$PWD/HTTP/select2.h \
+    $$PWD/HTTP/PMFCGI.h \
+    $$PWD/HTTP/Payload.h \
+    $$PWD/HTTP/beast.h \
+    $$PWD/HTTP/router.h \
+}
+
 DISTFILES += \
 	$$PWD/GeoLite2PP/README.md \
 	$$PWD/GeoLite2PP/libgeolite2++.a \
@@ -173,26 +192,6 @@ SOURCES += \
 SOURCES += $$PWD/HTTP/url.cpp 
 	
 HEADERS += $$PWD/HTTP/url.h 
-	
-
-defined(WITH_BOOST_BEAST,var) {
-#HTTP part
-DEFINES += BOOST_BEAST_USE_STD_STRING_VIEW=1
-
-SOURCES += \
-    $$PWD/HTTP/PMFCGI.cpp \
-    $$PWD/HTTP/beast.cpp \
-    $$PWD/HTTP/router.cpp \
-    $$PWD/HTTP/select2.cpp \
-	
-HEADERS += \
-    $$PWD/HTTP/beastConfig.h \
-    $$PWD/HTTP/select2.h \
-    $$PWD/HTTP/PMFCGI.h \
-    $$PWD/HTTP/Payload.h \
-    $$PWD/HTTP/beast.h \
-    $$PWD/HTTP/router.h \
-}
 
 SOURCES += \
 	$$PWD/QStacker/exceptionv2.cpp \
