@@ -12,20 +12,25 @@ std::string Select2::Result::toResultJSON() const {
 	array arr;
 	for (auto&& row : rows) {
 		object r;
-		r["id"s]  = row.id;
-		r["text"s] = row.text;
+		r["id"]   = row.id;
+		r["text"] = row.text;
+		if (row.selected) {
+			r["selected"] = true;
+		}
 		arr.emplace_back(r);
 	}
 	obj["results"] = arr;
 	return serialize(obj);
 }
 
-Select2::Row::Row(const std::string& id_, const std::string& text_) {
-	id   = id_;
-	text = text_;
+Select2::Row::Row(const std::string& id_, const std::string& text_, bool sel) {
+	id       = id_;
+	text     = text_;
+	selected = sel;
 }
 
-Select2::Row::Row(const QString& id_, const QString& text_) {
-	id   = id_.toStdString();
-	text = text_.toStdString();
+Select2::Row::Row(const QString& id_, const QString& text_, bool sel) {
+	id       = id_.toStdString();
+	text     = text_.toStdString();
+	selected = sel;
 }

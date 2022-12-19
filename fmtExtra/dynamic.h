@@ -2,6 +2,7 @@
 #define DYNAMIC_H
 
 #include "fmt/format.h"
+#include <QString>
 
 /**
  * @brief it is appaling to me why is not possible stock to have format on a dynamic string
@@ -17,6 +18,11 @@ template <typename... T>
 template <typename... T>
 [[nodiscard]] std::string F(const std::string_view& fmt, T&&... args) {
 	return fmt::vformat(fmt, fmt::make_format_args(args...));
+}
+
+template <typename... T>
+[[nodiscard]] QString F16(const std::string_view& fmt, T&&... args) {
+	return QString::fromStdString(fmt::vformat(fmt, fmt::make_format_args(args...)));
 }
 
 #endif // DYNAMIC_H

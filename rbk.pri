@@ -147,6 +147,7 @@ HEADERS += \
 	$$PWD/serialization/asstring.h \
     $$PWD/serialization/serialize.h \
     $$PWD/string/UTF8Util.h \
+    $$PWD/string/qstring.h \
     $$PWD/string/util.h \
     $$PWD/thread/threadstatush.h \
     $$PWD/thread/tmonitoring.h
@@ -185,6 +186,7 @@ SOURCES += \
     $$PWD/misc/twilio.cpp \
     $$PWD/rand/randutil.cpp \
     $$PWD/string/UTF8Util.cpp \
+    $$PWD/string/qstring.cpp \
     $$PWD/string/util.cpp \
     $$PWD/thread/threadstatush.cpp \
     $$PWD/thread/tmonitoring.cpp

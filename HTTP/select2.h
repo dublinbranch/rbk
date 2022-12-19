@@ -26,10 +26,11 @@ namespace Select2 {
 */
 
 struct Row {
-	Row(const std::string& id_, const std::string& text_);
-	Row(const QString& id_, const QString& text_);
+	Row(const std::string& id_, const std::string& text_, bool sel = false);
+	Row(const QString& id_, const QString& text_, bool sel = false);
 	std::string id;
 	std::string text;
+	bool        selected = false;
 };
 
 struct Result {
