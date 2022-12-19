@@ -338,7 +338,7 @@ sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) {
 				return res;
 			}
 		}
-
+		//FIXME not very clear, if I pass an extremely long ttl I must load from cache ?
 		if (ttl == numeric_limits<typeof(ttl)>::max()) {
 			if (required) {
 				throw DBException("no result for " + sql, DBException::NoResult);
