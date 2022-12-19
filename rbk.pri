@@ -250,7 +250,6 @@ HEADERS += \
     $$PWD/magicEnum/BetterEnum.hpp \
     $$PWD/magicEnum/enum.h \
     $$PWD/magicEnum/magic_enum.hpp \
-    $$PWD/magicEnum/utilities.hpp \
     $$PWD/magicEnum/templateEnum.h \
     $$PWD/magicEnum/magic_from_string.hpp
     
