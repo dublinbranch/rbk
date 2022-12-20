@@ -44,7 +44,7 @@ size_t STDWriter(void* contents, size_t size, size_t nmemb, std::string* userp);
 
 // cry
 struct curl_slist;
-struct CurlKeeper;
+class CurlKeeper;
 class CurlHeader : public NoCopy {
       public:
 	~CurlHeader();
@@ -102,6 +102,7 @@ class CurlKeeper : private NoCopy {
 struct CaseInsensitiveCompare {
 	bool operator()(QStringView a, QStringView b) const noexcept;
 };
+
 class Header : public mapV2<QStringView, QStringView, CaseInsensitiveCompare> {
       public:
 	QString serialize() const;
