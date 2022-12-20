@@ -178,7 +178,7 @@ void handle_request(
 			payload.mime       = "text/html";
 			payload.statusCode = 500;
 
-			auto msg = status.serializeMsg(e.what());
+			string msg = status.serializeMsg(e.what());
 
 			string file;
 			if (auto e2 = dynamic_cast<const ExceptionV2*>(&e); e2) {

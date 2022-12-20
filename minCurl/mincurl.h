@@ -127,6 +127,7 @@ struct CurlCallResult {
 	bool       fromCache = false;
 };
 
+//FIXME do not pass CURL Obj which is an alias to void -.- and of course the type system will not work, use CurlKeeper
 /**
  * @brief urlGetContent
  * @param url
