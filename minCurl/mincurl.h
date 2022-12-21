@@ -159,6 +159,7 @@ CurlCallResult urlGetCached(const T1& url, const T2 fileName, bool on, bool quie
 	if (on) {
 		res.result    = fileGetContents2(fileName).content;
 		res.fromCache = true;
+		res.ok        = true;
 	}
 	if (res.result.isEmpty()) {
 		res = urlGetContent2(url, quiet, curl);
