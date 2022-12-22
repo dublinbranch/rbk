@@ -44,7 +44,7 @@ size_t STDWriter(void* contents, size_t size, size_t nmemb, std::string* userp);
 
 // cry
 struct curl_slist;
-struct CurlKeeper;
+class CurlKeeper;
 class CurlHeader : public NoCopy {
       public:
 	~CurlHeader();
@@ -102,6 +102,7 @@ class CurlKeeper : private NoCopy {
 struct CaseInsensitiveCompare {
 	bool operator()(QStringView a, QStringView b) const noexcept;
 };
+
 class Header : public mapV2<QStringView, QStringView, CaseInsensitiveCompare> {
       public:
 	QString serialize() const;
@@ -158,6 +159,7 @@ CurlCallResult urlGetCached(const T1& url, const T2 fileName, bool on, bool quie
 	if (on) {
 		res.result    = fileGetContents2(fileName).content;
 		res.fromCache = true;
+		res.ok        = true;
 	}
 	if (res.result.isEmpty()) {
 		res = urlGetContent2(url, quiet, curl);
