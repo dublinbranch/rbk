@@ -183,7 +183,10 @@ void handle_request(
 			string file;
 			if (auto e2 = dynamic_cast<const ExceptionV2*>(&e); e2) {
 				if (auto HE = dynamic_cast<const HttpException*>(&e); HE) {
-					payload.html       = msg;
+					if (!HE->forceErrMsg.empty()) {
+						payload.html = HE->forceErrMsg;
+					}
+
 					payload.statusCode = HE->statusCode;
 				}
 				if (!e2->skipPrint) {

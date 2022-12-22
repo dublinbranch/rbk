@@ -6,17 +6,13 @@
 
 class HttpException : public ExceptionV2 {
       public:
-	// false -> normal output
-	// true -> error message
-	bool error = false;
-
 	unsigned statusCode = 400;
-	// normal output
-	QByteArray data;
+	// if set forced output to print
+	std::string forceErrMsg;
 
-	HttpException(QString _msg, bool _error = true, const QByteArray _data = QByteArray());
-	HttpException(std::string _msg, bool _error = true, const QByteArray _data = QByteArray());
-	HttpException(const char* _msg, bool _error = true, const QByteArray _data = QByteArray());
+	HttpException(QString _msg);
+	HttpException(std::string _msg);
+	HttpException(const char* _msg);
 
 	const std::string getLogFile() const noexcept override;
 };
