@@ -144,6 +144,7 @@ HEADERS += \
     $$PWD/mixin/CopyAssignable.h \
     $$PWD/mixin/NoCopy.h \
     $$PWD/rand/randutil.h \
+    $$PWD/serialization/QDataStreamer.h \
 	$$PWD/serialization/asstring.h \
     $$PWD/serialization/serialize.h \
     $$PWD/string/UTF8Util.h \
@@ -185,6 +186,7 @@ SOURCES += \
     $$PWD/misc/sourcelocation.cpp \
     $$PWD/misc/twilio.cpp \
     $$PWD/rand/randutil.cpp \
+    $$PWD/serialization/QDataStreamer.cpp \
     $$PWD/string/UTF8Util.cpp \
     $$PWD/string/qstring.cpp \
     $$PWD/string/util.cpp \

@@ -2,7 +2,6 @@
 
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/mixin/NoCopy.h"
-#include <QDataStream>
 #include <QDateTime>
 #include <QString>
 #include <any>
@@ -29,6 +28,10 @@ class APCU : private NoCopy {
 		std::any    value;
 		//0 will disable flushing
 		uint expireAt = 1;
+		//Only QByteArray is accepted for that kind, the cached type will provide the
+		//serialized / unserialize operation
+		//those key will be saved on disk on program CLOSE and reloaded, they still have the same TTL based logic
+		bool persistent = false;
 
 		bool expired() const;
 		bool expired(qint64 ts) const;
@@ -38,7 +41,8 @@ class APCU : private NoCopy {
 	 * We hide the implementation as multi index will kill compile time
 	 */
 	std::any fetchInner(const std::string& key);
-	void     storeInner(const std::string& _key, const std::any& _value, bool overwrite = false, int ttl = 60);
+	void     storeInner(const std::string& _key, const std::any& _value, bool overwrite_ = false, int ttl = 60);
+	void     storeInner(const APCU::Row& row_, bool overwrite_);
 
 	template <class T>
 	std::shared_ptr<T> fetch(const std::string& key) {
@@ -67,6 +71,14 @@ class APCU : private NoCopy {
 
 	void clear();
 
+	struct DiskValue {
+		uint       expireAt = 1;
+		QByteArray value;
+	};
+
+	void diskSyncInner();
+	void diskLoad();
+
 	//1 overwrite will NOT trigger 1 delete and 1 inserted
 	std::atomic<uint64_t> overwrite;
 	std::atomic<uint64_t> insert;
@@ -78,6 +90,8 @@ class APCU : private NoCopy {
 	void              garbageCollector_F2();
 	std::shared_mutex innerLock;
 	qint64            startedAt = 0;
+	std::atomic_flag  garbageCollectorRunning;
+	std::atomic_flag  requestGarbageCollectorStop = false;
 
 	//	/**
 	//	 * @brief apcuTryStore
@@ -98,6 +112,20 @@ class APCU : private NoCopy {
 	//		}
 	//	}
 };
+
+void apcuStore(const APCU::Row& row);
+
+struct FetchPodResult {
+	QByteArray value;
+	bool       found;
+
+	explicit operator bool() const {
+		return found;
+	}
+};
+
+FetchPodResult fetchPOD(const QString& key);
+FetchPodResult fetchPOD(const std::string& key);
 
 template <class T>
 void apcuStore(const std::string& key, std::shared_ptr<T>& obj, int ttl = 60) {

@@ -70,7 +70,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	template <typename D>
 	bool getIfNotNull(const QByteArray& key, D& dest, const D& def) const {
 		auto iter = find(key);
-		if (iter == end()) {
+		if (iter == ParentMap::end()) {
 			dest = def;
 			return false;
 		}

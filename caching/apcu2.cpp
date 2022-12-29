@@ -1,6 +1,7 @@
 #include "apcu2.h"
 #include "unistd.h"
 
+#include <cstdlib>
 #include <mutex>
 
 #include <boost/multi_index/hashed_index.hpp>
@@ -8,7 +9,12 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index_container.hpp>
 
+#include "rbk/filesystem/filefunction.h"
 #include "rbk/fmtExtra/includeMe.h"
+#include "rbk/serialization/QDataStreamer.h"
+
+#include <QDataStream>
+#include <rbk/mapExtensor/qmapV2.h>
 
 using namespace std;
 static APCU theAPCU;
@@ -27,9 +33,19 @@ struct ApcuCache_index : indexed_by<
 
 typedef multi_index_container<APCU::Row, ApcuCache_index> ApcuCache;
 ApcuCache                                                 cache;
+
+using DiskMapType = QMapV2<std::string, APCU::DiskValue>;
+
+void diskSync() {
+	auto a = APCU::getInstance();
+	a->diskSyncInner();
+}
+
 APCU::APCU() {
 	startedAt = QDateTime::currentSecsSinceEpoch();
+	diskLoad();
 	new std::thread(&APCU::garbageCollector_F2, this);
+	std::atexit(diskSync);
 }
 
 APCU* APCU::getInstance() {
@@ -54,24 +70,29 @@ std::any APCU::fetchInner(const std::string& key) {
 	return {};
 }
 
-void APCU::storeInner(const std::string& _key, const std::any& _value, bool _overwrite, int ttl) {
-	auto& byKey = cache.get<ByKey>();
-
-	std::unique_lock lock(innerLock);
-	uint             expireAt = 0;
+void APCU::storeInner(const std::string& _key, const std::any& _value, bool overwrite_, int ttl) {
+	uint expireAt = 0;
 	if (ttl) {
 		expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
 	}
+	Row row(_key, _value, expireAt);
+	storeInner(row, overwrite_);
+}
 
-	if (auto iter = byKey.find(_key); iter != cache.end()) {
-		if (_overwrite) {
+void APCU::storeInner(const Row& row, bool overwrite_) {
+	auto& byKey = cache.get<ByKey>();
+
+	std::unique_lock lock(innerLock);
+
+	if (auto iter = byKey.find(row.key); iter != cache.end()) {
+		if (overwrite_) {
 			overwrite++;
 
-			byKey.replace(iter, Row(_key, _value, expireAt));
+			byKey.replace(iter, row);
 		}
 	} else {
 		insert++;
-		cache.emplace(Row(_key, _value, expireAt));
+		cache.emplace(row);
 	}
 }
 
@@ -115,10 +136,61 @@ bool APCU::Row::expired(qint64 ts) const {
 	return false;
 }
 
+void APCU::diskSyncInner() {
+	//stop garbageCollector_F2
+
+	requestGarbageCollectorStop.test_and_set();
+	garbageCollectorRunning.wait(true);
+
+	fmt::print("Start collecting data to write on disk\n");
+	DiskMapType      toBeWritten;
+	std::shared_lock lock(innerLock);
+
+	auto& byKey = cache.get<ByKey>();
+	for (auto iter : byKey) {
+		try {
+			auto copy = any_cast<QByteArray>(iter.value);
+			toBeWritten.insert(iter.key, {iter.expireAt, copy});
+		} catch (std::bad_any_cast& e) {
+			fmt::print("key {} is not a QByteArray! {} \n", iter.key, e.what());
+		}
+	}
+
+	fmt::print("{} element to write\n", toBeWritten.size());
+
+	QFile file("apcu.dat");
+	file.open(QIODevice::WriteOnly);
+	QDataStream out(&file);
+	out << toBeWritten;
+	file.flush();
+	fmt::print("{} byte wrote\n", file.size());
+}
+
+void APCU::diskLoad() {
+	QFile file("apcu.dat");
+	if (!file.open(QIODevice::ReadOnly)) {
+		return;
+	}
+	QDataStream in(&file);
+	DiskMapType toBeWritten;
+
+	std::shared_lock lock(innerLock);
+	in >> toBeWritten;
+
+	for (auto&& [key, line] : toBeWritten) {
+		APCU::Row row(key, line.value, line.expireAt);
+		cache.emplace(row);
+	}
+}
+
 void APCU::garbageCollector_F2() {
 	//TODO On program exit stop this gc operation, else we will have double free problem
 	auto& byExpire = cache.get<ByExpire>();
+	garbageCollectorRunning.test_and_set();
 	while (true) {
+		if (!requestGarbageCollectorStop.test()) {
+			break;
+		}
 		sleep(1);
 		auto now = QDateTime::currentSecsSinceEpoch();
 
@@ -145,4 +217,36 @@ void APCU::garbageCollector_F2() {
 			iter++;
 		}
 	}
+	garbageCollectorRunning.clear();
+	garbageCollectorRunning.notify_one();
+}
+
+void apcuStore(const APCU::Row& row) {
+	auto a = APCU::getInstance();
+	a->storeInner(row, true);
+}
+
+FetchPodResult fetchPOD(const std::string& key) {
+	auto a   = APCU::getInstance();
+	auto res = a->fetchInner(key);
+	if (res.has_value()) {
+		return {any_cast<QByteArray>(res), true};
+	}
+	return {{}, false};
+}
+
+FetchPodResult fetchPOD(const QString& key) {
+	return fetchPOD(key.toStdString());
+}
+
+QDataStream& operator<<(QDataStream& out, const APCU::DiskValue& rhs) {
+	out << rhs.expireAt;
+	out << rhs.value;
+	return out;
+}
+
+QDataStream& operator>>(QDataStream& in, APCU::DiskValue& rhs) {
+	in >> rhs.value;
+	in >> rhs.expireAt;
+	return in;
 }
