@@ -22,7 +22,7 @@ class NotFoundMixin {
 	NotFoundMixin(Funtor f)
 	    : notFoundCallback(f){};
 
-	Funtor notFoundCallback = nullptr;
+	mutable Funtor notFoundCallback = nullptr;
 
 	void callNotFoundCallback(const K& key, const std::string location) const {
 		if (notFoundCallback) {

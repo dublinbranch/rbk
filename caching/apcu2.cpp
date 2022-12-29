@@ -188,6 +188,8 @@ void APCU::diskLoad() {
 
 	for (auto&& [key, line] : toBeWritten) {
 		APCU::Row row(key, line.value, line.expireAt);
+		//ofc if you reload something from disk it was born persistent!
+		row.persistent = true;
 		cache->emplace(row);
 	}
 }
@@ -197,10 +199,13 @@ void APCU::garbageCollector_F2() {
 	auto& byExpire = cache->get<ByExpire>();
 	garbageCollectorRunning.test_and_set();
 	while (true) {
-		if (!requestGarbageCollectorStop.test()) {
+		if (requestGarbageCollectorStop.test()) {
 			break;
 		}
 		sleep(1);
+		if (requestGarbageCollectorStop.test()) {
+			break;
+		}
 		auto now = QDateTime::currentSecsSinceEpoch();
 		{
 			std::unique_lock lock(innerLock);
