@@ -202,28 +202,29 @@ void APCU::garbageCollector_F2() {
 		}
 		sleep(1);
 		auto now = QDateTime::currentSecsSinceEpoch();
+		{
+			std::unique_lock lock(innerLock);
 
-		std::unique_lock lock(innerLock);
+			auto upper = byExpire.upper_bound(now);
+			//so we skip expire = 0
+			auto iter = byExpire.lower_bound(1);
 
-		auto upper = byExpire.upper_bound(now);
-		//so we skip expire = 0
-		auto iter = byExpire.lower_bound(1);
-
-		while (true) {
-			//You can not have an OR condition in the for ?
-			auto b = iter == byExpire.end();
-			auto c = iter == upper;
-			if (b || c) {
-				break;
+			while (true) {
+				//You can not have an OR condition in the for ?
+				auto b = iter == byExpire.end();
+				auto c = iter == upper;
+				if (b || c) {
+					break;
+				}
+				auto& row = *iter;
+				(void)row;
+				if (iter->expired(now)) {
+					iter = byExpire.erase(iter);
+					deleted++;
+					continue;
+				}
+				iter++;
 			}
-			auto& row = *iter;
-			(void)row;
-			if (iter->expired(now)) {
-				iter = byExpire.erase(iter);
-				deleted++;
-				continue;
-			}
-			iter++;
 		}
 	}
 	garbageCollectorRunning.clear();
