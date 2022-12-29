@@ -20,6 +20,15 @@ const std::string HttpException::getLogFile() const noexcept {
 	return addr;
 }
 
+void HttpException::HttpParamErrorHandler1(const QString& key) {
+	std::string   msg = key.toStdString() + " is not set and is required!";
+	HttpException e(msg);
+	e.forceErrMsg = msg;
+	e.statusCode  = 200;
+
+	throw e;
+}
+
 // for testing
 void testHttpException() {
 	auto e1 = HttpException("e1");

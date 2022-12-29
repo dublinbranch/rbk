@@ -15,6 +15,8 @@ class HttpException : public ExceptionV2 {
 	HttpException(const char* _msg);
 
 	const std::string getLogFile() const noexcept override;
+
+	static void HttpParamErrorHandler1(const QString& key);
 };
 
 void testHttpException();

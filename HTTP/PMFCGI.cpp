@@ -15,10 +15,10 @@ using namespace std;
 void bHeaders::add(const std::string_view& key, const std::string_view& value) {
 	QString k, v;
 
-	if (!isValidUTF8(key)) {
+	if (!isValidUTF8(key, &k)) {
 		throw ExceptionV2(QSL("Invalid utf8 in header %1 (value %2)").arg(base64this(key), QString::fromStdString(value.data())));
 	}
-	if (!isValidUTF8(value)) {
+	if (!isValidUTF8(value, &v)) {
 		throw ExceptionV2(QSL("Invalid utf8 in header %1 (value %2)").arg(QString::fromStdString(key.data()), base64this(value)));
 	}
 
@@ -116,10 +116,10 @@ string PMFCGI::serializeBase() const {
 #include "Payload.h"
 
 void Payload::setStandardHeaders(bool addCors) {
-	headers.insert({"Expires:", "Sun, 01 Jan 2014 00:00:00 GMT"});
-	headers.insert({"Cache-Control:", "no-store, no-cache, must-revalidate"});
-	headers.insert({"Cache-Control:", "post-check=0, pre-check=0"});
-	headers.insert({"Pragma:", "no-cache"});
+	headers.insert({"Expires", "Sun, 01 Jan 2014 00:00:00 GMT"});
+	headers.insert({"Cache-Control", "no-store, no-cache, must-revalidate"});
+	headers.insert({"Cache-Control", "post-check=0, pre-check=0"});
+	headers.insert({"Pragma", "no-cache"});
 	if (addCors) {
 		headers.insert({"Access-Control-Allow-Origin", "*"});
 	}
@@ -137,4 +137,15 @@ multiMapV2<QString, QString> decodePost(const std::string& form) {
 		res.insert({pair[0].toString(), pair[1].toString()});
 	}
 	return res;
+}
+
+void Headers::setCookie(const std::string& name, const std::string& value, uint ttl, bool sameSite) {
+	//	string secureS = secure ? "secure" : "";
+	//	string httpOnlyS = httponly ? "HttpOnly" : "";
+	// path={:path}; domain={:domain};
+	//https://developers.google.com/search/blog/2020/01/get-ready-for-new-samesitenone-secure?hl=it
+	// secure;  is not set in local development, and only block that is sent on port 80 looks like
+	auto SameSite = sameSite ? "SameSite=Lax" : "SameSite=None";
+	auto row      = fmt::format(R"({}={}; Max-Age={}; {}; secure; HttpOnly)", name, value, ttl, SameSite);
+	insert({"Set-Cookie", row});
 }

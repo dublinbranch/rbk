@@ -260,7 +260,7 @@ const mapV2<QByteArray, quint16>& getNationISO2() {
 	        {"ZA", 247},
 	        {"ZM", 248},
 	        {"ZW", 249},
-	    }};
+		 },{}};
 
 	return nations;
 }

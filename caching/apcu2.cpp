@@ -42,35 +42,36 @@ std::any APCU::fetchInner(const std::string& key) {
 	std::shared_lock lock(innerLock);
 
 	if (auto iter = byKey.find(key); iter != cache.end()) {
-		
-			hits++;
-			return iter->value;
-		
+
+		hits++;
+		return iter->value;
+
 		//unlock and just relock is bad, as will leave a GAP!
 		//you should unlock, restart the operation under full lock, and than erase...
 		//who cares, in a few second the GC will remove the record anyways
 	}
 	miss++;
-	return std::any();
+	return {};
 }
 
 void APCU::storeInner(const std::string& _key, const std::any& _value, bool _overwrite, int ttl) {
 	auto& byKey = cache.get<ByKey>();
 
 	std::unique_lock lock(innerLock);
+	uint             expireAt = 0;
+	if (ttl) {
+		expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
+	}
 
 	if (auto iter = byKey.find(_key); iter != cache.end()) {
 		if (_overwrite) {
 			overwrite++;
 
-			auto old     = *iter;
-			old.value    = _value;
-			old.expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
-			byKey.replace(iter, Row(_key, _value, ttl));
+			byKey.replace(iter, Row(_key, _value, expireAt));
 		}
 	} else {
 		insert++;
-		cache.emplace(Row(_key, _value, ttl));
+		cache.emplace(Row(_key, _value, expireAt));
 	}
 }
 
@@ -97,10 +98,10 @@ void throwTypeError(const type_info* found, const type_info* expected) {
 	throw ExceptionV2(QSL("Wrong type!! Found %1, expected %2, recheck where this key is used, maybe you have a collision").arg(found->name()).arg(expected->name()));
 }
 
-APCU::Row::Row(const std::string& _key, const std::any& _value, int ttl) {
-	key      = _key;
-	value    = _value;
-	expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
+APCU::Row::Row(const std::string& key_, const std::any& value_, int expireAt_) {
+	key      = key_;
+	value    = value_;
+	expireAt = expireAt_;
 }
 
 bool APCU::Row::expired() const {
@@ -108,11 +109,14 @@ bool APCU::Row::expired() const {
 }
 
 bool APCU::Row::expired(qint64 ts) const {
-	return ts > expireAt;
+	if (expireAt) {
+		return ts > expireAt;
+	}
+	return false;
 }
 
 void APCU::garbageCollector_F2() {
-    //TODO On program exit stop this gc operation, else we will have double free problem
+	//TODO On program exit stop this gc operation, else we will have double free problem
 	auto& byExpire = cache.get<ByExpire>();
 	while (true) {
 		sleep(1);
@@ -121,7 +125,8 @@ void APCU::garbageCollector_F2() {
 		std::unique_lock lock(innerLock);
 
 		auto upper = byExpire.upper_bound(now);
-		auto iter  = byExpire.begin();
+		//so we skip expire = 0
+		auto iter = byExpire.lower_bound(1);
 
 		while (true) {
 			//You can not have an OR condition in the for ?
@@ -136,9 +141,8 @@ void APCU::garbageCollector_F2() {
 				iter = byExpire.erase(iter);
 				deleted++;
 				continue;
-			} else {
-				iter++;
 			}
+			iter++;
 		}
 	}
 }

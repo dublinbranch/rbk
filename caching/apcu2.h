@@ -2,6 +2,7 @@
 
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/mixin/NoCopy.h"
+#include <QDataStream>
 #include <QDateTime>
 #include <QString>
 #include <any>
@@ -9,6 +10,7 @@
 #include <shared_mutex>
 #include <thread>
 #include <unordered_map>
+
 #define QSL(str) QStringLiteral(str)
 void throwTypeError(const std::type_info* found, const std::type_info* expected);
 
@@ -19,13 +21,14 @@ class APCU : private NoCopy {
 
 	struct Row {
 		//Corpus munus
-		Row() = delete;
-		Row(const std::string& _key, const std::any& _value, int ttl);
+		Row() = default;
+		Row(const std::string& key_, const std::any& value_, int expireAt_);
 
 		//Member
 		std::string key;
 		std::any    value;
-		uint        expireAt = 0;
+		//0 will disable flushing
+		uint expireAt = 1;
 
 		bool expired() const;
 		bool expired(qint64 ts) const;
@@ -109,7 +112,7 @@ void apcuStore(const QString& key, std::shared_ptr<T>& obj, int ttl = 60) {
 
 template <class T>
 void apcuStore(const std::string& key, const T& obj, int ttl = 60) {
-    auto copy = std::make_shared<T>(obj);
+	auto copy = std::make_shared<T>(obj);
 	apcuStore(key, copy, ttl);
 }
 
