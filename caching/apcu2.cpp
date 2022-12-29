@@ -17,7 +17,6 @@
 #include <rbk/mapExtensor/qmapV2.h>
 
 using namespace std;
-static APCU theAPCU;
 
 struct ByExpire {};
 struct ByKey {};
@@ -31,9 +30,11 @@ struct ApcuCache_index : indexed_by<
                              ordered_non_unique<
                                  tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, uint, expireAt)>> {};
 
-typedef multi_index_container<APCU::Row, ApcuCache_index> ApcuCache;
-ApcuCache                                                 cache;
+using ApcuCache = multi_index_container<APCU::Row, ApcuCache_index>;
+//this is deallocated at exit before the function is called, so we just manually manage it, no idea how to do the "correct" way
+static ApcuCache* cache = nullptr;
 
+static APCU theAPCU;
 using DiskMapType = QMapV2<std::string, APCU::DiskValue>;
 
 void diskSync() {
@@ -41,8 +42,10 @@ void diskSync() {
 	a->diskSyncInner();
 }
 
-APCU::APCU() {
-	startedAt = QDateTime::currentSecsSinceEpoch();
+APCU::APCU()
+    : startedAt(QDateTime::currentSecsSinceEpoch()) {
+
+	cache = new ApcuCache();
 	diskLoad();
 	new std::thread(&APCU::garbageCollector_F2, this);
 	std::atexit(diskSync);
@@ -53,11 +56,11 @@ APCU* APCU::getInstance() {
 }
 
 std::any APCU::fetchInner(const std::string& key) {
-	auto& byKey = cache.get<ByKey>();
+	auto& byKey = cache->get<ByKey>();
 
 	std::shared_lock lock(innerLock);
 
-	if (auto iter = byKey.find(key); iter != cache.end()) {
+	if (auto iter = byKey.find(key); iter != cache->end()) {
 
 		hits++;
 		return iter->value;
@@ -80,11 +83,11 @@ void APCU::storeInner(const std::string& _key, const std::any& _value, bool over
 }
 
 void APCU::storeInner(const Row& row, bool overwrite_) {
-	auto& byKey = cache.get<ByKey>();
+	auto& byKey = cache->get<ByKey>();
 
 	std::unique_lock lock(innerLock);
 
-	if (auto iter = byKey.find(row.key); iter != cache.end()) {
+	if (auto iter = byKey.find(row.key); iter != cache->end()) {
 		if (overwrite_) {
 			overwrite++;
 
@@ -92,7 +95,7 @@ void APCU::storeInner(const Row& row, bool overwrite_) {
 		}
 	} else {
 		insert++;
-		cache.emplace(row);
+		cache->insert(row);
 	}
 }
 
@@ -109,7 +112,7 @@ std::string APCU::info() const {
 		Delete:     {:>10} / {:>8.0f}s
 </pre>
 		)",
-	                           cache.size(), hits, hits / delta, miss, miss / delta, // 5
+	                           cache->size(), hits, hits / delta, miss, miss / delta, // 5
 	                           insert, insert / delta, overwrite, overwrite / delta, deleted, deleted / delta);
 	return msg;
 }
@@ -146,13 +149,17 @@ void APCU::diskSyncInner() {
 	DiskMapType      toBeWritten;
 	std::shared_lock lock(innerLock);
 
-	auto& byKey = cache.get<ByKey>();
-	for (auto iter : byKey) {
+	auto& byKey = cache->get<ByKey>();
+	for (auto& iter : byKey) {
+		if (!iter.persistent) {
+			continue;
+		}
 		try {
 			auto copy = any_cast<QByteArray>(iter.value);
 			toBeWritten.insert(iter.key, {iter.expireAt, copy});
 		} catch (std::bad_any_cast& e) {
-			fmt::print("key {} is not a QByteArray! {} \n", iter.key, e.what());
+			(void)e;
+			fmt::print("key {} is not a QByteArray! \n", iter.key);
 		}
 	}
 
@@ -177,15 +184,17 @@ void APCU::diskLoad() {
 	std::shared_lock lock(innerLock);
 	in >> toBeWritten;
 
+	fmt::print("APCU found {} element to reload\n", toBeWritten.size());
+
 	for (auto&& [key, line] : toBeWritten) {
 		APCU::Row row(key, line.value, line.expireAt);
-		cache.emplace(row);
+		cache->emplace(row);
 	}
 }
 
 void APCU::garbageCollector_F2() {
 	//TODO On program exit stop this gc operation, else we will have double free problem
-	auto& byExpire = cache.get<ByExpire>();
+	auto& byExpire = cache->get<ByExpire>();
 	garbageCollectorRunning.test_and_set();
 	while (true) {
 		if (!requestGarbageCollectorStop.test()) {
@@ -246,7 +255,7 @@ QDataStream& operator<<(QDataStream& out, const APCU::DiskValue& rhs) {
 }
 
 QDataStream& operator>>(QDataStream& in, APCU::DiskValue& rhs) {
-	in >> rhs.value;
 	in >> rhs.expireAt;
+	in >> rhs.value;
 	return in;
 }

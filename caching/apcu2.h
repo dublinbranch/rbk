@@ -55,7 +55,7 @@ class APCU : private NoCopy {
 		}
 	}
 
-	std::string info() const;
+	[[nodiscard]] std::string info() const;
 
 	/**
 	 * @brief store will OVERWRITE IF IS FOUND
