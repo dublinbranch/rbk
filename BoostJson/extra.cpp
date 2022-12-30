@@ -161,10 +161,16 @@ QString QS(const boost::json::string& cry) {
 }
 
 QString QS(const boost::json::value* value) {
+	if (value->is_null()) {
+		return {};
+	}
 	return QS(value->as_string());
 }
 
 QString QS(const boost::json::value& value) {
+	if (value.is_null()) {
+		return {};
+	}
 	return QS(value.as_string());
 }
 
