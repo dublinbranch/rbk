@@ -66,6 +66,6 @@ void ExceptionV2::setMsg(const std::string& newMsg) {
 }
 
 const char* currentExceptionTypeName() {
-	int status;
-	return abi::__cxa_demangle(abi::__cxa_current_exception_type()->name(), 0, 0, &status);
+	int status = 0;
+	return abi::__cxa_demangle(abi::__cxa_current_exception_type()->name(), nullptr, 0, &status);
 }

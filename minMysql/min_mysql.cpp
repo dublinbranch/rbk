@@ -709,7 +709,7 @@ quint64 getId(const sqlResult& res) {
 	if (!res.isEmpty()) {
 		auto& line = res.at(0);
 		auto  iter = line.find(QBL("last_id"));
-		if (iter != line.end()) {
+		if (iter != line.endQt()) {
 			bool ok = false;
 			auto v2 = iter->toULongLong(&ok);
 			if (v2 > 0 && ok) {

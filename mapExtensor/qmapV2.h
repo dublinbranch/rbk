@@ -1,7 +1,7 @@
 #pragma once
 
-#include "rbk/QStacker/exceptionv2.h"
 #include "fmt/core.h"
+#include "rbk/QStacker/exceptionv2.h"
 #include "rbk/fmtExtra/customformatter.h"
 #include <QDate>
 #include <QMap>
@@ -17,6 +17,28 @@ class MissingKeyEX : public ExceptionV2 {
 template <class Key, class T>
 class QMapV2 : public QMap<Key, T> {
       public:
+	// https://www.kdab.com/qt-range-based-for-loops-and-structured-bindings/
+	using ParentMap = QMap<Key, T>;
+	auto begin() const {
+		return ParentMap::keyValueBegin();
+	}
+
+	auto end() const {
+		return ParentMap::keyValueEnd();
+	}
+
+	//We have just override the end method! we neet to supply another one to keep qt based find method working!
+	auto endQt() const {
+		return ParentMap::end();
+	}
+
+	//avoid triple {
+	using value_type = std::pair<const Key, T>;
+	QMapV2(std::initializer_list<value_type> map_init)
+	    : ParentMap(map_init) {
+	}
+
+	QMapV2() = default;
 	/**
 	 * use like
 	 * QMap x
@@ -36,11 +58,10 @@ class QMapV2 : public QMap<Key, T> {
 			bool     present = false;
 		};
 		auto iter = this->find(key);
-		if (iter == this->end()) {
+		if (iter == ParentMap::end()) {
 			return OK();
-		} else {
-			return OK{&iter.value(), true};
 		}
+		return OK{&iter.value(), true};
 	}
 
 	void get(const Key& key, T& val) const {
@@ -84,7 +105,7 @@ class QMapV2 : public QMap<Key, T> {
 	}
 
 	[[nodiscard]] const auto& operator[](const Key& k) const {
-		if (auto iter = this->find(k); iter != this->end()) {
+		if (auto iter = this->find(k); iter != this->endQt()) {
 			return *iter;
 		} else {
 			throw ExceptionV2(fmt::format("key {} not found in {}", k, __PRETTY_FUNCTION__));

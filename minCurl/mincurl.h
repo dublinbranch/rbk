@@ -12,16 +12,16 @@ class QString;
 using size_t = unsigned long int;
 
 struct CURLTiming {
-	double  totalTime      = 0;
-	double  dnsTime        = 0;
-	double  connTime       = 0;
-	double  appConnect     = 0;
-	double  preTransfer    = 0;
-	double  startTtransfer = 0;
-	double  speed          = 0;
-	double  trxByte        = 0;
-	QString print() const;
-	QString print2() const;
+	double     totalTime      = 0;
+	double     dnsTime        = 0;
+	double     connTime       = 0;
+	double     appConnect     = 0;
+	double     preTransfer    = 0;
+	double     startTtransfer = 0;
+	curl_off_t speed          = 0;
+	curl_off_t trxByte        = 0;
+	QString    print() const;
+	QString    print2() const;
 	CURLTiming() = default;
 	CURLTiming(CURL* curl);
 	void read(CURL* curl);

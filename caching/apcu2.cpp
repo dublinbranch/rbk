@@ -1,6 +1,7 @@
 #include "apcu2.h"
 #include "unistd.h"
 
+#include <cstdlib>
 #include <mutex>
 
 #include <boost/multi_index/hashed_index.hpp>
@@ -8,10 +9,14 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index_container.hpp>
 
+#include "rbk/filesystem/filefunction.h"
 #include "rbk/fmtExtra/includeMe.h"
+#include "rbk/serialization/QDataStreamer.h"
+
+#include <QDataStream>
+#include <rbk/mapExtensor/qmapV2.h>
 
 using namespace std;
-static APCU theAPCU;
 
 struct ByExpire {};
 struct ByKey {};
@@ -25,11 +30,25 @@ struct ApcuCache_index : indexed_by<
                              ordered_non_unique<
                                  tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, uint, expireAt)>> {};
 
-typedef multi_index_container<APCU::Row, ApcuCache_index> ApcuCache;
-ApcuCache                                                 cache;
-APCU::APCU() {
-	startedAt = QDateTime::currentSecsSinceEpoch();
+using ApcuCache = multi_index_container<APCU::Row, ApcuCache_index>;
+//this is deallocated at exit before the function is called, so we just manually manage it, no idea how to do the "correct" way
+static ApcuCache* cache = nullptr;
+
+static APCU theAPCU;
+using DiskMapType = QMapV2<std::string, APCU::DiskValue>;
+
+void diskSync() {
+	auto a = APCU::getInstance();
+	a->diskSyncInner();
+}
+
+APCU::APCU()
+    : startedAt(QDateTime::currentSecsSinceEpoch()) {
+
+	cache = new ApcuCache();
+	diskLoad();
 	new std::thread(&APCU::garbageCollector_F2, this);
+	std::atexit(diskSync);
 }
 
 APCU* APCU::getInstance() {
@@ -37,40 +56,46 @@ APCU* APCU::getInstance() {
 }
 
 std::any APCU::fetchInner(const std::string& key) {
-	auto& byKey = cache.get<ByKey>();
+	auto& byKey = cache->get<ByKey>();
 
 	std::shared_lock lock(innerLock);
 
-	if (auto iter = byKey.find(key); iter != cache.end()) {
-		
-			hits++;
-			return iter->value;
-		
+	if (auto iter = byKey.find(key); iter != cache->end()) {
+
+		hits++;
+		return iter->value;
+
 		//unlock and just relock is bad, as will leave a GAP!
 		//you should unlock, restart the operation under full lock, and than erase...
 		//who cares, in a few second the GC will remove the record anyways
 	}
 	miss++;
-	return std::any();
+	return {};
 }
 
-void APCU::storeInner(const std::string& _key, const std::any& _value, bool _overwrite, int ttl) {
-	auto& byKey = cache.get<ByKey>();
+void APCU::storeInner(const std::string& _key, const std::any& _value, bool overwrite_, int ttl) {
+	uint expireAt = 0;
+	if (ttl) {
+		expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
+	}
+	Row row(_key, _value, expireAt);
+	storeInner(row, overwrite_);
+}
+
+void APCU::storeInner(const Row& row, bool overwrite_) {
+	auto& byKey = cache->get<ByKey>();
 
 	std::unique_lock lock(innerLock);
 
-	if (auto iter = byKey.find(_key); iter != cache.end()) {
-		if (_overwrite) {
+	if (auto iter = byKey.find(row.key); iter != cache->end()) {
+		if (overwrite_) {
 			overwrite++;
 
-			auto old     = *iter;
-			old.value    = _value;
-			old.expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
-			byKey.replace(iter, Row(_key, _value, ttl));
+			byKey.replace(iter, row);
 		}
 	} else {
 		insert++;
-		cache.emplace(Row(_key, _value, ttl));
+		cache->insert(row);
 	}
 }
 
@@ -87,7 +112,7 @@ std::string APCU::info() const {
 		Delete:     {:>10} / {:>8.0f}s
 </pre>
 		)",
-	                           cache.size(), hits, hits / delta, miss, miss / delta, // 5
+	                           cache->size(), hits, hits / delta, miss, miss / delta, // 5
 	                           insert, insert / delta, overwrite, overwrite / delta, deleted, deleted / delta);
 	return msg;
 }
@@ -97,10 +122,10 @@ void throwTypeError(const type_info* found, const type_info* expected) {
 	throw ExceptionV2(QSL("Wrong type!! Found %1, expected %2, recheck where this key is used, maybe you have a collision").arg(found->name()).arg(expected->name()));
 }
 
-APCU::Row::Row(const std::string& _key, const std::any& _value, int ttl) {
-	key      = _key;
-	value    = _value;
-	expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
+APCU::Row::Row(const std::string& key_, const std::any& value_, int expireAt_) {
+	key      = key_;
+	value    = value_;
+	expireAt = expireAt_;
 }
 
 bool APCU::Row::expired() const {
@@ -108,37 +133,135 @@ bool APCU::Row::expired() const {
 }
 
 bool APCU::Row::expired(qint64 ts) const {
-	return ts > expireAt;
+	if (expireAt) {
+		return ts > expireAt;
+	}
+	return false;
+}
+
+void APCU::diskSyncInner() {
+	//stop garbageCollector_F2
+
+	requestGarbageCollectorStop.test_and_set();
+	garbageCollectorRunning.wait(true);
+
+	fmt::print("Start collecting data to write on disk\n");
+	DiskMapType      toBeWritten;
+	std::shared_lock lock(innerLock);
+
+	auto& byKey = cache->get<ByKey>();
+	for (auto& iter : byKey) {
+		if (!iter.persistent) {
+			continue;
+		}
+		try {
+			auto copy = any_cast<QByteArray>(iter.value);
+			toBeWritten.insert(iter.key, {iter.expireAt, copy});
+		} catch (std::bad_any_cast& e) {
+			(void)e;
+			fmt::print("key {} is not a QByteArray! \n", iter.key);
+		}
+	}
+
+	fmt::print("{} element to write\n", toBeWritten.size());
+
+	QFile file("apcu.dat");
+	file.open(QIODevice::WriteOnly);
+	QDataStream out(&file);
+	out << toBeWritten;
+	file.flush();
+	fmt::print("{} byte wrote\n", file.size());
+}
+
+void APCU::diskLoad() {
+	QFile file("apcu.dat");
+	if (!file.open(QIODevice::ReadOnly)) {
+		return;
+	}
+	QDataStream in(&file);
+	DiskMapType toBeWritten;
+
+	std::shared_lock lock(innerLock);
+	in >> toBeWritten;
+
+	fmt::print("APCU found {} element to reload\n", toBeWritten.size());
+
+	for (auto&& [key, line] : toBeWritten) {
+		APCU::Row row(key, line.value, line.expireAt);
+		//ofc if you reload something from disk it was born persistent!
+		row.persistent = true;
+		cache->emplace(row);
+	}
 }
 
 void APCU::garbageCollector_F2() {
-    //TODO On program exit stop this gc operation, else we will have double free problem
-	auto& byExpire = cache.get<ByExpire>();
+	//TODO On program exit stop this gc operation, else we will have double free problem
+	auto& byExpire = cache->get<ByExpire>();
+	garbageCollectorRunning.test_and_set();
 	while (true) {
+		if (requestGarbageCollectorStop.test()) {
+			break;
+		}
 		sleep(1);
+		if (requestGarbageCollectorStop.test()) {
+			break;
+		}
 		auto now = QDateTime::currentSecsSinceEpoch();
+		{
+			std::unique_lock lock(innerLock);
 
-		std::unique_lock lock(innerLock);
+			auto upper = byExpire.upper_bound(now);
+			//so we skip expire = 0
+			auto iter = byExpire.lower_bound(1);
 
-		auto upper = byExpire.upper_bound(now);
-		auto iter  = byExpire.begin();
-
-		while (true) {
-			//You can not have an OR condition in the for ?
-			auto b = iter == byExpire.end();
-			auto c = iter == upper;
-			if (b || c) {
-				break;
-			}
-			auto& row = *iter;
-			(void)row;
-			if (iter->expired(now)) {
-				iter = byExpire.erase(iter);
-				deleted++;
-				continue;
-			} else {
+			while (true) {
+				//You can not have an OR condition in the for ?
+				auto b = iter == byExpire.end();
+				auto c = iter == upper;
+				if (b || c) {
+					break;
+				}
+				auto& row = *iter;
+				(void)row;
+				if (iter->expired(now)) {
+					iter = byExpire.erase(iter);
+					deleted++;
+					continue;
+				}
 				iter++;
 			}
 		}
 	}
+	garbageCollectorRunning.clear();
+	garbageCollectorRunning.notify_one();
+}
+
+void apcuStore(const APCU::Row& row) {
+	auto a = APCU::getInstance();
+	a->storeInner(row, true);
+}
+
+FetchPodResult fetchPOD(const std::string& key) {
+	auto a   = APCU::getInstance();
+	auto res = a->fetchInner(key);
+	if (res.has_value()) {
+		return {any_cast<QByteArray>(res), true};
+	}
+	return {{}, false};
+}
+
+FetchPodResult fetchPOD(const QString& key) {
+	return fetchPOD(key.toStdString());
+}
+
+QDataStream& operator<<(QDataStream& out, const APCU::DiskValue& rhs) {
+	out << rhs.expireAt;
+	out << rhs.value;
+	return out;
+}
+
+QDataStream& operator>>(QDataStream& in, APCU::DiskValue& rhs) {
+	in >> rhs.expireAt;
+	in >> rhs.value;
+	return in;
 }

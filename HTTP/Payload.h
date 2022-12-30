@@ -3,13 +3,38 @@
 
 #include <map>
 #include <string>
+class Headers : public std::map<std::string, std::string> {
+      public:
+	/**
+	 * @brief setCookie https://www.php.net/manual/en/function.setcookie.php
+	 * @param name
+	 * @param value
+	 * @param ttl, after how much time will expire
+	 * #param sameSite, we are a backend, is normal we are called from other site
+	 *
+	 * @param path The path on the server in which the cookie will be available on. If set to '/', the cookie will be available within the entire domain.
+	        If set to '/foo/', the cookie will only be available within the /foo/ directory and all sub-directories such as /foo/bar/ of domain.
+	 * @param domain
+	        The (sub)domain that the cookie is available to.
+	        Setting this to a subdomain (such as 'www.example.com') will make the cookie available to that subdomain and all other sub-domains of it (i.e. w2.www.example.com).
+	        To make the cookie available to the whole domain (including all subdomains of it), simply set the value to the domain name ('example.com', in this case).
+	 * @param secure
+	 * @param httponly can't really see a valid reason to have default OFF
+	 */
+	//Not implemented const std::string& path, const std::string& domain, bool secure, bool httponly
+	void setCookie(const std::string& name,
+	               const std::string& value,
+	               uint               ttl,
+	               bool               sameSite = false);
+};
+
 struct Payload {
-	bool                               alreadySent = false;
-	unsigned                           statusCode  = 200;
-	std::string                        html;
-	std::string                        mime = "text/html";
-	std::map<std::string, std::string> headers;
-	void                               setStandardHeaders(bool addCors = true);
+	bool        alreadySent = false;
+	unsigned    statusCode  = 200;
+	std::string html;
+	std::string mime = "text/html";
+	Headers     headers;
+	void        setStandardHeaders(bool addCors = true);
 };
 
 #endif // PAYLOAD_H

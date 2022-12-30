@@ -9,9 +9,47 @@
 #include "rbk/misc/swapType.h"
 #include <map>
 
-template <typename K, typename V, typename Compare = std::less<K>>
-class mapV2 : public std::map<K, V, Compare> {
+//void callNotFoundCallback(const QString& key, const std::string location) {
+//	(void)key;
+//	(void)location;
+//}
+
+template <typename K>
+class NotFoundMixin {
       public:
+	using Funtor    = void (*)(const K& key);
+	NotFoundMixin() = default;
+	NotFoundMixin(Funtor f)
+	    : notFoundCallback(f){};
+
+	mutable Funtor notFoundCallback = nullptr;
+
+	void callNotFoundCallback(const K& key, const std::string location) const {
+		if (notFoundCallback) {
+			(*notFoundCallback)(key);
+			return;
+		}
+		throw ExceptionV2(fmt::format("key >>>{}<<< not found in {}", key, location));
+	}
+};
+
+template <typename K, typename V, typename Compare = std::less<K>>
+class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
+      public:
+	using value_type   = std::pair<const K, V>;
+	using map_parent   = std::map<K, V, Compare>;
+	using mixin_parent = NotFoundMixin<K>;
+
+	mapV2() = default;
+
+	mapV2(std::initializer_list<value_type> map_init)
+	    : map_parent(map_init) {
+	}
+
+	mapV2(std::initializer_list<value_type> map_init, typename mixin_parent::Funtor f)
+	    : map_parent(map_init), mixin_parent(f) {
+	}
+
 	struct Founded {
 		const V* val   = nullptr;
 		bool     found = false;
@@ -54,11 +92,22 @@ class mapV2 : public std::map<K, V, Compare> {
 		return false;
 	}
 
-	[[nodiscard]] auto rq(const K& k) const {
+	[[nodiscard]] V rq(const K& k) const {
 		if (auto iter = this->find(k); iter != this->end()) {
 			return iter->second;
 		}
-		throw ExceptionV2(fmt::format("key >>>{}<<< not found in {}", k, __PRETTY_FUNCTION__));
+		this->callNotFoundCallback(k, locationFull());
+		return {};
+	}
+
+	template <typename T, std::invocable<K> C>
+	[[nodiscard]] T rq(const K& k, C* callback) const {
+		if (auto v = get(k); v) {
+			return swapType<T>(*(v.val));
+		}
+		(*callback)(k);
+		//this line is normally never execute as the passed lambda supposedly throw a custom exception on miss
+		return {};
 	}
 
 	template <typename T>
@@ -84,14 +133,18 @@ class mapV2 : public std::map<K, V, Compare> {
 				return;
 			}
 		}
-		throw HttpException(QSL("Required parameter %1 is missing (or empty)").arg(keys.join(" or ")));
+		this->callNotFoundCallback(keys.join(" or "), locationFull());
+		return;
 	}
 
-	[[nodiscard]] auto& rqRef(const K& k) const {
+	[[nodiscard]] V& rqRef(const K& k) {
 		if (auto iter = this->find(k); iter != this->end()) {
 			return iter->second;
 		}
-		throw ExceptionV2(fmt::format("key >>>{}<<< not found in {}", k, __PRETTY_FUNCTION__));
+		this->callNotFoundCallback(k, locationFull());
+		//just to avoid the warning
+		static V v;
+		return v;
 	}
 
 	[[nodiscard]] auto take(const K& k) {
@@ -142,8 +195,22 @@ class mapV2 : public std::map<K, V, Compare> {
 };
 
 template <typename K, typename V>
-class multiMapV2 : public std::multimap<K, V> {
+class multiMapV2 : public NotFoundMixin<K>, public std::multimap<K, V> {
       public:
+	using value_type   = std::pair<const K, V>;
+	using map_parent   = std::map<K, V>;
+	using mixin_parent = NotFoundMixin<K>;
+
+	multiMapV2() = default;
+
+	multiMapV2(std::initializer_list<value_type> map_init)
+	    : map_parent(map_init) {
+	}
+
+	multiMapV2(std::initializer_list<value_type> map_init, typename mixin_parent::Funtor f)
+	    : map_parent(map_init), mixin_parent(f) {
+	}
+
 	/*
 	 * Use like
 	map2<int, string> bla;
@@ -175,7 +242,8 @@ class multiMapV2 : public std::multimap<K, V> {
 		if (auto iter = this->find(k); iter != this->end()) {
 			return iter->second;
 		}
-		throw ExceptionV2(fmt::format("key {} not found in {}", k, __PRETTY_FUNCTION__));
+		this->callNotFoundCallback(k, locationFull());
+		return V();
 	}
 
 	template <typename T>
@@ -185,11 +253,12 @@ class multiMapV2 : public std::multimap<K, V> {
 	}
 
 	template <typename T, typename C>
-	T rq(const K& k, C* callback) {
+	[[nodiscard]] T rq(const K& k, C* callback) const {
 		if (auto v = get(k); v) {
 			return swapType<T>(*(v.val));
 		}
 		(*callback)(k);
+
 		//this line is normally never execute as the passed lambda supposedly throw a custom exception on miss
 		return {};
 	}

@@ -3,7 +3,7 @@
 #include "sha.h"
 #include <QDateTime>
 
-std::string salt(size_t lenght, std::string) {
+std::string salt(std::string, size_t lenght) {
 	return saltQS(lenght).toStdString();
 }
 

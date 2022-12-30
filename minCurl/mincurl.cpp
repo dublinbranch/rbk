@@ -65,13 +65,13 @@ size_t STDWriter(void* contents, size_t size, size_t nmemb, std::string* userp) 
 
 CURLTiming curlTimer(CURLTiming& timing, CURL* curl) {
 	curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &timing.totalTime);
-	curl_easy_getinfo(curl, CURLINFO_SPEED_DOWNLOAD, &timing.speed);
+	curl_easy_getinfo(curl, CURLINFO_SPEED_DOWNLOAD_T, &timing.speed);
 	curl_easy_getinfo(curl, CURLINFO_NAMELOOKUP_TIME, &timing.dnsTime);
 	curl_easy_getinfo(curl, CURLINFO_CONNECT_TIME, &timing.connTime);
 	curl_easy_getinfo(curl, CURLINFO_APPCONNECT_TIME, &timing.appConnect);
 	curl_easy_getinfo(curl, CURLINFO_PRETRANSFER_TIME, &timing.preTransfer);
 	curl_easy_getinfo(curl, CURLINFO_STARTTRANSFER_TIME, &timing.startTtransfer);
-	curl_easy_getinfo(curl, CURLINFO_SIZE_DOWNLOAD, &timing.trxByte);
+	curl_easy_getinfo(curl, CURLINFO_SIZE_DOWNLOAD_T, &timing.trxByte);
 	return timing;
 }
 
