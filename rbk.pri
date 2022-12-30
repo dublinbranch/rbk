@@ -155,6 +155,7 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/BoostJson/extra.cpp \
+    $$PWD/HTTP/Payload.cpp \
 	$$PWD/asanOption.cpp \
     $$PWD/dateTime/util.cpp \
     $$PWD/hash/salt.cpp \
