@@ -1,7 +1,6 @@
 #ifndef PMFCGI_H
 #define PMFCGI_H
 
-#include "url.h"
 #include <QString>
 #include <QStringList>
 #include <map>

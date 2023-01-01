@@ -2,7 +2,7 @@
 #include "PMFCGI.h"
 #include "beastConfig.h"
 #include "rbk/HTTP/Payload.h"
-#include "rbk/QStacker/httpexception.h"
+#include "rbk/HTTP/url.h"
 #include "rbk/caching/apcu2.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/thread/tmonitoring.h"

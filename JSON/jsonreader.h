@@ -310,7 +310,7 @@ class JSONReader {
 		return type;
 	}
 
-	QByteArray subJsonRender(rapidjson::Value* el);
+	static QByteArray subJsonRender(rapidjson::Value* el);
 
 	QByteArray jsonRender();
 

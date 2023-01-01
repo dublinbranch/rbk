@@ -7,8 +7,8 @@
 class HttpException : public ExceptionV2 {
       public:
 	unsigned statusCode = 400;
-	// if set forced output to print
-	std::string forceErrMsg;
+	// if set forced output to be sent as html response
+	std::string httpErrMsg;
 
 	HttpException(QString _msg);
 	HttpException(std::string _msg);
