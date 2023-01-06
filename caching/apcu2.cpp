@@ -39,7 +39,7 @@ using DiskMapType = QMapV2<std::string, APCU::DiskValue>;
 
 void diskSync() {
 	auto a = APCU::getInstance();
-	a->diskSyncInner();
+	a->diskSyncP1();
 }
 
 APCU::APCU()
@@ -139,12 +139,7 @@ bool APCU::Row::expired(qint64 ts) const {
 	return false;
 }
 
-void APCU::diskSyncInner() {
-	//stop garbageCollector_F2
-
-	requestGarbageCollectorStop.test_and_set();
-	garbageCollectorRunning.wait(true);
-
+void APCU::diskSyncP2() {
 	fmt::print("Start collecting data to write on disk\n");
 	DiskMapType      toBeWritten;
 	std::shared_lock lock(innerLock);
@@ -171,6 +166,15 @@ void APCU::diskSyncInner() {
 	out << toBeWritten;
 	file.flush();
 	fmt::print("{} byte wrote\n", file.size());
+}
+
+void APCU::diskSyncP1() {
+	//stop garbageCollector_F2
+
+	requestGarbageCollectorStop.test_and_set();
+	garbageCollectorRunning.wait(true);
+
+	diskSyncP2();
 }
 
 void APCU::diskLoad() {
@@ -231,6 +235,8 @@ void APCU::garbageCollector_F2() {
 				iter++;
 			}
 		}
+		//WARNING FIXME REMOVE ME ONLY FOR DEBUG!
+		//diskSyncP2();
 	}
 	garbageCollectorRunning.clear();
 	garbageCollectorRunning.notify_one();
