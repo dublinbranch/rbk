@@ -106,6 +106,7 @@ HEADERS += \
     $$PWD/minMysql/DBConf.h \
     $$PWD/minMysql/sqlRow.h \
     $$PWD/misc/echo.h \
+    $$PWD/misc/ieee754.h \
     $$PWD/misc/swapType.h \
 	$$PWD/rand/clampednormaldistribution.h \
     $$PWD/JSON/JSONReaderConst.h \
@@ -162,6 +163,7 @@ SOURCES += \
     $$PWD/hash/sha.cpp \
 	$$PWD/locale/codes.cpp \
     $$PWD/misc/echo.cpp \
+    $$PWD/misc/ieee754.cpp \
 	$$PWD/rand/clampednormaldistribution.cpp \
     $$PWD/JSON/jsonreader.cpp \
     $$PWD/SpaceShipOP/implementation.cpp \
