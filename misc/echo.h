@@ -4,6 +4,6 @@
 #include <string_view>
 void echo(const std::string& s);
 void echo(const std::string_view s);
-void warn(std::string& msg);
-void critical(std::string& msg);
+void warn(const std::string &msg);
+void critical(const std::string &msg);
 

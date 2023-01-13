@@ -10,13 +10,13 @@ void echo(const std::string& s) {
 	fmt::print("{}\n", s);
 }
 
-void warn(std::string& msg) {
+void warn(const std::string& msg) {
 	QByteArray q;
 	q.setRawData(msg.data(), msg.size());
 	qDebug().noquote() << q;
 }
 
-void critical(std::string& msg) {
+void critical(const std::string& msg) {
 	QByteArray q;
 	q.setRawData(msg.data(), msg.size());
 	qDebug().noquote() << q;
