@@ -76,7 +76,8 @@ class APCU : private NoCopy {
 		QByteArray value;
 	};
 
-	void diskSyncInner();
+	void diskSyncP2();
+	void diskSyncP1();
 	void diskLoad();
 
 	//1 overwrite will NOT trigger 1 delete and 1 inserted
