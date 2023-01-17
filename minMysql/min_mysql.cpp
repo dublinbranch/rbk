@@ -21,6 +21,7 @@
 #include <mutex>
 #include <poll.h>
 #include <unistd.h>
+#include "rbk/misc/b64.h"
 
 extern thread_local ThreadStatus::Status* localThreadStatus;
 
