@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mixin/NoCopy.h"
+
 /**
  *small helper class used to set and reset to initial value call like
  *ResetAfterUse r{rapidAssertEnabled, false};
@@ -55,15 +57,26 @@ class SetOnExit {
 
 #include <utility>
 template <typename F>
-struct OnExit {
+struct OnExit : public NoCopy {
 	F func;
-	OnExit(F&& f)
+	explicit OnExit(F&& f)
 	    : func(std::forward<F>(f)) {
 	}
 	~OnExit() {
+		if (doNotCall) {
+			return;
+		}
 		func();
 	}
+	//do not call any longer
+	void reset() {
+		doNotCall = true;
+	}
+
+      private:
+	bool doNotCall = false;
 };
 
-template <typename F>
-OnExit(F&& frv) -> OnExit<F>;
+//What is that ???
+//template <typename F>
+//OnExit(F&& frv) -> OnExit<F>;

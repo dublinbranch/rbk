@@ -18,13 +18,19 @@ QString demangle(const char* name) {
 	}
 }
 
-QByteArray JSONReader::subJsonRender(rapidjson::Value* el) {
+QByteArray JSONReader::subJsonRender(rapidjson::Value* el, bool pretty) {
 	// https://github.com/Tencent/rapidjson/issues/1035
 
-	StringBuffer               sb;
-	PrettyWriter<StringBuffer> writer(sb);
-	el->Accept(writer);
-	return sb.GetString();
+	StringBuffer buffer;
+	if (pretty) {
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+		el->Accept(writer);
+		return {buffer.GetString(), static_cast<int>(buffer.GetSize())};
+	} else {
+		PrettyWriter<StringBuffer> writer(buffer);
+		el->Accept(writer);
+		return {buffer.GetString(), static_cast<int>(buffer.GetSize())};
+	}
 
 	// OLD
 	//		auto&               allocator = json.GetAllocator();
