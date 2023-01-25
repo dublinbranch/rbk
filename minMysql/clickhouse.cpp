@@ -1,10 +1,12 @@
 #include "clickhouse.h"
+#include "ClickHouseException.h"
 #include "min_mysql.h"
 #include "rbk/QStacker/qstacker.h"
-#include "rbk/RAII//resetAfterUse.h"
-#include "rbk/defines//stringDefine.h"
-#include "rbk/filesystem//filefunction.h"
-#include "rbk/thread//threadstatush.h"
+#include "rbk/RAII/resetAfterUse.h"
+#include "rbk/defines/stringDefine.h"
+#include "rbk/filesystem/filefunction.h"
+#include "rbk/misc/b64.h"
+#include "rbk/thread/threadstatush.h"
 #include <QDateTime>
 #include <QDebug>
 
@@ -54,7 +56,11 @@ CurlCallResult ClickHouse::query(const QString& sql) {
 	return res;
 }
 
-QString composeSql(const QString& table, const CHParam& param, bool extendedInsert) {
+QString CHParam::composeSql(const std::string& table, bool extendedInsert) {
+	return composeSql(QString::fromStdString(table), extendedInsert);
+}
+
+QString CHParam::composeSql(const QString& table, bool extendedInsert) {
 	if (table.isEmpty()) {
 		return QString();
 	}
@@ -62,8 +68,8 @@ QString composeSql(const QString& table, const CHParam& param, bool extendedInse
 	if (extendedInsert) {
 		QString     sql = "INSERT INTO " + table + " SET \n";
 		QStringList part;
-		for (const auto& row : param) {
-			part << row.first + "=" + row.second;
+		for (auto& [key, value] : *this) {
+			part << '`' + key + "`=" + value;
 		}
 		sql += part.join(",") + ";";
 		return sql;
@@ -71,8 +77,8 @@ QString composeSql(const QString& table, const CHParam& param, bool extendedInse
 		QString     sql = "INSERT INTO " + table + "\n(";
 		QStringList key;
 		QStringList value;
-		for (const auto& row : param) {
-			key << row.first;
+		for (const auto& row : *this) {
+			key << '`' + row.first + '`';
 			value << row.second;
 		}
 		sql += key.join(',') + ")\nVALUES\n(" + value.join(',') + ")";
@@ -118,7 +124,7 @@ void CHParam::insert(const QString& q, const QString& v, Escape escape) {
 		return;
 
 	case base64:
-		mapV2::insert({q, base64this(v)});
+		mapV2::insert({q, base64Nullable(v)});
 		return;
 	}
 }
