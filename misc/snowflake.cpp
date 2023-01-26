@@ -29,7 +29,7 @@ void Snowflake::fromUint(const u_int64_t v) {
 	ts    = (v & tsX.mask) >> tsX.pad;
 }
 
-bool Snowflake::operator==(const Snowflake& j) {
+bool Snowflake::operator==(const Snowflake& j) const {
 	auto a = ts == j.ts;
 	auto b = ts == j.ts;
 	auto c = ts == j.ts;
