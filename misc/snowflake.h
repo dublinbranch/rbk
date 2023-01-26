@@ -19,7 +19,7 @@ class Snowflake : public NoCopy {
 	u64  toUint() const;
 	void fromUint(const u64 v);
 
-	bool operator==(const Snowflake& j);
+	bool operator==(const Snowflake& j) const;
 
       private:
 	struct Adp {
