@@ -4,6 +4,8 @@
 #include "rbk/mapExtensor/qmapV2.h"
 #include "rbk/misc/swapType.h"
 
+//TODO move to mapV2 as most of the stuff here is now duplicated
+
 class sqlRow : public QMapV2<QByteArray, QByteArray> {
       public:
 	bool fromCache = false;

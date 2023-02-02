@@ -1,10 +1,8 @@
 #ifndef CLICKHOUSE_H
 #define CLICKHOUSE_H
 
-#include "ClickHouseException.h"
 #include "rbk/mapExtensor/mapV2.h"
 #include "rbk/minCurl/mincurl.h"
-#include "rbk/misc/b64.h"
 #include <QByteArray>
 #include <QString>
 #include <QVariant>
@@ -21,6 +19,7 @@ class ClickHouse {
 	QString     logFolder;
 };
 
+//TODO this can probably be used also for MYSQL, rename and move in a separated header
 class CHParam : public mapV2<QString, QString> {
       public:
 	enum Escape {
@@ -40,10 +39,11 @@ class CHParam : public mapV2<QString, QString> {
 
 	void insert(const QString& q, const QString& v, Escape escape = Escape::base64);
 
-	void insert(const QString& q, const std::string v, Escape escape = Escape::base64);
+	void    insert(const QString& q, const std::string v, Escape escape = Escape::base64);
+	QString composeSql(const std::string& table, bool extendedInsert = false);
+	QString composeSql(const QString& table, bool extendedInsert = false);
 };
 
-QString composeSql(const QString& table, const CHParam& param, bool extendedInsert = false);
 QString toIpV6ForClickHouse(const QString& ip);
 
 #endif // CLICKHOUSE_H
