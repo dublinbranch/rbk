@@ -146,7 +146,6 @@ void handle_request(
 				throw ExceptionV2(QSL("Invalid utf8 in the PATH %1").arg(base64this(status.path)));
 			}
 
-			//check for the body (a POST) are done later
 			status.body = req.body();
 
 			for (auto& h : req.base()) {

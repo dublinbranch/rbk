@@ -21,10 +21,10 @@ const std::string HttpException::getLogFile() const noexcept {
 }
 
 void HttpException::HttpParamErrorHandler1(const QString& key) {
-	std::string   msg = key.toStdString() + " is not set and is required!";
+	std::string   msg = ">>>" + key.toStdString() + "<<< is not set and is required!";
 	HttpException e(msg);
 	e.httpErrMsg = msg;
-	e.statusCode  = 200;
+	e.statusCode = 200;
 
 	throw e;
 }
