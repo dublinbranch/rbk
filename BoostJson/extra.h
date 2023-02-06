@@ -9,7 +9,6 @@ class QString;
 class QByteArray;
 
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, QString const& t);
-
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, QByteArray const& t);
 
 template <isEnum T>
@@ -28,4 +27,4 @@ QString QS(const boost::json::value& value);
 class sqlRow;
 boost::json::value asNull(const sqlRow& row, std::string_view key);
 
-bool insertIfNotNull(boost::json::object &target, const sqlRow& row, std::string_view key);
+bool insertIfNotNull(boost::json::object& target, const sqlRow& row, std::string_view key);

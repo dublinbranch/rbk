@@ -108,6 +108,7 @@ HEADERS += \
     $$PWD/misc/echo.h \
     $$PWD/misc/ieee754.h \
     $$PWD/misc/swapType.h \
+    $$PWD/misc/typename.h \
 	$$PWD/rand/clampednormaldistribution.h \
     $$PWD/JSON/JSONReaderConst.h \
     $$PWD/JSON/jsonreader.h \
@@ -164,6 +165,7 @@ SOURCES += \
 	$$PWD/locale/codes.cpp \
     $$PWD/misc/echo.cpp \
     $$PWD/misc/ieee754.cpp \
+    $$PWD/misc/typename.cpp \
 	$$PWD/rand/clampednormaldistribution.cpp \
     $$PWD/JSON/jsonreader.cpp \
     $$PWD/SpaceShipOP/implementation.cpp \

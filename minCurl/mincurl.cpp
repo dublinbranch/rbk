@@ -202,6 +202,12 @@ CurlCallResult urlPostContent(const QByteArray& url, const QByteArray post, bool
 		curl_easy_setopt(useMe, CURLOPT_TIMEOUT, 60); // 1 minute, if you do not like use you own curl
 	}
 
+	if (post.isEmpty()) {
+		curl_easy_setopt(useMe, CURLOPT_CUSTOMREQUEST, "POST");
+	} else {
+		curl_easy_setopt(useMe, CURLOPT_POSTFIELDS, post.constData());
+	}
+
 	// all those are needed
 	curl_easy_setopt(useMe, CURLOPT_URL, url.constData());
 
@@ -215,8 +221,6 @@ CurlCallResult urlPostContent(const QByteArray& url, const QByteArray post, bool
 	curl_easy_setopt(useMe, CURLOPT_SSL_VERIFYHOST, 0);
 
 	curl_easy_setopt(useMe, CURLOPT_ERRORBUFFER, errbuf);
-
-	curl_easy_setopt(useMe, CURLOPT_POSTFIELDS, post.constData());
 
 	result.errorCode = curl_easy_perform(useMe);
 	result.errorMsg  = errbuf;
@@ -365,6 +369,14 @@ void CurlForm::add(const QByteArray& name, const QByteArray& value) {
 	field                = curl_mime_addpart(form);
 	curl_mime_name(field, name);
 	curl_mime_data(field, value, CURL_ZERO_TERMINATED);
+}
+
+void CurlForm::add(const std::string& name, const std::string& value) {
+	// form 1
+	curl_mimepart* field = nullptr;
+	field                = curl_mime_addpart(form);
+	curl_mime_name(field, name.c_str());
+	curl_mime_data(field, value.c_str(), CURL_ZERO_TERMINATED);
 }
 
 void CurlForm::connect() {

@@ -2,6 +2,7 @@
 #define SWAPTYPE_H
 #include "rbk/defines/stringDefine.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
+#include "rbk/misc/typename.h"
 #include <QByteArray>
 #include <QDate>
 #include <QDateTime>
@@ -48,7 +49,8 @@ void swapType(const QByteArray& source, D& dest) {
 				dest = 0;
 				return;
 			}
-			throw ExceptionV2(QSL("Impossible to convert >>>%1<<< as a number").arg(QString(source)));
+			//dest
+			throw ExceptionV2(QSL("Impossible to convert >>>%1<<< as a %2").arg(QString(source)).arg(QString::fromStdString(typeName<D>())));
 		}
 	} else {
 		// poor man static assert that will also print for which type it failed

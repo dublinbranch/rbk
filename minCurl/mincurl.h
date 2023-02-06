@@ -70,8 +70,9 @@ class CurlForm : private NoCopy {
 	curl_mime* get() const;
 
 	void add(const QString& name, const QString& value);
-
 	void add(const QByteArray& name, const QByteArray& value);
+	void add(const std::string& name, const std::string& value);
+
 	void connect();
 	~CurlForm();
 
