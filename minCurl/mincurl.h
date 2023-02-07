@@ -152,7 +152,8 @@ CurlCallResult urlGetContent2(const QByteArray& url, bool quiet = false, CURL* c
 CurlCallResult urlGetContent2(const QString& url, bool quiet = false, CURL* curl = nullptr);
 CurlCallResult urlGetContent2(const char* url, bool quiet = false, CURL* curl = nullptr);
 // TODO rifare la funzione e ritornare un oggetto composito per sapere se è andato a buon fine
-CurlCallResult urlPostContent(const QByteArray& url, const QByteArray post, bool quiet = false, CURL* curl = nullptr);
+CurlCallResult urlPostContent(const QByteArray& url, const QByteArray& post, bool quiet = false, CURL* curl = nullptr);
+CurlCallResult urlPostContent(const std::string& url, const std::string& post, bool quiet = false, CURL* curl = nullptr);
 
 template <typename T1, typename T2>
 CurlCallResult urlGetCached(const T1& url, const T2 fileName, bool on, bool quiet = false, CURL* curl = nullptr) {

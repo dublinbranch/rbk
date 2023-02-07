@@ -85,6 +85,11 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 
 	template <typename D>
+	bool getIfNotNull(const QByteArray& key, D& dest) const {
+		return getIfNotNull(key, dest, dest);
+	}
+
+	template <typename D>
 	D get2(const QByteArray& key) const {
 		QByteArray temp;
 		D          temp2;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mixin/NoCopy.h"
+#include "../mixin/NoCopy.h"
 
 /**
  *small helper class used to set and reset to initial value call like

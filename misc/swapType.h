@@ -30,10 +30,7 @@ void swapType(const QByteArray& source, D& dest) {
 		auto s = source.toStdString();
 		magic_enum::fromString(s, dest);
 		return;
-	} else if constexpr (isBetterEnum<D>) {
-#warning "IMPLEMENT ME"
-		//TODO fill me
-
+		//} else if constexpr (isBetterEnum<D>) {
 	} else if constexpr (std::is_arithmetic_v<D>) {
 		bool ok = false;
 		if constexpr (std::is_floating_point_v<D>) {

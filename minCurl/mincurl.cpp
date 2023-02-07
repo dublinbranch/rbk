@@ -193,7 +193,11 @@ CURL* CurlKeeper::get() const {
 	return header;
 }
 
-CurlCallResult urlPostContent(const QByteArray& url, const QByteArray post, bool quiet, CURL* curl) {
+CurlCallResult urlPostContent(const std::string& url, const std::string& post, bool quiet, CURL* curl) {
+	return urlPostContent(QByteArray::fromRawData(url.c_str(), url.size()), QByteArray::fromRawData(post.c_str(), post.size()), quiet, curl);
+}
+
+CurlCallResult urlPostContent(const QByteArray& url, const QByteArray& post, bool quiet, CURL* curl) {
 	CurlCallResult result;
 	char           errbuf[CURL_ERROR_SIZE] = {0};
 	CURL*          useMe                   = curl;
@@ -380,6 +384,7 @@ void CurlForm::add(const std::string& name, const std::string& value) {
 }
 
 void CurlForm::connect() {
+	//FIRSTTIMER add a check if destructor is called and the form is not used.
 	curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
 }
 
