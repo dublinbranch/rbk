@@ -54,8 +54,12 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	QDateTime asDateTime(const QByteArray& key) const;
 
 	template <typename D>
-	[[deprecated("use rq")]] void get2(const QByteArray& key, D& dest) const {
-		rq(key, dest);
+	bool get2(const QByteArray& key, D& dest) const {
+		if (auto v = this->fetch(key); v) {
+			swapType(*v.value, dest);
+			return true;
+		}
+		return false;
 	}
 
 	// To avoid conversion back and forth QBytearray of the default value and the his result
