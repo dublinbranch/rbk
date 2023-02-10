@@ -247,9 +247,15 @@ class multiMapV2 : public NotFoundMixin<K>, public std::multimap<K, V> {
 	}
 
 	template <typename T>
-	T rq(const K& k) {
+	T rq(const K& k) const {
 		auto v = rq(k);
 		return swapType<T>(v);
+	}
+
+	template <typename T>
+	void rq(const K& k, T& t) const {
+		auto v = rq(k);
+		swapType(v, t);
 	}
 
 	template <typename T, typename C>

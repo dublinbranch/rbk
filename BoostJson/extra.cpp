@@ -2,11 +2,14 @@
 //one off include to compile what is needed and avoid linking external stuff
 #include <boost/json/src.hpp>
 
+#include "rbk/fmtExtra/includeMe.h"
 #include "rbk/minMysql/sqlRow.h"
 #include <QByteArray>
 #include <QString>
 
 using namespace std;
+namespace bj = boost::json;
+using namespace std::string_literals;
 
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QString& t) {
 	jv = t.toStdString();
@@ -183,4 +186,25 @@ bool insertIfNotNull(boost::json::object& target, const sqlRow& row, std::string
 	}
 	target[key] = v.toStdString();
 	return true;
+}
+
+void pushCreate(boost::json::object& value, std::string_view key, const boost::json::value& newValue) {
+	if (auto array = value.if_contains(key); array) {
+		if (!array->is_array()) {
+			throw ExceptionV2(string("this is not an array!").append(key));
+		}
+		array->as_array().push_back(newValue);
+	} else {
+		value[key] = bj::array{newValue};
+	}
+}
+
+json::value parseJson(std::string_view json) {
+	//Todo add the check at which position the error happened
+	bj::error_code ec;
+	auto           js = bj::parse(json, ec);
+	if (ec) {
+		throw ExceptionV2(F("impossible to decode {}\nError is {}", json, ec.message()));
+	}
+	return js;
 }

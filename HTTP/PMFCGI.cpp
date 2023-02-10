@@ -128,13 +128,15 @@ void Payload::setStandardHeaders(bool addCors) {
 multiMapV2<QString, QString> decodePost(const std::string& form) {
 	multiMapV2<QString, QString> res;
 	auto                         copy = QString::fromStdString(form);
-	auto                         rows = copy.splitRef('&');
+	auto                         rows = copy.split('&');
 	for (auto& row : rows) {
 		auto pair = row.split('=');
 		if (pair.size() != 2) {
 			throw HttpException("invalid line in post" + row);
 		}
-		res.insert({pair[0].toString(), pair[1].toString()});
+		auto t1 = QByteArray::fromPercentEncoding(pair[1].toUtf8());
+		t1.replace("+", " ");
+		res.insert({pair[0], t1});
 	}
 	return res;
 }
