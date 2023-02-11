@@ -286,3 +286,11 @@ defined(HAS_QT_NETWORK, var) {
 	HEADERS += $$PWD/qhostaddress.h 
 	SOURCES += $$PWD/qhostaddress.cpp 
 }
+
+
+#Mustache
+INCLUDEPATH += $$PWD/mustache/
+SOURCES += \
+    $$PWD/mustache/renderer.cpp
+
+HEADERS += $$PWD/mustache/boost/mustache.hpp
