@@ -44,6 +44,9 @@ void diskSync() {
 
 APCU::APCU()
     : startedAt(QDateTime::currentSecsSinceEpoch()) {
+	if (disableAPCU) {
+		return;
+	}
 
 	cache = new ApcuCache();
 	diskLoad();

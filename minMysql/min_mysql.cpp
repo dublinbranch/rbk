@@ -7,6 +7,7 @@
 #include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/customformatter.h"
 #include "rbk/hash/sha.h"
+#include "rbk/misc/b64.h"
 #include "rbk/serialization/serialize.h"
 #include "rbk/thread/threadstatush.h"
 #include "utilityfunctions.h"
@@ -21,7 +22,6 @@
 #include <mutex>
 #include <poll.h>
 #include <unistd.h>
-#include "rbk/misc/b64.h"
 
 extern thread_local ThreadStatus::Status* localThreadStatus;
 
@@ -901,31 +901,46 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 	res.reserve(512);
 
 	auto conn = getConn();
-	// If you batch more than two select, you are crazy, just the first one will be returned and you will be in bad situation later
+	// If you batch more than two select, you are crazy, it is POSSIBLE, but there are SCARCE real use case for it,
+	// and will just break this library logic / will require much more metadata and a custom fetchResult
+	// just the first one will be returned and you will be in bad situation later
 	// this iteration is just if you batch mulitple update, result is NULL, but mysql insist that you fetch them...
+	bool         first      = true;
+	unsigned int num_fields = 0;
+	MYSQL_FIELD* fields     = nullptr;
 	do {
 		// swap the whole result set we do not expect 1Gb+ result set here
 		MYSQL_RES* result = mysql_store_result(conn);
 
-		if (result != nullptr) {
+		if (result) {
+			if (first) {
+				first      = false;
+				num_fields = mysql_num_fields(result);
+				fields     = mysql_fetch_fields(result);
+				for (uint16_t i = 0; i < num_fields; i++) {
+					auto& field = fields[i];
+					res.types.insert({field.name, field.type});
+				}
+			}
+
 			my_ulonglong row_count = mysql_num_rows(result);
 			for (uint j = 0; j < row_count; j++) {
-				MYSQL_ROW    row        = mysql_fetch_row(result);
-				auto         num_fields = mysql_num_fields(result);
-				MYSQL_FIELD* fields     = mysql_fetch_fields(result);
-				sqlRow       thisItem;
-				auto         lengths = mysql_fetch_lengths(result);
+				MYSQL_ROW row = mysql_fetch_row(result);
+
+				sqlRow thisItem;
+				auto   lengths = mysql_fetch_lengths(result);
 				for (uint16_t i = 0; i < num_fields; i++) {
+					auto& field = fields[i];
 					// this is how sql NULL is signaled, instead of having a wrapper and check ALWAYS before access, we normally just ceck on result swap if a NULL has any sense here or not.
 					// Plus if you have the string NULL in a DB you are really looking for trouble
 					if (row[i] == nullptr && lengths[i] == 0) {
 						if (state.get().NULL_as_EMPTY) {
-							thisItem.insert(fields[i].name, QByteArray());
+							thisItem.insert(field.name, QByteArray());
 						} else {
-							thisItem.insert(fields[i].name, BSQL_NULL);
+							thisItem.insert(field.name, BSQL_NULL);
 						}
 					} else {
-						thisItem.insert(fields[i].name, QByteArray(row[i], static_cast<int>(lengths[i])));
+						thisItem.insert(field.name, QByteArray(row[i], static_cast<int>(lengths[i])));
 					}
 				}
 				res.push_back(thisItem);
@@ -1241,4 +1256,23 @@ QStringList getIdList(const sqlResult& sqlRes, const QString& idName) {
 		rangeIdList.push_back(id);
 	}
 	return rangeIdList;
+}
+
+MyType::MyType(enum_field_types& t) {
+	type = t;
+}
+
+bool MyType::isNumeric() const {
+	return IS_NUM(type);
+}
+
+bool MyType::isFloat() const {
+	switch (type) {
+	case enum_field_types::MYSQL_TYPE_DECIMAL:
+	case enum_field_types::MYSQL_TYPE_DOUBLE:
+	case enum_field_types::MYSQL_TYPE_FLOAT:
+		return true;
+	default:
+		return false;
+	}
 }

@@ -24,10 +24,9 @@ class NotFoundMixin {
 
 	mutable Funtor notFoundCallback = nullptr;
 
-	void callNotFoundCallback(const K& key, const std::string location) const {
+	[[noreturn]] void callNotFoundCallback(const K& key, const std::string location) const {
 		if (notFoundCallback) {
 			(*notFoundCallback)(key);
-			return;
 		}
 		throw ExceptionV2(fmt::format("key >>>{}<<< not found in {}", key, location));
 	}
@@ -97,7 +96,6 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 			return iter->second;
 		}
 		this->callNotFoundCallback(k, locationFull());
-		return {};
 	}
 
 	template <typename T, std::invocable<K> C>
@@ -106,8 +104,6 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 			return swapType<T>(*(v.val));
 		}
 		(*callback)(k);
-		//this line is normally never execute as the passed lambda supposedly throw a custom exception on miss
-		return {};
 	}
 
 	template <typename T>
