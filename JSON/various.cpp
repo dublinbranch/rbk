@@ -1,8 +1,8 @@
 #include "various.h"
-#include "rapidjson/cursorstreamwrapper.h"
-#include "rapidjson/includeMe.h"
-#include "rapidjson/pointer.h"
-#include "rapidjson/prettywriter.h"
+#include "rbk/rapidjson/cursorstreamwrapper.h"
+#include "rbk/rapidjson/includeMe.h"
+#include "rbk/rapidjson/pointer.h"
+#include "rbk/rapidjson/prettywriter.h"
 #include <QDebug>
 #define QSL(str) QStringLiteral(str)
 

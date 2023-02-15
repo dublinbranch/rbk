@@ -37,4 +37,12 @@ void pushCreate(boost::json::object& value, std::string_view key, const T& newVa
 	pushCreate(value, key, boost::json::value_from(newValue));
 }
 
-boost::json::value parseJson(std::string_view json);
+struct JsonRes {
+	boost::json::value json;
+	//if position is set, it means there was an error and this is the position
+	uint                    position = 0;
+	boost::json::error_code ec;
+};
+
+JsonRes parseJson(const QByteArray& json);
+JsonRes parseJson(std::string_view json);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rapidjson/includeMe.h"
+#include "rbk/rapidjson/includeMe.h"
 #include "various.h"
 #include <QByteArray>
 #include <QString>

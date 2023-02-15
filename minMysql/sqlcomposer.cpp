@@ -1,53 +1,66 @@
 #include "sqlcomposer.h"
+#include "min_mysql.h"
 
-QString SScol::assemble(int padding) const {
-	QString final = key.leftJustified(padding) + QSL("= ");
-	if (aritmetic) {
-		return final + val;
-	} else {
-		return final + mayBeBase64(val);
-	}
+using namespace std;
+
+SqlComposer::SqlComposer(DB* db_, bool forInsert_) {
+	db        = db_;
+	forInsert = forInsert_;
 }
 
 void SqlComposer::push(const SScol& col) {
 	//This is just to showcase the usage of a lamba, in this case a normal for loop would probably have been easier
 	auto comp = [&](const SScol& a) {
-		if (a.getKey() == col.getKey()) {
+		if (a.key == col.key) {
 			return true;
 		}
 		return false;
 	};
 
-	auto iter = std::find_if(
-	    vector.begin(),
-	    vector.end(),
-	    comp);
+	{
+		auto iter = std::find_if(
+		    begin(),
+		    end(),
+		    comp);
 
-	if (iter != vector.end()) {
-		throw QSL("you are inserting twice the same KEY: %1, current value is %2, previous value was %3\n").arg(col.getKey(), col.getVal(), iter->getVal());
+		if (iter != end()) {
+			throw ExceptionV2(F("you are inserting twice the same KEY: {}, current value is {}, previous value was {}\n", col.key, col.val, iter->val));
+		}
 	}
 
-	vector.push_back(col);
-	auto s     = col.getKey().size();
-	longestKey = std::max(longestKey, s);
+	push_back(col);
+	//in padding and readability we forever trust
+	longestKey = std::max(longestKey, col.key.size());
+	longestVal = std::max(longestVal, col.val.size());
 }
 
-QString SqlComposer::compose() const {
+std::string SqlComposer::compose() const {
 	//In padding we trust
 
-	QString final;
+	string final = " SET \n";
 	final.reserve(16000);
-	for (auto iter = vector.begin(); iter != vector.end() - 1; ++iter) {
-		final += iter->assemble(longestKey + 1) + QSL(",\n");
+	//plain fmt::join is not enought here
+	bool first = true;
+	for (auto&& [math, key, val] : *this) {
+		string t;
+		if (math) {
+			t = val;
+		} else {
+			t = "'"s + db->escape(val) + "'"s;
+		}
+		t = F("{:>{}}", t, longestVal);
+
+		if (first) {
+			first = false;
+			final += F(" {:>{}} = {} \n"s, key, longestKey, t);
+		} else {
+			final += F(",{:>{}} = {} \n"s, key, longestKey, t);
+		}
 	}
-	final += vector.back().assemble(longestKey + 1) + QSL("\n");
 	return final;
 }
-
-QString SScol::getKey() const {
-	return key;
-}
-
-QString SScol::getVal() const {
-	return val;
-}
+//	for (auto iter = vector.begin(); iter != vector.end() - 1; ++iter) {
+//		final += iter->assemble(longestKey + 1) + QSL(",\n");
+//	}
+//	final += vector.back().assemble(longestKey + 1) + QSL("\n");
+//	return final;

@@ -92,7 +92,9 @@ DISTFILES += \
 	$$PWD/SpaceShipOP/LICENSE.md \
 	$$PWD/SpaceShipOP/README.md \
 	$$PWD/SpaceShipOP/qspaceship.pri \
-	$$PWD/minCurl/README.md
+	$$PWD/minCurl/README.md \
+	$$PWD/minMysql/README.md \
+	$$PWD/minMysql/minMysql.pri
 
 HEADERS += \
     $$PWD/BoostJson/extra.h \
@@ -105,6 +107,7 @@ HEADERS += \
 	$$PWD/locale/codes.h \
     $$PWD/minMysql/DBConf.h \
     $$PWD/minMysql/sqlRow.h \
+    $$PWD/minMysql/sqlcomposer.h \
     $$PWD/misc/echo.h \
     $$PWD/misc/ieee754.h \
     $$PWD/misc/swapType.h \
@@ -163,6 +166,7 @@ SOURCES += \
     $$PWD/hash/salt.cpp \
     $$PWD/hash/sha.cpp \
 	$$PWD/locale/codes.cpp \
+    $$PWD/minMysql/sqlcomposer.cpp \
     $$PWD/misc/echo.cpp \
     $$PWD/misc/ieee754.cpp \
     $$PWD/misc/typename.cpp \
@@ -212,6 +216,8 @@ HEADERS += \
     $$PWD/QStacker/exceptionv2.h \
     $$PWD/QStacker/httpexception.h \
     $$PWD/QStacker/qstacker.h 
+
+INCLUDEPATH += $$PWD/rapidjson/
 
 SOURCES += $$PWD/rapidjson/rapidAssert.cpp 
 HEADERS += $$PWD/rapidjson/includeMe.h

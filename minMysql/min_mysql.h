@@ -2,7 +2,7 @@
 
 #include "DBConf.h"
 #include "MITLS.h"
-#include "mapExtensor/mapV2.h"
+#include "rbk/mapExtensor/mapV2.h"
 #include "sqlRow.h"
 #include <QDateTime>
 #include <QDebug>
@@ -127,9 +127,10 @@ class DB {
 	// This is to be used ONLY in case the query can have deadlock, and internally tries multiple times to insert data
 	sqlResult queryDeadlockRepeater(const QByteArray& sql, uint maxTry = 5) const;
 
-	void    pingCheck(st_mysql*& conn) const;
-	QString escape(const QString& what) const;
-	bool    isSSL() const;
+	void        pingCheck(st_mysql*& conn) const;
+	QString     escape(const QString& what) const;
+	std::string escape(const std::string& what) const;
+	bool        isSSL() const;
 	/**
 	  Those 2 are used toghether for the ASYNC mode
 	 * @brief startQuery

@@ -1,51 +1,56 @@
 #pragma once
 
-#include "min_mysql.h"
-#include <QList>
-#include <QString>
+#include "rbk/fmtExtra/includeMe.h"
 
 class SScol {
       public:
 	SScol() = default;
-	template <typename K, typename V>
-	SScol(const K& key, const V& val) {
-		setKey(key);
-		setVal(val);
+
+	template <typename V>
+	SScol(const std::string_view& key_, const V& val_) {
+		key = key_;
+		setVal(val_);
 	}
-	QString getKey() const;
+
+	template <typename K, typename V>
+	SScol(const K& key_, const V& val_) {
+		setKey(key_);
+		setVal(val_);
+	}
+
 	template <typename T>
-	void setKey(const T& value) {
-		key = QSL("%1").arg(value);
+	void setKey(const T& key_) {
+		key = F("{}", key_);
 	}
 
 	template <typename T>
 	void setVal(const T& value) {
-		aritmetic = std::is_arithmetic<T>::value;
-		if constexpr (std::is_same<QByteArray, T>::value){
-			val       = value;
-		}else{
-			val       = QSL("%1").arg(value);
+		if constexpr (std::is_arithmetic<T>::value) {
+			aritmetic = true;
 		}
-		
+		val = F("{}", value);
 	}
 
-	QString getVal() const;
-
-	QString assemble(int padding = 1) const;
+	bool        aritmetic = false;
+	std::string key;
+	std::string val;
 
       private:
-	bool    aritmetic = false;
-	QString key;
-	QString val;
 };
 
-class SqlComposer {
+class DB;
+//is a vector to keep the order of the pushed stuff intact
+class SqlComposer : public std::vector<SScol> {
       public:
+	SqlComposer(DB* db_, bool forInsert_ = false);
 	void push(const SScol& col);
-	QString compose() const;
 
-	bool valid = true;
+	std::string compose() const;
+	bool        valid     = true;
+	bool        forInsert = false;
+
       private:
-	std::vector<SScol> vector;
-	int longestKey = 0;
+	size_type longestKey = 0;
+	size_type longestVal = 0;
+	DB*       db         = nullptr;
 };

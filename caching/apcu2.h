@@ -18,7 +18,7 @@ class APCU : private NoCopy {
 	APCU();
 	static APCU* getInstance();
 
-	static inline bool disableAPCU;
+	static inline bool disableAPCU=false;
 
 	struct Row {
 		//Corpus munus

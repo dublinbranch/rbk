@@ -199,12 +199,21 @@ void pushCreate(boost::json::object& value, std::string_view key, const boost::j
 	}
 }
 
-json::value parseJson(std::string_view json) {
-	//Todo add the check at which position the error happened
-	bj::error_code ec;
-	auto           js = bj::parse(json, ec);
-	if (ec) {
-		throw ExceptionV2(F("impossible to decode {}\nError is {}", json, ec.message()));
+JsonRes parseJson(std::string_view json) {
+	JsonRes res;
+
+	bj::parser  p;
+	std::size_t consumed = p.write_some(json, res.ec);
+
+	if (res.ec) {
+		res.position = consumed;
+	} else {
+		res.json = p.release();
 	}
-	return js;
+
+	return res;
+}
+
+JsonRes parseJson(const QByteArray& json) {
+	return parseJson(json.toStdString());
 }

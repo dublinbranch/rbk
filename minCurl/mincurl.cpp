@@ -233,7 +233,7 @@ CurlCallResult urlPostContent(const QByteArray& url, const QByteArray& post, boo
 		result.ok     = true;
 		result.header = parseHeader(result.headerRaw);
 	} else if (!quiet) {
-		qCritical().noquote() << "For:" << url << "\n " << errbuf;
+		qCritical().noquote() << "For:" << url << " code " << result.errorCode << "\n " << errbuf;
 	}
 
 	if (!curl) { // IF a local instance was used
@@ -368,7 +368,6 @@ void CurlForm::add(const QString& name, const QString& value) {
 }
 
 void CurlForm::add(const QByteArray& name, const QByteArray& value) {
-	// form 1
 	curl_mimepart* field = nullptr;
 	field                = curl_mime_addpart(form);
 	curl_mime_name(field, name);
@@ -376,11 +375,17 @@ void CurlForm::add(const QByteArray& name, const QByteArray& value) {
 }
 
 void CurlForm::add(const std::string& name, const std::string& value) {
-	// form 1
 	curl_mimepart* field = nullptr;
 	field                = curl_mime_addpart(form);
 	curl_mime_name(field, name.c_str());
 	curl_mime_data(field, value.c_str(), CURL_ZERO_TERMINATED);
+}
+
+void CurlForm::addFile(const std::string& name, const std::string& path) {
+	curl_mimepart* field = nullptr;
+	field                = curl_mime_addpart(form);
+	curl_mime_filedata(field, path.c_str());
+	curl_mime_name(field, name.c_str());
 }
 
 void CurlForm::connect() {

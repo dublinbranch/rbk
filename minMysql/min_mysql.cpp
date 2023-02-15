@@ -476,6 +476,15 @@ QString DB::escape(const QString& what) const {
 	return escaped;
 }
 
+string DB::escape(const std::string& plain) const {
+	// Ma esiste una lib in C++ per mysql ?
+	char* tStr = new char[plain.size() * 2 + 1];
+	mysql_real_escape_string(getConn(), tStr, plain.data(), plain.size());
+	string escaped = tStr;
+	delete[] tStr;
+	return escaped;
+}
+
 QString QV(const sqlRow& line, const QByteArray& b) {
 	return line.value(b);
 }

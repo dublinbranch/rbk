@@ -15,9 +15,9 @@ inline thread_local bool rapidAssertPrintTrace = true;
 #define RAPIDJSON_48BITPOINTER_OPTIMIZATION 1 //stuff some data in the high part of 64bit ptr (x64 IGNORE after bit 48)
 #define RAPIDJSON_PARSE_DEFAULT_FLAGS 32      //add the ability to have comment inside
 
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
+#include "rbk/rapidjson/document.h"
+#include "rbk/rapidjson/stringbuffer.h"
+#include "rbk/rapidjson/writer.h"
 
 typedef rapidjson::GenericValue<rapidjson::UTF8<>> jsonValue;
 
