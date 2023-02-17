@@ -18,6 +18,7 @@ class DBException : public ExceptionV2 {
 		NoResult,
 		InvalidDB  = 1049,
 		DeadLock   = 1213,
+		Duplicate  = 1062,
 		Connection = 2013
 
 	} errorType = Error::NA;

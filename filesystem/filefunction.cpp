@@ -496,6 +496,10 @@ void logWithTime(const QString& logFile, const std::string& msg) {
 	fileAppendContents(logMsg, logFile);
 }
 
+void logWithTime(const QString& logFile, const QByteArray& msg) {
+	logWithTime(logFile, msg.toStdString());
+}
+
 bool fileAppendContents(const QString& pay, const QString& fileName) {
 	return fileAppendContents(pay.toUtf8(), fileName);
 }

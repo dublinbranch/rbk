@@ -18,7 +18,15 @@ class APCU : private NoCopy {
 	APCU();
 	static APCU* getInstance();
 
-	static inline bool disableAPCU=false;
+	//to disable
+	/* Apply the constructor attribute to startupfun() so that it is executed before main()
+	   void startupfun (void) __attribute__ ((constructor));
+
+	   void startupfun (void)
+	   {   APCU::disableAPCU = true    }
+*/
+
+	static inline bool disableAPCU = false;
 
 	struct Row {
 		//Corpus munus

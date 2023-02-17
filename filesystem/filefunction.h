@@ -76,3 +76,4 @@ QString hardlink(const QString& source, const QString& dest, HLParam param = HLP
 
 void logWithTime(const QString& logFile, const QString& msg);
 void logWithTime(const QString& logFile, const std::string& msg);
+void logWithTime(const QString& logFile, const QByteArray& msg);

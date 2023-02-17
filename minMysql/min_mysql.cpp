@@ -144,6 +144,12 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 
 	if (error) {
 		switch (error) {
+		case 1062: { //unique index violation
+			cxaNoStack     = true;
+			cxaLevel       = CxaLevel::none;
+			auto exception = DBException(mysql_error(conn), DBException::Error(error));
+			throw exception;
+		}
 		case 1065:
 			// well an empty query is bad, but not too much!
 			qWarning().noquote() << "empty query (or equivalent for) " << sql << "in" << QStacker16();
