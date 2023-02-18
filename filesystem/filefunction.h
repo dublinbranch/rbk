@@ -10,8 +10,8 @@ class QFileXT : public QFile {
       public:
 	QFileXT() = default;
 	QFileXT(const QString& file);
-	bool open(OpenMode flags) override;
-	bool open(OpenMode flags, bool quiet);
+	bool open(QIODevice::OpenMode flags = QIODevice::OpenModeFlag::ReadOnly) override;
+	bool open(QIODevice::OpenMode flags, bool quiet);
 };
 
 class QSaveV2 : public QFile {

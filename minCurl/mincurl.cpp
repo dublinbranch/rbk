@@ -354,6 +354,7 @@ result: %3)";
 }
 
 CurlForm::CurlForm(CURL* _curl) {
+	//set a flag on curlkeeper to wait for the form to be bound ?
 	this->curl = _curl;
 	/* Create the form */
 	form = curl_mime_init(curl);
