@@ -122,6 +122,8 @@ struct CurlCallResult {
 	QString url;
 	// Keep raw as can be binary stuff
 	QByteArray result;
+	//in case of a redirect
+	QByteArray redirectUrl;
 	CURLTiming timing;
 	long       httpCode = 0;
 	bool       ok       = false;

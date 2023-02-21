@@ -287,6 +287,13 @@ CurlCallResult urlGetContent2(const QByteArray& url, bool quiet, CURL* curl, boo
 	result.errorMsg  = errbuf;
 	curlTimer(result.timing, useMe);
 	if (result.errorCode == CURLE_OK) {
+		{
+			char* redirectUrl = nullptr;
+			curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &redirectUrl);
+			if (redirectUrl) {
+				result.redirectUrl = redirectUrl;
+			}
+		}
 		result.ok = true;
 
 		char* ip;
