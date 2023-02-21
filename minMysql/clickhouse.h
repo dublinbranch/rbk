@@ -20,6 +20,7 @@ class ClickHouse {
 };
 
 //TODO this can probably be used also for MYSQL, rename and move in a separated header
+//FIXME this is partiall duplicating and extending SqlComposer merge the 2 ?
 class CHParam : public mapV2<QString, QString> {
       public:
 	enum Escape {
