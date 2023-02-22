@@ -2,6 +2,7 @@
 //one off include to compile what is needed and avoid linking external stuff
 #include <boost/json/src.hpp>
 
+#include "minMysql/min_mysql.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/minMysql/sqlRow.h"
 #include <QByteArray>
@@ -216,4 +217,10 @@ JsonRes parseJson(std::string_view json) {
 
 JsonRes parseJson(const QByteArray& json) {
 	return parseJson(json.toStdString());
+}
+
+void sqlEscape(boost::json::object& r, DB* db) {
+	for (auto iter = r.begin(); iter != r.end(); iter++) {
+		iter->value() = db->escape(string(iter->value().as_string().c_str()));
+	}
 }

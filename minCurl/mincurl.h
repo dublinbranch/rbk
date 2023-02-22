@@ -51,6 +51,7 @@ class CurlHeader : public NoCopy {
 	void              add(QString header);
 	void              add(QByteArray header);
 	void              add(const char* header);
+	void              add(std::string_view header);
 	void              clear();
 	const curl_slist* get() const;
 	void              set(CurlKeeper& curl) const;

@@ -18,12 +18,22 @@ class ResetAfterUse {
 		//Keep a reference
 		this->variable = &key;
 	}
+	//sometime we do not want to wait until scope exit
+	void reset() {
+		if (variable) {
+			*variable = oldValue;
+		}
+		variable = nullptr;
+	}
 	//OF COURSE you must use the returned value! else will be destroyed immediately
 	[[nodiscard]] ResetAfterUse(K& key, const K& value) {
 		set(key, value);
 	}
 	~ResetAfterUse() {
-		*variable = oldValue;
+		if (variable) {
+			*variable = oldValue;
+		}
+		variable = nullptr;
 	}
 
       private:

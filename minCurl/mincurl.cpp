@@ -129,6 +129,10 @@ void CurlHeader::add(const char* header) {
 	chunk = curl_slist_append(chunk, header);
 }
 
+void CurlHeader::add(std::string_view header) {
+	add(header.data());
+}
+
 void CurlHeader::clear() {
 	if (chunk) {
 		curl_slist_free_all(chunk);

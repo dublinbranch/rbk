@@ -5,6 +5,9 @@
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include <boost/json.hpp>
 
+//namespace bj = boost::json;
+//using namespace std::string_literals;
+
 class QString;
 class QByteArray;
 
@@ -46,3 +49,6 @@ struct JsonRes {
 
 JsonRes parseJson(const QByteArray& json);
 JsonRes parseJson(std::string_view json);
+
+class DB;
+void sqlEscape(boost::json::object& value, DB* db);

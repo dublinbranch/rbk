@@ -177,6 +177,10 @@ class DB {
 	void         setConf(const DBConf& value);
 
 	long getAffectedRows() const;
+	//usually set / reset via
+	//	ResetAfterUse resetMe(mainDB->state.get()
+	//						  .NULL_as_EMPTY,
+	//						  true);
 	struct InternalState {
 		uint    queryExecuted = 0;
 		uint    reconnection  = 0;
@@ -242,6 +246,7 @@ class SQLBuffering {
 	 */
 	SQLBuffering(DB* _conn, uint _bufferSize = 1000, bool _useTRX = true);
 	~SQLBuffering();
+	void append(const std::string& sql);
 	void append(const QString& sql);
 	void append(const QStringList& sqlList);
 	void flush();
