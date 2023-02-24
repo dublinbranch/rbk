@@ -1,4 +1,5 @@
 #include "httpexception.h"
+#include "qstacker.h"
 
 //TODO
 // codice duplicato: chiamare costruttore di padre
@@ -21,9 +22,9 @@ const std::string HttpException::getLogFile() const noexcept {
 }
 
 void HttpException::HttpParamErrorHandler1(const QString& key) {
-	std::string   msg = ">>>" + key.toStdString() + "<<< is not set and is required!";
-	HttpException e(msg);
-	e.httpErrMsg = msg;
+	auto          msg = ">>>" + key + "<<< is not set and is required!";
+	HttpException e(msg + "\n" + QStacker16Light());
+	e.httpErrMsg = msg.toStdString();
 	e.statusCode = 200;
 
 	throw e;
