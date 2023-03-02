@@ -61,7 +61,6 @@ void SlackSender::sendSlackMessage(QString msg) {
 	json["channel"] = channel;
 	QJsonDocument jDoc(json);
 
-	//xoxb-45953423253-4437920353648-08NTs97L14KfbO4SU8AtAtVQ
 	CurlKeeper curl;
 	CurlHeader h;
 	h.add("Authorization: Bearer "s + slackAPIToken);
@@ -84,8 +83,12 @@ void SlackSender::send(const QString& channel, const QString& msg) {
 	slack.sendSlackMessage(msg);
 }
 
+void SlackSender::send(const std::string& channel, const std::string& msg) {
+	send(QString::fromStdString(channel), QString::fromStdString(msg));
+}
+
 void SlackSender::sendAsync(const QString& channel, const QString& msg) {
-	std::thread send(SlackSender::send, channel, msg);
+	std::thread send(SlackSender::sendQ16, channel, msg);
 	//In theory we should register this one, but the program wil not terminate immediately, and in any case the errore is collected and send via mail outside of it
 	send.detach();
 }
@@ -102,4 +105,8 @@ void SlackSender::setCoolDown(const uint32_t& value) {
 		return;
 	}
 	coolDown = value;
+}
+
+void SlackSender::sendQ16(const QString& channel, const QString& msg) {
+	return send(channel, msg);
 }

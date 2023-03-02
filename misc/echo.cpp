@@ -13,11 +13,11 @@ void echo(const std::string& s) {
 void warn(const std::string& msg) {
 	QByteArray q;
 	q.setRawData(msg.data(), msg.size());
-	qDebug().noquote() << q;
+	qWarning().noquote() << q;
 }
 
 void critical(const std::string& msg) {
 	QByteArray q;
 	q.setRawData(msg.data(), msg.size());
-	qDebug().noquote() << q;
+	qCritical().noquote() << q;
 }

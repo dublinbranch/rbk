@@ -19,9 +19,13 @@ class SlackSender {
 	static void sendToDestSlackChannel(QString msg);
 
 	void setCoolDown(const uint32_t& value);
-	
+
+	//needed as std::thread does not accept polymorphic
+	static void sendQ16(const QString& channel, const QString& msg);
+
 	//this will just send the message regardless of cooldown ecc, use with caution!
 	static void send(const QString& channel, const QString& msg);
+	static void send(const std::string& channel, const std::string& msg);
 
       private:
 	QString channel;
