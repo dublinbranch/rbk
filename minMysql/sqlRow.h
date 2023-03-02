@@ -10,6 +10,12 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
       public:
 	bool fromCache = false;
 
+	[[nodiscard]] QByteArray rq(const QByteArray& key) const {
+		QByteArray v;
+		getReal(key, v);
+		return v;
+	}
+
 	template <typename D>
 	void rq(const QByteArray& key, D& dest, const D* def = nullptr) const {
 		QByteArray temp;
@@ -23,19 +29,11 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 		}
 	}
 
-	QByteArray rq(const QByteArray& key) const {
-		QByteArray temp;
-		get(key, temp);
-		return temp;
-	}
-
 	template <typename T>
 	[[nodiscard]] T rq(const QByteArray& key) const {
-		QByteArray temp;
-		get(key, temp);
-		T t2;
-		swapType(temp, t2);
-		return t2;
+		T temp;
+		rq(key, temp);
+		return temp;
 	}
 
 	/**
@@ -91,6 +89,13 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	template <typename D>
 	bool getIfNotNull(const QByteArray& key, D& dest) const {
 		return getIfNotNull(key, dest, dest);
+	}
+
+	template <typename D>
+	D getIfNotNull(const QByteArray& key, const D& def) const {
+		D temp;
+		getIfNotNull(key, temp, def);
+		return temp;
 	}
 
 	template <typename D>

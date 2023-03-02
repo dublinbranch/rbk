@@ -160,18 +160,19 @@ CurlCallResult urlPostContent(const QByteArray& url, const QByteArray& post, boo
 CurlCallResult urlPostContent(const std::string& url, const std::string& post, bool quiet = false, CURL* curl = nullptr);
 
 template <typename T1, typename T2>
-CurlCallResult urlGetCached(const T1& url, const T2 fileName, bool on, bool quiet = false, CURL* curl = nullptr) {
+CurlCallResult urlGetCached(const T1& url, const T2 fileName, uint ttl, bool quiet = false, CURL* curl = nullptr) {
 	CurlCallResult res;
-	if (on) {
-		res.result    = fileGetContents2(fileName).content;
+
+	if (auto file = fileGetContents2(fileName, quiet, ttl); file) {
+		res.result    = file.content;
 		res.fromCache = true;
 		res.ok        = true;
+		return res;
 	}
-	if (res.result.isEmpty()) {
-		res = urlGetContent2(url, quiet, curl);
-		filePutContents(res.result, fileName);
-		res.fromCache = false;
-	}
+
+	res = urlGetContent2(url, quiet, curl);
+	filePutContents(res.result, fileName);
+	res.fromCache = false;
 	return res;
 }
 

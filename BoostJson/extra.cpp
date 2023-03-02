@@ -2,8 +2,8 @@
 //one off include to compile what is needed and avoid linking external stuff
 #include <boost/json/src.hpp>
 
-#include "minMysql/min_mysql.h"
 #include "rbk/fmtExtra/includeMe.h"
+#include "rbk/minMysql/min_mysql.h"
 #include "rbk/minMysql/sqlRow.h"
 #include <QByteArray>
 #include <QString>

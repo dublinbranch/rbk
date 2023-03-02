@@ -207,6 +207,22 @@ class multiMapV2 : public NotFoundMixin<K>, public std::multimap<K, V> {
 	    : map_parent(map_init), mixin_parent(f) {
 	}
 
+	struct Founded {
+		const V* val   = nullptr;
+		bool     found = false;
+
+		explicit operator bool() const {
+			return found;
+		}
+	};
+
+	[[nodiscard]] V getDefault(const K& k) const {
+		if (auto v = this->get(k); v) {
+			return *(v.val);
+		}
+		return V();
+	}
+
 	/*
 	 * Use like
 	map2<int, string> bla;
@@ -219,19 +235,19 @@ class multiMapV2 : public NotFoundMixin<K>, public std::multimap<K, V> {
 	}
 	 */
 	[[nodiscard]] auto get(const K& k) const {
-		struct Founded {
-			const V* val   = nullptr;
-			bool     found = false;
-
-			explicit operator bool() const {
-				return found;
-			}
-		};
-
 		if (auto iter = this->find(k); iter != this->end()) {
 			return Founded{&iter->second, true};
 		}
 		return Founded();
+	}
+
+	template <typename T>
+	auto get(const K& k, T& t) const {
+		if (auto iter = this->find(k); iter != this->end()) {
+			t = swapType<T>(iter->second);
+			return true;
+		}
+		return false;
 	}
 
 	[[nodiscard]] auto rq(const K& k) const {

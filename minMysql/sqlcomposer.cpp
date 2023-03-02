@@ -48,7 +48,7 @@ std::string SqlComposer::compose() const {
 		} else {
 			t = "'"s + db->escape(val) + "'"s;
 		}
-		t = F("{:>{}}", t, longestVal);
+		//t = F("{:>{}}", t, longestVal);
 
 		if (first) {
 			first = false;

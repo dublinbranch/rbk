@@ -98,7 +98,13 @@ class QMapV2 : public QMap<Key, T> {
 		return v;
 	}
 
-	T get(const Key& key) const {
+	[[nodiscard]] T get(const Key& key) const {
+		T v;
+		getReal(key, v);
+		return v;
+	}
+
+	[[nodiscard]] T rq(const Key& key) const {
 		T v;
 		getReal(key, v);
 		return v;

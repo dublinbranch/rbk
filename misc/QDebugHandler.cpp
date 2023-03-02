@@ -36,11 +36,7 @@ void sendSlack(const QString& msg) {
 		return;
 	}
 
-	if (config->useTestSlackChannel) {
-		destSlackChannel = Channel::develop_test;
-	}
-
-	SlackSender::sendAsync(destSlackChannel, msg);
+	SlackSender::sendAsync("#backenderror_afd", msg);
 }
 void callViaTwilio() {
 	if (config->BRUTAL_INHUMAN_REPORTING) {
