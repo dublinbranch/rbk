@@ -5,6 +5,7 @@
 #include "rbk/RAII/resetAfterUse.h"
 #include "rbk/defines/stringDefine.h"
 #include "rbk/filesystem/filefunction.h"
+#include "rbk/minMysql/runnable.h"
 #include "rbk/misc/b64.h"
 #include "rbk/thread/threadstatush.h"
 #include <QDateTime>
