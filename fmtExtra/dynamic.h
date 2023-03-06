@@ -2,6 +2,7 @@
 #define DYNAMIC_H
 
 #include "fmt/format.h"
+#include "rbk/misc/echo.h"
 #include <QString>
 
 /**
@@ -18,6 +19,12 @@ template <typename... T>
 template <typename... T>
 [[nodiscard]] std::string F(const std::string_view& fmt, T&&... args) {
 	return fmt::vformat(fmt, fmt::make_format_args(args...));
+}
+
+template <typename... T>
+void echo(const std::string_view& fmt, T&&... args) {
+	auto msg = fmt::vformat(fmt, fmt::make_format_args(args...));
+	echo(msg);
 }
 
 template <typename... T>
