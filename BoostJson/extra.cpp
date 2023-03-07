@@ -268,7 +268,23 @@ string JsonRes::composeErrorMsg() const {
 		//auto il = i->first;
 		auto& r   = i->second;
 		rowNumber = r.rowNumber;
-		showMe    = r.row;
+
+		auto start = r.start;
+		auto end   = i->first;
+		//do we have a line before ?
+		if (rowNumber > 2) {
+			start = (----i)->second.start;
+		} else if (rowNumber > 1) {
+			start = (--i)->second.start;
+		}
+		//do we have a line after ?
+		//if (rowNumber < newLines.size()) {
+		//TODO insert the pointer and than this other part ?
+		//end = (++i)->first;
+		//}
+		auto len = end - start;
+		showMe   = string_view(raw).substr(start, len);
+
 		//row do not start at pos 0
 		offset = (position - r.start) + 1;
 	} else {
@@ -282,7 +298,7 @@ string JsonRes::composeErrorMsg() const {
 		uint start = max(0u, position - 45);
 		uint end   = min(Pt(start + 80), raw.size());
 
-		auto len = (end - start);
+		auto len = end - start;
 
 		showMe = string_view(raw).substr(start, len);
 		if (rowNumber) { //if NOT on a single big line the json, take last line info
