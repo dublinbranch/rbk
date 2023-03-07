@@ -41,10 +41,12 @@ void pushCreate(boost::json::object& value, std::string_view key, const T& newVa
 }
 
 struct JsonRes {
+	std::string        raw;
 	boost::json::value json;
 	//if position is set, it means there was an error and this is the position
 	uint                    position = 0;
 	boost::json::error_code ec;
+	std::string             composeErrorMsg() const;
 };
 
 JsonRes parseJson(const QByteArray& json);

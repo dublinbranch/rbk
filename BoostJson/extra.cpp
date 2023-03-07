@@ -207,6 +207,8 @@ JsonRes parseJson(std::string_view json) {
 	std::size_t consumed = p.write_some(json, res.ec);
 
 	if (res.ec) {
+		//take a copy only in case of error
+		res.raw      = json;
 		res.position = consumed;
 	} else {
 		res.json = p.release();
@@ -223,4 +225,88 @@ void sqlEscape(boost::json::object& r, DB* db) {
 	for (auto iter = r.begin(); iter != r.end(); iter++) {
 		iter->value() = db->escape(string(iter->value().as_string().c_str()));
 	}
+}
+
+string JsonRes::composeErrorMsg() const {
+	if (!position) {
+		return "Valid JSON";
+	}
+
+	using Pt = string::size_type;
+	struct Payload {
+		string_view row;
+		Pt          start;
+		uint        rowNumber;
+	};
+
+	std::map<Pt, Payload> newLines;
+
+	{
+		Pt   lineStart = 0;
+		Pt   lineEnd   = 0;
+		uint rowNumber = 0;
+		while (true) {
+			//never seen row 0
+			rowNumber++;
+			lineEnd = raw.find("\n", lineStart);
+			if (lineEnd == string::npos) {
+				break;
+			}
+			Payload p{string_view(raw).substr(lineStart, lineEnd - lineStart),
+			          lineStart,
+			          rowNumber};
+			newLines.insert({lineEnd, p});
+			lineStart = lineEnd + 1;
+		}
+	}
+
+	Pt          offset    = 0;
+	uint        rowNumber = 0;
+	string_view showMe;
+
+	if (auto i = newLines.lower_bound(position); i != newLines.end()) {
+		//auto il = i->first;
+		auto& r   = i->second;
+		rowNumber = r.rowNumber;
+		showMe    = r.row;
+		//row do not start at pos 0
+		offset = (position - r.start) + 1;
+	} else {
+		//either a single line or at the last line
+		rowNumber = newLines.size();
+		if (!rowNumber) {
+			rowNumber = 1;
+		}
+
+		//show a part of the json to understand the problem, do not go over end of line or before!
+		uint start = max(0u, position - 45);
+		uint end   = min(Pt(start + 80), raw.size());
+
+		auto len = (end - start);
+
+		showMe = string_view(raw).substr(start, len);
+		if (rowNumber) { //if NOT on a single big line the json, take last line info
+			offset = position - newLines.rbegin()->first;
+		} else {
+			offset = position - start;
+		}
+	}
+
+	auto fancy = F("{: >{}}", "^", offset);
+
+	auto msg = F(R"(
+Invalid json 
+Error {} 
+At position {} (line {}:{})
+--------------------
+{}
+{}
+--------------------
+)",
+	             ec.message(),
+	             position,
+	             rowNumber, offset,
+	             showMe,
+	             fancy);
+	return msg;
 }

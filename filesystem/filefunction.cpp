@@ -481,17 +481,23 @@ FPCRes::operator bool() {
 	return ok;
 }
 
-// for debug
+void logWithTime(const std::string& logFile, const std::string& msg) {
+	auto now    = QDateTime::currentDateTimeUtc().toString(mysqlDateTimeFormat).toStdString();
+	auto logMsg = "\n-------------------\n" + now + " UTC\n" + msg + "\n";
+
+	fileAppendContents(logMsg, logFile);
+}
+
 void logWithTime(const QString& logFile, const QString& msg) {
 	auto now    = QDateTime::currentDateTimeUtc().toString(mysqlDateTimeFormat);
-	auto logMsg = QSL("%1 UTC\n%2\n")
+	auto logMsg = QSL("\n-------------------\n %1 UTC\n%2\n")
 	                  .arg(now, msg);
 	fileAppendContents(logMsg.toUtf8(), logFile);
 }
 
 void logWithTime(const QString& logFile, const std::string& msg) {
 	auto now    = QDateTime::currentDateTimeUtc().toString(mysqlDateTimeFormat).toStdString();
-	auto logMsg = now + "UTC\n" + msg + "\n";
+	auto logMsg = "\n-------------------\n" + now + "UTC\n" + msg + "\n";
 
 	fileAppendContents(logMsg, logFile);
 }
