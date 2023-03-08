@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../mixin/NoCopy.h"
+#include <cstddef>
 
 /**
  *small helper class used to set and reset to initial value call like
@@ -29,6 +30,12 @@ class ResetAfterUse {
 	[[nodiscard]] ResetAfterUse(K& key, const K& value) {
 		set(key, value);
 	}
+
+	//OF COURSE you must use the returned value! else will be destroyed immediately
+	[[nodiscard]] ResetAfterUse(K& key, const std::nullptr_t& value) {
+		set(key, value);
+	}
+
 	~ResetAfterUse() {
 		if (variable) {
 			*variable = oldValue;

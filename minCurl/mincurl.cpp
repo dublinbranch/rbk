@@ -154,6 +154,7 @@ void CurlHeader::set(CurlKeeper& marx) const {
 
 CurlKeeper::CurlKeeper() {
 	curl = curl_easy_init();
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60); // default is 0 which is unlimited, not a good default
 }
 
 CurlKeeper::~CurlKeeper() {
@@ -408,7 +409,7 @@ void CurlForm::asJson(const std::string_view& name, const std::string_view& valu
 	if (!saveJson) {
 		return;
 	}
-	saveJson->as_object()[name] = value;
+	saveJson->insert_or_assign(name, value);
 }
 
 CurlForm::~CurlForm() {

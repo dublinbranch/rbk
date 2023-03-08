@@ -66,8 +66,16 @@ class CurlHeader : public NoCopy {
 class CurlForm : private NoCopy {
       public:
 	CurlForm(CURL* _curl);
-	//in some case we want to keep track of what is beeing sent
-	boost::json::value* saveJson = nullptr;
+
+	/**
+	 * in some case we want to keep track of what is beeing sent
+	if you want to skip for something
+{
+	ResetAfterUse s(mime->saveJson, nullptr);
+	mime->add("access_token", campaign->account->kit);
+}
+*/
+	boost::json::object* saveJson = nullptr;
 
 	operator curl_mime*() const;
 

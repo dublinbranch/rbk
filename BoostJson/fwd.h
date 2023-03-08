@@ -4,6 +4,7 @@
 namespace boost {
 namespace json {
 class value;
+class object;
 } // namespace json
 } // namespace boost
 

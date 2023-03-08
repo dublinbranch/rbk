@@ -69,7 +69,7 @@ void SlackSender::sendSlackMessage(QString msg) {
 	auto res = urlPostContent("https://slack.com/api/chat.postMessage", jDoc.toJson(), false, curl);
 	{
 		auto doc = QJsonDocument::fromJson(res.result);
-		if (doc["ok"].toString() != "ok") {
+		if (doc["ok"].toBool() != true) {
 			fprintf(stderr, "slack error %s", res.result.constData());
 		}
 	}
