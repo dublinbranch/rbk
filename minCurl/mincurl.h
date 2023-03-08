@@ -1,6 +1,7 @@
 #pragma once
 
 #include "curl/curl.h"
+#include "rbk/BoostJson/fwd.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/mapExtensor/mapV2.h"
 #include "rbk/mixin/NoCopy.h"
@@ -65,6 +66,8 @@ class CurlHeader : public NoCopy {
 class CurlForm : private NoCopy {
       public:
 	CurlForm(CURL* _curl);
+	//in some case we want to keep track of what is beeing sent
+	boost::json::value* saveJson = nullptr;
 
 	operator curl_mime*() const;
 
@@ -72,13 +75,16 @@ class CurlForm : private NoCopy {
 
 	void add(const QString& name, const QString& value);
 	void add(const QByteArray& name, const QByteArray& value);
-	void add(const std::string& name, const std::string& value);
+	void add(const std::string_view& name, const std::string_view& value);
+
 	void addFile(const std::string& name, const std::string& path);
 
-	void connect();
+	void connect() const;
 	~CurlForm();
 
       private:
+	void asJson(const std::string_view& name, const std::string_view& value) const;
+
 	// the curl_mimepart do not to be freed as long as they are used
 	curl_mime* form = nullptr;
 	CURL*      curl = nullptr;

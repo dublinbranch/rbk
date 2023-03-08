@@ -98,6 +98,7 @@ DISTFILES += \
 
 HEADERS += \
     $$PWD/BoostJson/extra.h \
+    $$PWD/BoostJson/fwd.h \
     $$PWD/QStacker/CxaLevel.h \
     $$PWD/dateTime/util.h \
     $$PWD/fmtExtra/dynamic.h \

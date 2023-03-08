@@ -1,14 +1,14 @@
 #include "mincurl.h"
 #include "qstringtokenizer.h"
 #include "rbk/QStacker/qstacker.h"
+#include "rbk/RAII//resetAfterUse.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
+#include "rbk/thread/threadstatush.h"
 #include <QByteArray>
 #include <QDebug>
 #include <QString>
+#include <boost/json.hpp>
 #include <curl/curl.h>
-
-#include "rbk/RAII//resetAfterUse.h"
-#include "rbk/thread/threadstatush.h"
 extern thread_local ThreadStatus::Status* localThreadStatus;
 
 /**
@@ -376,21 +376,20 @@ curl_mime* CurlForm::get() const {
 }
 
 void CurlForm::add(const QString& name, const QString& value) {
-	add(name.toUtf8(), value.toUtf8());
+	add(name.toStdString(), value.toStdString());
 }
 
 void CurlForm::add(const QByteArray& name, const QByteArray& value) {
-	curl_mimepart* field = nullptr;
-	field                = curl_mime_addpart(form);
-	curl_mime_name(field, name);
-	curl_mime_data(field, value, CURL_ZERO_TERMINATED);
+	add(name.toStdString(), value.toStdString());
 }
 
-void CurlForm::add(const std::string& name, const std::string& value) {
+void CurlForm::add(const std::string_view& name, const std::string_view& value) {
 	curl_mimepart* field = nullptr;
 	field                = curl_mime_addpart(form);
-	curl_mime_name(field, name.c_str());
-	curl_mime_data(field, value.c_str(), CURL_ZERO_TERMINATED);
+	//The name string is copied into the part, thus the associated storage may safely be released or reused after call.
+	curl_mime_name(field, name.data());
+	curl_mime_data(field, value.data(), CURL_ZERO_TERMINATED);
+	asJson(name, value);
 }
 
 void CurlForm::addFile(const std::string& name, const std::string& path) {
@@ -400,9 +399,16 @@ void CurlForm::addFile(const std::string& name, const std::string& path) {
 	curl_mime_name(field, name.c_str());
 }
 
-void CurlForm::connect() {
+void CurlForm::connect() const {
 	//FIRSTTIMER add a check if destructor is called and the form is not used.
 	curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
+}
+
+void CurlForm::asJson(const std::string_view& name, const std::string_view& value) const {
+	if (!saveJson) {
+		return;
+	}
+	saveJson->as_object()[name] = value;
 }
 
 CurlForm::~CurlForm() {
