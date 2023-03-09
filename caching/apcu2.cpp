@@ -50,7 +50,8 @@ APCU::APCU()
 
 	cache = new ApcuCache();
 	diskLoad();
-	new std::thread(&APCU::garbageCollector_F2, this);
+	std::thread apt(&APCU::garbageCollector_F2, this);
+	apt.detach();
 	std::atexit(diskSync);
 }
 

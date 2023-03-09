@@ -194,7 +194,7 @@ template <typename K, typename V>
 class multiMapV2 : public NotFoundMixin<K>, public std::multimap<K, V> {
       public:
 	using value_type   = std::pair<const K, V>;
-	using map_parent   = std::map<K, V>;
+	using map_parent   = std::multimap<K, V>;
 	using mixin_parent = NotFoundMixin<K>;
 
 	multiMapV2() = default;
@@ -221,6 +221,15 @@ class multiMapV2 : public NotFoundMixin<K>, public std::multimap<K, V> {
 			return *(v.val);
 		}
 		return V();
+	}
+
+	[[nodiscard]] std::vector<V> rqRange(const K& k) {
+		std::vector<V> res;
+		auto           result = this->equal_range(k);
+		for (auto it = result.first; it != result.second; it++) {
+			res.push_back(it->second);
+		}
+		return res;
 	}
 
 	/*
