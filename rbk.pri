@@ -96,6 +96,8 @@ DISTFILES += \
 	$$PWD/minMysql/README.md \
 	$$PWD/minMysql/minMysql.pri
 
+    
+	
 HEADERS += \
     $$PWD/BoostJson/extra.h \
     $$PWD/BoostJson/fwd.h \
@@ -110,6 +112,7 @@ HEADERS += \
     $$PWD/minMysql/runnable.h \
     $$PWD/minMysql/sqlRow.h \
     $$PWD/minMysql/sqlcomposer.h \
+    $$PWD/minMysql/sqlresult.h \
     $$PWD/misc/echo.h \
     $$PWD/misc/ieee754.h \
     $$PWD/misc/swapType.h \
@@ -170,6 +173,7 @@ SOURCES += \
 	$$PWD/locale/codes.cpp \
     $$PWD/minMysql/runnable.cpp \
     $$PWD/minMysql/sqlcomposer.cpp \
+    $$PWD/minMysql/sqlresult.cpp \
     $$PWD/misc/echo.cpp \
     $$PWD/misc/ieee754.cpp \
     $$PWD/misc/typename.cpp \
