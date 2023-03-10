@@ -37,7 +37,7 @@ void SqlComposer::push(const SScol& col) {
 std::string SqlComposer::compose() const {
 	//In padding we trust
 
-	string final = " SET \n";
+	string final = "\n";
 	final.reserve(16000);
 	//plain fmt::join is not enought here
 	bool first = true;

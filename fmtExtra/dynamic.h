@@ -28,6 +28,12 @@ void echo(const std::string_view& fmt, T&&... args) {
 }
 
 template <typename... T>
+void warn(const std::string_view& fmt, T&&... args) {
+	auto msg = fmt::vformat(fmt, fmt::make_format_args(args...));
+	warn(msg);
+}
+
+template <typename... T>
 [[nodiscard]] QString F16(const std::string_view& fmt, T&&... args) {
 	return QString::fromStdString(fmt::vformat(fmt, fmt::make_format_args(args...)));
 }

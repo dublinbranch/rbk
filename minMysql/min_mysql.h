@@ -4,6 +4,7 @@
 #include "MITLS.h"
 #include "rbk/mapExtensor/mapV2.h"
 #include "sqlRow.h"
+#include "sqlresult.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QStringList>
@@ -31,30 +32,6 @@ struct st_mysql;
 struct st_mysql_res;
 
 QString asString(const sqlRow& row);
-
-class MyType {
-      public:
-	//MyTypes() = default;
-	MyType(enum_field_types& t);
-	enum_field_types type;
-	bool             isNumeric() const;
-	bool             isFloat() const;
-};
-
-class sqlResult : public QList<sqlRow> {
-      public:
-	//Metadata for the column Type
-	mapV2<QByteArray, MyType> types;
-
-	bool    fromCache = false;
-	QString toString() {
-		QString s;
-		for (sqlRow& row : *this) {
-			s += asString(row) + "\n";
-		}
-		return s;
-	}
-};
 
 QStringList getIdList(const sqlResult& sqlRes, const QString& idName);
 

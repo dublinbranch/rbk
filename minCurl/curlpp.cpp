@@ -154,7 +154,7 @@ bool CURLpp::smtp_send(bool rawHtml) {
 	curl_easy_setopt(marx, CURLOPT_PASSWORD, copia->smtp_password.c_str());
 
 	// security
-	curl_easy_setopt(marx, CURLOPT_USE_SSL, (long)CURLUSESSL_ALL);
+	//curl_easy_setopt(marx, CURLOPT_USE_SSL, (long)CURLUSESSL_ALL);
 
 	curl_easy_setopt(marx, CURLOPT_MAIL_FROM, copia->smtp_from.c_str());
 
@@ -404,7 +404,7 @@ CURLpp::Builder& CURLpp::Builder::set_email_details(const string msg, const stri
 	this->smtp_subject = sbj;
 	this->smtp_to      = to;
 	this->smtp         = 1;
-	this->url          = "smtp://tech.techadsmedia.com:25";
+	this->url          = "smtp://seisho.us:25";
 	return *this;
 }
 
@@ -413,7 +413,7 @@ CURLpp::Builder& CURLpp::Builder::set_smtp_details(const string usr, const strin
 	this->smtp_user     = usr;
 	this->smtp_password = pwd;
 	this->smtp          = 1;
-	this->url           = "smtp://tech.techadsmedia.com:25";
+	this->url           = "smtp://seisho.us:25";
 	return *this;
 }
 

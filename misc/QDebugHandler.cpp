@@ -49,11 +49,18 @@ void sendMail(QString subject, QString message) {
 		return;
 	}
 
+	//	CURLpp marx = CURLpp::Builder()
+	//	                  .set_email_details("ciao", "soggetto", "admin@seisho.us")
+	//	                  .set_smtp_details("spammer@seisho.us", "mjsydiTODNmDLTUqRIZY", "spammer@seisho.us")
+	//	                  .build();
+	//	marx.perform();
+
 	for (auto& recipient : config->warningMailRecipients) {
 		//NOTE this operation is "slow" so we need a detached thread
 		auto CurlPPisBroken = [=]() {
 			CURLpp marx = CURLpp::Builder()
 			                  .set_email_details(message.toUtf8().constData(), subject.toUtf8().constData(), recipient.constData())
+			                  .set_smtp_details("spammer@seisho.us", "mjsydiTODNmDLTUqRIZY", "spammer@seisho.us")
 			                  .build();
 			marx.perform();
 		};
