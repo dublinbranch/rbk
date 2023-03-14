@@ -42,12 +42,18 @@ class DB;
 //is a vector to keep the order of the pushed stuff intact
 class SqlComposer : public std::vector<SScol> {
       public:
-	SqlComposer(DB* db_, bool forInsert_ = false);
+	SqlComposer(DB* db_, const std::string& separator_ = ",");
+
 	void push(const SScol& col);
+
+	template <typename K, typename V>
+	void push(const K& key_, const V& val_) {
+		push({key_, val_});
+	}
 
 	std::string compose() const;
 	bool        valid     = true;
-	bool        forInsert = false;
+	std::string separator = ",";
 
       private:
 	size_type longestKey = 0;

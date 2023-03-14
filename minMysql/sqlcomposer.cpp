@@ -1,11 +1,13 @@
 #include "sqlcomposer.h"
 #include "min_mysql.h"
+#include "rbk/string/util.h"
 
 using namespace std;
 
-SqlComposer::SqlComposer(DB* db_, bool forInsert_) {
+SqlComposer::SqlComposer(DB* db_, const std::string& separator_) {
 	db        = db_;
-	forInsert = forInsert_;
+	separator = separator_;
+	replace(" ", "", separator);
 }
 
 void SqlComposer::push(const SScol& col) {
@@ -52,9 +54,10 @@ std::string SqlComposer::compose() const {
 
 		if (first) {
 			first = false;
-			final += F(" {:>{}} = {} \n"s, key, longestKey, t);
+			//the first block is used for padding based on separator lenght
+			final += F("{:>{}} {:>{}} = {} \n"s, " ", separator.size(), key, longestKey, t);
 		} else {
-			final += F(",{:>{}} = {} \n"s, key, longestKey, t);
+			final.append(separator) += F(" {:>{}} = {} \n"s, key, longestKey, t);
 		}
 	}
 	return final;
