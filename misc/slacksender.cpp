@@ -1,12 +1,12 @@
 #include "slacksender.h"
 #include "rbk/QStacker/qstacker.h"
-#include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/minCurl/mincurl.h"
 #include <QByteArray>
 #include <QDateTime>
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <iostream>
 #include <mutex>
 #include <thread>
 
@@ -34,6 +34,10 @@ SlackSender::SlackSender(uint32_t _coolDown) {
  * @param red bypass the anti spam
  */
 void SlackSender::sendSlackMessage(QString msg) {
+	if (!slackAPIToken) {
+		std::cerr << "requested to print in slack but no configuration found! set slackAPIToken !";
+		return;
+	}
 	static std::mutex mu;
 
 	std::unique_lock<std::mutex> lock(mu, std::try_to_lock);
