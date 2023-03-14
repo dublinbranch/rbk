@@ -17,6 +17,7 @@ using namespace std::string_literals;
 //something like xoxb-xxxxxxxxxxxxxxxxxxxxxxxxx
 //https://api.slack.com/web#basics
 extern const char* slackAPIToken;
+const char*        slackAPIToken = nullptr;
 
 SlackSender::SlackSender(const QString& channel_, uint32_t coolDown_) {
 	channel = channel_;

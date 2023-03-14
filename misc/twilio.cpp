@@ -5,6 +5,7 @@
 #include <mutex>
 
 extern const char* twilioAPIurl;
+const char*        twilioAPIurl = nullptr;
 
 void Twilio::call() {
 	Twilio t;
