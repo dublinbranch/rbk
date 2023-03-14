@@ -76,6 +76,10 @@ void SlackSender::sendSlackMessage(QString msg) {
 	}
 }
 
+void SlackSender::sendAsync(const std::string& channel, const QString& msg) {
+	sendAsync(QString::fromStdString(channel), msg);
+}
+
 //https://discuss.newrelic.com/t/sending-alerts-to-slack-with-channel-notification/35921/3
 //https://api.slack.com/reference/surfaces/formatting#mentioning-users
 //https://help.workast.com/hc/en-us/articles/360027461274-How-to-find-a-Slack-user-ID

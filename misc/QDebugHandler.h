@@ -10,5 +10,5 @@ void commonInitialization(const NanoSpammerConfig* _config);
 void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg);
 void lowSpamMsgHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg);
 void sendMail(QString subject, QString message);
-void sendSlack(const QString& msg);
+void sendSlack(const QString& msg, std::string channel="");
 void callViaTwilio();

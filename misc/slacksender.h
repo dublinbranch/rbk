@@ -15,6 +15,7 @@ class SlackSender {
 
 	void sendSlackMessage(QString msg);
 
+	static void sendAsync(const std::string& channel, const QString& msg);
 	static void sendAsync(const QString& channel, const QString& msg);
 	static void sendToDestSlackChannel(QString msg);
 

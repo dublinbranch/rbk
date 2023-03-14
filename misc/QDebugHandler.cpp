@@ -31,12 +31,15 @@ QString getHeader2(const char* file, int line, const char* func) {
 	return warningHeader2;
 }
 
-void sendSlack(const QString& msg) {
-	if (!config->warningToSlack) {
+void sendSlack(const QString& msg, std::string channel) {
+	if (!config->slackOpt.warningON) {
 		return;
 	}
+	if (channel.empty()) {
+		channel = config->slackOpt.warningChannel;
+	}
 
-	SlackSender::sendAsync("#backenderror_afd", msg);
+	SlackSender::sendAsync(channel, msg);
 }
 void callViaTwilio() {
 	if (config->BRUTAL_INHUMAN_REPORTING) {
@@ -228,8 +231,8 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 		auto warningHeader2 = getHeader2(file, context.line, funkz);
 
 		{
-			QString msg2slack = QSL("<@U02HT1JM4> ") + warningHeader1 + QSL("\n") + warningHeader2 + QSL("\n\n") + msg;
-			sendSlack(msg2slack);
+			QString msg2slack = QSL("<@U93PHQ62J> ") + warningHeader1 + QSL("\n") + warningHeader2 + QSL("\n\n") + msg;
+			sendSlack(msg2slack, config->slackOpt.warningChannel);
 		}
 		{
 			// subject
