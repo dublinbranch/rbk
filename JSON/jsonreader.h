@@ -5,8 +5,8 @@
 #include "rbk/rapidjson/pointer.h"
 #include "rbk/rapidjson/prettywriter.h"
 
-#include "rbk/JSON/various.h"
 #include "JSONReaderConst.h"
+#include "rbk/JSON/various.h"
 #include "rbk/QStacker/qstacker.h"
 
 #include "rbk/magicEnum/magic_from_string.hpp"
@@ -284,6 +284,12 @@ class JSONReader {
 	}
 
       public:
+	enum ParseError {
+		none,
+		empty,
+		invalid
+	} parseError = ParseError::none;
+          
 	bool parse(const std::string& raw);
 	bool parse(const QByteArray& raw);
 	bool parse(const char* raw);

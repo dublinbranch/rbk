@@ -23,7 +23,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #-ggdb3
 QMAKE_CXXFLAGS += -Wunused -Wunused-function
 QMAKE_CXXFLAGS += -std=gnu++2b
-QMAKE_CXXFLAGS += -Wall -Wextra -Wshadow -Wshadow-local -Wshadow-compatible-local
+#-Werror -Wconversion
+QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wshadow-local -Wshadow-compatible-local
 
 CONFIG += object_parallel_to_source
 
