@@ -3,6 +3,7 @@
 
 #include "rbk/QStacker/httpexception.h"
 #include "rbk/defines/stringDefine.h"
+#include "rbk/fmtExtra/customformatter.h"
 #include "rbk/mapExtensor/mapV2.h"
 #include <QString>
 #include <QStringList>

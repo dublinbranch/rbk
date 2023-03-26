@@ -44,11 +44,11 @@ class SqlComposer : public std::vector<SScol> {
       public:
 	SqlComposer(DB* db_, const std::string& separator_ = ",");
 
-	void push(const SScol& col);
+	void push(const SScol& col, bool force = false);
 
 	template <typename K, typename V>
-	void push(const K& key_, const V& val_) {
-		push({key_, val_});
+	void push(const K& key_, const V& val_, bool force = false) {
+		push({key_, val_}, force);
 	}
 
 	std::string compose() const;

@@ -10,7 +10,7 @@ SqlComposer::SqlComposer(DB* db_, const std::string& separator_) {
 	replace(" ", "", separator);
 }
 
-void SqlComposer::push(const SScol& col) {
+void SqlComposer::push(const SScol& col, bool force) {
 	//This is just to showcase the usage of a lamba, in this case a normal for loop would probably have been easier
 	auto comp = [&](const SScol& a) {
 		if (a.key == col.key) {
@@ -26,7 +26,10 @@ void SqlComposer::push(const SScol& col) {
 		    comp);
 
 		if (iter != end()) {
-			throw ExceptionV2(F("you are inserting twice the same KEY: {}, current value is {}, previous value was {}\n", col.key, col.val, iter->val));
+			if (!force) {
+				throw ExceptionV2(F("you are inserting twice the same KEY: {}, current value is {}, previous value was {}\n", col.key, col.val, iter->val));
+			}
+			erase(iter);
 		}
 	}
 
