@@ -114,6 +114,10 @@ bool JSONReader::parse(const QByteArray& raw) {
 }
 
 bool JSONReader::parse(const char* raw) {
+	if (strlen(raw) < 2) {
+		parseError = empty;
+		return false;
+	};
 	rapidjson::StringStream                                 ss(raw);
 	rapidjson::CursorStreamWrapper<rapidjson::StringStream> csw(ss);
 	json.ParseStream(csw);
@@ -123,6 +127,7 @@ bool JSONReader::parse(const char* raw) {
 		                             .arg(csw.GetColumn())
 		                             .arg(QString(raw).left(512))
 		                      << QStacker16Light();
+		parseError = invalid;
 		return false;
 	}
 	return true;
