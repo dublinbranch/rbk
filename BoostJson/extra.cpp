@@ -273,7 +273,7 @@ string JsonRes::composeErrorMsg() const {
 		auto end   = i->first;
 		//do we have a line before ?
 		if (rowNumber > 2) {
-			start = (----i)->second.start;
+			start = (-- --i)->second.start;
 		} else if (rowNumber > 1) {
 			start = (--i)->second.start;
 		}
@@ -325,4 +325,8 @@ At position {} (line {}:{})
 	             showMe,
 	             fancy);
 	return msg;
+}
+
+void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QStringList& t) {
+	jv = bj::value_from(t.toStdList());
 }
