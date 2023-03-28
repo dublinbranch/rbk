@@ -4,7 +4,22 @@
 
 class SScol {
       public:
+	class Value {
+	      public:
+		Value() = default;
+		Value(const std::string& s, bool noQuote_ = false, bool noEscape_ = false);
+
+		std::string val;
+		bool        noQuote  = false;
+		bool        noEscape = false;
+	};
+
 	SScol() = default;
+
+	SScol(const std::string_view& key_, const Value& val_) {
+		key = key_;
+		val = val_;
+	}
 
 	template <typename V>
 	SScol(const std::string_view& key_, const V& val_) {
@@ -28,12 +43,12 @@ class SScol {
 		if constexpr (std::is_arithmetic<T>::value) {
 			aritmetic = true;
 		}
-		val = F("{}", value);
+		val.val = F("{}", value);
 	}
 
 	bool        aritmetic = false;
 	std::string key;
-	std::string val;
+	Value       val;
 
       private:
 };
@@ -52,8 +67,14 @@ class SqlComposer : public std::vector<SScol> {
 	}
 
 	std::string compose() const;
+	QString     composeQS() const;
 	bool        valid     = true;
 	std::string separator = ",";
+	//change into " AS " for INSERT INTO / SELECT
+	std::string joiner    = " = ";
+	bool        isASelect = false;
+
+	void setIsASelect();
 
       private:
 	size_type longestKey = 0;

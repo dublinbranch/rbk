@@ -27,7 +27,7 @@ void SqlComposer::push(const SScol& col, bool force) {
 
 		if (iter != end()) {
 			if (!force) {
-				throw ExceptionV2(F("you are inserting twice the same KEY: {}, current value is {}, previous value was {}\n", col.key, col.val, iter->val));
+				throw ExceptionV2(F("you are inserting twice the same KEY: {}, current value is {}, previous value was {}\n", col.key, col.val.val, iter->val.val));
 			}
 			erase(iter);
 		}
@@ -36,7 +36,7 @@ void SqlComposer::push(const SScol& col, bool force) {
 	push_back(col);
 	//in padding and readability we forever trust
 	longestKey = std::max(longestKey, col.key.size());
-	longestVal = std::max(longestVal, col.val.size());
+	longestVal = std::max(longestVal, col.val.val.size());
 }
 
 std::string SqlComposer::compose() const {
@@ -46,27 +46,59 @@ std::string SqlComposer::compose() const {
 	final.reserve(16000);
 	//plain fmt::join is not enought here
 	bool first = true;
-	for (auto&& [math, key, val] : *this) {
-		string t;
-		if (math) {
-			t = val;
+	for (auto&& [aritmetic, key, val] : *this) {
+		string valueS1;
+		//no ONE in his right mind will save a string called NULL in a database
+		if (aritmetic || val.noEscape || val.noQuote || val.val == "NULL") {
+			valueS1 = val.val;
 		} else {
-			t = "'"s + db->escape(val) + "'"s;
+			valueS1 = "'"s + db->escape(val.val) + "'"s;
 		}
+
 		//t = F("{:>{}}", t, longestVal);
 
-		if (first) {
-			first = false;
-			//the first block is used for padding based on separator lenght
-			final += F("{:>{}} {:>{}} = {} \n"s, " ", separator.size(), key, longestKey, t);
+		const string* kk      = nullptr;
+		const string* vv      = nullptr;
+		uint          longest = 0;
+		if (isASelect) {
+			kk      = &valueS1;
+			vv      = &key;
+			longest = longestVal;
 		} else {
-			final.append(separator) += F(" {:>{}} = {} \n"s, key, longestKey, t);
+			kk      = &key;
+			vv      = &valueS1;
+			longest = longestKey;
+		}
+
+		string keyS1 = F("{:>{}}", *kk, longest);
+
+		if (first) {
+			first               = false;
+			auto initialPadding = F("{:>{}}", " ", separator.size());
+			final += F("{}{}{}{}\n"s, initialPadding, keyS1, joiner, *vv);
+		} else {
+			final.append(separator) += F("{}{}{}\n"s, keyS1, joiner, *vv);
 		}
 	}
 	return final;
+}
+
+QString SqlComposer::composeQS() const {
+	return QString::fromStdString(compose());
+}
+
+void SqlComposer::setIsASelect() {
+	joiner    = " AS ";
+	isASelect = true;
 }
 //	for (auto iter = vector.begin(); iter != vector.end() - 1; ++iter) {
 //		final += iter->assemble(longestKey + 1) + QSL(",\n");
 //	}
 //	final += vector.back().assemble(longestKey + 1) + QSL("\n");
 //	return final;
+
+SScol::Value::Value(const std::string& s, bool noQuote_, bool noEscape_) {
+	val      = s;
+	noQuote  = noQuote_;
+	noEscape = noEscape_;
+}
