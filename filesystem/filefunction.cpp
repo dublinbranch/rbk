@@ -513,3 +513,13 @@ bool fileAppendContents(const QString& pay, const QString& fileName) {
 bool fileAppendContents(const std::string& pay, const std::string& fileName) {
 	return fileAppendContents(QByteArray::fromStdString(pay), QString::fromStdString(fileName));
 }
+
+QString RotableFile(const QString& name_, QString suffix) {
+	auto now = QDate::currentDate();
+	//2010-01-03
+	auto n2 = now.toString(Qt::ISODate);
+	if (!suffix.isEmpty()) {
+		suffix.prepend(".");
+	}
+	return name_ + "_" + n2 + suffix;
+}

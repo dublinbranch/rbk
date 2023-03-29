@@ -221,6 +221,10 @@ JsonRes parseJson(const QByteArray& json) {
 	return parseJson(json.toStdString());
 }
 
+JsonRes parseJson(const QString& json) {
+	return parseJson(json.toStdString());
+}
+
 void sqlEscape(boost::json::object& r, DB* db) {
 	for (auto iter = r.begin(); iter != r.end(); iter++) {
 		iter->value() = db->escape(string(iter->value().as_string().c_str()));

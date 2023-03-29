@@ -74,6 +74,8 @@ bool softlink(const QString& source, const QString& dest, bool quiet = false);
 // HLParam::quiet | HLParam::eraseOld
 QString hardlink(const QString& source, const QString& dest, HLParam param = HLParam::eraseOld);
 
+QString RotableFile(const QString& name, QString suffix = "");
+
 void logWithTime(const QString& logFile, const QString& msg);
 void logWithTime(const QString& logFile, const std::string& msg);
 void logWithTime(const std::string& logFile, const std::string& msg);

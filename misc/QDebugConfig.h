@@ -5,6 +5,7 @@
 struct SlackOpt {
 	bool        warningON      = true;
 	std::string warningChannel = "";
+	//FIXME why is slackAPIToken not here ????
 };
 
 struct NanoSpammerConfig {

@@ -31,6 +31,13 @@ QString QS(const boost::json::string& cry);
 QString QS(const boost::json::value* value);
 QString QS(const boost::json::value& value);
 
+template <class T>
+boost::json::value J(T&& t) {
+	boost::json::value jv;
+	boost::json::value_from(std::forward<T>(t), jv);
+	return jv;
+}
+
 class sqlRow;
 boost::json::value asNull(const sqlRow& row, std::string_view key);
 
@@ -53,6 +60,7 @@ struct JsonRes {
 	std::string             composeErrorMsg() const;
 };
 
+JsonRes parseJson(const QString& json);
 JsonRes parseJson(const QByteArray& json);
 JsonRes parseJson(std::string_view json);
 

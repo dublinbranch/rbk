@@ -5,6 +5,7 @@ namespace boost {
 namespace json {
 class value;
 class object;
+class array;
 } // namespace json
 } // namespace boost
 
