@@ -335,3 +335,7 @@ QString serializeQS(const boost::json::value& jv) {
 	auto t = bj::serialize(jv);
 	return QString::fromStdString(t);
 }
+
+QString pretty_printQS(const boost::json::value &jv) {
+	return QString::fromStdString(pretty_print(jv));
+}
