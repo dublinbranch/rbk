@@ -68,7 +68,6 @@ LIBS += -lmariadb
 
 defined(WITH_BOOST_BEAST,var) {
 #HTTP part
-DEFINES += BOOST_NO_CXX17_HDR_STRING_VIEW=1
 
 SOURCES += \
     $$PWD/HTTP/PMFCGI.cpp \

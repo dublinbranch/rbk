@@ -74,10 +74,10 @@ std::string SqlComposer::compose() const {
 
 		if (first) {
 			first               = false;
-			auto initialPadding = F("{:>{}}", " ", separator.size());
+			auto initialPadding = F("{:>{}} ", " ", separator.size());
 			final += F("{}{}{}{}\n"s, initialPadding, keyS1, joiner, *vv);
 		} else {
-			final.append(separator) += F("{}{}{}\n"s, keyS1, joiner, *vv);
+			final.append(separator) += F(" {}{}{}\n"s, keyS1, joiner, *vv);
 		}
 	}
 	return final;

@@ -58,27 +58,27 @@ QByteArray JSONReader::jsonRender() {
 }
 
 bool JSONReader::stageClear(rapidjson::Value* el, bool verbose) {
-	bool empty = true;
+	bool isEmpty = true;
 	//check if we have nothing left (or all set as null, so we can delete)
 	if (el->IsObject()) {
 		for (auto&& iter : el->GetObject()) {
-			empty = empty & stageClear(&iter.value, false);
-			if (!empty) {
+			isEmpty = isEmpty & stageClear(&iter.value, false);
+			if (!isEmpty) {
 				break;
 			}
 		}
 	} else if (el->IsArray()) {
 		for (auto&& iter : el->GetArray()) {
-			empty = empty & stageClear(&iter, false);
-			if (!empty) {
+			isEmpty = isEmpty & stageClear(&iter, false);
+			if (!isEmpty) {
 				break;
 			}
 		}
 	} else if (!el->IsNull()) {
-		empty = false;
+		isEmpty = false;
 	}
 
-	if (empty) {
+	if (isEmpty) {
 		el->SetNull();
 		return true;
 	} else if (verbose) {
@@ -90,14 +90,14 @@ bool JSONReader::stageClear(rapidjson::Value* el, bool verbose) {
 }
 
 bool JSONReader::stageClear() {
-	bool empty = true;
+	bool isEmpty = true;
 	for (auto&& iter : json.GetObject()) {
-		empty = empty & stageClear(&iter.value, false);
-		if (!empty) {
+		isEmpty = isEmpty & stageClear(&iter.value, false);
+		if (!isEmpty) {
 			break;
 		}
 	}
-	if (!empty) {
+	if (!isEmpty) {
 		qCritical().noquote() << "non empty Full JSON at the end of parsing, remnant is" << jsonRender()
 		                      << QStacker16(4, QStackerOptLight);
 		return false;
