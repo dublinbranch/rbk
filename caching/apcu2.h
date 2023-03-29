@@ -23,7 +23,7 @@ class APCU : private NoCopy {
 	   void startupfun (void) __attribute__ ((constructor));
 
 	   void startupfun (void)
-	   {   APCU::disableAPCU = true    }
+	   {   APCU::disableAPCU = true;    }
 */
 
 	static inline bool disableAPCU = false;

@@ -9,6 +9,7 @@
 #include <QDebug>
 #include <QStringList>
 #include <mysql/mysql.h>
+#include "rbk/QStacker/exceptionv2.h"
 
 class DBException : public ExceptionV2 {
       public:
