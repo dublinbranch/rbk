@@ -56,5 +56,8 @@ struct JsonRes {
 JsonRes parseJson(const QByteArray& json);
 JsonRes parseJson(std::string_view json);
 
+std::string escape_json(const std::string& s);
+QString     escape_json(const QString& string);
+
 class DB;
 void sqlEscape(boost::json::object& value, DB* db);
