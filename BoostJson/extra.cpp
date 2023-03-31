@@ -387,3 +387,7 @@ std::string escape_json(const std::string& s) {
 QString escape_json(const QString& string) {
 	return QString::fromStdString(escape_json(string.toStdString()));
 }
+
+QString tag_invoke(const boost::json::value_to_tag<QString> &, const boost::json::value &jv) {
+	return QS(jv);
+}

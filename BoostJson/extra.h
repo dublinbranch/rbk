@@ -6,30 +6,36 @@
 #include <boost/json.hpp>
 
 //namespace bj = boost::json;
-//using namespace std::string_literals;
+//using namespace std::string_literals; <<-- this one for the suffix s to conver from char[] to std::string
 
 class QString;
 class QByteArray;
 
-void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, QString const& t);
-void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, QByteArray const& t);
-void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, QStringList const& t);
+QString QS(const boost::json::string& cry);
+QString QS(const boost::json::value* value);
+QString QS(const boost::json::value& value);
+
+/** FROM */
+void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QString& t);
+void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QByteArray& t);
+void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QStringList& t);
 
 template <isEnum T>
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const T& t) {
 	jv = asSWString(t);
 }
 
+/** TO */
+
+QString tag_invoke(const boost::json::value_to_tag<QString>&, const boost::json::value& jv);
+
+/***********************/
 void        pretty_print(std::string& res, boost::json::value const& jv, std::string* indent = nullptr);
 std::string pretty_print(boost::json::value const& jv);
 
 QString pretty_printQS(boost::json::value const& jv);
 
 QString serializeQS(boost::json::value const& jv);
-
-QString QS(const boost::json::string& cry);
-QString QS(const boost::json::value* value);
-QString QS(const boost::json::value& value);
 
 template <class T>
 boost::json::value J(T&& t) {

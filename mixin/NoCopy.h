@@ -10,6 +10,10 @@ class NoCopy {
 	NoCopy()  = default;
 	~NoCopy() = default;
 
-	NoCopy(const NoCopy&)            = delete;
+	//copy creator ie Miao m(oldValue)
+	NoCopy(const NoCopy&) = delete;
+	
+	//https://en.cppreference.com/w/cpp/language/move_assignment
+	//Miao m = oldValue
 	NoCopy& operator=(const NoCopy&) = delete;
 };
