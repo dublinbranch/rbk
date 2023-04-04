@@ -51,7 +51,7 @@ class QMapV2 : public QMap<Key, T> {
 	 */
 	[[nodiscard]] auto fetch(const Key& key) const {
 		struct OK {
-			operator bool() const {
+			explicit operator bool() const {
 				return present;
 			}
 			const T* value   = nullptr;

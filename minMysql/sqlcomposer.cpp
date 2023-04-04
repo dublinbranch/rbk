@@ -8,6 +8,10 @@ SqlComposer::SqlComposer(DB* db_, const std::string& separator_) {
 	db        = db_;
 	separator = separator_;
 	replace(" ", "", separator);
+	PrivateTag t;
+	where            = make_unique<SqlComposer>(t);
+	where->db        = db;
+	where->separator = " AND ";
 }
 
 void SqlComposer::push(const SScol& col, bool force) {
@@ -85,6 +89,16 @@ std::string SqlComposer::compose() const {
 
 QString SqlComposer::composeQS() const {
 	return QString::fromStdString(compose());
+}
+
+string SqlComposer::composeUpdate() const {
+	string sql = F(R"(
+UPDATE {} SET
+{}
+WHERE {}
+)",
+	               table, compose(), where->compose());
+	return sql;
 }
 
 void SqlComposer::setIsASelect() {
