@@ -43,7 +43,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	 */
 	template <isEnum T>
 	[[nodiscard]] T rqe(const QByteArray& key) const {
-		int temp;
+		int temp = 0;
 		rq(key, temp);
 		T t2 = T(temp);
 		return t2;
