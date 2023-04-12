@@ -109,6 +109,7 @@ HEADERS += \
     $$PWD/hash/sha.h \
 	$$PWD/locale/codes.h \
     $$PWD/minMysql/DBConf.h \
+    $$PWD/minMysql/checkschema.h \
     $$PWD/minMysql/runnable.h \
     $$PWD/minMysql/sqlRow.h \
     $$PWD/minMysql/sqlcomposer.h \
@@ -171,6 +172,7 @@ SOURCES += \
     $$PWD/hash/salt.cpp \
     $$PWD/hash/sha.cpp \
 	$$PWD/locale/codes.cpp \
+    $$PWD/minMysql/checkschema.cpp \
     $$PWD/minMysql/runnable.cpp \
     $$PWD/minMysql/sqlcomposer.cpp \
     $$PWD/minMysql/sqlresult.cpp \
