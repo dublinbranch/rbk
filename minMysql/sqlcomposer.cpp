@@ -55,7 +55,7 @@ std::string SqlComposer::compose() const {
 		//no ONE in his right mind will save a string called NULL in a database
 		if (aritmetic || val.noEscape || val.noQuote || val.val == "NULL") {
 			valueS1 = val.val;
-		} else {
+		} else { //no longer we will abuse base64this!
 			valueS1 = "'"s + db->escape(val.val) + "'"s;
 		}
 

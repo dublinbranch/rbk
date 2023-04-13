@@ -98,7 +98,7 @@ bool CheckSchema::checkDbSchema() {
 		if (sdlines.size() != itlines.size()) { // different number of lines
 			qWarning().noquote() << "schema for " << key << " has different number of lines!\n"
 			                     << diskSchema << "\n-----------------------------\n"
-			                     << diskSchema;
+			                     << dbSchema;
 			abort();
 		}
 
@@ -128,12 +128,12 @@ bool CheckSchema::checkDbSchema() {
 			}
 
 			// the two lines are definitely different
-			diff.push_back(sdline + " - " + itline);
+			diff.push_back("------\n" + sdline + " \n" + itline);
 		}
 
 		if (!diff.empty()) {
 			qWarning().noquote() << "schema for " << key << " is different!\n"
-			                     << diff.join(", n");
+			                     << diff.join(", \n");
 			abort();
 		}
 	}
