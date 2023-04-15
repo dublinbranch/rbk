@@ -525,6 +525,7 @@ void DB::setConf(const DBConf& value) {
 	for (auto& rx : conf.warningSuppression) {
 		rx->optimize();
 	}
+	state.get().NULL_as_EMPTY = conf.NULL_as_EMPTY;
 }
 
 long DB::getAffectedRows() const {
@@ -703,6 +704,8 @@ st_mysql* DB::connect() const {
 		query(QBL("SET sql_log_bin = 0"));
 	}
 
+	//this function is normally called when a new instance is created in a MT program, so we have to set again the local state
+	state.get().NULL_as_EMPTY = conf.NULL_as_EMPTY;
 	return connPool;
 }
 
