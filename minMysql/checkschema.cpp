@@ -1,11 +1,10 @@
 #include "checkschema.h"
-#include "hash/sha.h"
-#include "minMysql/min_mysql.h"
+#include "rbk/hash/sha.h"
+#include "rbk/minMysql/min_mysql.h"
 
 #include <QByteArray>
 #include <QDataStream>
 #include <QFile>
-#include <QMap>
 #include <QRegularExpression>
 #include <QSaveFile>
 
@@ -50,8 +49,8 @@ void CheckSchema::saveSchema() {
 		QByteArray  stream;
 		QDataStream out(&stream, QIODevice::WriteOnly);
 		out << getDbSchema();
-		auto sha = sha1(stream, false).toHex();
-		auto sz  = stream.size();
+		//auto sha = sha1(stream, false).toHex();
+		//auto sz  = stream.size();
 		file.write(stream);
 	}
 	file.commit();
@@ -61,9 +60,9 @@ CheckSchema::Schemas CheckSchema::loadSchema() {
 	CheckSchema::Schemas map;
 	QFile                file(":/db/dbSchema");
 	if (file.open(QFile::ReadOnly)) {
-		QByteArray sha, payload;
+		QByteArray payload;
 		auto       content = file.readAll();
-		sha                = sha1(content, false).toHex();
+		//auto sha                = sha1(content, false).toHex();
 		file.seek(0);
 		QDataStream in(&file);
 		in >> map;
