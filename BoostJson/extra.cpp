@@ -336,8 +336,8 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, cons
 }
 
 QString serializeQS(const boost::json::value& jv) {
-	auto t = bj::serialize(jv);
-	return QString::fromStdString(t);
+	auto t = pretty_printQS(jv);
+	return t;
 }
 
 QString pretty_printQS(const boost::json::value& jv) {
@@ -388,6 +388,6 @@ QString escape_json(const QString& string) {
 	return QString::fromStdString(escape_json(string.toStdString()));
 }
 
-QString tag_invoke(const boost::json::value_to_tag<QString> &, const boost::json::value &jv) {
+QString tag_invoke(const boost::json::value_to_tag<QString>&, const boost::json::value& jv) {
 	return QS(jv);
 }
