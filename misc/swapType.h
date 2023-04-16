@@ -24,7 +24,13 @@ void swapType(const QByteArray& source, D& dest) {
 		dest = QDate::fromString(source, mysqlDateFormat);
 		return;
 	} else if constexpr (std::is_same<D, QDateTime>::value) {
-		dest = QDateTime::fromString(source, mysqlDateTimeFormat);
+		bool convertible;
+		auto val = source.toUInt(&convertible);
+		if (val && convertible) {
+			dest.setSecsSinceEpoch(val);
+		} else {
+			dest = QDateTime::fromString(source, mysqlDateTimeFormat);
+		}
 		return;
 	} else if constexpr (std::is_enum_v<D>) {
 		auto s = source.toStdString();

@@ -16,13 +16,18 @@ class MyType {
 
 class sqlResult : public QList<sqlRow> {
       public:
+	friend class DB;
+	bool    fromCache = false;
+	QString toString();
+
+	const mapV2<QByteArray, MyType>& getTypes() const;
+
+      private:
 	//Metadata for the column Type
 	//TODO is not always SET, so make private anche check on access
 	//FIXME also on CACHE HIT those are absent!
-	mapV2<QByteArray, MyType> types;
 
-	bool    fromCache = false;
-	QString toString();
+	mapV2<QByteArray, MyType> types;
 };
 
 QString asString(const sqlRow& row);
