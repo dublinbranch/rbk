@@ -115,9 +115,9 @@ HEADERS += \
     $$PWD/minMysql/sqlcomposer.h \
     $$PWD/minMysql/sqlresult.h \
     $$PWD/misc/echo.h \
-    $$PWD/misc/ieee754.h \
     $$PWD/misc/swapType.h \
     $$PWD/misc/typename.h \
+    $$PWD/number/sanitize.h \
 	$$PWD/rand/clampednormaldistribution.h \
     $$PWD/JSON/JSONReaderConst.h \
     $$PWD/JSON/jsonreader.h \
@@ -177,8 +177,8 @@ SOURCES += \
     $$PWD/minMysql/sqlcomposer.cpp \
     $$PWD/minMysql/sqlresult.cpp \
     $$PWD/misc/echo.cpp \
-    $$PWD/misc/ieee754.cpp \
     $$PWD/misc/typename.cpp \
+    $$PWD/number/sanitize.cpp \
 	$$PWD/rand/clampednormaldistribution.cpp \
     $$PWD/JSON/jsonreader.cpp \
     $$PWD/SpaceShipOP/implementation.cpp \

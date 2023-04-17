@@ -42,7 +42,7 @@ QDateTime getMidnight(int deltaDays, const QTimeZone* tz) {
 	if (!tz) {
 		tz = &UTC;
 	}
-	int       d    = deltaDays * 1;
+	int       d    = deltaDays;
 	auto      ieri = QDate::currentDate().addDays(d);
 	QDateTime cry;
 	cry.setTimeZone(*tz);
