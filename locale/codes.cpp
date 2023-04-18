@@ -517,6 +517,7 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	    {"tunisia", "TN"},
 	    {"tonga", "TO"},
 	    {"turkey", "TR"},
+		{"türkiye", "TR"},
 	    {"trinidad and tobago", "TT"},
 		{"trinidad & tobago", "TT"},
 		{"repubblica di trinidad e tobago", "TT"},

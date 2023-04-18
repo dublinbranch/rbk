@@ -182,7 +182,7 @@ bool insertIfNotNull(boost::json::object& target, const sqlRow& row, std::string
 	QByteArray k;
 	k.setRawData(key.data(), key.size());
 	auto v = row.rq<QByteArray>(k);
-	if (v == BSQL_NULL) {
+	if (v.isEmpty() || v == BSQL_NULL) {
 		return false;
 	}
 	target[key] = v.toStdString();
