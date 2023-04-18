@@ -74,7 +74,8 @@ class SqlComposer : public std::vector<SScol> {
 	template <class... T>
 	void setTable(T&&... strings) {
 		//TODO https://www.linkedin.com/pulse/nth-element-variadic-pack-extraction-alex-dathskovsky-/?trk=pulse-article_more-articles_related-content-card
-		constexpr auto   size = sizeof...(strings);
+		constexpr auto size = sizeof...(strings);
+		//based on number of parameter I know if this is a DB + TABLE or a single entity, so I join or not them
 		std::tuple<T...> tuple(strings...);
 		auto             first = std::get<0>(tuple);
 

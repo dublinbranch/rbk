@@ -1,6 +1,7 @@
 #ifndef SELECT2_H
 #define SELECT2_H
 
+#include <boost/json/value.hpp>
 #include <string>
 #include <vector>
 
@@ -12,7 +13,8 @@ namespace Select2 {
   "results": [
     {
       "id": 1,
-      "text": "Option 1"
+      "text": "Option 1",
+          "formatMe" : {} or "" depending on the receiving function
     },
     {
       "id": 2,
@@ -26,11 +28,13 @@ namespace Select2 {
 */
 
 struct Row {
+	Row() = default;
 	Row(const std::string& id_, const std::string& text_, bool sel = false);
 	Row(const QString& id_, const QString& text_, bool sel = false);
-	std::string id;
-	std::string text;
-	bool        selected = false;
+	std::string         id;
+	std::string         text;
+	boost::json::object formatMe;
+	bool                selected = false;
 };
 
 struct Result {

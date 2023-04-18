@@ -17,6 +17,9 @@ std::string Select2::Result::toResultJSON() const {
 		if (row.selected) {
 			r["selected"] = true;
 		}
+		if (!row.formatMe.empty()) {
+			r["formatMe"] = row.formatMe;
+		}
 		arr.emplace_back(r);
 	}
 	obj["results"] = arr;

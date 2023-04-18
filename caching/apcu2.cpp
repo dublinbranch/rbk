@@ -34,10 +34,14 @@ using ApcuCache = multi_index_container<APCU::Row, ApcuCache_index>;
 //this is deallocated at exit before the function is called, so we just manually manage it, no idea how to do the "correct" way
 static ApcuCache* cache = nullptr;
 
+//Orrible, as will trigger immediately the GC thread creation ecc, those must be delayed, and most important enabled AFTER main if needed in the project...
 static APCU theAPCU;
 using DiskMapType = QMapV2<std::string, APCU::DiskValue>;
 
 void diskSync() {
+	if (APCU::disableAPCU) {
+		return;
+	}
 	auto a = APCU::getInstance();
 	a->diskSyncP1();
 }
