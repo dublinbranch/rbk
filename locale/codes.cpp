@@ -534,6 +534,7 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	    {"uzbekistan", "UZ"},
 	    {"vatican city", "VA"},
 	    {"saint vincent and the grenadines", "VC"},
+		{"st. vincent & grenadines", "VC"},
 	    {"venezuela", "VE"},
 	    {"british virgin islands", "VG"},
 	    {"u.s. virgin islands", "VI"},
