@@ -1,4 +1,5 @@
 #include "codes.h"
+#include "funkz.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/QStacker/qstacker.h"
 #include <QDebug>
@@ -437,6 +438,7 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	    {"republic of north macedonia", "MK"},
 	    {"mali", "ML"},
 	    {"myanmar [burma]", "MM"},
+		{"myanmar (burma)", "MM"},
 	    {"mongolia", "MN"},
 	    {"macao", "MO"},
 	    {"northern mariana islands", "MP"},
@@ -559,7 +561,10 @@ QString getNationIsoCode(const QString& nation) {
 	auto codes = getNationsIsoCodes();
 	auto iter  = codes.find(nation.toLower());
 	if (iter == codes.end()) {
-		qCritical().noquote() << QSL("nation: %1 missing in getNationsIsoCodes \n").arg(nation.toLower()) + QStacker16Light();
+		auto key = QSL("nation: %1 missing in getNationsIsoCodes \n").arg(nation.toLower());
+		if (runnable(key, 3600)) {
+			qCritical().noquote() << key + QStacker16Light();
+		}
 		return QString();
 	}
 	return iter.value();
