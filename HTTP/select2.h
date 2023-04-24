@@ -14,7 +14,7 @@ namespace Select2 {
     {
       "id": 1,
       "text": "Option 1",
-          "formatMe" : {} or "" depending on the receiving function
+          "formatMe" : {JSON} or "" depending on the receiving function
     },
     {
       "id": 2,

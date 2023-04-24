@@ -38,4 +38,9 @@ template <typename... T>
 	return QString::fromStdString(fmt::vformat(fmt, fmt::make_format_args(args...)));
 }
 
+template <typename... T>
+[[nodiscard]] QByteArray F8(const std::string_view& fmt, T&&... args) {
+	return QByteArray::fromStdString(fmt::vformat(fmt, fmt::make_format_args(args...)));
+}
+
 #endif // DYNAMIC_H
