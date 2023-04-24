@@ -162,6 +162,7 @@ HEADERS += \
     $$PWD/string/qstring.h \
     $$PWD/string/util.h \
     $$PWD/thread/threadstatush.h \
+    $$PWD/thread/threadvector.h \
     $$PWD/thread/tmonitoring.h
 
 SOURCES += \
@@ -209,6 +210,7 @@ SOURCES += \
     $$PWD/string/qstring.cpp \
     $$PWD/string/util.cpp \
     $$PWD/thread/threadstatush.cpp \
+    $$PWD/thread/threadvector.cpp \
     $$PWD/thread/tmonitoring.cpp
 
 SOURCES += $$PWD/HTTP/url.cpp 

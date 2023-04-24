@@ -6,10 +6,8 @@ QString QCommandLineParserV2::require(const QString& key, const char* msg) {
 	if (value(key).isEmpty()) {
 		if (msg) {
 			throw ExceptionV2(msg);
-		} else {
-			throw ExceptionV2(QSL("missing required parameter %1").arg(key),6);
 		}
-	} else {
-		return value(key);
+		throw ExceptionV2(QSL("missing required parameter %1").arg(key), 6);
 	}
+	return value(key);
 }

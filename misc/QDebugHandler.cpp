@@ -7,6 +7,7 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QFile>
+#include <curl/curl.h>
 #include <thread>
 
 static const NanoSpammerConfig* config = nullptr;
@@ -118,6 +119,8 @@ std::string submoduleInfo() {
  * we set this initialization very early with some default value
  */
 void commonInitialization(const NanoSpammerConfig* _config) {
+	//We probably ALWAYS use curl
+	curl_global_init(CURL_GLOBAL_ALL);
 	loadBuffer();
 	//Maybe not the best thing, but no idea how else to achieve a better globalish
 

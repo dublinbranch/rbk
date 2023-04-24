@@ -8,11 +8,11 @@
 
 namespace std {
 class thread;
-}
+};
 namespace boost {
 namespace asio {
 class io_context;
-}
+} // namespace asio
 } // namespace boost
 
 class listener;
