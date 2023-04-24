@@ -418,6 +418,7 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	    {"laos", "LA"},
 	    {"lebanon", "LB"},
 	    {"saint lucia", "LC"},
+	    {"st. lucia", "LC"},
 	    {"liechtenstein", "LI"},
 	    {"sri lanka", "LK"},
 	    {"liberia", "LR"},
