@@ -25,7 +25,7 @@ struct fmt::formatter<QStringRef> {
 		// auto format(const point &p, FormatContext &ctx) -> decltype(ctx.out()) // c++11
 		// ctx.out() is an output iterator to write to.
 
-		return format_to(
+		return fmt::format_to(
 		    ctx.out(),
 		    "{}",
 		    p.string()->toStdString());
@@ -70,7 +70,7 @@ struct fmt::formatter<QString> {
 	auto format(const QString& p, FormatContext& ctx) const {
 		// auto format(const point &p, FormatContext &ctx) -> decltype(ctx.out()) // c++11
 		// ctx.out() is an output iterator to write to.
-		return format_to(
+        return fmt::format_to(
 		    ctx.out(),
 		    "{}",
 		    p.toStdString());
@@ -115,7 +115,7 @@ struct fmt::formatter<QByteArray> {
 	auto format(const QByteArray& p, FormatContext& ctx) const {
 		// auto format(const point &p, FormatContext &ctx) -> decltype(ctx.out()) // c++11
 		// ctx.out() is an output iterator to write to.
-		return format_to(
+		return fmt::format_to(
 		    ctx.out(),
 		    "{}",
 		    p.toStdString());

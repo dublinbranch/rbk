@@ -42,7 +42,7 @@ struct fmt::formatter<T> {
 	auto format(const T& p, FormatContext& ctx) const {
 		// auto format(const point &p, FormatContext &ctx) -> decltype(ctx.out()) // c++11
 		// ctx.out() is an output iterator to write to.
-		return format_to(
+		return fmt::format_to(
 		    ctx.out(),
 		    "{}",
 		    asSWString(p));

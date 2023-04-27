@@ -11,10 +11,6 @@
  * @param args the param
  * @return the formatted string
  */
-template <typename... T>
-[[nodiscard]] std::string format(const std::string_view& fmt, T&&... args) {
-	return fmt::vformat(fmt, fmt::make_format_args(args...));
-}
 
 template <typename... T>
 [[nodiscard]] std::string F(const std::string_view& fmt, T&&... args) {
