@@ -151,6 +151,10 @@ void handle_request(
 			for (auto& h : req.base()) {
 				status.headers.add(h.name_string(), h.value());
 			}
+
+			if (auto v = status.headers.get("remote_addr"); v) {
+				status.remoteIp = v.val->toStdString();
+			}
 			status.extractCookies();
 
 			/*

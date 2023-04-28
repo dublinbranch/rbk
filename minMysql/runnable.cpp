@@ -2,6 +2,8 @@
 #include "min_mysql.h"
 #include "rbk/misc/b64.h"
 
+Runnable runnable;
+
 Runnable::Runnable(DB* db_) {
 	setConf(db_);
 }

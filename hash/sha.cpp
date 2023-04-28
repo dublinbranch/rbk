@@ -22,3 +22,7 @@ QByteArray sha1(const QString& original, bool urlSafe) {
 QString sha1QS(const QString& original, bool urlSafe) {
 	return sha1(original, urlSafe);
 }
+
+QByteArray sha1(const std::string& original, bool urlSafe) {
+	return sha1(QByteArray::fromStdString(original), urlSafe);
+}
