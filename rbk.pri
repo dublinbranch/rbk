@@ -163,7 +163,8 @@ HEADERS += \
     $$PWD/string/util.h \
     $$PWD/thread/threadstatush.h \
     $$PWD/thread/threadvector.h \
-    $$PWD/thread/tmonitoring.h
+    $$PWD/thread/tmonitoring.h \
+	$$PWD/versioncheck.h
 
 SOURCES += \
     $$PWD/BoostJson/extra.cpp \
@@ -211,7 +212,8 @@ SOURCES += \
     $$PWD/string/util.cpp \
     $$PWD/thread/threadstatush.cpp \
     $$PWD/thread/threadvector.cpp \
-    $$PWD/thread/tmonitoring.cpp
+    $$PWD/thread/tmonitoring.cpp \
+	$$PWD/versioncheck.cpp
 
 SOURCES += $$PWD/HTTP/url.cpp 
 	
