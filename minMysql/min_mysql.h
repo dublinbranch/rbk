@@ -2,6 +2,7 @@
 
 #include "DBConf.h"
 #include "MITLS.h"
+#include "rbk/QStacker/exceptionv2.h"
 #include "rbk/mapExtensor/mapV2.h"
 #include "sqlRow.h"
 #include "sqlresult.h"
@@ -9,7 +10,6 @@
 #include <QDebug>
 #include <QStringList>
 #include <mysql/mysql.h>
-#include "rbk/QStacker/exceptionv2.h"
 
 class DBException : public ExceptionV2 {
       public:
@@ -154,6 +154,7 @@ class DB {
 
 	const DBConf getConf() const;
 	void         setConf(const DBConf& value);
+	void         setConfIfNotSet(const DBConf& value);
 
 	long getAffectedRows() const;
 	//usually set / reset via

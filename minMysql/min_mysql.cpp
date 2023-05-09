@@ -519,7 +519,16 @@ const DBConf DB::getConf() const {
 	return conf;
 }
 
+void DB::setConfIfNotSet(const DBConf& value) {
+	if (!confSet) {
+		setConf(value);
+	}
+}
+
 void DB::setConf(const DBConf& value) {
+	if (confSet) {
+		throw ExceptionV2("better not set twice the db config to avoid abomination");
+	}
 	conf    = value;
 	confSet = true;
 	for (auto& rx : conf.warningSuppression) {

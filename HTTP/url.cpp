@@ -18,7 +18,7 @@ std::string Url::prettyPrint() const {
 	for (auto& [key, value] : query) {
 		buffer += fmt::format("  |--> {:<{}} : {}\n", key.toStdString(), longest, value);
 	}
-	return buffer;
+    return buffer;
 }
 
 QString Url::get3lvl() const {
