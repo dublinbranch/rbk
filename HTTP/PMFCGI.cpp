@@ -126,6 +126,9 @@ void Payload::setStandardHeaders(bool addCors) {
 }
 
 multiMapV2<QString, QString> decodePost(const std::string& form) {
+	if (form.empty()) {
+        return{};
+	}
 	multiMapV2<QString, QString> res;
 	auto                         copy = QString::fromStdString(form);
 	auto                         rows = copy.split('&');
