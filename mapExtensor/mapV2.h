@@ -57,8 +57,8 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		}
 	};
 	struct Founded2 {
-		const V  val   = nullptr;
-		bool     found = false;
+		const V val   = nullptr;
+		bool    found = false;
 		explicit operator bool() const {
 			return found;
 		}
@@ -166,6 +166,16 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		return v;
 	}
 
+	[[nodiscard]] V getDefault(const K& k, const V& v, bool& isFound) const {
+		if (auto found = this->get(k); found) {
+			isFound = true;
+			return *(found.val);
+		}
+		isFound = false;
+		return v;
+	}
+
+	//same interface as normal get!
 	bool getOptional(const K& key, V& dest) const {
 		if (auto found = get(key); found) {
 			dest = *found.val;

@@ -572,3 +572,10 @@ QString getNationIsoCode(const QString& nation) {
 	}
 	return iter.value();
 }
+
+bool validNation(const QByteArray& nation, bool okLatam) {
+	if (okLatam && nation == "LATAM") {
+		return true;
+	}
+	return getNationISO2().contains(nation);
+}
