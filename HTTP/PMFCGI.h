@@ -1,6 +1,7 @@
 #ifndef PMFCGI_H
 #define PMFCGI_H
 
+#include "url.h"
 #include <QString>
 #include <QStringList>
 #include <map>
@@ -26,6 +27,10 @@ struct PMFCGI {
 	//This is only the path, and in nginx X we do the intermediate routing
 	std::string path;
 	std::string body;
+	//remember not automatically decoded! //TODO extend and decode on request ?
+	multiMapV2<QString, QString> post;
+	QueryParams                  get;
+	multiMapV2<QString, QString> request;
 	//server name, if needed must be forwarded by nginx else will be 127.0.0.1 from the header
 
 	void        extractCookies();
