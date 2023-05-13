@@ -143,6 +143,11 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		return v;
 	}
 
+	template <typename D>
+	void rq(const K& key, D& dest) const {
+		dest = rq(key);
+	}
+
 	[[nodiscard]] auto take(const K& k) {
 		if (auto iter = this->find(k); iter != this->end()) {
 			Founded2 f{iter->second, true};

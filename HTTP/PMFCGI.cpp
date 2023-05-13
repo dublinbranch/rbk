@@ -132,9 +132,15 @@ multiMapV2<QString, QString> decodePost(const std::string& form) {
 	multiMapV2<QString, QString> res;
 	auto                         copy = QString::fromStdString(form);
 	auto                         rows = copy.split('&');
+
 	for (auto& row : rows) {
 		auto pair = row.split('=');
 		if (pair.size() != 2) {
+			if (rows.size() == 1) {
+				//in some cases we send ONLY a single JSON back and not the post format stuff...
+				// in this case is fine to just return empty and use a custom decoder
+				return {};
+			}
 			throw HttpException("invalid line in post" + row);
 		}
 		auto t0 = QByteArray::fromPercentEncoding(pair[0].toUtf8());

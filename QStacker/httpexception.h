@@ -19,6 +19,7 @@ class HttpException : public ExceptionV2 {
 	static void HttpParamErrorHandler1(const QString& key);
 };
 
+
 void testHttpException();
 
 #endif // HTTPEXCEPTION_H
