@@ -101,6 +101,11 @@ WHERE {}
 	return sql;
 }
 
+string SqlComposer::composeInsert() const {
+	auto sql = F("INSERT INTO {} SET {}", table, compose());
+	return sql;
+}
+
 void SqlComposer::setIsASelect() {
 	joiner    = " AS ";
 	isASelect = true;

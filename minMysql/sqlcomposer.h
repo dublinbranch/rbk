@@ -18,15 +18,10 @@ class SScol {
 
 	SScol() = default;
 
-	SScol(const std::string_view& key_, const Value& val_) {
-		key = key_;
-		val = val_;
-	}
-
-	template <typename V>
-	SScol(const std::string_view& key_, const V& val_) {
-		key = key_;
-		setVal(val_);
+	template <typename K>
+	SScol(const K& key_, const Value& val_)
+		: val(val_) {
+		setKey(key_);
 	}
 
 	template <typename K, typename V>
@@ -37,7 +32,7 @@ class SScol {
 
 	template <typename T>
 	void setKey(const T& key_) {
-		key = F("{}", key_);
+		key = F("`{}`", key_);
 	}
 
 	template <typename T>
@@ -71,6 +66,11 @@ class SqlComposer : public std::vector<SScol> {
 
 	void push(const SScol& col, bool force = false);
 
+	template <typename K, typename V>
+	void push(const K& key_, const V& val_, bool force = false) {
+		push(SScol{key_, val_}, force);
+	}
+
 	template <class... T>
 	void setTable(T&&... strings) {
 		//TODO https://www.linkedin.com/pulse/nth-element-variadic-pack-extraction-alex-dathskovsky-/?trk=pulse-article_more-articles_related-content-card
@@ -102,17 +102,13 @@ class SqlComposer : public std::vector<SScol> {
 		table = table_;
 	}
 
-	template <typename K, typename V>
-	void push(const K& key_, const V& val_, bool force = false) {
-		push({key_, val_}, force);
-	}
-
 	[[nodiscard]] std::string compose() const;
 	[[nodiscard]] QString     composeQS() const;
-
 	[[nodiscard]] std::string composeUpdate() const;
-	bool                      valid     = true;
-	std::string               separator = ",";
+	[[nodiscard]] std::string composeInsert() const;
+
+	bool        valid     = true;
+	std::string separator = ",";
 	//change into " AS " for INSERT INTO / SELECT
 	std::string joiner    = " = ";
 	bool        isASelect = false;
