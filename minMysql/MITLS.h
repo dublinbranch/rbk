@@ -1,29 +1,40 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
+#include <mutex>
 #include <unordered_map>
+#include <vector>
 
 template <typename T>
 class mi_tls_repository {
+      private:
+	using mapT = std::unordered_map<uintptr_t, T>;
+
+	inline static thread_local mapT* repository = nullptr;
+	std::vector<mapT*>               repoList;
+	inline static std::mutex         m;
+
+	void getRepo() {
+		if (!repository) {
+			repository = new mapT();
+			std::lock_guard<std::mutex> l(m);
+			repoList.push_back(repository);
+		}
+	}
+
       protected:
 	void store(uintptr_t instance, T value) {
-		if (!repository) { // check if the application has been already terminated, and we have an out of order destruction
-			repository = new std::unordered_map<uintptr_t, T>();
-		}
+		getRepo();
 		repository->operator[](instance) = value;
 	}
 
-	T& load(uintptr_t instance) const {
-		if (!repository) { // check if the application has been already terminated, and we have an out of order destruction
-			repository = new std::unordered_map<uintptr_t, T>();
-		}
+	T& load(uintptr_t instance) {
+		getRepo();
 		return repository->operator[](instance);
 	}
 
 	void remove(uintptr_t instance) {
-		if (!repository) { // check if the application has been already terminated, and we have an out of order destruction
-			repository = new std::unordered_map<uintptr_t, T>();
-		}
+		getRepo();
 		if (repository->find(instance) != repository->cend()) {
 			repository->erase(instance);
 		}
@@ -32,18 +43,21 @@ class mi_tls_repository {
 	// This will be called for all constructor
 	mi_tls_repository() {
 		// but only the first in this thread will create the map
-		if (!repository) {
-			repository = new std::unordered_map<uintptr_t, T>();
-		}
+		getRepo();
 	}
 
 	~mi_tls_repository() {
-		// Stuff allocated by thread can not be automatically cleaned up as the destruction order can be wrong and so we loose access to the internal stuff
-		// Thus is impossible to close the inner content
+		//only one destructor per thread has to run
+		std::lock_guard l(m);
+		if (repoList.empty()) {
+			return;
+		}
 
-		// In addition FIRST one in the thread to deallocate trigger this function, thus breaking all the other
-
-		// So STOP wasting time to save a 10Byte memleak, and go figure a better overall logic
+		for (auto& row : repoList) {
+			row->clear();
+			delete (row);
+		}
+		repoList.clear();
 	}
 
       private:
@@ -53,7 +67,6 @@ class mi_tls_repository {
 	// Therefore this will leak memory, once you close the program, so is 100% irrelevant
 
 	// We should create another pool managed by us, but is nowhere relavant, as long as you do not create a milion thread...
-	inline static thread_local std::unordered_map<uintptr_t, T>* repository = nullptr;
 };
 
 template <typename T>
