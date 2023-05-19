@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rbk/fmtExtra/includeMe.h"
+#include "rbk/number/sanitize.h"
 #include "rbk/string/util.h"
 #include <memory>
 
@@ -38,9 +39,15 @@ class SScol {
 	template <typename T>
 	void setVal(const T& value) {
 		if constexpr (std::is_arithmetic<T>::value) {
-			aritmetic = true;
+			aritmetic  = true;
+			auto cheap = value;
+			if constexpr (std::is_floating_point<T>::value) {
+				cheap = deNaN(value);
+			}
+			val.val = F("{}", cheap);
+		} else {
+			val.val = F("{}", value);
 		}
-		val.val = F("{}", value);
 	}
 
 	bool        aritmetic = false;
@@ -56,9 +63,10 @@ class SqlComposer : public std::vector<SScol> {
       private:
 	struct PrivateTag {};
 
-	size_type longestKey = 0;
-	size_type longestVal = 0;
-	DB*       db         = nullptr;
+	size_type   longestKey = 0;
+	size_type   longestVal = 0;
+	DB*         db         = nullptr;
+	std::string table;
 
       public:
 	SqlComposer(PrivateTag){};
@@ -104,16 +112,18 @@ class SqlComposer : public std::vector<SScol> {
 
 	[[nodiscard]] std::string compose() const;
 	[[nodiscard]] QString     composeQS() const;
+	[[nodiscard]] std::string composeSelect();
 	[[nodiscard]] std::string composeUpdate() const;
 	[[nodiscard]] std::string composeInsert() const;
+	[[nodiscard]] std::string composeDelete() const;
 
 	bool        valid     = true;
 	std::string separator = ",";
 	//change into " AS " for INSERT INTO / SELECT
 	std::string joiner    = " = ";
 	bool        isASelect = false;
-	std::string table;
 
 	std::unique_ptr<SqlComposer> where;
 	void                         setIsASelect();
+	std::string                  getTable() const;
 };

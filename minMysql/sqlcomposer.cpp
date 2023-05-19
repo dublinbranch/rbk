@@ -91,7 +91,13 @@ QString SqlComposer::composeQS() const {
 	return QString::fromStdString(compose());
 }
 
+string SqlComposer::composeSelect() {
+	setIsASelect();
+	return compose();
+}
+
 string SqlComposer::composeUpdate() const {
+	getTable();
 	string sql = F(R"(
 UPDATE {} SET
 {}
@@ -102,8 +108,29 @@ WHERE {}
 }
 
 string SqlComposer::composeInsert() const {
+	getTable();
+	if (!where->empty()) {
+		throw ExceptionV2("Refusing an insert with where condition");
+	}
 	auto sql = F("INSERT INTO {} SET {}", table, compose());
 	return sql;
+}
+
+string SqlComposer::composeDelete() const {
+	getTable();
+	if (where->empty()) {
+		throw ExceptionV2("Refusing a delete with no where condition");
+	}
+
+	auto sql = F("DELETE FROM {} WHERE {}", table, where->compose());
+	return sql;
+}
+
+std::string SqlComposer::getTable() const {
+	if (table.empty()) {
+		throw ExceptionV2("not table set!");
+	}
+	return table;
 }
 
 void SqlComposer::setIsASelect() {

@@ -760,14 +760,22 @@ SQLBuffering::~SQLBuffering() {
 }
 
 void SQLBuffering::append(const std::string& sql) {
-	buffer.append(QString::fromStdString(sql));
+	append(QString::fromStdString(sql));
 }
 
 void SQLBuffering::append(const QString& sql) {
 	if (sql.isEmpty()) {
 		return;
 	}
-	buffer.append(sql);
+	//many times I forget the ; at the end -.-
+	if (!sql.endsWith(";")) {
+		auto copy = sql;
+		copy.append(";");
+		buffer.append(copy);
+	} else {
+		buffer.append(sql);
+	}
+
 	// 0 disable flushing, 1 disable buffering
 	if (bufferSize && (uint)buffer.size() >= bufferSize) {
 		flush();
@@ -775,10 +783,8 @@ void SQLBuffering::append(const QString& sql) {
 }
 
 void SQLBuffering::append(const QStringList& sqlList) {
-	buffer.append(sqlList);
-
-	if (bufferSize && (uint)buffer.size() >= bufferSize) {
-		flush();
+	for (auto& row : sqlList) {
+		append(row);
 	}
 }
 
