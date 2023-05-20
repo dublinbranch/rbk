@@ -101,7 +101,7 @@ string SqlComposer::composeUpdate() const {
 	string sql = F(R"(
 UPDATE {} SET
 {}
-WHERE {}
+WHERE {} ;
 )",
 	               table, compose(), where->compose());
 	return sql;
@@ -112,7 +112,7 @@ string SqlComposer::composeInsert() const {
 	if (!where->empty()) {
 		throw ExceptionV2("Refusing an insert with where condition");
 	}
-	auto sql = F("INSERT INTO {} SET {}", table, compose());
+	auto sql = F("INSERT INTO {} SET {} ;", table, compose());
 	return sql;
 }
 
@@ -122,7 +122,7 @@ string SqlComposer::composeDelete() const {
 		throw ExceptionV2("Refusing a delete with no where condition");
 	}
 
-	auto sql = F("DELETE FROM {} WHERE {}", table, where->compose());
+	auto sql = F("DELETE FROM {} WHERE {} ;", table, where->compose());
 	return sql;
 }
 

@@ -48,6 +48,9 @@ class indexedVector {
 		constexpr bool hasCampaign = requires() {
 			r->campaign.rty;
 		};
+		constexpr bool hasHeaderCampaign = requires() {
+			r->header.campaign.rty;
+		};
 
 		//Due to an orrible error that Roy did we now need this hack, well not entirely
 		if constexpr (hasRty) {
@@ -64,6 +67,9 @@ class indexedVector {
 			return;
 		} else if constexpr (hasCampaign) {
 			content.insert({r->campaign.rty, r});
+			return;
+		} else if constexpr (hasHeaderCampaign) {
+			content.insert({r->header.campaign.rty, r});
 			return;
 		}
 		throw ExceptionV2("what is that now ?");
