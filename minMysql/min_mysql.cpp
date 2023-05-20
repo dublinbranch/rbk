@@ -780,6 +780,7 @@ void SQLBuffering::append(const QString& sql) {
 	if (bufferSize && (uint)buffer.size() >= bufferSize) {
 		flush();
 	}
+	buffer.append(sql);
 }
 
 void SQLBuffering::append(const QStringList& sqlList) {

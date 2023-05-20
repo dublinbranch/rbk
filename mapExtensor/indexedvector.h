@@ -1,5 +1,7 @@
 #ifndef INDEXEDVECTOR_H
 #define INDEXEDVECTOR_H
+#include "rbk/QStacker/exceptionv2.h"
+#include <cassert>
 #include <map>
 #include <stdint.h>
 
@@ -7,14 +9,14 @@
 
 template <class T>
 concept isIterable = requires(const T& t) {
-	                     t.begin();
-	                     t.end();
-                     };
+	t.begin();
+	t.end();
+};
 
 template <class T>
 concept isIndexedVector = requires(const T& t) {
-	                          t.isIndexedVector;
-                          };
+	t.isIndexedVector;
+};
 
 template <class T>
 class indexedVector {
@@ -32,30 +34,39 @@ class indexedVector {
 	}
 	void push_back(const T& r) {
 		constexpr bool hasRty = requires() {
-			                        r.rty;
-		                        };
+			r.rty;
+		};
 		constexpr bool hasRty_ptr = requires() {
-			                            r->rty;
-		                            };
+			r->rty;
+		};
 		constexpr bool hasHeader = requires() {
-			                           r.header.rty;
-		                           };
+			r.header.rty;
+		};
 		constexpr bool hasHeader_ptr = requires() {
-			                               r->header.rty;
-		                               };
+			r->header.rty;
+		};
+		constexpr bool hasCampaign = requires() {
+			r->campaign.rty;
+		};
 
 		//Due to an orrible error that Roy did we now need this hack, well not entirely
 		if constexpr (hasRty) {
 			content.insert({r.rty, r});
+			return;
 		} else if constexpr (hasRty_ptr) {
 			content.insert({r->rty, r});
+			return;
 		} else if constexpr (hasHeader) {
 			content.insert({r.header.rty, r});
+			return;
 		} else if constexpr (hasHeader_ptr) {
 			content.insert({r->header.rty, r});
-		} else {
-			static_assert(true, "what is that now ?");
+			return;
+		} else if constexpr (hasCampaign) {
+			content.insert({r->campaign.rty, r});
+			return;
 		}
+		throw ExceptionV2("what is that now ?");
 	}
 
 	void push_back(isIterable auto& n) {
