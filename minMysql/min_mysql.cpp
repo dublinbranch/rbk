@@ -411,8 +411,10 @@ sqlResult DB::queryDeadlockRepeater(const QByteArray& sql, uint maxTry) const {
 					continue;
 					break;
 				default:
-					throw error;
+					throw;
 				}
+			} catch (...) {
+				throw;
 			}
 		}
 		qWarning().noquote() << "too many trial to resolve deadlock, fix your code!" + QStacker16();
@@ -756,7 +758,13 @@ SQLBuffering::SQLBuffering(DB* _conn, uint _bufferSize, bool _useTRX) {
 }
 
 SQLBuffering::~SQLBuffering() {
-	flush();
+	try {
+		flush();
+	} catch (std::exception& e) {
+		qCritical() << e.what();
+	} catch (...) {
+		qCritical() << "unknow exception in " << QStacker16();
+	}
 }
 
 void SQLBuffering::append(const std::string& sql) {
@@ -766,14 +774,6 @@ void SQLBuffering::append(const std::string& sql) {
 void SQLBuffering::append(const QString& sql) {
 	if (sql.isEmpty()) {
 		return;
-	}
-	//many times I forget the ; at the end -.-
-	if (!sql.endsWith(";")) {
-		auto copy = sql;
-		copy.append(";");
-		buffer.append(copy);
-	} else {
-		buffer.append(sql);
 	}
 
 	// 0 disable flushing, 1 disable buffering
