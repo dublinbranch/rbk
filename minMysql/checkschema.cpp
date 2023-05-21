@@ -20,13 +20,13 @@ CheckSchema::Schemas CheckSchema::getDbSchema() {
 		{
 			{
 				//get all tables in the db and check if we support them (there can be sequence or other stuff we do not handle
-				auto sqlTables = F("SELECT * FROM `TABLES` WHERE `TABLE_SCHEMA` = '{}'", dbName);
+				auto sqlTables = F("SELECT * FROM information_schema.`TABLES` WHERE `TABLE_SCHEMA` = '{}'", dbName);
 				auto res       = db->query(sqlTables);
 				for (auto& row : res) {
 					auto        tableName = row.rq("TABLE_NAME");
 					auto        type      = row.rq("TABLE_TYPE");
 					std::string sqlInfo;
-					if (type != "BASE TABLE" || type != "VIEW") {
+					if (type != "BASE TABLE" && type != "VIEW") {
 						throw ExceptionV2(F("Unhandled table type {} in {}", type, dbName, tableName));
 					}
 				}
@@ -48,10 +48,9 @@ ORDER BY `ORDINAL_POSITION` ASC)",
 			{
 				//get all VIEW in the db at once o.O
 				auto sqlInfo = F(R"(
-SELECT VIEW_DEFINITION,ALGORITHM 
+SELECT TABLE_NAME,VIEW_DEFINITION,ALGORITHM 
 FROM information_schema.VIEWS 
-WHERE table_schema='{}'
-ORDER BY `ORDINAL_POSITION` ASC)",
+WHERE table_schema='{}')",
 				                 dbName);
 				auto res     = db->query(sqlInfo);
 				for (auto& row : res) {
@@ -107,60 +106,60 @@ bool CheckSchema::checkDbSchema() {
 	auto diskSchemas = loadSchema();
 	auto dbSchemas   = getDbSchema();
 	bool dirty       = false;
-	for (auto&& [key, dbSchema] : dbSchemas) {
-		auto diskSchema = diskSchemas.take(key);
+	for (auto&& [table, dbSchema] : dbSchemas) {
+		auto diskSchema = diskSchemas.take(table);
 		if (diskSchema == dbSchema) {
 			continue; // exact same CREATE TABLE result, nice!
 		}
 
-		auto        diskLines = diskSchema.split("\n");
-		auto        dbLines   = dbSchema.split("\n");
-		QStringList diff;
-		if (diskLines.size() != dbLines.size()) { // different number of lines
-			qWarning().noquote() << "schema for " << key << " has different number of lines!\n"
-			                     << diskSchema << "\n-----------------------------\n"
-			                     << dbSchema;
-			abort();
+		if (diskSchema.size() != dbSchema.size()) { // different number of lines
+			auto msg      = F16("schema for {}.{} has different number of lines!\n", table.database, table.table);
+			auto diskSize = diskSchema.size();
+			auto dbSize   = dbSchema.size();
+			auto size     = std::max(diskSize, dbSize);
+			for (int i = 0; i < size; i++) {
+				auto diskRow = diskSchema.value(i);
+				auto dbRow   = dbSchema.value(i);
+				auto diskCol = diskRow.value("COLUMN_NAME", "***NOTHING***");
+				auto dbCol   = dbRow.value("COLUMN_NAME", "***NOTHING***");
+				msg += F16("\t{} - {}\n", diskCol, dbCol);
+			}
+			qWarning().noquote() << msg;
+			continue; // exact same CREATE TABLE result, nice!
 		}
-
 		// at this stage we are sure that the sizes of the 2 QStringList are the same
-		for (int i = 0; i < diskLines.size(); ++i) {
-			if (diskLines.at(i) == dbLines.at(i)) {
-				continue;
-			}
-			// the two raw lines are different.
+		for (int i = 0; i < diskSchema.size(); i++) {
+			auto        diskLines = diskSchema[i];
+			auto        dbLines   = dbSchema[i];
+			QStringList diff;
+			QByteArray  tableColumnName;
+			diskLines.getIfNotNull("TABLE_NAME", tableColumnName);  //when processing view
+			diskLines.getIfNotNull("COLUMN_NAME", tableColumnName); //when processing table
 
-			// different versions of InnoDB have different outputs regarding the DEFAULT NULL options
-			QString diskLine = diskLines.at(i);
-			QString dbLine   = dbLines.at(i);
-			diskLine.replace("  ", " ");
-			dbLine.replace("  ", " ");
-			diskLine.replace(" DEFAULT NULL", "");
-			dbLine.replace(" DEFAULT NULL", "");
-			if (diskLine == dbLine) {
-				continue;
-			}
+			for (const auto& [parameterName, diskValue] : diskLines) {
+				auto dbValue = dbLines[parameterName];
+				if (diskValue == dbValue) {
+					continue;
+				}
 
-			// the definer of the views depends on the user that created the view
-			diskLine.replace(deleteDefiner, "");
-			dbLine.replace(deleteDefiner, "");
-			if (diskLine == dbLine) {
-				continue;
+				// the two lines are definitely different
+				diff.push_back(F16("------\nIn Table {}.{}::{} for {}:\nDisk:\n{}\nDB:\n{}", table.database, table.table, tableColumnName, parameterName, diskValue, dbValue));
 			}
 
-			// the two lines are definitely different
-			diff.push_back("------\nDisk:\n" + diskLine + " \nDB:\n" + dbLine);
-		}
-
-		if (!diff.empty()) {
-			qWarning().noquote() << "schema for " << key << " is different!\n"
-			                     << diff.join(", \n");
-			dirty = true;
+			if (!diff.empty()) {
+				qWarning().noquote() << "schema for " << table << " is different!\n"
+				                     << diff.join(", \n");
+				dirty = true;
+			}
 		}
 	}
 	if (!diskSchemas.isEmpty()) {
-		qWarning().noquote() << "unknown table found:\n"
-		                     << diskSchemas;
+		auto msg = F16("unknown table found:\n");
+
+		for (auto&& [table, schema] : diskSchemas) {
+			msg += F16("\t{}.{}\n", table.database, table.table);
+		}
+		qWarning().noquote() << msg;
 		dirty = true;
 	}
 	if (dirty) {
