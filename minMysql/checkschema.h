@@ -1,7 +1,7 @@
 #ifndef TMP_QTCREATOR_HJDWZN_CLANGTOOLS_VFSO_OXXLMP_CHECKSCHEMA_H_AUTO
 #define TMP_QTCREATOR_HJDWZN_CLANGTOOLS_VFSO_OXXLMP_CHECKSCHEMA_H_AUTO
 
-#include "minMysql/sqlresult.h"
+#include "rbk/minMysql/sqlresult.h"
 #include "rbk/SpaceShipOP/qstringship.h"
 #include "rbk/mapExtensor/qmapV2.h"
 #include <QDebug>

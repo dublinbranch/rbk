@@ -1,5 +1,5 @@
 #include "checkschema.h"
-#include "fmtExtra/dynamic.h"
+#include "rbk/fmtExtra/dynamic.h"
 #include "rbk/hash/sha.h"
 #include "rbk/minMysql/min_mysql.h"
 
