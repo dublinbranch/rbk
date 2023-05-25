@@ -189,14 +189,14 @@ bool insertIfNotNull(boost::json::object& target, const sqlRow& row, std::string
 	return true;
 }
 
-void pushCreate(boost::json::object& value, std::string_view key, const boost::json::value& newValue) {
-	if (auto array = value.if_contains(key); array) {
+void pushCreate(boost::json::object& json, std::string_view key, const boost::json::value& newValue) {
+	if (auto array = json.if_contains(key); array) {
 		if (!array->is_array()) {
 			throw ExceptionV2(string("this is not an array!").append(key));
 		}
 		array->as_array().push_back(newValue);
 	} else {
-		value[key] = bj::array{newValue};
+		json[key] = bj::array{newValue};
 	}
 }
 

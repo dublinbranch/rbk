@@ -768,6 +768,9 @@ SQLBuffering::~SQLBuffering() {
 }
 
 void SQLBuffering::append(const std::string& sql) {
+	if (sql.empty()) {
+		return;
+	}
 	append(QString::fromStdString(sql));
 }
 

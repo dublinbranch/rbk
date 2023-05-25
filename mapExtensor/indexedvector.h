@@ -93,11 +93,11 @@ class indexedVector {
 		static Iterator dummy() {
 			return Iterator();
 		}
-		Iterator(pointer ptr)
+		[[nodiscard]] Iterator(pointer ptr)
 		    : m_ptr(ptr) {
 		}
 
-		int64_t key() const {
+		[[nodiscard]] int64_t key() const {
 			return m_ptr->first;
 		}
 		reference operator*() const {
@@ -142,7 +142,7 @@ class indexedVector {
 	//poor man tag dispatch for concepts ?
 	static bool isIndexedVector;
 
-	bool empty() const {
+	[[nodiscard]] bool empty() const {
 		return content.empty();
 	}
 
@@ -150,7 +150,7 @@ class indexedVector {
 		content.clear();
 	}
 
-	size_t size() const {
+	[[nodiscard]] size_t size() const {
 		return content.size();
 	}
 

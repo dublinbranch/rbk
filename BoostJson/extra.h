@@ -50,11 +50,11 @@ boost::json::value asNull(const sqlRow& row, std::string_view key);
 bool insertIfNotNull(boost::json::object& target, const sqlRow& row, std::string_view key);
 
 //If needed create the array, else just push into
-void pushCreate(boost::json::object& value, std::string_view key, const boost::json::value& newValue);
+void pushCreate(boost::json::object& json, std::string_view key, const boost::json::value& newValue);
 
 template <class T>
-void pushCreate(boost::json::object& value, std::string_view key, const T& newValue) {
-	pushCreate(value, key, boost::json::value_from(newValue));
+void pushCreate(boost::json::object& json, std::string_view key, const T& newValue) {
+	pushCreate(json, key, boost::json::value_from(newValue));
 }
 
 struct JsonRes {
