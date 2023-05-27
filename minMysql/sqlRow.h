@@ -49,6 +49,13 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 		return t2;
 	}
 
+	template <isEnum T>
+	void rqe(const QByteArray& key, T& t) const {
+		int temp = 0;
+		rq(key, temp);
+		t = T(temp);
+	}
+
 	QDateTime asDateTime(const QByteArray& key) const;
 
 	template <typename D>
