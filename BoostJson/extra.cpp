@@ -391,3 +391,11 @@ QString escape_json(const QString& string) {
 QString tag_invoke(const boost::json::value_to_tag<QString>&, const boost::json::value& jv) {
 	return QS(jv);
 }
+
+void createOrAppendObj(boost::json::object& json, std::string_view container, std::string_view newElement, const boost::json::value& newValue) {
+	if (auto* obj = json.if_contains(container); obj) {
+		obj->as_object()[newElement] = newValue;
+	} else {
+		json[container] = {{newElement, newValue}};
+	}
+}

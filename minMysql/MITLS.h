@@ -87,6 +87,13 @@ class mi_tls : protected mi_tls_repository<T> {
 		return this->load(reinterpret_cast<uintptr_t>(this));
 	}
 
+	//this is pretty cool
+	T* operator->() {
+		return &this->load(reinterpret_cast<uintptr_t>(this));
+	}
+
+	//we want this to NOT be explicit so we can just do something = mi_tls
+	//this is a dynamic https://en.cppreference.com/w/cpp/language/cast_operator even cooler
 	operator T() {
 		return this->load(reinterpret_cast<uintptr_t>(this));
 	}

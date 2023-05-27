@@ -49,6 +49,8 @@ boost::json::value asNull(const sqlRow& row, std::string_view key);
 
 bool insertIfNotNull(boost::json::object& target, const sqlRow& row, std::string_view key);
 
+void createOrAppendObj(boost::json::object& json, std::string_view container, std::string_view newElement, const boost::json::value& newValue);
+
 //If needed create the array, else just push into
 void pushCreate(boost::json::object& json, std::string_view key, const boost::json::value& newValue);
 
