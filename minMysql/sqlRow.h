@@ -37,7 +37,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 
 	/**
-	 * @brief rqe is specific for int type enum
+	 * @brief rqe is specific for int type enum IE the one NOT using ENUM but an actual INT inside mysql
 	 * @param key
 	 * @return
 	 */

@@ -34,7 +34,13 @@ void swapType(const QByteArray& source, D& dest) {
 		return;
 	} else if constexpr (std::is_enum_v<D>) {
 		auto s = source.toStdString();
-		magic_enum::fromString(s, dest);
+		//NULL can not be used as an ENUM value, we use in that case NA
+		if (s == "NULL") {
+			dest = D::NA;
+		} else {
+			magic_enum::fromString(s, dest);
+		}
+
 		return;
 		//} else if constexpr (isBetterEnum<D>) {
 	} else if constexpr (std::is_arithmetic_v<D>) {
