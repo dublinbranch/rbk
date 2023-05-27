@@ -8,8 +8,9 @@ HttpException::HttpException(QString _msg) {
 	msg = _msg.toUtf8().data();
 }
 
-HttpException::HttpException(std::string _msg) {
-	msg = QByteArray::fromStdString(_msg).data();
+HttpException::HttpException(const std::string& msg_, const std::string& httpErrMsg_) {
+	msg        = msg_;
+	httpErrMsg = httpErrMsg_;
 }
 
 HttpException::HttpException(const char* _msg) {
@@ -28,14 +29,4 @@ void HttpException::HttpParamErrorHandler1(const QString& key) {
 	e.statusCode = 200;
 
 	throw e;
-}
-
-// for testing
-void testHttpException() {
-	auto e1 = HttpException("e1");
-
-	std::string m3 = "e3";
-	auto        e3 = HttpException(m3);
-
-	[[maybe_unused]] int i = 0;
 }
