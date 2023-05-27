@@ -454,6 +454,7 @@ void Beast::listen() {
 		    IOC->stop();
 		    //remove the handler ?, else the next ctrl c will not terminate the program ?
 		    signals2block->remove(SIGINT);
+		    exit(0);
 	    });
 
 	signals2block_p = signals2block;

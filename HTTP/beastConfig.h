@@ -4,9 +4,16 @@
 #include "rbk/mapExtensor/mapV2.h"
 class RequestBase;
 
+class PMFCGI;
+class Payload;
+
 struct BeastConf {
-	mapV2<std::string, RequestBase*> routing;
-	mapV2<std::string, std::string>  defaultHeader;
+
+	using SimpleRoutedType = void (*)(PMFCGI& status, Payload& payload);
+
+	mapV2<std::string, SimpleRoutedType> routingSimple;
+	mapV2<std::string, RequestBase*>     routing;
+	mapV2<std::string, std::string>      defaultHeader;
 
 	std::string logFolder;
 

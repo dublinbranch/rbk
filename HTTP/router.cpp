@@ -85,6 +85,15 @@ void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) 
 			throw;
 		}
 		//dk.processingEnd.setNow();
+	} else if (auto v2 = conf->routingSimple.get(path); v2) {
+		try {
+			(*(v2.val))(status, payload);
+			return;
+		} catch (std::exception& e) {
+			//addFlag(dk.errorCode, DkError::minorException);
+			//exception type will be preserved
+			throw;
+		}
 	}
 	payload.html       = fmt::format("invalid path >>> {} <<< no routing available", path);
 	payload.statusCode = 400;
