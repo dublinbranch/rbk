@@ -4,6 +4,7 @@
 #include "rbk/mapExtensor/hmap.h"
 
 #include <QString>
+#include <memory>
 #include <thread>
 
 #include <QElapsedTimer>
@@ -69,11 +70,11 @@ class ThreadStatus {
 		QByteArray  sql;
 	};
 
-	Status* newStatus() const {
-		return new Status();
+	std::shared_ptr<Status> newStatus() const {
+		return std::make_shared<Status>();
 	}
 
-	hmap<std::thread::id, Status*> pool;
+	hmap<std::thread::id, std::shared_ptr<Status>> pool;
 };
 
 #endif // THREADSTATUSH_H

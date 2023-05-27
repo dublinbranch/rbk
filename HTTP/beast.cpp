@@ -468,7 +468,7 @@ void Beast::listen() {
 		    [status, this] {
 			    //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
 			    status->tid       = gettid();
-			    localThreadStatus = status;
+			    localThreadStatus = status.get();
 			    //and than launch to io handler
 			    IOC->run();
 		    }));
