@@ -70,9 +70,7 @@ class ThreadStatus {
 		QByteArray  sql;
 	};
 
-	std::shared_ptr<Status> newStatus() const {
-		return std::make_shared<Status>();
-	}
+	static std::shared_ptr<Status> newStatus();
 
 	hmap<std::thread::id, std::shared_ptr<Status>> pool;
 };

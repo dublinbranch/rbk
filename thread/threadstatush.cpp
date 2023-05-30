@@ -55,3 +55,7 @@ qint64 ElapsedTimerV2::nsecsElapsed() const {
 	}
 	return total + timer.nsecsElapsed();
 }
+
+std::shared_ptr<ThreadStatus::Status> ThreadStatus::newStatus() {
+	return std::make_shared<Status>();
+}
