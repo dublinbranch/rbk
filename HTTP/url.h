@@ -26,9 +26,7 @@ class QueryParams : public mapV2<QString, QString> {
 	template <class T>
 	T get2(const QString& key) const {
 		T t = T();
-		if (swap(key, t)) {
-			return t;
-		}
+		swapType(key, t);
 		return t;
 	}
 
