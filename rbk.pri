@@ -300,7 +300,8 @@ DISTFILES += /
 	
 DISTFILES += \
 	$$PWD/README.md 
-	
+
+#is you perform QT += network somewhere
 defined(HAS_QT_NETWORK, var) {
 	HEADERS += $$PWD/qhostaddress.h 
 	SOURCES += $$PWD/qhostaddress.cpp 

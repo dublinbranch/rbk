@@ -82,7 +82,7 @@ sqlRow DB::queryLine(const std::string& sql) const {
 sqlRow DB::queryLine(const QByteArray& sql) const {
 	auto res = query(sql);
 	if (res.empty()) {
-		return sqlRow();
+		return {};
 	}
 	return res[0];
 }
