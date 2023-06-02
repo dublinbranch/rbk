@@ -63,7 +63,7 @@ void sendMail(QString subject, QString message) {
 		//NOTE this operation is "slow" so we need a detached thread
 		auto CurlPPisBroken = [=]() {
 			CURLpp marx = CURLpp::Builder()
-			                  .set_email_details(message.toUtf8().constData(), subject.toUtf8().constData(), recipient.constData())
+							  .set_email_details(message.toUtf8().constData(), subject.toUtf8().constData(), recipient.data())
 			                  .set_smtp_details("spammer@seisho.us", "mjsydiTODNmDLTUqRIZY", "spammer@seisho.us")
 			                  .build();
 			marx.perform();

@@ -203,7 +203,12 @@ void pushCreate(boost::json::object& json, std::string_view key, const boost::js
 JsonRes parseJson(std::string_view json) {
 	JsonRes res;
 
-	bj::parser  p;
+	bj::parse_options opt;            // all extensions default to off
+	opt.allow_comments        = true; // permit C and C++ style comments to appear in whitespace
+	opt.allow_trailing_commas = true; // allow an additional trailing comma in object and array element lists
+
+	//value jv = parse("[1,2,3,] // comment ", storage_ptr(), opt);
+	bj::parser  p(res.storage, opt);
 	std::size_t consumed = p.write_some(json, res.ec);
 
 	if (res.ec) {

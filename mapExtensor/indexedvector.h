@@ -4,14 +4,8 @@
 #include <cassert>
 #include <map>
 #include <stdint.h>
-
+#include "isIterable.h"
 //This is to keep the same interface of a vector, but behave internally more like a map for faster access
-
-template <class T>
-concept isIterable = requires(const T& t) {
-	t.begin();
-	t.end();
-};
 
 template <class T>
 concept isIndexedVector = requires(const T& t) {

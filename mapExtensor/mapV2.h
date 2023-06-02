@@ -8,29 +8,14 @@
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/misc/swapType.h"
 #include <map>
+#include "NotFoundMixin.h"
 
 //void callNotFoundCallback(const QString& key, const std::string location) {
 //	(void)key;
 //	(void)location;
 //}
 
-template <typename K>
-class NotFoundMixin {
-      public:
-	using Funtor    = void (*)(const K& key);
-	NotFoundMixin() = default;
-	NotFoundMixin(Funtor f)
-	    : notFoundCallback(f){};
 
-	mutable Funtor notFoundCallback = nullptr;
-
-	[[noreturn]] void callNotFoundCallback(const K& key, const std::string location) const {
-		if (notFoundCallback) {
-			(*notFoundCallback)(key);
-		}
-		throw ExceptionV2(fmt::format("key >>>{}<<< not found in {}", key, location));
-	}
-};
 
 template <typename K, typename V, typename Compare = std::less<K>>
 class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {

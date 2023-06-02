@@ -101,12 +101,17 @@ DISTFILES += \
 HEADERS += \
     $$PWD/BoostJson/extra.h \
     $$PWD/BoostJson/fwd.h \
+	$$PWD/BoostJson/depleter.h \
+	$$PWD/BoostJson/SwapperSpec.h \
+    $$PWD/BoostJson/isjsonasubset.h \
+    $$PWD/BoostJson/to_string.h \
     $$PWD/QStacker/CxaLevel.h \
     $$PWD/dateTime/util.h \
     $$PWD/fmtExtra/dynamic.h \
     $$PWD/fmtExtra/fromEnum.h \
     $$PWD/hash/salt.h \
     $$PWD/hash/sha.h \
+    $$PWD/isIterable.h \
 	$$PWD/locale/codes.h \
     $$PWD/minMysql/DBConf.h \
     $$PWD/minMysql/checkschema.h \
@@ -114,6 +119,7 @@ HEADERS += \
     $$PWD/minMysql/sqlRow.h \
     $$PWD/minMysql/sqlcomposer.h \
     $$PWD/minMysql/sqlresult.h \
+    $$PWD/misc/checkoptionalareset.h \
     $$PWD/misc/echo.h \
     $$PWD/misc/swapType.h \
     $$PWD/misc/typename.h \
@@ -168,6 +174,8 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/BoostJson/extra.cpp \
+    $$PWD/BoostJson/isjsonasubset.cpp \
+    $$PWD/BoostJson/to_string.cpp \
     $$PWD/HTTP/Payload.cpp \
 	$$PWD/asanOption.cpp \
     $$PWD/dateTime/util.cpp \
@@ -178,6 +186,7 @@ SOURCES += \
     $$PWD/minMysql/runnable.cpp \
     $$PWD/minMysql/sqlcomposer.cpp \
     $$PWD/minMysql/sqlresult.cpp \
+    $$PWD/misc/checkoptionalareset.cpp \
     $$PWD/misc/echo.cpp \
     $$PWD/misc/typename.cpp \
     $$PWD/number/sanitize.cpp \
@@ -247,6 +256,7 @@ HEADERS += \
 	$$PWD/mapExtensor/rwguard.h \
 	$$PWD/mapExtensor/valueMitWarning.h \
 	$$PWD/mapExtensor/vectorV2.h \
+	$$PWD/mapExtensor/NotFoundMixin.h \
 	$$PWD/mapExtensor/joinVector.h
 
 DISTFILES += /

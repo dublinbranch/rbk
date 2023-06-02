@@ -1,7 +1,6 @@
 #ifndef QSTACKER_H
 #define QSTACKER_H
 
-#include "exceptionv2.h"
 #include <QByteArray>
 #include "CxaLevel.h"
 

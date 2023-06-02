@@ -7,6 +7,7 @@
 #include <dlfcn.h>
 #include <execinfo.h>
 #include <mutex>
+#include "rbk/QStacker/exceptionv2.h"
 
 std::string stacker(uint skip, QStackerOpt opt) {
 	/** For loading from an arbitrary position

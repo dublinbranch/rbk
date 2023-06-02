@@ -1,7 +1,7 @@
 #include "echo.h"
+#include "fmt/format.h"
 #include <QDebug>
 
-#include "fmt/format.h"
 void echo(const std::string_view s) {
 	fmt::print("{}\n", s);
 }

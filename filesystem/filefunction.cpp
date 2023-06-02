@@ -1,5 +1,6 @@
 #include "filefunction.h"
 #include "folder.h"
+#include "rbk/QStacker/exceptionv2.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/RAII/resetAfterUse.h"
 #include "rbk/defines/stringDefine.h"
