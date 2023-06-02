@@ -29,7 +29,7 @@ void isJsonASubset(const boost::json::value& outer, const boost::json::value& su
 			auto it = arr.begin();
 			int  i  = 0;
 			for (;;) {
-				std::string path = fmt::format("{}[{}]", basePath, i);
+				std::string path = fmt::format("{}/{}", basePath, i);
 				isJsonASubset(outer, *it, path);
 				i++;
 				if (++it == arr.end())
