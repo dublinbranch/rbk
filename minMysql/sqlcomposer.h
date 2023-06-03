@@ -21,7 +21,7 @@ class SScol {
 
 	template <typename K>
 	SScol(const K& key_, const Value& val_)
-		: val(val_) {
+	    : val(val_) {
 		setKey(key_);
 	}
 
@@ -72,11 +72,11 @@ class SqlComposer : public std::vector<SScol> {
 	SqlComposer(PrivateTag){};
 	explicit SqlComposer(DB* db_, const std::string& separator_ = ",");
 
-	void push(const SScol& col, bool force = false);
+	void push(const SScol& col, bool replaceIf = false);
 
 	template <typename K, typename V>
-	void push(const K& key_, const V& val_, bool force = false) {
-		push(SScol{key_, val_}, force);
+	void push(const K& key_, const V& val_, bool replaceIf = false) {
+		push(SScol{key_, val_}, replaceIf);
 	}
 
 	template <class... T>
