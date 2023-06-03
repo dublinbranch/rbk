@@ -38,8 +38,9 @@ struct DBConf {
 	QString    getInfo(bool passwd = false) const;
 	void       setWarningSuppression(std::vector<QString> regex);
 
-      private:
 	QByteArray defaultDB;
+
+      private:
 };
 
 #endif // DBCONF_H

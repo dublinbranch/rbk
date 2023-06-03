@@ -337,7 +337,7 @@ At position {} (line {}:{})
 }
 
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QStringList& t) {
-	jv = bj::value_from(t.toStdList());
+	jv = bj::value_from(std::list<QString>(t.begin(), t.end()));
 }
 
 QString serializeQS(const boost::json::value& jv) {
