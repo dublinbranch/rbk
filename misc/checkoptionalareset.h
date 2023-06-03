@@ -40,7 +40,7 @@ template <class T,
           class Bd = boost::describe::describe_bases<T, boost::describe::mod_any_access>,
           class Md = boost::describe::describe_members<T, boost::describe::mod_any_access>,
           class En = std::enable_if_t<!std::is_union<T>::value>>
-bool checkOptionalAreSet(T const& t, std::string basePath="") {
+bool checkOptionalAreSet(T const& t, std::string basePath = "") {
 	boost::mp11::mp_for_each<Bd>([&](auto D) {
 		using B = typename decltype(D)::type;
 		checkOptionalAreSet((B const&)t, basePath);
@@ -52,9 +52,9 @@ bool checkOptionalAreSet(T const& t, std::string basePath="") {
 		//x is the base object, *D.pointer is the pointer to the internal element, the dynamic way of writing x->element
 		//auto& el = t.*D.pointer;
 		//and this gives the type
-		decltype(t.*D.pointer) dd{};
+		//decltype(t.*D.pointer) dd{};
 		using Type = std::remove_cvref_t<decltype(t.*D.pointer)>;
-		Type dd2;
+		//Type dd2;
 
 		if constexpr (isVector<Type>()) {
 			int i = 0;

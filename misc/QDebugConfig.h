@@ -14,5 +14,5 @@ struct NanoSpammerConfig {
 	bool                     BRUTAL_INHUMAN_REPORTING = false;
 	bool                     warningToMail            = true;
 	std::vector<std::string> warningMailRecipients    = {"admin@seisho.us"};
-	QString                  instanceName;
+	std::optional<QString>   instanceName;
 };
