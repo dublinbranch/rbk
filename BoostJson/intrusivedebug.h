@@ -26,4 +26,6 @@ struct PushMe {
 #define BOOST_MESSAGE(x) (PushMe::message = (x));
 #endif
 
+#include "rbk/BoostJson/override/value_to.h"
+
 #endif // INTRUSIVEDEBUG_H
