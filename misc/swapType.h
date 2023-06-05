@@ -3,7 +3,7 @@
 #include "rbk/defines/stringDefine.h"
 #include "rbk/magicEnum/BetterEnum.hpp"
 #include "rbk/magicEnum/magic_from_string.hpp"
-#include "rbk/misc/typename.h"
+#include "rbk/misc/typeinfo.h"
 #include <QByteArray>
 #include <QDate>
 #include <QDateTime>
@@ -64,7 +64,7 @@ void swapType(const QByteArray& source, D& dest) {
 				return;
 			}
 			//dest
-			throw ExceptionV2(QSL("Impossible to convert >>>%1<<< as a %2").arg(QString(source)).arg(QString::fromStdString(typeName<D>())));
+			throw ExceptionV2(QSL("Impossible to convert >>>%1<<< as a %2").arg(QString(source)).arg(QString::fromStdString(getTypeName<D>())));
 		}
 	} else {
 		// poor man static assert that will also print for which type it failed

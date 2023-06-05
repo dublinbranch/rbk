@@ -404,3 +404,11 @@ void createOrAppendObj(boost::json::object& json, std::string_view container, st
 		json[container] = {{newElement, newValue}};
 	}
 }
+
+QByteArray tag_invoke(const boost::json::value_to_tag<QByteArray>&, const boost::json::value& jv) {
+	auto       s = jv.as_string();
+	QByteArray q;
+	q.setRawData(s.data(), s.size());
+	q.detach();
+	return q;
+}

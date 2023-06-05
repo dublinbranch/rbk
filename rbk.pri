@@ -103,6 +103,7 @@ HEADERS += \
     $$PWD/BoostJson/fwd.h \
 	$$PWD/BoostJson/depleter.h \
 	$$PWD/BoostJson/SwapperSpec.h \
+    $$PWD/BoostJson/intrusivedebug.h \
     $$PWD/BoostJson/isjsonasubset.h \
     $$PWD/BoostJson/to_string.h \
     $$PWD/QStacker/CxaLevel.h \
@@ -122,7 +123,7 @@ HEADERS += \
     $$PWD/misc/checkoptionalareset.h \
     $$PWD/misc/echo.h \
     $$PWD/misc/swapType.h \
-    $$PWD/misc/typename.h \
+	$$PWD/misc/typeinfo.h \
     $$PWD/number/sanitize.h \
 	$$PWD/rand/clampednormaldistribution.h \
     $$PWD/JSON/JSONReaderConst.h \
@@ -174,6 +175,7 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/BoostJson/extra.cpp \
+    $$PWD/BoostJson/intrusivedebug.cpp \
     $$PWD/BoostJson/isjsonasubset.cpp \
     $$PWD/BoostJson/to_string.cpp \
     $$PWD/HTTP/Payload.cpp \
@@ -188,7 +190,7 @@ SOURCES += \
     $$PWD/minMysql/sqlresult.cpp \
     $$PWD/misc/checkoptionalareset.cpp \
     $$PWD/misc/echo.cpp \
-    $$PWD/misc/typename.cpp \
+	$$PWD/misc/typeinfo.cpp \
     $$PWD/number/sanitize.cpp \
 	$$PWD/rand/clampednormaldistribution.cpp \
     $$PWD/JSON/jsonreader.cpp \

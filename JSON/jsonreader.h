@@ -12,17 +12,10 @@
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include <QDebug>
 #include <QString>
+#include "rbk/misc/typeinfo.h"
 
 #define QBL(str) QByteArrayLiteral(str)
 #define QSL(str) QStringLiteral(str)
-
-QString demangle(const char* name);
-
-template <typename Type>
-QString getTypeName() {
-	auto name = typeid(Type).name();
-	return demangle(name);
-}
 
 class JSONReader {
       public:
@@ -140,7 +133,7 @@ class JSONReader {
 			break;
 		case SwapRes::typeMismatch:
 			qCritical().noquote() << QSL("Type mismatch! Expecting %1 found %2 for %3")
-			                                 .arg(getTypeName<Type>())
+											 .arg(QString::fromStdString(getTypeName<Type>()))
 			                                 .arg(printType(mismatchedType)) +
 			                             QStacker16Light();
 			exit(1);

@@ -27,7 +27,8 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, cons
 
 /** TO */
 
-QString tag_invoke(const boost::json::value_to_tag<QString>&, const boost::json::value& jv);
+QString    tag_invoke(const boost::json::value_to_tag<QString>&, const boost::json::value& jv);
+QByteArray tag_invoke(const boost::json::value_to_tag<QByteArray>&, const boost::json::value& jv);
 
 /***********************/
 void        pretty_print(std::string& res, boost::json::value const& jv, std::string* indent = nullptr);

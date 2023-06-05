@@ -113,10 +113,10 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 		throw ExceptionV2("This mysql instance is not connected!");
 	}
 
-	SQLLogger sqlLogger(sql, conf.logError, this);
+	SQLLogger sqlLogger(sql, conf.logError.value(), this);
 	if (sql != "SHOW WARNINGS") {
 		lastSQL          = sql;
-		sqlLogger.logSql = conf.logSql;
+		sqlLogger.logSql = conf.logSql.value();
 	} else {
 		sqlLogger.logSql = false;
 	}
@@ -429,7 +429,7 @@ void DB::pingCheck(st_mysql*& conn) const {
 	if (!conf.pingBeforeQuery) {
 		return;
 	}
-	SQLLogger sqlLogger("PING", conf.logError, this);
+	SQLLogger sqlLogger("PING", conf.logError.value(), this);
 	auto      oldConnId = mysql_thread_id(conn);
 
 	auto guard = qScopeGuard([&] {
@@ -563,7 +563,7 @@ void DBConf::setDefaultDB(const QByteArray& value) {
 QString DBConf::getInfo(bool passwd) const {
 	auto msg = QSL(" %1:%2  user: %3")
 	               .arg(QString(host))
-	               .arg(port)
+				   .arg(port.value())
 	               .arg(user.data());
 	if (passwd) {
 		msg += pass.data();
@@ -665,9 +665,10 @@ st_mysql* DB::connect() const {
 		}
 
 		// For some reason mysql is now complaining of not having a DB selected... just select one and gg
+		auto sock      = conf.sock.has_value() ? conf.sock.value().constData() : nullptr;
 		auto connected = mysql_real_connect(conn, conf.host, conf.user.constData(), conf.pass.constData(),
 		                                    conf.getDefaultDB(),
-		                                    conf.port, conf.sock.constData(), flag);
+											conf.port.value(), sock, flag);
 		if (connected == nullptr) {
 			auto    errorNo = mysql_errno(conn);
 			QString error   = mysql_error(conn);

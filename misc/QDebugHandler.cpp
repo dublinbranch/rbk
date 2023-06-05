@@ -20,7 +20,7 @@ QString getHeader1() {
 	auto time           = QDateTime::currentDateTime().toString(Qt::ISODate);
 	auto warningHeader1 = QSL("@ %1 From %2 instanceId %3 rev %4")
 	                          .arg(time)
-							  .arg(QCoreApplication::applicationName(), config->instanceName.value(), GIT_STATUS_buffer);
+							  .arg(QCoreApplication::applicationName(), config->instanceName, GIT_STATUS_buffer);
 	return warningHeader1;
 }
 
@@ -239,7 +239,7 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 		}
 		{
 			// subject
-			auto subject = QSL("Error from %1 @ %2 in %3").arg(QCoreApplication::applicationName(), config->instanceName.value(), funkz);
+			auto subject = QSL("Error from %1 @ %2 in %3").arg(QCoreApplication::applicationName(), config->instanceName, funkz);
 			// message
 			auto warningMessage = warningHeader1 + QSL("<br/>") + warningHeader2 + QSL("<br/><br/><pre>") + msg + "</pre>";
 			sendMail(subject, warningMessage);
