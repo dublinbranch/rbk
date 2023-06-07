@@ -2,13 +2,14 @@
 #define INTRUSIVEDEBUG_H
 
 #include "rbk/misc/typeinfo.h"
+#include <fmt/format.h>
 #include <string>
 #include <vector>
 
 struct PushMe {
 	PushMe();
-	static void push(const char* str);
-	static void pop();
+	static void                            push(const char* str);
+	static void                            pop();
 	static std::string                     compose();
 	static inline std::string              message;
 	static inline std::vector<const char*> path;

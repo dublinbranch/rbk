@@ -174,6 +174,7 @@ HEADERS += \
 	$$PWD/versioncheck.h
 
 SOURCES += \
+    $$PWD/BoostJson/depleter.cpp \
     $$PWD/BoostJson/extra.cpp \
     $$PWD/BoostJson/intrusivedebug.cpp \
     $$PWD/BoostJson/isjsonasubset.cpp \
