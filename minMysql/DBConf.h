@@ -17,8 +17,9 @@ struct DBConf {
 	std::optional<bool>       ssl     = false;
 	// Usually set false for operation that do not have to be replicated
 	bool writeBinlog = true;
-	//sometimes we connect with low privileges or weird limit like in GCP
-	bool noSqlMode = false;
+	//sometimes we connect with low privileges or weird limit like in GCP or orrible bug
+	std::optional<bool> isMariaDB8 = false;
+
 	// This header is quite big, better avoid the inclusion
 	std::vector<std::shared_ptr<QRegularExpression>> warningSuppression;
 

@@ -707,7 +707,7 @@ st_mysql* DB::connect() const {
 		/***/
 	}
 
-	if (!conf.noSqlMode) {
+	if (!conf.isMariaDB8.value()) {
 		query(QBL("SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY';"));
 	}
 
