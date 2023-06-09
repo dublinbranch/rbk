@@ -49,6 +49,9 @@ class mi_tls_repository {
 	~mi_tls_repository() {
 		//only one destructor per thread has to run
 		std::lock_guard l(m);
+		//mark the local instance as clear
+		repository = nullptr;
+
 		if (repoList.empty()) {
 			return;
 		}
