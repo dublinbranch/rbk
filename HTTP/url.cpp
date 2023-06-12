@@ -18,7 +18,7 @@ std::string Url::prettyPrint() const {
 	for (auto& [key, value] : query) {
 		buffer += fmt::format("  |--> {:<{}} : {}\n", key.toStdString(), longest, value);
 	}
-    return buffer;
+	return buffer;
 }
 
 QString Url::get3lvl() const {
@@ -55,18 +55,12 @@ void QueryParams::setQuery(const QString& val) {
 
 	//Must keep internal parameter encoded! to avoid splitting in the wrong position when you have annidated encoded stuff
 	for (auto& [key, value] : p.queryItems(QUrl::FullyEncoded)) {
-		if (key == QSL("clickid") && value.compare(QSL("CLICKID"), Qt::CaseInsensitive) == 0) {
-			//I do not want to see this trash ever again !
-			continue;
-		}
-
 		if (value.isEmpty()) {
 			//as people are dumb and keep adding useless stuff, which is also dangerour as some of those param can go in conflict so we forcefully remove them
 			continue;
-		} else {
-			auto decoded = QByteArray::fromPercentEncoding(value.toUtf8());
-			insert({key, decoded});
 		}
+		auto decoded = QByteArray::fromPercentEncoding(value.toUtf8());
+		insert({key, decoded});
 	}
 }
 

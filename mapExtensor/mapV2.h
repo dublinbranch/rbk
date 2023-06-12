@@ -4,18 +4,16 @@
 //#include "rbk/fmtExtra/includeMe.h"
 //as this will include a lot of qt stuff
 
+#include "NotFoundMixin.h"
 #include "fmt/core.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/misc/swapType.h"
 #include <map>
-#include "NotFoundMixin.h"
 
 //void callNotFoundCallback(const QString& key, const std::string location) {
 //	(void)key;
 //	(void)location;
 //}
-
-
 
 template <typename K, typename V, typename Compare = std::less<K>>
 class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
@@ -130,7 +128,7 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 
 	template <typename D>
 	void rq(const K& key, D& dest) const {
-		dest = rq(key);
+		dest = rq<D>(key);
 	}
 
 	[[nodiscard]] auto take(const K& k) {
