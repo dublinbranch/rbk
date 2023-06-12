@@ -5,6 +5,7 @@
 #include <QList>
 #include <QString>
 #include <memory>
+#include <optional>
 
 class QRegularExpression;
 struct DBConf {
