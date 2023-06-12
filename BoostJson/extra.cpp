@@ -200,6 +200,7 @@ void pushCreate(boost::json::object& json, std::string_view key, const boost::js
 	}
 }
 
+//TODO pass a context to support auto trowh and print in QCritical ecc
 JsonRes parseJson(std::string_view json) {
 	JsonRes res;
 
