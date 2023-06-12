@@ -222,7 +222,7 @@ class SQLBuffering {
 	/**
 	 * @brief SQLBuffering
 	 * @param _conn
-	 * @param _bufferSize 0 disable auto flushing, 1 disable buffering
+	 * @param _bufferSize 0 disable auto flushing, 1 disable buffering (if you want to wrap lot of stuff in a TRX use 0)
 	 */
 	SQLBuffering(DB* _conn, uint _bufferSize = 1000, bool _useTRX = true);
 	~SQLBuffering();
