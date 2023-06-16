@@ -55,15 +55,13 @@ class ConnPooler {
 	const map<st_mysql*, bool>& getPool() const;
 	~ConnPooler();
 
-	ulong active = 0xBADF00DBADC0FFEE;
-
       private:
 	map<st_mysql*, bool> allConn;
 	mutex                allConnMutex;
 };
 
-static ConnPooler connPooler;
-static int        somethingHappened(MYSQL* mysql, int status);
+ConnPooler connPooler;
+static int somethingHappened(MYSQL* mysql, int status);
 
 sqlRow DB::queryLine(const char* sql) const {
 	return queryLine(QByteArray(sql));
@@ -596,11 +594,7 @@ void DB::closeConn() const {
 	if (curConn) {
 		// this whole conn pool architecture is wrong, ditch it and recreate something and do not realy on magic constant
 		// to detect if something is freed or not
-		if (connPooler.active == 0xBADF00DBADC0FFEE) {
-			connPooler.active = 0;
-			connPooler.removeConn(curConn);
-			mysql_close(curConn);
-		}
+		connPooler.removeConn(curConn);
 		connPool = nullptr;
 	}
 }
@@ -1198,14 +1192,21 @@ void ConnPooler::addConnPool(st_mysql* conn) {
 void ConnPooler::removeConn(st_mysql* conn) {
 	lock_guard<mutex> guard(allConnMutex);
 	if (auto iter = allConn.find(conn); iter != allConn.end()) {
+		if (iter->second) {
+			mysql_close(conn);
+			iter->second = false;
+		}
 		allConn.erase(iter);
 	}
 }
 
 void ConnPooler::closeAll() {
 	lock_guard<mutex> guard(allConnMutex);
-	for (auto& [conn, dummy] : allConn) {
-		mysql_close(conn);
+	for (auto& [conn, connected] : allConn) {
+		if (connected) {
+			mysql_close(conn);
+			connected = false;
+		}
 	}
 	allConn.clear();
 }
@@ -1215,7 +1216,6 @@ const map<st_mysql*, bool>& ConnPooler::getPool() const {
 }
 
 ConnPooler::~ConnPooler() {
-	active = 0;
 	closeAll();
 }
 
