@@ -597,6 +597,7 @@ void DB::closeConn() const {
 		// this whole conn pool architecture is wrong, ditch it and recreate something and do not realy on magic constant
 		// to detect if something is freed or not
 		if (connPooler.active == 0xBADF00DBADC0FFEE) {
+			connPooler.active = 0;
 			connPooler.removeConn(curConn);
 			mysql_close(curConn);
 		}
