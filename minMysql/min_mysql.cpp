@@ -1194,6 +1194,7 @@ void ConnPooler::removeConn(st_mysql* conn) {
 	if (auto iter = allConn.find(conn); iter != allConn.end()) {
 		if (iter->second) {
 			mysql_close(conn);
+			conn         = nullptr;
 			iter->second = false;
 		}
 		allConn.erase(iter);
