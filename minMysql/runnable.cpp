@@ -49,20 +49,25 @@ bool Runnable::runnable(const QString& key, qint64 second, double multiplier) {
 	auto                 row  = db->queryLine(sql);
 
 	auto insertSql = F16("INSERT INTO runnable.runnable SET operationCode = {}, lastRun = {}, coolDown = {}",
-						 base64this(key), now, second);
+	                     base64this(key), now, second);
 
 	if (row.isEmpty()) {
 		db->query(insertSql);
 		return true;
 	}
 	auto lastRun  = row.rq<uint>("lastRun");
-	auto coolDown = row.rq<uint>("coolDown");
+	uint coolDown = second;
 
-	coolDown = coolDown * multiplier;
+	//if we are using the cooldown scaling take into account the last one
+	if (multiplier != 1) {
+		coolDown = row.rq<uint>("coolDown");
+		coolDown = coolDown * multiplier;
+	}
 
 	if (lastRun + coolDown > now) {
 		return false;
 	}
+
 	db->query(insertSql);
 	return true;
 }
