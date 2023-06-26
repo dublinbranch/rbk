@@ -218,6 +218,8 @@ class SQLBuffering {
 	uint        bufferSize = 1000;
 	QStringList buffer;
 
+	bool skipWarning = false;
+
 	SQLBuffering() = default;
 	/**
 	 * @brief SQLBuffering

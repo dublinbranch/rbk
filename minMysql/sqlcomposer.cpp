@@ -96,6 +96,15 @@ string SqlComposer::composeSelect() {
 	return compose();
 }
 
+string SqlComposer::composeSelectAll() {
+	getTable();
+	string sql = "SELECT * FROM " + table;
+	if (!where->empty()) {
+		sql += " WHERE " + where->compose();
+	}
+	return sql;
+}
+
 string SqlComposer::composeUpdate() const {
 	getTable();
 	string sql = F(R"(
@@ -107,12 +116,16 @@ WHERE {} ;
 	return sql;
 }
 
-string SqlComposer::composeInsert() const {
+string SqlComposer::composeInsert(bool ignore) const {
 	getTable();
 	if (!where->empty()) {
 		throw ExceptionV2("Refusing an insert with where condition");
 	}
-	auto sql = F("INSERT INTO {} SET {} ;", table, compose());
+	string ignoreS;
+	if (ignore) {
+		ignoreS = " IGNORE ";
+	}
+	auto sql = F("INSERT {} INTO {} SET {} ;", ignoreS, table, compose());
 	return sql;
 }
 

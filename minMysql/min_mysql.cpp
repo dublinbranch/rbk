@@ -807,7 +807,7 @@ void SQLBuffering::flush() {
 	 show variables like "max_allowed_packet"
 	 */
 
-	// This MUST be out of the buffered block!
+	// This MUST be out of the buffered block!  BUT WHY ?
 	if (useTRX) {
 		conn->query(QBL("START TRANSACTION;"));
 	}
@@ -820,15 +820,21 @@ void SQLBuffering::flush() {
 		// this is UTF16, but MySQL run in UTF8, so can be lower or bigger (rare vey rare but possible)
 		// small safety margin + increase size for UTF16 -> UTF8 conversion
 		if ((query.size() * 1.3) > maxPacket * 0.75) {
+			if (skipWarning) {
+				conn->skipWarning = true;
+			}
 			conn->queryDeadlockRepeater(query.toUtf8());
 			query.clear();
 		}
 	}
 	buffer.clear();
 	if (!query.isEmpty()) {
+		if (skipWarning) {
+			conn->skipWarning = true;
+		}
 		conn->queryDeadlockRepeater(query.toUtf8());
 	}
-	// This MUST be out of the buffered block!
+	// This MUST be out of the buffered block! BUT WHY ?
 	if (useTRX) {
 		conn->query(QBL("COMMIT;"));
 	}

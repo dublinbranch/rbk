@@ -61,6 +61,7 @@ class Url {
 	QString getNlvl(int pos) const;
 
 	struct DS {
+		QString print() const;
 		QString domain;
 		QString subDomain;
 	};

@@ -113,8 +113,9 @@ class SqlComposer : public std::vector<SScol> {
 	[[nodiscard]] std::string compose() const;
 	[[nodiscard]] QString     composeQS() const;
 	[[nodiscard]] std::string composeSelect();
+	[[nodiscard]] std::string composeSelectAll();
 	[[nodiscard]] std::string composeUpdate() const;
-	[[nodiscard]] std::string composeInsert() const;
+	[[nodiscard]] std::string composeInsert(bool ignore = false) const;
 	[[nodiscard]] std::string composeDelete() const;
 
 	bool        valid     = true;
