@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
@@ -10,17 +11,21 @@ class mi_tls_repository {
       private:
 	// Key = memory location of the INSTANCE
 	// Value = what you want to store
+
 	using mapT = std::unordered_map<uintptr_t, T>;
+	using mapS = std::shared_ptr<mapT>;
 
 	/*
 	 * The general per thread map that contain all resources (of this type)
 	 * It must be a ptr as it can goes out of scope before the other element, so cleaning will be a disaster
 	 */
-	inline static thread_local mapT* repository = nullptr;
+	inline static thread_local mapS repository = std::make_shared<mapT>();
+	mapS                            local      = nullptr;
 
 	void getRepo() {
+		return;
 		if (!repository) {
-			repository = new mapT();
+			//repository = new mapT();
 		}
 	}
 
@@ -44,19 +49,20 @@ class mi_tls_repository {
 
 	// This will be called for all constructor
 	mi_tls_repository() {
+		local = repository;
 		// but only the first in this thread will create the map
 		getRepo();
 	}
 
 	~mi_tls_repository() {
-		if (repository) {
-			repository->clear();
+		//		if (repository) {
+		//			repository->clear();
 
-			delete (repository);
+		//			delete (repository);
 
-			//mark the local instance as clear
-			repository = nullptr;
-		}
+		//			//mark the local instance as clear
+		//			repository = nullptr;
+		//		}
 	}
 };
 

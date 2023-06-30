@@ -47,8 +47,7 @@ extern thread_local ThreadStatus::Status* localThreadStatus;
 DB::SharedState DB::sharedState;
 using namespace std;
 
-std::atomic_int connCounter = 0;
-static int      somethingHappened(MYSQL* mysql, int status);
+static int somethingHappened(MYSQL* mysql, int status);
 
 sqlRow DB::queryLine(const char* sql) const {
 	return queryLine(QByteArray(sql));
@@ -180,7 +179,7 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 				          .arg(state.get().queryExecuted)
 				          .arg(state.get().reconnection)
 				          .arg(sharedState.busyConnection)
-						  .arg(connCounter.load())
+						  .arg(St_mysqlW::connCounter.load())
 				          .arg((double)sqlLogger.serverTime, 0, 'G', 3)
 				          .arg(sqlLogger.serverTime)
 				          .arg(runningSqls);
@@ -488,7 +487,6 @@ st_mysql* DB::getConn(bool doNotConnect) const {
 		if (doNotConnect) {
 			return nullptr;
 		}
-		// loading in connPool is inside
 		connect();
 	}
 	return *connPool.get();
@@ -580,7 +578,6 @@ DB::~DB() {
 void DB::closeConn() const {
 	auto curConn = connPool.get();
 	if (curConn) {
-		--connCounter;
 		curConn.reset();
 	}
 }
@@ -686,7 +683,6 @@ StMysqlPtr DB::connect() const {
 		/***/
 		sptr->set(conn);
 		connPool = sptr;
-		++connCounter;
 		/***/
 	}
 
@@ -1224,5 +1220,25 @@ bool MyType::isFloat() const {
 		return true;
 	default:
 		return false;
+	}
+}
+
+St_mysqlW::operator st_mysql*() {
+	return conn;
+}
+
+void St_mysqlW::set(st_mysql* c) {
+	if (conn) {
+		throw ExceptionV2("NO! you can not reuse this class!");
+	}
+	++connCounter;
+	conn = c;
+}
+
+St_mysqlW::~St_mysqlW() {
+	if (conn) {
+		--connCounter;
+		mysql_close(conn);
+		conn = nullptr;
 	}
 }

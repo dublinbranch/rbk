@@ -37,23 +37,14 @@ struct st_mysql_res;
  */
 class St_mysqlW {
 	  public:
-	operator st_mysql*() {
-		return conn;
-	}
+	operator st_mysql*();
 
-	void set(st_mysql* c) {
-		if (conn) {
-			throw ExceptionV2("NO! you can not reuse this class!");
-		}
-		conn = c;
-	}
+	void set(st_mysql* c);
 
-	~St_mysqlW() {
-		if (conn) {
-			mysql_close(conn);
-			conn = nullptr;
-		}
-	}
+	~St_mysqlW();
+
+	//just a cute counter
+	inline static std::atomic_int connCounter = 0;
 
 	  private:
 	st_mysql* conn = nullptr;
