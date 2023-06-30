@@ -32,6 +32,35 @@ QString nullOnZero(uint v);
 struct st_mysql;
 struct st_mysql_res;
 
+/**
+ * @brief The MysqlW class is just to wrap the st_mysql to have RAII
+ */
+class St_mysqlW {
+	  public:
+	operator st_mysql*() {
+		return conn;
+	}
+
+	void set(st_mysql* c) {
+		if (conn) {
+			throw ExceptionV2("NO! you can not reuse this class!");
+		}
+		conn = c;
+	}
+
+	~St_mysqlW() {
+		if (conn) {
+			mysql_close(conn);
+			conn = nullptr;
+		}
+	}
+
+	  private:
+	st_mysql* conn = nullptr;
+};
+
+using StMysqlPtr = std::shared_ptr<St_mysqlW>;
+
 QString asString(const sqlRow& row);
 
 QStringList getIdList(const sqlResult& sqlRes, const QString& idName);
@@ -73,9 +102,9 @@ class DB {
 	DB() = default;
 	DB(const DBConf& _conf);
 	~DB();
-	void      closeConn() const;
-	st_mysql* connect() const;
-	bool      tryConnect() const;
+	void       closeConn() const;
+	StMysqlPtr connect() const;
+	bool       tryConnect() const;
 
 	sqlRow queryLine(const std::string& sql) const;
 	sqlRow queryLine(const char* sql) const;
@@ -185,7 +214,7 @@ class DB {
 	// Mutable is needed for all of them
 	mutable mi_tls<long> affectedRows;
 	// this allow to spam the DB handler around, and do not worry of thread, each thread will create it's own connection!
-	mutable mi_tls<st_mysql*> connPool;
+	mutable mi_tls<StMysqlPtr> connPool;
 	// used for asyncs
 	mutable mi_tls<int>        signalMask;
 	mutable mi_tls<QByteArray> lastSQL;

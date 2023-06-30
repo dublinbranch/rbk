@@ -46,22 +46,9 @@ extern thread_local ThreadStatus::Status* localThreadStatus;
 
 DB::SharedState DB::sharedState;
 using namespace std;
-// I (Roy) really do not like reading warning, so we will now properly close all opened connection!
-class ConnPooler {
-      public:
-	void                        addConnPool(st_mysql* conn);
-	void                        removeConn(st_mysql* conn);
-	void                        closeAll();
-	const map<st_mysql*, bool>& getPool() const;
-	~ConnPooler();
 
-      private:
-	map<st_mysql*, bool> allConn;
-	mutex                allConnMutex;
-};
-
-ConnPooler connPooler;
-static int somethingHappened(MYSQL* mysql, int status);
+std::atomic_int connCounter = 0;
+static int      somethingHappened(MYSQL* mysql, int status);
 
 sqlRow DB::queryLine(const char* sql) const {
 	return queryLine(QByteArray(sql));
@@ -193,7 +180,7 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 				          .arg(state.get().queryExecuted)
 				          .arg(state.get().reconnection)
 				          .arg(sharedState.busyConnection)
-				          .arg(connPooler.getPool().size())
+						  .arg(connCounter.load())
 				          .arg((double)sqlLogger.serverTime, 0, 'G', 3)
 				          .arg(sqlLogger.serverTime)
 				          .arg(runningSqls);
@@ -225,7 +212,7 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 	}
 
 	if (noFetch) {
-		return sqlResult();
+		return {};
 	}
 	return fetchResult(&sqlLogger);
 }
@@ -496,15 +483,15 @@ QString QV(const sqlRow& line, const QByteArray& b) {
 }
 
 st_mysql* DB::getConn(bool doNotConnect) const {
-	st_mysql* curConn = connPool;
+	auto curConn = connPool.get();
 	if (curConn == nullptr) {
 		if (doNotConnect) {
 			return nullptr;
 		}
 		// loading in connPool is inside
-		curConn = connect();
+		connect();
 	}
-	return curConn;
+	return *connPool.get();
 }
 
 ulong DB::lastId() const {
@@ -588,18 +575,18 @@ DB::~DB() {
  * @brief DB::closeConn should be called if you know the db instance is been used in a thread (and ofc will not be used anymore)
  * is not a problem if not done, it will just leave a few warn in the error log likeF
  * [Warning] Aborted connection XXX to db: 'ZYX' user: '123' host: 'something' (Got an error reading communication packets)
+ * when the mysql server will forcefully close it
  */
 void DB::closeConn() const {
-	st_mysql* curConn = connPool;
+	auto curConn = connPool.get();
 	if (curConn) {
-		// this whole conn pool architecture is wrong, ditch it and recreate something and do not realy on magic constant
-		// to detect if something is freed or not
-		connPooler.removeConn(curConn);
-		connPool = nullptr;
+		--connCounter;
+		curConn.reset();
 	}
 }
 
-st_mysql* DB::connect() const {
+StMysqlPtr DB::connect() const {
+	auto sptr = make_shared<St_mysqlW>();
 	// Mysql connection stuff is not thread safe!
 	{
 		static std::mutex           mutex;
@@ -697,8 +684,9 @@ st_mysql* DB::connect() const {
 		}
 
 		/***/
-		connPool = conn;
-		connPooler.addConnPool(conn);
+		sptr->set(conn);
+		connPool = sptr;
+		++connCounter;
 		/***/
 	}
 
@@ -713,7 +701,7 @@ st_mysql* DB::connect() const {
 
 	//this function is normally called when a new instance is created in a MT program, so we have to set again the local state
 	state.get().NULL_as_EMPTY = conf.NULL_as_EMPTY;
-	return connPool;
+	return sptr;
 }
 
 bool DB::tryConnect() const {
@@ -1188,42 +1176,6 @@ QString sqlRow::serialize() const {
 	QDebug  dbg(&out);
 	dbg << (*this);
 	return out;
-}
-
-void ConnPooler::addConnPool(st_mysql* conn) {
-	lock_guard<mutex> guard(allConnMutex);
-	allConn.insert({conn, true});
-}
-
-void ConnPooler::removeConn(st_mysql* conn) {
-	lock_guard<mutex> guard(allConnMutex);
-	if (auto iter = allConn.find(conn); iter != allConn.end()) {
-		if (iter->second) {
-			mysql_close(conn);
-			conn         = nullptr;
-			iter->second = false;
-		}
-		allConn.erase(iter);
-	}
-}
-
-void ConnPooler::closeAll() {
-	lock_guard<mutex> guard(allConnMutex);
-	for (auto& [conn, connected] : allConn) {
-		if (connected) {
-			mysql_close(conn);
-			connected = false;
-		}
-	}
-	allConn.clear();
-}
-
-const map<st_mysql*, bool>& ConnPooler::getPool() const {
-	return allConn;
-}
-
-ConnPooler::~ConnPooler() {
-	closeAll();
 }
 
 DBException::DBException(const QString& _msg, Error error)

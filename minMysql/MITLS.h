@@ -8,17 +8,19 @@
 template <typename T>
 class mi_tls_repository {
       private:
+	// Key = memory location of the INSTANCE
+	// Value = what you want to store
 	using mapT = std::unordered_map<uintptr_t, T>;
 
+	/*
+	 * The general per thread map that contain all resources (of this type)
+	 * It must be a ptr as it can goes out of scope before the other element, so cleaning will be a disaster
+	 */
 	inline static thread_local mapT* repository = nullptr;
-	std::vector<mapT*>               repoList;
-	inline static std::mutex         m;
 
 	void getRepo() {
 		if (!repository) {
 			repository = new mapT();
-			std::lock_guard<std::mutex> l(m);
-			repoList.push_back(repository);
 		}
 	}
 
@@ -47,34 +49,20 @@ class mi_tls_repository {
 	}
 
 	~mi_tls_repository() {
-		//only one destructor per thread has to run
-		std::lock_guard l(m);
-		//mark the local instance as clear
-		repository = nullptr;
+		if (repository) {
+			repository->clear();
 
-		if (repoList.empty()) {
-			return;
-		}
+			delete (repository);
 
-		for (auto& row : repoList) {
-			row->clear();
-			delete (row);
+			//mark the local instance as clear
+			repository = nullptr;
 		}
-		repoList.clear();
 	}
-
-      private:
-	// Key = memory location of the INSTANCE
-	// Value = what you want to store
-	// This is manual because thread_local are auto freed, but free order can be wrong (and usually __call_tls_dtors are called before the at_exit handler)! so when the DB closes (and remove the conn) we are in the wrong place
-	// Therefore this will leak memory, once you close the program, so is 100% irrelevant
-
-	// We should create another pool managed by us, but is nowhere relavant, as long as you do not create a milion thread...
 };
 
 template <typename T>
 class mi_tls : protected mi_tls_repository<T> {
-      public:
+	  public:
 	mi_tls() = default;
 
 	mi_tls(const T& value) {
