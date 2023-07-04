@@ -64,15 +64,10 @@ std::string SqlComposer::compose() const {
 		const string* kk      = nullptr;
 		const string* vv      = nullptr;
 		uint          longest = 0;
-		if (isASelect) {
-			kk      = &valueS1;
-			vv      = &key;
-			longest = longestVal;
-		} else {
-			kk      = &key;
-			vv      = &valueS1;
-			longest = longestKey;
-		}
+
+		kk      = &key;
+		vv      = &valueS1;
+		longest = longestKey;
 
 		string keyS1 = F("{:>{}}", *kk, longest);
 
@@ -84,6 +79,7 @@ std::string SqlComposer::compose() const {
 			final.append(separator) += F(" {}{}{}\n"s, keyS1, joiner, *vv);
 		}
 	}
+
 	return final;
 }
 
@@ -95,6 +91,19 @@ string SqlComposer::composeSelect() {
 	setIsASelect();
 	return compose();
 }
+
+string SqlComposer::composeSelect_V2()
+{
+	getTable();
+	setIsASelect();
+
+	auto sql = F("SELECT {} FROM {}", compose(), table);
+	if (where && !where->empty()) {
+		sql += "\n WHERE " + where->compose();
+	}
+	return sql;
+}
+
 
 string SqlComposer::composeSelectAll() {
 	getTable();
@@ -109,10 +118,12 @@ string SqlComposer::composeUpdate() const {
 	getTable();
 	string sql = F(R"(
 UPDATE {} SET
-{}
-WHERE {} ;
+{};
 )",
-	               table, compose(), where->compose());
+	               table, compose());
+	if (where && !where->empty()) {
+		sql += "\n WHERE " + where->compose();
+	}
 	return sql;
 }
 
@@ -147,8 +158,7 @@ std::string SqlComposer::getTable() const {
 }
 
 void SqlComposer::setIsASelect() {
-	joiner    = " AS ";
-	isASelect = true;
+	joiner = " AS ";
 }
 //	for (auto iter = vector.begin(); iter != vector.end() - 1; ++iter) {
 //		final += iter->assemble(longestKey + 1) + QSL(",\n");
