@@ -221,11 +221,14 @@ class multiMapV2 : public NotFoundMixin<K>, public std::multimap<K, V> {
 		return V();
 	}
 
-	[[nodiscard]] std::vector<V> rqRange(const K& k) {
+	[[nodiscard]] std::vector<V> rqRange(const K& k) const {
 		std::vector<V> res;
 		auto           result = this->equal_range(k);
 		for (auto it = result.first; it != result.second; it++) {
 			res.push_back(it->second);
+		}
+		if (res.empty()) {
+			this->callNotFoundCallback(k, locationFull());
 		}
 		return res;
 	}
