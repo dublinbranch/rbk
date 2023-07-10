@@ -106,6 +106,7 @@ HEADERS += \
     $$PWD/BoostJson/intrusivedebug.h \
     $$PWD/BoostJson/isjsonasubset.h \
     $$PWD/BoostJson/to_string.h \
+    $$PWD/BoostJson/util.h \
     $$PWD/QStacker/CxaLevel.h \
     $$PWD/dateTime/util.h \
     $$PWD/fmtExtra/dynamic.h \
@@ -179,6 +180,7 @@ SOURCES += \
     $$PWD/BoostJson/intrusivedebug.cpp \
     $$PWD/BoostJson/isjsonasubset.cpp \
     $$PWD/BoostJson/to_string.cpp \
+    $$PWD/BoostJson/util.cpp \
     $$PWD/HTTP/Payload.cpp \
 	$$PWD/asanOption.cpp \
     $$PWD/dateTime/util.cpp \
