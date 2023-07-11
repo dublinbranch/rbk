@@ -15,12 +15,10 @@ SqlComposer::SqlComposer(DB* db_, const std::string& separator_) {
 }
 
 void SqlComposer::push(const SScol& col, bool replaceIf) {
+
 	//This is just to showcase the usage of a lamba, in this case a normal for loop would probably have been easier
 	auto comp = [&](const SScol& a) {
-		if (a.key == col.key) {
-			return true;
-		}
-		return false;
+		return a.key == col.key;
 	};
 
 	{
@@ -92,8 +90,7 @@ string SqlComposer::composeSelect() {
 	return compose();
 }
 
-string SqlComposer::composeSelect_V2()
-{
+string SqlComposer::composeSelect_V2() {
 	getTable();
 	setIsASelect();
 
@@ -103,7 +100,6 @@ string SqlComposer::composeSelect_V2()
 	}
 	return sql;
 }
-
 
 string SqlComposer::composeSelectAll() {
 	getTable();
