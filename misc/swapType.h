@@ -50,7 +50,14 @@ void swapType(const QByteArray& source, D& dest) {
 		} else if constexpr (std::is_signed_v<D>) {
 			dest = source.toLongLong(&ok);
 		} else if constexpr (std::is_unsigned_v<D>) {
+
+#pragma GCC diagnostic push
+//many false warning here
+#pragma GCC diagnostic ignored "-Wconversion"
+
 			dest = source.toULongLong(&ok);
+
+#pragma GCC diagnostic pop
 		}
 		if (!ok) {
 			// last chanche NULL is 0 in case we are numeric right ?
@@ -103,7 +110,13 @@ void swapType(const QString& source, D& dest) {
 		} else if constexpr (std::is_signed_v<D>) {
 			dest = source.toLongLong(&ok);
 		} else if constexpr (std::is_unsigned_v<D>) {
+#pragma GCC diagnostic push
+//many false warning here
+#pragma GCC diagnostic ignored "-Wconversion"
+
 			dest = source.toULongLong(&ok);
+
+#pragma GCC diagnostic pop
 		}
 		if (!ok) {
 			// last chanche NULL is 0 in case we are numeric right ?
