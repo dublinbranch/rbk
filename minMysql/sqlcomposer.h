@@ -107,6 +107,9 @@ class SqlComposer : public std::vector<SScol> {
 	}
 
 	void setTable(const std::string& table_) {
+		if (table_.empty()) {
+			throw ExceptionV2("Setting and empty table -.-");
+		}
 		table = table_;
 	}
 

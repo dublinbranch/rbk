@@ -114,12 +114,12 @@ string SqlComposer::composeUpdate() const {
 	getTable();
 	string sql = F(R"(
 UPDATE {} SET
-{};
-)",
+{})",
 	               table, compose());
 	if (where && !where->empty()) {
-		sql += "\n WHERE " + where->compose();
+		sql += "WHERE " + where->compose();
 	}
+	sql += ";";
 	return sql;
 }
 
