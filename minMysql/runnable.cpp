@@ -38,13 +38,13 @@ bool Runnable::runnable_64(const QString& key, qint64 second, double multiplier)
 	return runnable(key, second, multiplier);
 }
 
-bool Runnable::runnable(const QString& key, qint64 second, double multiplier) {
+bool Runnable::runnable(const QString& key, u64 second, double multiplier) {
 	if (forceRunnable) {
 		return true;
 	}
 
 	static const QString skel = "SELECT id, lastRun, coolDown FROM runnable.runnable WHERE operationCode = %1 ORDER BY lastRun DESC LIMIT 1";
-	auto                 now  = QDateTime::currentSecsSinceEpoch();
+	u64                  now  = QDateTime::currentSecsSinceEpoch();
 	auto                 sql  = skel.arg(base64this(key));
 	auto                 row  = db->queryLine(sql);
 
@@ -55,13 +55,13 @@ bool Runnable::runnable(const QString& key, qint64 second, double multiplier) {
 		db->query(insertSql);
 		return true;
 	}
-	auto lastRun  = row.rq<uint>("lastRun");
-	uint coolDown = second;
+	auto lastRun  = row.rq<u64>("lastRun");
+	auto coolDown = second;
 
 	//if we are using the cooldown scaling take into account the last one
 	if (multiplier != 1) {
 		coolDown = row.rq<uint>("coolDown");
-		coolDown = coolDown * multiplier;
+		coolDown = static_cast<u64>(coolDown * multiplier);
 	}
 
 	if (lastRun + coolDown > now) {

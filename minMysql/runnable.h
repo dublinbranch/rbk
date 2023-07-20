@@ -1,6 +1,7 @@
 #ifndef RUNNABLE_H
 #define RUNNABLE_H
 
+#include "misc/intTypes.h"
 #include <QString>
 class DB;
 
@@ -22,7 +23,7 @@ class Runnable {
 	 * @param time
 	 * @return true: we can run, false: do not run
 	 */
-	[[nodiscard]] bool runnable(const QString& key, qint64 second, double multiplier = 1);
+	[[nodiscard]] bool runnable(const QString& key, u64 second, double multiplier = 1);
 	//To make it fully compatible with swaptronic old one
 	[[nodiscard]] bool operator()(const QString& key, qint64 second, double multiplier = 1);
 	[[nodiscard]] bool runnable_64(const QString& key, qint64 second, double multiplier = 1);

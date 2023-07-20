@@ -492,7 +492,7 @@ st_mysql* DB::getConn(bool doNotConnect) const {
 	return *connPool.get();
 }
 
-ulong DB::lastId() const {
+u64 DB::lastId() const {
 	return mysql_insert_id(getConn());
 }
 

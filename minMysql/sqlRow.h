@@ -2,6 +2,7 @@
 #include "rbk/defines/stringDefine.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/mapExtensor/qmapV2.h"
+#include "rbk/misc/intTypes.h"
 #include "rbk/misc/swapType.h"
 
 //TODO move to mapV2 as most of the stuff here is now duplicated
@@ -51,7 +52,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 
 	template <isEnum T>
 	void rqe(const QByteArray& key, T& t) const {
-		int temp = 0;
+		i64 temp = 0;
 		rq(key, temp);
 		t = T(temp);
 	}

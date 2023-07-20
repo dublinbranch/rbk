@@ -18,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # GCC to treat Qt's headers as "system headers" with the -isystem flag
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]/QtCore
+QMAKE_CXXFLAGS += -isystem $$/rapidjson
 
 
 # You can also make your code fail to compile if you use deprecated APIs.
@@ -130,6 +131,7 @@ HEADERS += \
     $$PWD/minMysql/sqlresult.h \
     $$PWD/misc/checkoptionalareset.h \
     $$PWD/misc/echo.h \
+    $$PWD/misc/intTypes.h \
     $$PWD/misc/swapType.h \
 	$$PWD/misc/typeinfo.h \
     $$PWD/number/sanitize.h \

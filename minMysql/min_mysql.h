@@ -160,7 +160,7 @@ class DB {
 	 * @return
 	 */
 	st_mysql* getConn(bool doNotConnect = false) const;
-	ulong     lastId() const;
+	u64 lastId() const;
 
 	// Non copyable
 	DB& operator=(const DB&) = delete;
