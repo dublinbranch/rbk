@@ -61,7 +61,7 @@ std::string SqlComposer::compose() const {
 
 		const string* kk      = nullptr;
 		const string* vv      = nullptr;
-		uint          longest = 0;
+		u64           longest = 0;
 
 		kk      = &key;
 		vv      = &valueS1;

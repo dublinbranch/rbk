@@ -60,8 +60,8 @@ bool Runnable::runnable(const QString& key, u64 second, double multiplier) {
 
 	//if we are using the cooldown scaling take into account the last one
 	if (multiplier != 1) {
-		coolDown = row.rq<uint>("coolDown");
-		coolDown = static_cast<u64>(coolDown * multiplier);
+		row.rq("coolDown", coolDown);
+		coolDown = static_cast<u64>(static_cast<double>(coolDown) * multiplier);
 	}
 
 	if (lastRun + coolDown > now) {

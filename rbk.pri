@@ -18,7 +18,6 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # GCC to treat Qt's headers as "system headers" with the -isystem flag
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]/QtCore
-QMAKE_CXXFLAGS += -isystem $$/rapidjson
 
 
 # You can also make your code fail to compile if you use deprecated APIs.

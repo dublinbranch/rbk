@@ -28,7 +28,7 @@ struct ApcuCache_index : indexed_by<
                              hashed_unique<
                                  tag<ByKey>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, std::string, key)>,
                              ordered_non_unique<
-                                 tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, uint, expireAt)>> {};
+                                 tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, u64, expireAt)>> {};
 
 using ApcuCache = multi_index_container<APCU::Row, ApcuCache_index>;
 //this is deallocated at exit before the function is called, so we just manually manage it, no idea how to do the "correct" way
@@ -81,8 +81,8 @@ std::any APCU::fetchInner(const std::string& key) {
 	return {};
 }
 
-void APCU::storeInner(const std::string& _key, const std::any& _value, bool overwrite_, int ttl) {
-	uint expireAt = 0;
+void APCU::storeInner(const std::string& _key, const std::any& _value, bool overwrite_, u64 ttl) {
+	u64 expireAt = 0;
 	if (ttl) {
 		expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
 	}
@@ -130,7 +130,7 @@ void throwTypeError(const type_info* found, const type_info* expected) {
 	throw ExceptionV2(QSL("Wrong type!! Found %1, expected %2, recheck where this key is used, maybe you have a collision").arg(found->name()).arg(expected->name()));
 }
 
-APCU::Row::Row(const std::string& key_, const std::any& value_, int expireAt_) {
+APCU::Row::Row(const std::string& key_, const std::any& value_, u64 expireAt_) {
 	key      = key_;
 	value    = value_;
 	expireAt = expireAt_;
@@ -159,7 +159,7 @@ void APCU::diskSyncP2() {
 		}
 		try {
 			auto copy = any_cast<QByteArray>(iter.value);
-			toBeWritten.insert(iter.key, {iter.expireAt, copy});
+			toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), copy});
 		} catch (std::bad_any_cast& e) {
 			(void)e;
 			fmt::print("key {} is not a QByteArray! \n", iter.key);

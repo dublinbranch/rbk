@@ -16,14 +16,14 @@ using namespace std::string_literals;
 //SlackSender::send("#backenderror_afd", "prova");
 //something like xoxb-xxxxxxxxxxxxxxxxxxxxxxxxx
 //https://api.slack.com/web#basics
-const char*        slackAPIToken = nullptr;
+const char* slackAPIToken = nullptr;
 
-SlackSender::SlackSender(const QString& channel_, uint32_t coolDown_) {
+SlackSender::SlackSender(const QString& channel_, u64 coolDown_) {
 	channel = channel_;
 	setCoolDown(coolDown_);
 }
 
-SlackSender::SlackSender(uint32_t _coolDown) {
+SlackSender::SlackSender(u64 _coolDown) {
 	setCoolDown(_coolDown);
 }
 
@@ -45,9 +45,9 @@ void SlackSender::sendSlackMessage(QString msg) {
 		return;
 	}
 
-	static int64_t lastCall = 0;
-	auto           now      = QDateTime::currentSecsSinceEpoch();
-	uint32_t       next     = lastCall + coolDown;
+	static u64 lastCall = 0;
+	u64        now      = QDateTime::currentSecsSinceEpoch();
+	u64        next     = lastCall + coolDown;
 	if (next > now) { //if still in cooldown
 		return;
 	} else {
@@ -106,7 +106,7 @@ void SlackSender::sendToDestSlackChannel(QString msg) {
 	slack.sendSlackMessage(msg);
 }
 
-void SlackSender::setCoolDown(const uint32_t& value) {
+void SlackSender::setCoolDown(const u64& value) {
 	if (value < minCooldown) {
 		qDebug().noquote() << "minimum slack spam time is 10 second... no one is going to read all of that spam in any case, is just useless..." + QStacker16Light();
 		coolDown = minCooldown;

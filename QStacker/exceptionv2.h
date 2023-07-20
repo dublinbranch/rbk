@@ -23,7 +23,11 @@ class ExceptionV2 : public std::exception {
 
 	ExceptionV2() = default;
 	ExceptionV2(const QString& _msg, uint skip = 4);
-	ExceptionV2(const char* _msg, uint skip = 4);
+
+	explicit ExceptionV2(const char* _msg);
+
+	ExceptionV2(const char* _msg, uint skip);
+
 	ExceptionV2(const std::string& _msg, uint skip = 4);
 	ExceptionV2(const QByteArray& _msg, uint skip = 4);
 

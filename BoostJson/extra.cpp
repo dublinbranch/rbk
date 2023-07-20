@@ -152,7 +152,7 @@ std::string pretty_print(const boost::json::value& jv) {
 json::value asNull(const sqlRow& row, std::string_view key) {
 
 	QByteArray k;
-	k.setRawData(key.data(), key.size());
+	k.setRawData(key.data(), static_cast<uint>(key.size()));
 	auto v = row.rq<QByteArray>(k);
 	if (v == BSQL_NULL) {
 		return nullptr;
@@ -180,7 +180,7 @@ QString QS(const boost::json::value& value) {
 
 bool insertIfNotNull(boost::json::object& target, const sqlRow& row, std::string_view key) {
 	QByteArray k;
-	k.setRawData(key.data(), key.size());
+	k.setRawData(key.data(), static_cast<uint>(key.size()));
 	auto v = row.rq<QByteArray>(k);
 	if (v.isEmpty() || v == BSQL_NULL) {
 		return false;
@@ -271,7 +271,7 @@ string JsonRes::composeErrorMsg() const {
 	}
 
 	Pt          offset    = 0;
-	uint        rowNumber = 0;
+	size_t      rowNumber = 0;
 	string_view showMe;
 
 	if (auto i = newLines.lower_bound(position); i != newLines.end()) {
@@ -305,8 +305,8 @@ string JsonRes::composeErrorMsg() const {
 		}
 
 		//show a part of the json to understand the problem, do not go over end of line or before!
-		uint start = max(0u, position - 45);
-		uint end   = min(Pt(start + 80), raw.size());
+		auto start = max(0ul, position - 45);
+		auto end   = min(Pt(start + 80), raw.size());
 
 		auto len = end - start;
 
@@ -409,7 +409,7 @@ void createOrAppendObj(boost::json::object& json, std::string_view container, st
 QByteArray tag_invoke(const boost::json::value_to_tag<QByteArray>&, const boost::json::value& jv) {
 	auto       s = jv.as_string();
 	QByteArray q;
-	q.setRawData(s.data(), s.size());
+	q.setRawData(s.data(), static_cast<uint>(s.size()));
 	q.detach();
 	return q;
 }

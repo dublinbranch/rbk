@@ -39,7 +39,7 @@ QByteArray JSONReader::jsonRender() {
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
 	json.Accept(writer);
 	QByteArray res = "\n";
-	res.append(buffer.GetString(), buffer.GetSize());
+	res.append(buffer.GetString(), static_cast<int>(buffer.GetSize()));
 	res.append("\n");
 	return res;
 }

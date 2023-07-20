@@ -1,5 +1,6 @@
 #pragma once
 
+#include "misc/intTypes.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/mixin/NoCopy.h"
 #include <QDateTime>
@@ -31,13 +32,13 @@ class APCU : private NoCopy {
 	struct Row {
 		//Corpus munus
 		Row() = default;
-		Row(const std::string& key_, const std::any& value_, int expireAt_);
+		Row(const std::string& key_, const std::any& value_, u64 expireAt_);
 
 		//Member
 		std::string key;
 		std::any    value;
 		//0 will disable flushing
-		uint expireAt = 1;
+		u64 expireAt = 1;
 		//Only QByteArray is accepted for that kind, the cached type will provide the
 		//serialized / unserialize operation
 		//those key will be saved on disk on program CLOSE and reloaded, they still have the same TTL based logic
@@ -51,7 +52,7 @@ class APCU : private NoCopy {
 	 * We hide the implementation as multi index will kill compile time
 	 */
 	std::any fetchInner(const std::string& key);
-	void     storeInner(const std::string& _key, const std::any& _value, bool overwrite_ = false, int ttl = 60);
+	void     storeInner(const std::string& _key, const std::any& _value, bool overwrite_ = false, u64 ttl = 60);
 	void     storeInner(const APCU::Row& row_, bool overwrite_);
 
 	template <class T>

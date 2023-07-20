@@ -8,6 +8,10 @@ ExceptionV2::ExceptionV2(const QString& _msg, uint skip) {
 	msg = _msg.toStdString() + stacker(skip, QStackerOptLight);
 }
 
+ExceptionV2::ExceptionV2(const char* _msg) {
+	msg = _msg + stacker(4, QStackerOptLight);
+}
+
 ExceptionV2::ExceptionV2(const char* _msg, uint skip) {
 	msg = _msg + stacker(skip, QStackerOptLight);
 }

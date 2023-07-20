@@ -1,5 +1,6 @@
 #pragma once
 
+#include "misc/intTypes.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/number/sanitize.h"
 #include "rbk/string/util.h"
@@ -63,8 +64,8 @@ class SqlComposer : public std::vector<SScol> {
       private:
 	struct PrivateTag {};
 
-	size_type   longestKey = 0;
-	size_type   longestVal = 0;
+	u64         longestKey = 0;
+	u64         longestVal = 0;
 	DB*         db         = nullptr;
 	std::string table;
 

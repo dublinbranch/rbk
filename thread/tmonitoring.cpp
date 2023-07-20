@@ -48,12 +48,12 @@ struct Averager {
 	Averager(uint bs) {
 		blockSize = bs;
 	}
-	uint blockSize = 0;
+	u64 blockSize = 0;
 
-	double       restartedOn = 0;
-	double       resetAfter  = 0;
-	atomic<uint> request{0};
-	ATiming      timing;
+	u64         restartedOn = 0;
+	u64         resetAfter  = 0;
+	atomic<u64> request{0};
+	ATiming     timing;
 
 	void clear() {
 		request = 0;
@@ -247,15 +247,15 @@ All time are in ms
 )",
 		                             t->tid,
 		                             asString(t->state),
-		                             m.total() / 1E6,
-		                             m.flush / 1E6,
-		                             m.execution() / 1E6,
-		                             m.IO.nsecsElapsed() / 1E6,
-		                             m.sqlImmediate / 1E6,
-		                             m.sqlDeferred / 1E6,
-		                             m.curlImmediate / 1E6,
-		                             m.curlDeferred / 1E6,
-		                             m.clickHouse.nsecsElapsed() / 1E6);
+		                             static_cast<double>(m.total()) / 1E6,
+		                             static_cast<double>(m.flush) / 1E6,
+		                             static_cast<double>(m.execution()) / 1E6,
+		                             static_cast<double>(m.IO.nsecsElapsed()) / 1E6,
+		                             static_cast<double>(m.sqlImmediate) / 1E6,
+		                             static_cast<double>(m.sqlDeferred) / 1E6,
+		                             static_cast<double>(m.curlImmediate) / 1E6,
+		                             static_cast<double>(m.curlDeferred) / 1E6,
+		                             static_cast<double>(m.clickHouse.nsecsElapsed()) / 1E6);
 	}
 	generalStatus += "</table>";
 	generalStatus += "<hr>" + sql;

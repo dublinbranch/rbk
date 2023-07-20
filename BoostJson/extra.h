@@ -64,7 +64,7 @@ struct JsonRes {
 	std::string        raw;
 	boost::json::value json;
 	//if position is set, it means there was an error and this is the position
-	uint                      position = 0;
+	size_t                    position = 0;
 	boost::json::error_code   ec;
 	boost::json::storage_ptr  storage;
 	[[nodiscard]] std::string composeErrorMsg() const;

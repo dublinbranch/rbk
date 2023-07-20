@@ -1,6 +1,7 @@
 #ifndef SLACKSENDER_H
 #define SLACKSENDER_H
 
+#include "misc/intTypes.h"
 #include <QString>
 
 class SlackSender {
@@ -10,8 +11,8 @@ class SlackSender {
 	 * @param prefix with # for channel @ for user
 	 * @param coolDown
 	 */
-	SlackSender(const QString& _channel, uint32_t _coolDown = 30);
-	SlackSender(uint32_t _coolDown);
+	SlackSender(const QString& _channel, u64 _coolDown = 30);
+	explicit SlackSender(u64 _coolDown);
 
 	void sendSlackMessage(QString msg);
 
@@ -19,7 +20,7 @@ class SlackSender {
 	static void sendAsync(const QString& channel, const QString& msg);
 	static void sendToDestSlackChannel(QString msg);
 
-	void setCoolDown(const uint32_t& value);
+	void setCoolDown(const u64& value);
 
 	//needed as std::thread does not accept polymorphic
 	static void sendQ16(const QString& channel, const QString& msg);
@@ -31,8 +32,8 @@ class SlackSender {
       private:
 	QString channel;
 	//how much time between one send and the other, to avoid needless spam, 30 sec is the default internal hard coded limit is 10
-	static constexpr uint32_t minCooldown = 10;
-	uint32_t                  coolDown    = 30;
+	static constexpr u64 minCooldown = 10;
+	u64                  coolDown    = 30;
 };
 
 #endif // SLACKSENDER_H
