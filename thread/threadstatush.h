@@ -1,7 +1,7 @@
 #ifndef THREADSTATUSH_H
 #define THREADSTATUSH_H
 
-#include "misc/intTypes.h"
+#include "rbk/misc/intTypes.h"
 #include "rbk/mapExtensor/hmap.h"
 
 #include <QString>

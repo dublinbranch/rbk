@@ -1,7 +1,7 @@
 #ifndef SLACKSENDER_H
 #define SLACKSENDER_H
 
-#include "misc/intTypes.h"
+#include "rbk/misc/intTypes.h"
 #include <QString>
 
 class SlackSender {

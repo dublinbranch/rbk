@@ -1,7 +1,7 @@
 #ifndef RUNNABLE_H
 #define RUNNABLE_H
 
-#include "misc/intTypes.h"
+#include "rbk/misc/intTypes.h"
 #include <QString>
 class DB;
 
