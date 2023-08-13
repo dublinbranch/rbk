@@ -724,10 +724,6 @@ value_to_impl(
     return v.value();
 }
 
-template<class T>
-using value_to_implementation
-    = conversion_implementation<T, value_to_conversion>;
-
 } // detail
 
 // std::optional

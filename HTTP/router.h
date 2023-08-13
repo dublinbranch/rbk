@@ -38,6 +38,8 @@ but the note is here
 	virtual ~RequestBase() = default;
 };
 
+using SimpleRoutedType = void (*)(PMFCGI& status, Payload& payload);
+
 struct BeastConf;
 class Router {
       public:
@@ -52,4 +54,5 @@ class Router {
 	std::shared_ptr<RequestBase> operation = nullptr;
 };
 
-mapV2<std::string, RequestBase*> getDefaultRouting();
+mapV2<std::string, RequestBase*>     getDefaultRouting();
+mapV2<std::string, SimpleRoutedType> getDefaultSimpleRouting();

@@ -49,17 +49,6 @@ class Status : public RequestBase {
 	}
 };
 
-// functor map
-
-mapV2<std::string, RequestBase*> getDefaultRouting() {
-	return {{
-
-	    {"echo", new Echo},
-	    {"Z4DgMzxU1gKlwhedSGeERZVeId4QRwDHDejwn3PKRQhdVLrzCg2ww", new Status}
-
-	}};
-}
-
 void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) {
 	Url  url(status.path);
 	auto path = url.url.path().toStdString().substr(1);
@@ -110,4 +99,19 @@ void Router::deferred() {
 	if (operation) {
 		operation->deferred();
 	}
+}
+
+// functor map
+
+mapV2<std::string, RequestBase*> getDefaultRouting() {
+	return {{
+
+	    {"echo", new Echo},
+	    {"Z4DgMzxU1gKlwhedSGeERZVeId4QRwDHDejwn3PKRQhdVLrzCg2ww", new Status}
+
+	}};
+}
+
+mapV2<string, SimpleRoutedType> getDefaultSimpleRouting() {
+	return {};
 }

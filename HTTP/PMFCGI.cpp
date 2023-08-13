@@ -64,6 +64,12 @@ string bHeaders::serialize(const QStringList& skipHeaders, bool initialSpacer, b
 	return buffer;
 }
 
+void PMFCGI::decodeGet() {
+	Url url(path);
+	get                  = url.query;
+	get.notFoundCallback = HttpException::HttpParamErrorHandler1;
+}
+
 void PMFCGI::extractCookies() {
 	if (auto v = headers.get("cookie"); v) {
 		for (auto& ck : v.val->split(';')) {

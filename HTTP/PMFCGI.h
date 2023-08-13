@@ -33,6 +33,7 @@ struct PMFCGI {
 	multiMapV2<QString, QString> request;
 	//server name, if needed must be forwarded by nginx else will be 127.0.0.1 from the header
 
+	void        decodeGet();
 	void        extractCookies();
 	std::string serializeMsg(const QByteArray& msg, bool light = false) const;
 	std::string serializeMsg(const char* msg) const;

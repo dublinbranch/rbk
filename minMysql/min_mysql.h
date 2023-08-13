@@ -116,10 +116,10 @@ class DB {
 	sqlRow queryCacheLine2(const QString& sql, uint ttl = 3600, bool required = false);
 	sqlRow queryCacheLine2(const std::string& sql, uint ttl = 3600, bool required = false);
 
-	sqlResult queryCache2(const std::string& sql, const Opt& opt);
+	sqlResult queryCache2(const std::string& sql, const Opt& opt) const;
 
-	sqlResult queryCache2(const std::string& sql, uint ttl, bool required = false);
-	sqlResult queryCache2(const QString& sql, uint ttl, bool required = false);
+	sqlResult queryCache2(const std::string& sql, uint ttl, bool required = false) const;
+	sqlResult queryCache2(const QString& sql, uint ttl, bool required = false) const;
 	//Try to read data from cache, if expired read from DB, if db unavailable use the cache, if all fail throw error
 	sqlResult queryORcache(const QString& sql, uint ttl, bool required = false);
 

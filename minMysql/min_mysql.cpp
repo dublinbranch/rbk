@@ -179,7 +179,7 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 				          .arg(state.get().queryExecuted)
 				          .arg(state.get().reconnection)
 				          .arg(sharedState.busyConnection)
-						  .arg(St_mysqlW::connCounter.load())
+				          .arg(St_mysqlW::connCounter.load())
 				          .arg((double)sqlLogger.serverTime, 0, 'G', 3)
 				          .arg(sqlLogger.serverTime)
 				          .arg(runningSqls);
@@ -257,12 +257,12 @@ sqlRow DB::queryCacheLine2(const std::string& sql, uint ttl, bool required) {
 	return queryCacheLine2(QString::fromStdString(sql), ttl, required);
 }
 
-sqlResult DB::queryCache2(const std::string& sql, const Opt& opt) {
+sqlResult DB::queryCache2(const std::string& sql, const Opt& opt) const {
 	state.get().noCacheOnEmpty = opt.noCacheOnEmpty;
 	return queryCache2(QString::fromStdString(sql), opt.ttl, opt.required);
 }
 
-sqlResult DB::queryCache2(const std::string& sql, uint ttl, bool required) {
+sqlResult DB::queryCache2(const std::string& sql, uint ttl, bool required) const {
 	return queryCache2(QString::fromStdString(sql), ttl, required);
 }
 
@@ -299,7 +299,7 @@ sqlRow DB::queryCacheLine(const QString& sql, uint ttl, bool required) {
 //		}
 //	}
 
-sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) {
+sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) const {
 	ResetAfterUse<typeof localThreadStatus->state> reset1;
 	if (localThreadStatus) {
 		reset1.set(localThreadStatus->state, ThreadState::MyCache);
@@ -546,7 +546,7 @@ void DBConf::setDefaultDB(const QByteArray& value) {
 QString DBConf::getInfo(bool passwd) const {
 	auto msg = QSL(" %1:%2  user: %3")
 	               .arg(QString(host))
-				   .arg(port.value())
+	               .arg(port.value())
 	               .arg(user.data());
 	if (passwd) {
 		msg += pass.data();
@@ -647,7 +647,7 @@ StMysqlPtr DB::connect() const {
 		auto sock      = conf.sock.has_value() ? conf.sock.value().constData() : nullptr;
 		auto connected = mysql_real_connect(conn, conf.host, conf.user.constData(), conf.pass.constData(),
 		                                    conf.getDefaultDB(),
-											conf.port.value(), sock, flag);
+		                                    conf.port.value(), sock, flag);
 		if (connected == nullptr) {
 			auto    errorNo = mysql_errno(conn);
 			QString error   = mysql_error(conn);
