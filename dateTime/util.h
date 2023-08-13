@@ -26,9 +26,9 @@ qint64 getSecondsUntilMidnight(const QTimeZone& time_zone);
 
 bool isBefore(const QTime& time);
 
-ushort getCurHour(const QTimeZone& t);
+int getCurHour(const QTimeZone& t);
 
-ushort getCurMinute();
+int getCurMinute();
 
 class QDateTime;
 QDateTime getToday();
@@ -51,7 +51,5 @@ QDateTime getMidnight(int deltaDays, const QTimeZone* tz = nullptr);
 QDateTime getMidnight(QDateTime day);
 QDateTime getNextMidnight();
 qint64    secToNextMidnight();
-ushort    getCurHour(const QTimeZone &t = UTC);
-ushort    getCurMinute();
 qint64    getCurrentTS();
 qint64    getCurrentMTS();
