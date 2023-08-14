@@ -101,11 +101,11 @@ TimespecV2::TimespecV2(double ts) {
 	time = ts;
 }
 
-TimespecV2 TimespecV2::operator-(const TimespecV2& rhs) {
+TimespecV2 TimespecV2::operator-(const TimespecV2& rhs) const {
 	return time - rhs.time;
 }
 
-TimespecV2 TimespecV2::operator-(const double& r) {
+TimespecV2 TimespecV2::operator-(const double& r) const {
 	return time - r;
 }
 

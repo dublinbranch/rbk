@@ -23,8 +23,8 @@ class TimespecV2 {
 
 	TimespecV2() = default;
 	TimespecV2(double ts);
-	TimespecV2        operator-(const TimespecV2& rhs);
-	TimespecV2        operator-(const double& rhs);
+	TimespecV2        operator-(const TimespecV2& rhs) const;
+	TimespecV2        operator-(const double& rhs) const;
 	timespec          toTimespec() const;
 	static TimespecV2 now();
 	void              setNow();
