@@ -31,7 +31,7 @@ struct FileGetRes {
 struct FPCRes {
 	bool                   ok;
 	QFileDevice::FileError error = QFileDevice::FileError::NoError;
-	                       operator bool();
+	operator bool();
 };
 
 //I do really need to find a solution to this nonsense!
@@ -74,6 +74,12 @@ bool softlink(const QString& source, const QString& dest, bool quiet = false);
 // HLParam::quiet | HLParam::eraseOld
 QString hardlink(const QString& source, const QString& dest, HLParam param = HLParam::eraseOld);
 
+/**
+ * @brief RotableFile is used to provide an in program logrotate functionality
+ * @param name_
+ * @param suffix
+ * @return
+ */
 QString RotableFile(const QString& name, QString suffix = "");
 
 void logWithTime(const QString& logFile, const QString& msg);

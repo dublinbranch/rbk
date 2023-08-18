@@ -1,5 +1,4 @@
 #include "filefunction.h"
-#include "folder.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/RAII/resetAfterUse.h"
@@ -145,7 +144,7 @@ QByteArray unzip1(QByteArray zipped) {
 			}
 
 			QByteArray decompressed;
-			decompressed.resize(sb.size);
+			decompressed.resize(static_cast<int>(sb.size));
 			auto len = zip_fread(zf, decompressed.data(), sb.size);
 			if (len < 0) {
 				qCritical().noquote() << "error decompressing zip file" << QStacker16();

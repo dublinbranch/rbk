@@ -413,3 +413,13 @@ QByteArray tag_invoke(const boost::json::value_to_tag<QByteArray>&, const boost:
 	q.detach();
 	return q;
 }
+
+std::optional<boost::json::value*> optPointer(boost::json::value& value, std::string_view ptr) {
+	error_code jec;
+	
+	auto       result = value.find_pointer(ptr, jec);
+	if (jec) {
+		return {};
+	}
+	return result;
+}

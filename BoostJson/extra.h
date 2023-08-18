@@ -4,6 +4,7 @@
 
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include <boost/json.hpp>
+#include <optional>
 
 //namespace bj = boost::json;
 //using namespace std::string_literals; <<-- this one for the suffix s to conver from char[] to std::string

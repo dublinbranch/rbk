@@ -5,7 +5,6 @@
 #include "rbk/RAII//resetAfterUse.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/filesystem/folder.h"
-#include "rbk/fmtExtra/customformatter.h"
 #include "rbk/hash/sha.h"
 #include "rbk/misc/b64.h"
 #include "rbk/serialization/serialize.h"
@@ -59,7 +58,7 @@ sqlRow DB::queryLine(const QString& sql) const {
 
 sqlRow DB::queryLine(const std::string& sql) const {
 	QByteArray temp;
-	temp.setRawData(sql.c_str(), sql.size());
+	temp.setRawData(sql.c_str(), static_cast<uint>(sql.size()));
 	return queryLine(temp);
 }
 
@@ -348,7 +347,6 @@ sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) const {
 			}
 		}
 		fileSerialize(name, res);
-
 		return res;
 	} else {
 		return query(sql);
@@ -732,6 +730,9 @@ quint64 getId(const sqlResult& res) {
 }
 
 SQLBuffering::SQLBuffering(DB* _conn, uint _bufferSize, bool _useTRX) {
+	if (!_conn) {
+		throw ExceptionV2("in nullptr we DO NOT TRUST! fix the code");
+	}
 	this->conn       = _conn;
 	this->bufferSize = _bufferSize;
 	this->useTRX     = _useTRX;
@@ -741,7 +742,7 @@ SQLBuffering::~SQLBuffering() {
 	try {
 		flush();
 	} catch (std::exception& e) {
-		qCritical() << e.what();
+		qCritical().noquote() << e.what();
 	} catch (...) {
 		qCritical() << "unknow exception in " << QStacker16();
 	}
@@ -777,7 +778,7 @@ void SQLBuffering::flush() {
 		return;
 	}
 	if (conn == nullptr) {
-		throw QSL("you forget to set a usable DB Conn!") + QStacker16();
+		throw DBException("you forget to set a usable DB Conn!", DBException::Error::Connection);
 	}
 	/**
 	 * To avoid having a very big packet we split
@@ -1116,8 +1117,8 @@ void SQLLogger::flush() {
 
 	file.write(info.toUtf8());
 
-	double     query = serverTime / 1E9;
-	double     fetch = fetchTime / 1E9;
+	double     query = static_cast<double>(serverTime) / 1E9;
+	double     fetch = static_cast<double>(fetchTime) / 1E9;
 	QByteArray buff  = "Query: " + QByteArray::number(query, 'E', 3);
 	file.write(buff.leftJustified(20, ' ').append("Fetch: " + QByteArray::number(fetch, 'E', 3)) + "\n" + sql);
 	if (!error.isEmpty()) {

@@ -24,9 +24,9 @@ void ClampedNormalDistribution::setParam(double _min, double _max, double _mean,
 }
 
 void ClampedNormalDistribution::initSeed() const {
-	seeded        = true;
-	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-	generator     = new (std::mt19937);
+	seeded    = true;
+	auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+	generator = new (std::mt19937);
 	generator->seed(seed);
 }
 

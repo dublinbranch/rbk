@@ -47,3 +47,7 @@ QByteArray simplifyMore(const QByteArray& original) {
 	}
 	return cleaned;
 }
+
+QString Q16(std::string_view s) {
+	return QString::fromStdString(std::string(s.data(), s.size()));
+}
