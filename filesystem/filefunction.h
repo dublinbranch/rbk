@@ -35,12 +35,12 @@ struct FPCRes {
 };
 
 //I do really need to find a solution to this nonsense!
-FPCRes filePutContents(const QString& pay, const QString& fileName);
-FPCRes filePutContents(const QByteArray& pay, const QString& fileName);
-FPCRes filePutContents(const std::string& pay, const QString& fileName);
-FPCRes filePutContents(const std::string& pay, const std::string& fileName);
-FPCRes filePutContents(const QByteArray& pay, const std::string& fileName);
-FPCRes filePutContents(const QByteArray& pay, const char* fileName);
+FPCRes filePutContents(const QString& pay, const QString& fileName, bool verbose = false);
+FPCRes filePutContents(const QByteArray& pay, const QString& fileName, bool verbose = false);
+FPCRes filePutContents(const std::string& pay, const QString& fileName, bool verbose = false);
+FPCRes filePutContents(const std::string& pay, const std::string& fileName, bool verbose = false);
+FPCRes filePutContents(const QByteArray& pay, const std::string& fileName, bool verbose = false);
+FPCRes filePutContents(const QByteArray& pay, const char* fileName, bool verbose = false);
 
 QByteArray fileGetContents(const QString& fileName, bool quiet = true);
 QByteArray fileGetContents(const QString& fileName, bool quiet, bool& success);

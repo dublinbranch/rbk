@@ -1,8 +1,10 @@
 #include "filefunction.h"
+#include "rbk/fmtExtra/dynamic.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/RAII/resetAfterUse.h"
 #include "rbk/defines/stringDefine.h"
+#include "rbk/fmtExtra/customformatter.h"
 #include "rbk/magicEnum/magic_enum.hpp"
 #include "rbk/serialization/serialize.h"
 #include <QDateTime>
@@ -49,15 +51,21 @@ bool QSaveV2::open(QIODevice::OpenMode flags, bool quiet) {
 	return true;
 }
 
-FPCRes filePutContents(const QByteArray& pay, const QString& fileName) {
+FPCRes filePutContents(const QByteArray& pay, const QString& fileName, bool verbose) {
 	QSaveFile file;
 	file.setFileName(fileName);
 	// TODO nel caso il file non sia scribile (di un altro utente) ritorna un vaghissimo WriteError, indicare se possibile meglio!
 	if (!file.open(QIODevice::Truncate | QIODevice::WriteOnly)) {
+		if (verbose) {
+			qCritical() << F16("Impossbile to write into {} due to {} in {}\n", fileName, file.error(),QStacker16Light());
+		}
 		return {false, file.error()};
 	}
 	auto written = file.write(pay);
 	if (written != pay.size()) {
+		if (verbose) {
+			qCritical() << F16("Impossbile to write into {} due to {} in {}\n", fileName, file.error(),QStacker16Light());
+		}
 		return {false, file.error()};
 	}
 	file.commit();
@@ -224,24 +232,24 @@ void checkFileLock(QString path, uint minDelay) {
 	filePutContents(pathTs, pathTs);
 }
 
-FPCRes filePutContents(const QString& pay, const QString& fileName) {
-	return filePutContents(pay.toUtf8(), fileName);
+FPCRes filePutContents(const QString& pay, const QString& fileName, bool verbose) {
+	return filePutContents(pay.toUtf8(), fileName, verbose);
 }
 
-FPCRes filePutContents(const std::string& pay, const QString& fileName) {
-	return filePutContents(QByteArray::fromStdString(pay), fileName);
+FPCRes filePutContents(const std::string& pay, const QString& fileName, bool verbose) {
+	return filePutContents(QByteArray::fromStdString(pay), fileName, verbose);
 }
 
-FPCRes filePutContents(const std::string& pay, const std::string& fileName) {
-	return filePutContents(QByteArray::fromStdString(pay), QString::fromStdString(fileName));
+FPCRes filePutContents(const std::string& pay, const std::string& fileName, bool verbose) {
+	return filePutContents(QByteArray::fromStdString(pay), QString::fromStdString(fileName), verbose);
 }
 
-FPCRes filePutContents(const QByteArray& pay, const std::string& fileName) {
-	return filePutContents(pay, QString::fromStdString(fileName));
+FPCRes filePutContents(const QByteArray& pay, const std::string& fileName, bool verbose) {
+	return filePutContents(pay, QString::fromStdString(fileName), verbose);
 }
 
-FPCRes filePutContents(const QByteArray& pay, const char* fileName) {
-	return filePutContents(pay, QString(fileName));
+FPCRes filePutContents(const QByteArray& pay, const char* fileName, bool verbose) {
+	return filePutContents(pay, QString(fileName), verbose);
 }
 
 bool fileAppendContents(const std::string& pay, const QString& fileName) {

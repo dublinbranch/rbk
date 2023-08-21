@@ -69,7 +69,7 @@ static const std::vector<std::string> errorPrefix{
     "Look mom an"};
 
 string_view randomErrorPrefix() {
-	auto s = errorPrefix.size();
+	uint s = static_cast<uint>(errorPrefix.size());
 	auto r = rand(0, s - 1);
 	return errorPrefix[r];
 }
@@ -119,7 +119,7 @@ void sendResponseToClient(beast::tcp_stream& stream, Payload& payload) {
 	res.keep_alive(false);
 
 	//equivalente to fastcgi_close
-	send(stream, move(res));
+	send(stream, res);
 	registerFlushTime();
 }
 
