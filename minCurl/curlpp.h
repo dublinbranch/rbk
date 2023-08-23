@@ -21,7 +21,7 @@ struct CurlPPStruct {
 };
 
 struct upload_status {
-	int         bytes_read = 0;
+	size_t      bytes_read = 0;
 	std::string smtp_payload;
 };
 

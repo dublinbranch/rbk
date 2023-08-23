@@ -12,12 +12,12 @@ void echo(const std::string& s) {
 
 void warn(const std::string& msg) {
 	QByteArray q;
-	q.setRawData(msg.data(), msg.size());
+	q.setRawData(msg.data(), (uint)msg.size());
 	qWarning().noquote() << q;
 }
 
 void critical(const std::string& msg) {
 	QByteArray q;
-	q.setRawData(msg.data(), msg.size());
+	q.setRawData(msg.data(), (uint)msg.size());
 	qCritical().noquote() << q;
 }

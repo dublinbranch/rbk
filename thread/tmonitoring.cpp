@@ -51,7 +51,7 @@ struct Averager {
 	u64 blockSize = 0;
 
 	u64         restartedOn = 0;
-	u64         resetAfter  = 0;
+	i64         resetAfter  = 0;
 	atomic<u64> request{0};
 	ATiming     timing;
 
@@ -71,8 +71,8 @@ struct Averager {
 	}
 
 	std::string info() const {
-		double delta = QDateTime::currentSecsSinceEpoch() - restartedOn;
-		auto   ps    = (double)request / delta;
+		auto delta = QDateTime::currentSecsSinceEpoch() - restartedOn;
+		auto ps    = (double)request / (double)delta;
 		return fmt::format(R"(
 <td>{}</td>
 <td>{:.2f} / s</td>
@@ -145,7 +145,7 @@ void registerFlushTime() {
 }
 
 string composeStatus() {
-	auto rqs = ((double)request / (QDateTime::currentMSecsSinceEpoch() - startedAt)) * 1000.0;
+	auto rqs = ((double)request / (double)(QDateTime::currentMSecsSinceEpoch() - startedAt)) * 1000.0;
 	//TODO convert to json in master so can be used by hacheck easily
 
 	string generalStatus;

@@ -10,7 +10,6 @@
 #include <boost/multi_index_container.hpp>
 
 #include "rbk/filesystem/filefunction.h"
-#include "rbk/fmtExtra/includeMe.h"
 #include "rbk/serialization/QDataStreamer.h"
 
 #include <QDataStream>
@@ -28,7 +27,7 @@ struct ApcuCache_index : indexed_by<
                              hashed_unique<
                                  tag<ByKey>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, std::string, key)>,
                              ordered_non_unique<
-                                 tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, u64, expireAt)>> {};
+                                 tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, i64, expireAt)>> {};
 
 using ApcuCache = multi_index_container<APCU::Row, ApcuCache_index>;
 //this is deallocated at exit before the function is called, so we just manually manage it, no idea how to do the "correct" way
@@ -109,7 +108,7 @@ void APCU::storeInner(const Row& row, bool overwrite_) {
 
 std::string APCU::info() const {
 	//Poor man APCU page -.-
-	double delta = QDateTime::currentSecsSinceEpoch() - startedAt;
+	double delta = (double)(QDateTime::currentSecsSinceEpoch() - startedAt);
 	auto   msg   = fmt::format(R"(
 <pre>
 		Cache size: {:>10}
@@ -120,8 +119,8 @@ std::string APCU::info() const {
 		Delete:     {:>10} / {:>8.0f}s
 </pre>
 		)",
-	                           cache->size(), hits, hits / delta, miss, miss / delta, // 5
-	                           insert, insert / delta, overwrite, overwrite / delta, deleted, deleted / delta);
+	                           cache->size(), hits, (double)hits / delta, miss, (double)miss / delta, // 5
+	                           insert, (double)insert / delta, overwrite, (double)overwrite / delta, deleted, (double)deleted / delta);
 	return msg;
 }
 

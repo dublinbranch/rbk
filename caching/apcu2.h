@@ -1,7 +1,7 @@
 #pragma once
 
-#include "rbk/misc/intTypes.h"
 #include "rbk/QStacker/exceptionv2.h"
+#include "rbk/misc/intTypes.h"
 #include "rbk/mixin/NoCopy.h"
 #include <QDateTime>
 #include <QString>
@@ -38,7 +38,7 @@ class APCU : private NoCopy {
 		std::string key;
 		std::any    value;
 		//0 will disable flushing
-		u64 expireAt = 1;
+		i64 expireAt = 1;
 		//Only QByteArray is accepted for that kind, the cached type will provide the
 		//serialized / unserialize operation
 		//those key will be saved on disk on program CLOSE and reloaded, they still have the same TTL based logic

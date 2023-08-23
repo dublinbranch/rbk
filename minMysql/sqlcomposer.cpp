@@ -116,10 +116,12 @@ string SqlComposer::composeUpdate() const {
 UPDATE {} SET
 {})",
 	               table, compose());
-	if (where && !where->empty()) {
-		sql += "WHERE " + where->compose();
+	if (!where || where->empty()) {
+		throw ExceptionV2("Nervously refusing an update without where condition (I basically saved the day from overwriting a whole table...)");
 	}
-	sql += ";";
+
+	sql += "WHERE " + where->compose() + ";";
+
 	return sql;
 }
 
