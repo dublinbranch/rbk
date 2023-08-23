@@ -5,8 +5,6 @@
 //as this will include a lot of qt stuff
 
 #include "NotFoundMixin.h"
-#include "fmt/core.h"
-#include "rbk/QStacker/exceptionv2.h"
 #include "rbk/misc/swapType.h"
 #include <map>
 
@@ -72,6 +70,15 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 			return true;
 		}
 		return false;
+	}
+
+	template <typename T>
+	[[nodiscard]] T get(const K& k) const {
+		T t;
+		if (auto iter = this->find(k); iter != this->end()) {
+			swapType(iter->second, t);
+		}
+		return t;
 	}
 
 	[[nodiscard]] V rq(const K& k) const {

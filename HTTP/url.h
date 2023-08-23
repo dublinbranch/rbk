@@ -23,13 +23,6 @@ class QueryParams : public mapV2<QString, QString> {
 	QString get64(const QString& key) const;
 	bool    get64(const QString& key, QString& value) const;
 
-	template <class T>
-	T get2(const QString& key) const {
-		T t = T();
-		swapType(key, t);
-		return t;
-	}
-
 	QString join() const;
 };
 

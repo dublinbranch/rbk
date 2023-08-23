@@ -40,7 +40,10 @@ size_t QBReader(char* ptr, size_t size, size_t nmemb, void* userdata) {
 
 size_t QBWriter(void* contents, size_t size, size_t nmemb, QByteArray* userp) {
 	size_t realsize = size * nmemb;
-	userp->append(static_cast<char*>(contents), realsize);
+
+	auto rs = static_cast<int>(realsize);
+
+	userp->append(static_cast<char*>(contents), rs);
 	return realsize;
 }
 
@@ -199,7 +202,10 @@ CURL* CurlKeeper::get() const {
 }
 
 CurlCallResult urlPostContent(const std::string& url, const std::string& post, bool quiet, CURL* curl) {
-	return urlPostContent(QByteArray::fromRawData(url.c_str(), url.size()), QByteArray::fromRawData(post.c_str(), post.size()), quiet, curl);
+	auto postSize = static_cast<int>(post.size());
+	auto urlSize  = static_cast<int>(url.size());
+
+	return urlPostContent(QByteArray::fromRawData(url.c_str(), urlSize), QByteArray::fromRawData(post.c_str(), postSize), quiet, curl);
 }
 
 CurlCallResult urlPostContent(const QByteArray& url, const QByteArray& post, bool quiet, CURL* curl) {

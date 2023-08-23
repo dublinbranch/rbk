@@ -24,6 +24,9 @@ struct DBConf {
 	// This header is quite big, better avoid the inclusion
 	std::vector<std::shared_ptr<QRegularExpression>> warningSuppression;
 
+	//This is dangerous water, a short timeout will trigger error on long sql, but also will not be responsive on short one
+	//yes is a fault in mysql protocol that should have some kind of heartbeat mechanism while the sql is ongoing
+	//the default of 0 means never timeout, which... is not the best
 	std::optional<uint> readTimeout     = 0;
 	std::optional<uint> port            = 3306;
 	std::optional<bool> logSql          = false;

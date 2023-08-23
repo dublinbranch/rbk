@@ -627,6 +627,7 @@ StMysqlPtr DB::connect() const {
 		 *
 		 * https://stackoverflow.com/questions/34369376/what-is-mysqls-wait-timeout-net-read-timeout-and-net-write-timeout-variable
 		 *
+		 *Literally is MYSQL_OPT_READ_TIMEOUT: Specifies the timeout in seconds for reading packets from the server.
 		 */
 		if (conf.readTimeout) {
 			mysql_options(conn, MYSQL_OPT_READ_TIMEOUT, &conf.readTimeout);
