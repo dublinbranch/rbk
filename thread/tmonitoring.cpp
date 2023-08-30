@@ -83,13 +83,13 @@ struct Averager {
 <td>{}</td>
 <td>{:.2f}</td>
 )",
-		                   request,
+		                   request.load(),
 		                   ps,
 		                   ((double)timing.flush) / 1E9,
 		                   ((double)timing.sqlFetch) / 1E9,
 		                   ((double)timing.sqlServer) / 1E9,
-		                   timing.sqlDone,
-		                   timing.sqlReconnect,
+		                   timing.sqlDone.load(),
+		                   timing.sqlReconnect.load(),
 		                   ((double)timing.total) / 1E9);
 	}
 };
@@ -194,7 +194,7 @@ Used Thread : {}
 Exception   : {}
 </pre>
 )", // conf().workerLimit - threadFree
-	                             request, rqs, threadFree, 555, exceptionThrown);
+	                             request.load(), rqs, threadFree.load(), 555, exceptionThrown.load());
 
 	generalStatus += R"(
 <hr>

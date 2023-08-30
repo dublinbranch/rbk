@@ -30,7 +30,7 @@ std::string UaDecoder::getHtml() {
 </tr>
 </table>
 )",
-	                          cache.size(), request);
+	                          cache.size(), request.load());
 	return html;
 }
 

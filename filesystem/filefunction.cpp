@@ -1,11 +1,12 @@
 #include "filefunction.h"
-#include "rbk/fmtExtra/dynamic.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/RAII/resetAfterUse.h"
 #include "rbk/defines/stringDefine.h"
 #include "rbk/fmtExtra/customformatter.h"
+#include "rbk/fmtExtra/dynamic.h"
 #include "rbk/magicEnum/magic_enum.hpp"
+#include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/serialization/serialize.h"
 #include <QDateTime>
 #include <QDebug>
@@ -57,14 +58,14 @@ FPCRes filePutContents(const QByteArray& pay, const QString& fileName, bool verb
 	// TODO nel caso il file non sia scribile (di un altro utente) ritorna un vaghissimo WriteError, indicare se possibile meglio!
 	if (!file.open(QIODevice::Truncate | QIODevice::WriteOnly)) {
 		if (verbose) {
-			qCritical() << F16("Impossbile to write into {} due to {} in {}\n", fileName, file.error(),QStacker16Light());
+			qCritical() << F16("Impossbile to write into {} due to {} in {}\n", fileName, asSWString(file.error()), QStacker16Light());
 		}
 		return {false, file.error()};
 	}
 	auto written = file.write(pay);
 	if (written != pay.size()) {
 		if (verbose) {
-			qCritical() << F16("Impossbile to write into {} due to {} in {}\n", fileName, file.error(),QStacker16Light());
+			qCritical() << F16("Impossbile to write into {} due to {} in {}\n", fileName, asSWString(file.error()), QStacker16Light());
 		}
 		return {false, file.error()};
 	}

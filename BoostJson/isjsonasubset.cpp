@@ -11,7 +11,7 @@ void isJsonASubset(const boost::json::value& outer, const boost::json::value& su
 		if (!obj.empty()) {
 			auto it = obj.begin();
 			for (;;) {
-				std::string path = fmt::format("{}/{}", basePath, it->key());
+				std::string path = fmt::format("{}/{}", basePath, std::string_view(it->key()));
 				isJsonASubset(outer, it->value(), path);
 				if (++it == obj.end()) {
 					break;

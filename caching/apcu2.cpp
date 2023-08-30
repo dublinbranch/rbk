@@ -119,8 +119,8 @@ std::string APCU::info() const {
 		Delete:     {:>10} / {:>8.0f}s
 </pre>
 		)",
-	                           cache->size(), hits, (double)hits / delta, miss, (double)miss / delta, // 5
-	                           insert, (double)insert / delta, overwrite, (double)overwrite / delta, deleted, (double)deleted / delta);
+	                           cache->size(), hits.load(), (double)hits / delta, miss.load(), (double)miss / delta, // 5
+	                           insert.load(), (double)insert / delta, overwrite.load(), (double)overwrite / delta, deleted.load(), (double)deleted / delta);
 	return msg;
 }
 

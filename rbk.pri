@@ -103,8 +103,8 @@ DISTFILES += \
 	$$PWD/minMysql/README.md \
 	$$PWD/minMysql/minMysql.pri
 
-    
-	
+#DEFINES += BOOST_NO_CXX17_HDR_STRING_VIEW
+
 HEADERS += \
     $$PWD/BoostJson/extra.h \
     $$PWD/BoostJson/fwd.h \
