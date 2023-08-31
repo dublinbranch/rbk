@@ -124,7 +124,11 @@ bool fileAppendContents(const QByteArray& pay, const QString& fileName) {
 
 		return false;
 	}
-	file.write(pay);
+	auto byteWritten = file.write(pay);
+	if (byteWritten != pay.size()) {
+		qCritical() << F16("Error writing into {}, wrote {} byte, should have been {}\n", fileName, byteWritten, pay.size());
+	}
+	file.flush();
 	file.write("\n");
 	file.close();
 	return true;
