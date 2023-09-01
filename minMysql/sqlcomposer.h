@@ -1,7 +1,7 @@
 #pragma once
 
-#include "rbk/misc/intTypes.h"
 #include "rbk/fmtExtra/includeMe.h"
+#include "rbk/misc/intTypes.h"
 #include "rbk/number/sanitize.h"
 #include "rbk/string/util.h"
 #include <memory>
@@ -86,15 +86,14 @@ class SqlComposer : public std::vector<SScol> {
 		constexpr auto size = sizeof...(strings);
 		//based on number of parameter I know if this is a DB + TABLE or a single entity, so I join or not them
 		std::tuple<T...> tuple(strings...);
-		auto             first = std::get<0>(tuple);
+		std::string_view first = std::get<0>(tuple);
 
 		switch (size) {
 		case 1:
-			table = toStdString(first);
+			table = F("{}", first);
 			break;
 		case 2: {
-			auto x1 = toStdString(first);
-			if (x1.ends_with(".")) {
+			if (first.ends_with(".")) {
 				table = F("{}{}", strings...);
 			} else {
 				table = F("{}.{}", strings...);

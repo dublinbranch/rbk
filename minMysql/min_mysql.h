@@ -36,7 +36,7 @@ struct st_mysql_res;
  * @brief The MysqlW class is just to wrap the st_mysql to have RAII
  */
 class St_mysqlW {
-	  public:
+      public:
 	operator st_mysql*();
 
 	void set(st_mysql* c);
@@ -46,7 +46,7 @@ class St_mysqlW {
 	//just a cute counter
 	inline static std::atomic_int connCounter = 0;
 
-	  private:
+      private:
 	st_mysql* conn = nullptr;
 };
 
@@ -129,6 +129,7 @@ class DB {
 	void        pingCheck(st_mysql*& conn) const;
 	QString     escape(const QString& what) const;
 	std::string escape(const std::string& what) const;
+	std::string escape(const std::string_view what) const;
 	bool        isSSL() const;
 	/**
 	  Those 2 are used toghether for the ASYNC mode
@@ -160,7 +161,7 @@ class DB {
 	 * @return
 	 */
 	st_mysql* getConn(bool doNotConnect = false) const;
-	u64 lastId() const;
+	u64       lastId() const;
 
 	// Non copyable
 	DB& operator=(const DB&) = delete;

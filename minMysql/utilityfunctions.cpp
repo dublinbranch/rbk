@@ -1,5 +1,6 @@
 #include "utilityfunctions.h"
 #include "QtDebug"
+#include "rbk/fmtExtra/includeMe.h"
 
 sqlResult filterRunningQueries(const sqlResult& sqlProcessList) {
 	sqlResult res;
@@ -25,7 +26,7 @@ QString queryEssay(const sqlRow& row, bool brief) {
 	}
 
 	return QSL("for %1 s : %2 ")
-	           .arg(time,info) +
+	           .arg(time, info) +
 	       "\n";
 }
 
@@ -53,4 +54,17 @@ sqlResult DBDebugger::getProcessList() {
 	auto sql = "show full processlist";
 	auto res = query(sql);
 	return res;
+}
+
+std::vector<std::string> getTablesInDB(DB* db, std::string_view schema) {
+	auto s   = db->escape(schema);
+	auto sql = F("SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE `TABLE_SCHEMA` = '{}' AND `TABLE_TYPE` = 'BASE TABLE'", schema);
+	auto res = db->query(sql);
+
+	std::vector<std::string> f;
+
+	for (auto& row : res) {
+		f.push_back(row.rq<std::string>("TABLE_NAME"));
+	}
+	return f;
 }
