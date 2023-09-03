@@ -2,7 +2,7 @@
 
 QDataStream& operator<<(QDataStream& out, const std::string& rhs) {
 	QByteArray raw;
-	raw.setRawData(rhs.data(), rhs.size());
+	raw.setRawData(rhs.data(), static_cast<uint>(rhs.size()));
 	out << raw;
 	return out;
 }

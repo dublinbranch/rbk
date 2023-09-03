@@ -5,7 +5,7 @@
 QString base64this(const char* param) {
 	// no alloc o.O
 	QByteArray cheap;
-	cheap.setRawData(param, strlen(param));
+	cheap.setRawData(param, (uint)strlen(param));
 	return base64this(cheap);
 }
 
@@ -73,7 +73,7 @@ QString base64this(const QString& param) {
 
 QString base64this(const std::string_view& param) {
 	QByteArray cheap;
-	cheap.setRawData(param.data(), param.size());
+	cheap.setRawData(param.data(), (uint)param.size());
 	return base64this(cheap);
 }
 

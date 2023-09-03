@@ -10,9 +10,9 @@ bool isValidUTF8(std::string_view string, QString* target) {
 	QTextCodec::ConverterState state;
 	auto                       codec = QTextCodec::codecForName("UTF-8");
 	if (target) {
-		*target = codec->toUnicode(string.data(), string.size(), &state);
+		*target = codec->toUnicode(string.data(), (int)string.size(), &state);
 	} else {
-		codec->toUnicode(string.data(), string.size(), &state);
+		codec->toUnicode(string.data(), (int)string.size(), &state);
 	}
 
 	bool validUtf8 = state.invalidChars == 0;

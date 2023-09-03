@@ -17,7 +17,7 @@ class rapidfunkz {
 };
 /**
  * @brief jsonValue
- * use like 
+ * use like
  * auto& data = static_cast<JSafe&>(line["insights"]["data"].GetArray()[0]);
  * data.sfGet<double>("key");
  */
@@ -27,7 +27,7 @@ class JSafe : public jsonValue {
 	JSafe& operator=(const JSafe&) = delete;
 	JSafe(const JSafe&)            = delete;
 
-	static JSafe getDummy(){
+	static JSafe getDummy() {
 		return {};
 	}
 
@@ -42,9 +42,9 @@ class JSafe : public jsonValue {
 			case rapidjson::Type::kNumberType:
 				return value.Get<V>();
 			case rapidjson::Type::kStringType: {
-				bool   ok;
-				double res;
-				auto   qb = QByteArray::fromRawData(value.GetString(), value.GetStringLength());
+				bool ok;
+				V    res;
+				auto qb = QByteArray::fromRawData(value.GetString(), value.GetStringLength());
 				if constexpr (std::is_floating_point<V>::value) {
 					res = qb.toDouble(&ok);
 				} else if constexpr (std::is_signed<V>::value) {
@@ -54,12 +54,12 @@ class JSafe : public jsonValue {
 				}
 
 				if (!ok) {
-					throw QString("%1 is not an int, or directly convertible in an aritmetic type, it is a string %2").arg(key,QString(qb));
+					throw QString("%1 is not an int, or directly convertible in an aritmetic type, it is a string %2").arg(key, QString(qb));
 				}
 				return res;
 			}
 			default:
-				throw QString("%1 is not an int, or directly convertible in an aritmetic type,, it is a %2").arg(key,printType(type));
+				throw QString("%1 is not an int, or directly convertible in an aritmetic type,, it is a %2").arg(key, printType(type));
 			}
 		} else {
 			return 0;
@@ -87,6 +87,7 @@ class JSafe : public jsonValue {
 		value = JSafe::getta<V>(json, key);
 		return true;
 	}
-private:
+
+	  private:
 	JSafe();
 };
