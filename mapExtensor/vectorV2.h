@@ -6,6 +6,14 @@
 template <typename T>
 class vectorV2 : public std::vector<T> {
       public:
+	using vector_parent = std::vector<T>;
+
+	vectorV2() = default;
+
+	vectorV2(std::initializer_list<T> init)
+	    : vector_parent(init) {
+	}
+
 	template <typename N>
 	void append(const N& n) {
 		this->insert(this->end(), n.begin(), n.end());
@@ -23,5 +31,14 @@ class vectorV2 : public std::vector<T> {
 			return true;
 		}
 		return false;
+	}
+
+	const T* elementContainedInto(const T& pattern) const {
+		for (auto& el : *this) {
+			if (pattern.contains(el)) {
+				return &el;
+			}
+		}
+		return nullptr;
 	}
 };

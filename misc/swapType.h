@@ -48,16 +48,21 @@ void swapType(const QByteArray& source, D& dest) {
 		if constexpr (std::is_floating_point_v<D>) {
 			dest = source.toDouble(&ok);
 		} else if constexpr (std::is_signed_v<D>) {
+			
+#pragma GCC diagnostic push
+//we should check if is not overflowing tbh
+#pragma GCC diagnostic ignored "-Wconversion"
 			dest = source.toLongLong(&ok);
+#pragma GCC diagnostic pop
+			
 		} else if constexpr (std::is_unsigned_v<D>) {
 
 #pragma GCC diagnostic push
-//many false warning here
+//we should check if is not overflowing tbh
 #pragma GCC diagnostic ignored "-Wconversion"
-
 			dest = source.toULongLong(&ok);
-
 #pragma GCC diagnostic pop
+			
 		}
 		if (!ok) {
 			// last chanche NULL is 0 in case we are numeric right ?
