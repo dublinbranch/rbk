@@ -73,22 +73,27 @@ LIBS += -lcurl
 #zypper in libmariadb3
 LIBS += -lmariadb
 
+#HTTP part that is enought common and lightweigh
+SOURCES += \
+    $$PWD/HTTP/PMFCGI.cpp
+
+HEADERS += \
+    $$PWD/HTTP/PMFCGI.h
+
 defined(WITH_BOOST_BEAST,var) {
-#HTTP part
+#HTTP part that trigger boost beast stuff
 
 SOURCES += \
-    $$PWD/HTTP/PMFCGI.cpp \
     $$PWD/HTTP/beast.cpp \
     $$PWD/HTTP/router.cpp \
-    $$PWD/HTTP/select2.cpp \
+    $$PWD/HTTP/select2.cpp
 	
 HEADERS += \
     $$PWD/HTTP/beastConfig.h \
     $$PWD/HTTP/select2.h \
-    $$PWD/HTTP/PMFCGI.h \
     $$PWD/HTTP/Payload.h \
     $$PWD/HTTP/beast.h \
-    $$PWD/HTTP/router.h \
+    $$PWD/HTTP/router.h
 }
 
 DISTFILES += \
@@ -108,8 +113,8 @@ DISTFILES += \
 HEADERS += \
     $$PWD/BoostJson/extra.h \
     $$PWD/BoostJson/fwd.h \
-	$$PWD/BoostJson/depleter.h \
-	$$PWD/BoostJson/SwapperSpec.h \
+    $$PWD/BoostJson/depleter.h \
+    #$$PWD/BoostJson/SwapperSpec.h \
     $$PWD/BoostJson/intrusivedebug.h \
     $$PWD/BoostJson/isjsonasubset.h \
     $$PWD/BoostJson/to_string.h \
@@ -120,8 +125,8 @@ HEADERS += \
     $$PWD/fmtExtra/fromEnum.h \
     $$PWD/hash/salt.h \
     $$PWD/hash/sha.h \
-    $$PWD/isIterable.h \
-	$$PWD/locale/codes.h \
+    #$$PWD/isIterable.h \
+    $$PWD/locale/codes.h \
     $$PWD/minMysql/DBConf.h \
     $$PWD/minMysql/checkschema.h \
     $$PWD/minMysql/runnable.h \

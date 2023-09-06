@@ -125,6 +125,10 @@ UPDATE {} SET
 	return sql;
 }
 
+QString SqlComposer::composeUpdateQS() const {
+	return QString::fromStdString(composeUpdate());
+}
+
 string SqlComposer::composeInsert(bool ignore) const {
 	getTable();
 	if (!where->empty()) {

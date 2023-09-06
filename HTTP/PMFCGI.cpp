@@ -132,12 +132,16 @@ void Payload::setStandardHeaders(bool addCors) {
 }
 
 multiMapV2<QString, QString> decodePost(const std::string& form) {
-	if (form.empty()) {
+	auto copy = QString::fromStdString(form);
+	return decodePost(copy);
+}
+
+multiMapV2<QString, QString> decodePost(const QString& form) {
+	if (form.isEmpty()) {
 		return {};
 	}
 	multiMapV2<QString, QString> res;
-	auto                         copy = QString::fromStdString(form);
-	auto                         rows = copy.split('&');
+	auto                         rows = form.split('&');
 
 	for (auto& row : rows) {
 		auto pair = row.split('=');

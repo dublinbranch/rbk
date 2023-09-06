@@ -60,6 +60,7 @@ void requestBeging();
 void requestEnd();
 void registerFlushTime();
 
+multiMapV2<QString, QString> decodePost(const QString& form);
 multiMapV2<QString, QString> decodePost(const std::string& form);
 
 #endif // PMFCGI_H

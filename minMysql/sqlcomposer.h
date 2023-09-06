@@ -76,12 +76,13 @@ class SqlComposer : public std::vector<SScol> {
 	void push(const SScol& col, bool replaceIf = false);
 
 	template <typename K, typename V>
-	void push(const K& key_, const V& val_, bool replaceIf = false) {
+	SqlComposer& push(const K& key_, const V& val_, bool replaceIf = false) {
 		push(SScol{key_, val_}, replaceIf);
+		return *this;
 	}
 
 	template <class... T>
-	void setTable(T&&... strings) {
+	SqlComposer& setTable(T&&... strings) {
 		//TODO https://www.linkedin.com/pulse/nth-element-variadic-pack-extraction-alex-dathskovsky-/?trk=pulse-article_more-articles_related-content-card
 		constexpr auto size = sizeof...(strings);
 		//based on number of parameter I know if this is a DB + TABLE or a single entity, so I join or not them
@@ -104,13 +105,15 @@ class SqlComposer : public std::vector<SScol> {
 			static_assert(size < 3, "invalid number of parameter, 2 or 1");
 			break;
 		}
+		return *this;
 	}
 
-	void setTable(const std::string& table_) {
+	SqlComposer& setTable(const std::string& table_) {
 		if (table_.empty()) {
 			throw ExceptionV2("Setting and empty table -.-");
 		}
 		table = table_;
+		return *this;
 	}
 
 	[[nodiscard]] std::string compose() const;
@@ -118,6 +121,7 @@ class SqlComposer : public std::vector<SScol> {
 	[[nodiscard]] std::string composeSelect();
 	[[nodiscard]] std::string composeSelectAll();
 	[[nodiscard]] std::string composeUpdate() const;
+	[[nodiscard]] QString     composeUpdateQS() const;
 	[[nodiscard]] std::string composeInsert(bool ignore = false) const;
 	[[nodiscard]] std::string composeDelete() const;
 

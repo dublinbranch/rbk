@@ -16,6 +16,8 @@ QString QS(const boost::json::string& cry);
 QString QS(const boost::json::value* value);
 QString QS(const boost::json::value& value);
 
+std::string asString(const boost::json::value& value);
+
 /** FROM */
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QString& t);
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QByteArray& t);
@@ -77,6 +79,27 @@ JsonRes parseJson(std::string_view json);
 
 std::string escape_json(const std::string& s);
 QString     escape_json(const QString& string);
+
+/**
+ * @brief getNumber will handle the case when the value is NULL and will use the default instead
+ * @param def
+ * @return
+ */
+template <class T>
+bool getNumber(const boost::json::value& v, std::string_view key, T& val, const T def = T()) {
+	//std::string             block = pretty_print(v);
+	boost::json::error_code e;
+	if (auto p = v.as_object().if_contains(key); p) {
+		if (p->is_null()) {
+			val = def;
+			return false;
+		}
+		val = p->to_number<T>();
+		return true;
+	}
+	val = def;
+	return false;
+};
 
 class DB;
 void sqlEscape(boost::json::object& value, DB* db);
