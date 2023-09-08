@@ -58,9 +58,14 @@ sqlResult DBDebugger::getProcessList() {
 
 std::vector<std::string> getTablesInDB(DB* db, std::string_view schema) {
 	auto s   = db->escape(schema);
-	auto sql = F("SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE `TABLE_SCHEMA` = '{}' AND `TABLE_TYPE` = 'BASE TABLE'", schema);
+	auto sql = F(R"(
+SELECT TABLE_NAME 
+FROM information_schema.`TABLES` 
+WHERE `TABLE_SCHEMA` = '{}' 
+	AND `TABLE_TYPE` = 'BASE TABLE'
+ORDER BY CREATE_TIME DESC)", schema);
 	auto res = db->query(sql);
-
+	
 	std::vector<std::string> f;
 
 	for (auto& row : res) {
