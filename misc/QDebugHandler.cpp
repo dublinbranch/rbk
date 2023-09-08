@@ -19,9 +19,7 @@ static const NanoSpammerConfig* config = nullptr;
 QString getHeader1() {
 	// header 1
 	auto time           = QDateTime::currentDateTime().toString(Qt::ISODate);
-	auto warningHeader1 = QSL("@ %1 From %2 instanceId %3 rev %4")
-	                          .arg(time)
-	                          .arg(QCoreApplication::applicationName(), config->instanceName, GIT_STATUS_buffer);
+	auto warningHeader1 = F16("@ {} From {} instanceId {} rev {}", time, QCoreApplication::applicationName(), config->instanceName, GIT_STATUS_buffer);
 	return warningHeader1;
 }
 
