@@ -45,7 +45,7 @@ bool QSaveV2::open(QIODevice::OpenMode flags) {
 bool QSaveV2::open(QIODevice::OpenMode flags, bool quiet) {
 	if (!QFile::open(flags)) {
 		if (!quiet) {
-			qWarning().noquote() << errorString() << "opening" << fileName();
+			qWarning().noquote() << errorString() << "opening" << fileName() + QStacker16Light();
 		}
 		return false;
 	}

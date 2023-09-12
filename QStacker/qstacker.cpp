@@ -1,5 +1,6 @@
 #include "rbk/QStacker/qstacker.h"
 #include "backward.hpp"
+#include "rbk/QStacker/exceptionv2.h"
 #include "rbk/string/util.h"
 #include <QDebug>
 #include <QString>
@@ -7,7 +8,6 @@
 #include <dlfcn.h>
 #include <execinfo.h>
 #include <mutex>
-#include "rbk/QStacker/exceptionv2.h"
 
 std::string stacker(uint skip, QStackerOpt opt) {
 	/** For loading from an arbitrary position
