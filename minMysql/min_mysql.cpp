@@ -85,7 +85,7 @@ sqlResult DB::query(const std::string& sql) const {
 }
 
 sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
-	ResetAfterUse reset1(localThreadStatus->state, ThreadState::MyQuery);
+    ResetOnExit reset1(localThreadStatus->state, ThreadState::MyQuery);
 	localThreadStatus->sql = sql;
 
 	if (sql.isEmpty()) {
@@ -299,7 +299,7 @@ sqlRow DB::queryCacheLine(const QString& sql, uint ttl, bool required) {
 //	}
 
 sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) const {
-	ResetAfterUse<typeof localThreadStatus->state> reset1;
+    ResetOnExit<typeof localThreadStatus->state> reset1;
 	if (localThreadStatus) {
 		reset1.set(localThreadStatus->state, ThreadState::MyCache);
 	}

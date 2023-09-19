@@ -42,8 +42,8 @@ CurlCallResult ClickHouse::query(const QString& sql) {
 	curl_easy_setopt(curl->get(), CURLOPT_POSTFIELDS, post.data());
 	//Click house is normally very fast, we do batch aggregation with 1 second timeout
 	curl_easy_setopt(curl->get(), CURLOPT_TIMEOUT_MS, 1500);
-
-	ResetAfterUse reset1(localThreadStatus->state, ThreadState::ClickHouse);
+    
+    ResetOnExit reset1(localThreadStatus->state, ThreadState::ClickHouse);
 
 	localThreadStatus->time.clickHouse.start();
 	auto res = urlGetContent2(url, false, curl->get(), false);

@@ -192,7 +192,7 @@ std::vector<QByteArray> csvExploder(QByteArray line, const char separator) {
 	std::vector<std::string> vec2;
 	auto                     cry = line.toStdString();
 	try {
-		ResetAfterUse r(cxaLevel, CxaLevel::none);
+        ResetOnExit r(cxaLevel, CxaLevel::none);
 		Tokenizer     tok(cry, sep);
 		vec2.assign(tok.begin(), tok.end());
 	} catch (...) {

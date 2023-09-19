@@ -265,7 +265,7 @@ CurlCallResult urlGetContent2(const char* url, bool quiet, CURL* curl) {
 CurlCallResult urlGetContent2(const QByteArray& url, bool quiet, CURL* curl, bool LTS) {
 	QElapsedTimer timer;
 	if (LTS) {
-		ResetAfterUse reset1(localThreadStatus->state, ThreadState::cURL);
+        ResetOnExit reset1(localThreadStatus->state, ThreadState::cURL);
 		timer.start();
 	}
 
