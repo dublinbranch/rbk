@@ -310,7 +310,7 @@ sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) const {
 		static bool fraud = mkdir(QSL("cachedSQL_%1/").arg(conf.cacheId));
 		(void)fraud;
 
-		//We have a lock to prevent concurrent write in this process, but nothing to protect again other, just use another folder
+		//We have a lock to prevent concurrent write in this process, but nothing to protect against other, just use another folder
 		QString                      name = QSL("cachedSQL_%1/").arg(conf.cacheId) + sha1(sql);
 		static std::mutex            lock;
 		std::scoped_lock<std::mutex> scoped(lock);

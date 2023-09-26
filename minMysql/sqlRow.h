@@ -107,12 +107,19 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 
 	template <typename D>
-	D get2(const QByteArray& key) const {
+	[[nodiscard]] D get2(const QByteArray& key) const {
 		QByteArray temp;
 		D          temp2;
 		get(key, temp);
 		swapType(temp, temp2);
 		return temp2;
+	}
+
+	template <typename D>
+	[[nodiscard]] D get2(const QByteArray& key, const D& def) const {
+		D val;
+		get2(key, val, def);
+		return val;
 	}
 
 	// Sooo many time we need a QString back
