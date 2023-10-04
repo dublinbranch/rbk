@@ -339,6 +339,9 @@ defined(HAS_QT_NETWORK, var) {
 #Mustache
 INCLUDEPATH += $$PWD/mustache/
 SOURCES += \
-    $$PWD/mustache/renderer.cpp
+    $$PWD/mustache/renderer.cpp \
+    $$PWD/mustache/extra.cpp
 
-HEADERS += $$PWD/mustache/boost/mustache.hpp
+HEADERS += $$PWD/mustache/boost/mustache.hpp \
+    $$PWD/mustache/extra.h
+
