@@ -64,6 +64,15 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	}
 
 	template <typename T>
+	T get(const K& k, const T&& t) const {
+		auto v = t;
+		if (auto iter = this->find(k); iter != this->end()) {
+			swapType(iter->second, v);
+		}
+		return v;
+	}
+
+	template <typename T>
 	bool get(const K& k, T& t) const {
 		if (auto iter = this->find(k); iter != this->end()) {
 			swapType(iter->second, t);
@@ -73,12 +82,8 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	}
 
 	template <typename T>
-	[[nodiscard]] T get(const K& k) const {
-		T t;
-		if (auto iter = this->find(k); iter != this->end()) {
-			swapType(iter->second, t);
-		}
-		return t;
+	[[deprecated("get with not option is now RQ")]] [[nodiscard]] T get(const K& k) const {
+		return rq<T>(k);
 	}
 
 	[[nodiscard]] V rq(const K& k) const {

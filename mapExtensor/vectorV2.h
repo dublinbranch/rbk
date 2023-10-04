@@ -42,3 +42,4 @@ class vectorV2 : public std::vector<T> {
 		return nullptr;
 	}
 };
+

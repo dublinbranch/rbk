@@ -34,6 +34,13 @@ struct FPCRes {
 	operator bool();
 };
 
+/**
+ * given a path this will first check ON DISK if we have a local copy
+ * if we have the local one, expecially used for develop/debug to avoid recompiled it will have the priority
+ * else will use the embedded resource
+ */
+QString resourceTryDisk(const QString& fileName);
+
 //I do really need to find a solution to this nonsense!
 FPCRes filePutContents(const QString& pay, const QString& fileName, bool verbose = false);
 FPCRes filePutContents(const QByteArray& pay, const QString& fileName, bool verbose = false);
@@ -55,6 +62,7 @@ bool fileAppendContents(const std::string& pay, const std::string& fileName);
 
 QByteArray unzip1(QByteArray zipped);
 
+//TODO why are here ?
 /**
   The parameter line MUST be kept alive, so the QStringRef can point to something valid
 */

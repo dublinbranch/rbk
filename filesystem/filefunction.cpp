@@ -192,8 +192,8 @@ std::vector<QByteArray> csvExploder(QByteArray line, const char separator) {
 	std::vector<std::string> vec2;
 	auto                     cry = line.toStdString();
 	try {
-        ResetOnExit r(cxaLevel, CxaLevel::none);
-		Tokenizer     tok(cry, sep);
+		ResetOnExit r(cxaLevel, CxaLevel::none);
+		Tokenizer   tok(cry, sep);
 		vec2.assign(tok.begin(), tok.end());
 	} catch (...) {
 		// qWarning().noquote() << "error decoding csv line " << line;
@@ -535,4 +535,12 @@ QString RotableFile(const QString& name_, QString suffix) {
 		suffix.prepend(".");
 	}
 	return name_ + "_" + n2 + suffix;
+}
+
+QString resourceTryDisk(const QString& fileName) {
+	if (QFile::exists(fileName)) {
+		return fileName;
+	}
+	//if you play weird trick with path, you are looking for troubles
+	return ":/" + fileName;
 }
