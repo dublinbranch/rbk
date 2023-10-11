@@ -13,6 +13,7 @@
 
 class DBException : public ExceptionV2 {
       public:
+	//The mysql error code are, sight, a bunch of define -.- in mysqld_error.h
 	enum Error : int {
 		NA = 0,
 		Warning,
@@ -21,7 +22,9 @@ class DBException : public ExceptionV2 {
 		InvalidDB  = 1049,
 		DeadLock   = 1213,
 		Duplicate  = 1062,
-		Connection = 2013
+		Connection = 2013,
+		//custom error code
+		InvalidState = 9000
 
 	} errorType = Error::NA;
 	DBException(const QString& _msg, Error error);

@@ -85,7 +85,7 @@ sqlResult DB::query(const std::string& sql) const {
 }
 
 sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
-    ResetOnExit reset1(localThreadStatus->state, ThreadState::MyQuery);
+	ResetOnExit reset1(localThreadStatus->state, ThreadState::MyQuery);
 	localThreadStatus->sql = sql;
 
 	if (sql.isEmpty()) {
@@ -299,7 +299,7 @@ sqlRow DB::queryCacheLine(const QString& sql, uint ttl, bool required) {
 //	}
 
 sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) const {
-    ResetOnExit<typeof localThreadStatus->state> reset1;
+	ResetOnExit<typeof localThreadStatus->state> reset1;
 	if (localThreadStatus) {
 		reset1.set(localThreadStatus->state, ThreadState::MyCache);
 	}
@@ -495,7 +495,11 @@ st_mysql* DB::getConn(bool doNotConnect) const {
 }
 
 u64 DB::lastId() const {
-	return mysql_insert_id(getConn());
+	auto lastId = mysql_insert_id(getConn());
+	if (!lastId) {
+		throw DBException("Last insert is 0, check for error!", DBException::InvalidState);
+	}
+	return lastId;
 }
 
 const DBConf DB::getConf() const {
