@@ -78,7 +78,8 @@ SOURCES += \
 
 HEADERS += \
     $$PWD/../../googleAdsListener/rbk/concept/isRvalue.h \
-    $$PWD/HTTP/PMFCGI.h
+    $$PWD/HTTP/PMFCGI.h \
+    $$PWD/types/isOptional.h
 
 defined(WITH_BOOST_BEAST,var) {
 #HTTP part that trigger boost beast stuff
