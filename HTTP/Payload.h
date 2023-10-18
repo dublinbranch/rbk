@@ -20,6 +20,13 @@ class Headers : public std::map<std::string, std::string> {
 	        To make the cookie available to the whole domain (including all subdomains of it), simply set the value to the domain name ('example.com', in this case).
 	 * @param secure
 	 * @param httponly can't really see a valid reason to have default OFF
+	 * 
+	 * 
+	 * Standard beast way is in https://github.com/boostorg/beast/issues/1425
+	 * res.set(field::set_cookie, "mycookie=123");
+	 * -------
+	 * for(auto param : http::param_list(req[field::cookie]))
+		std::cout << "Cookie '" << param.first << "' has value '" << param.second << "'\n";
 	 */
 	//Not implemented const std::string& path, const std::string& domain, bool secure, bool httponly
 	void setCookie(const std::string& name,

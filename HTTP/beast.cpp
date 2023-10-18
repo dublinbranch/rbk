@@ -157,6 +157,9 @@ void handle_request(
 			}
 			status.extractCookies();
 
+			if (conf->prePhase1) {
+				conf->prePhase1(status, payload);
+			}
 			/*
 			 * phase 1
 			 * execute immediate
