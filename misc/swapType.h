@@ -146,6 +146,14 @@ void swapType(const QString& source, D& dest) {
 			}
 			throw ExceptionV2(QSL("Impossible to convert >>>%1<<< as a number").arg(QString(source)));
 		}
+	} else if constexpr (is_optional<D>) {
+		typename D::value_type t;
+		if (source == SQL_NULL) {
+			dest.reset();
+			return;
+		}
+		swapType(source, t);
+		dest = t;
 	} else {
 		// poor man static assert that will also print for which type it failed
 		using X = typename D::something_made_up;
