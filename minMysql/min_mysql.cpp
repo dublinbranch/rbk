@@ -1021,10 +1021,9 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 	return res;
 }
 
-int DB::fetchAdvanced(FetchVisitor* visitor) const {
+u64 DB::fetchAdvanced(FetchVisitor* visitor) const {
 	auto conn = getConn();
 
-	// swap the whole result set we do not expect 1Gb+ result set here
 	MYSQL_RES* result = mysql_use_result(conn);
 	if (!result) {
 		auto error = mysql_errno(conn);
@@ -1034,6 +1033,7 @@ int DB::fetchAdvanced(FetchVisitor* visitor) const {
 			throw 1025;
 		}
 	}
+
 	if (!visitor->preCheck(result)) {
 		//???
 		throw QSL("no idea what to do whit this result set!");
@@ -1041,9 +1041,9 @@ int DB::fetchAdvanced(FetchVisitor* visitor) const {
 	while (auto row = mysql_fetch_row(result)) {
 		visitor->processLine(row);
 	}
+	auto rowCount = mysql_num_rows(result);
 	mysql_free_result(result);
-	// no idea what to return
-	return 1;
+	return rowCount;
 }
 
 /**

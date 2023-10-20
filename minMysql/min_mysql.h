@@ -156,7 +156,7 @@ class DB {
 	// Shared by both async and not
 	sqlResult getWarning(bool useSuppressionList = true) const;
 	sqlResult fetchResult(SQLLogger* sqlLogger = nullptr) const;
-	int       fetchAdvanced(FetchVisitor* visitor) const;
+	u64 fetchAdvanced(FetchVisitor* visitor) const;
 
 	/**
 	 * @brief getConn
