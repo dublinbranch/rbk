@@ -1,4 +1,5 @@
 #include "PMFCGI.h"
+#include "Payload.h"
 #include "rbk/QStacker/httpexception.h"
 #include "rbk/defines/stringDefine.h"
 #include "rbk/fmtExtra/includeMe.h"
@@ -71,13 +72,14 @@ void PMFCGI::decodeGet() {
 }
 
 void PMFCGI::extractCookies() {
+	cookies = bHeaders();
 	if (auto v = headers.get("cookie"); v) {
 		for (auto& ck : v.val->split(';')) {
 			auto dp = ck.split('=');
 			if (dp.size() != 2) {
 				throw HttpException(QSL("invalid cookie %1").arg(ck));
 			}
-			cookies.insert({dp[0].trimmed(), {dp[1].trimmed()}});
+			cookies->insert({dp[0].trimmed(), {dp[1].trimmed()}});
 		}
 	}
 }
@@ -118,8 +120,6 @@ string PMFCGI::serialize() const {
 string PMFCGI::serializeBase() const {
 	return "remote ip and plain text url and header should be enought";
 }
-
-#include "Payload.h"
 
 void Payload::setStandardHeaders(bool addCors) {
 	headers.insert({"Expires", "Sun, 01 Jan 2014 00:00:00 GMT"});

@@ -20,9 +20,9 @@ class bHeaders : public mapV2<QString, SKQ> {
 };
 
 struct PMFCGI {
-	std::string remoteIp;
-	bHeaders    headers;
-	bHeaders    cookies;
+	std::string             remoteIp;
+	bHeaders                headers;
+	std::optional<bHeaders> cookies;
 
 	//This is only the path, and in nginx X we do the intermediate routing
 	std::string path;
@@ -54,6 +54,8 @@ struct PMFCGI {
 	};
 
 	uint debug = 0;
+
+      public:
 };
 
 void requestBeging();

@@ -155,7 +155,6 @@ void handle_request(
 			if (auto v = status.headers.get("remote_addr"); v) {
 				status.remoteIp = v.val->toStdString();
 			}
-			status.extractCookies();
 
 			if (conf->prePhase1) {
 				conf->prePhase1(status, payload);
