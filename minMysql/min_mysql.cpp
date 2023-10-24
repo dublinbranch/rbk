@@ -502,6 +502,10 @@ u64 DB::lastId() const {
 	return lastId;
 }
 
+u64 DB::lastIdNoEx() const {
+	return mysql_insert_id(getConn());
+}
+
 const DBConf DB::getConf() const {
 	if (!confSet) {
 		cxaNoStack = true;

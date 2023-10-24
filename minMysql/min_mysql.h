@@ -156,7 +156,7 @@ class DB {
 	// Shared by both async and not
 	sqlResult getWarning(bool useSuppressionList = true) const;
 	sqlResult fetchResult(SQLLogger* sqlLogger = nullptr) const;
-	u64 fetchAdvanced(FetchVisitor* visitor) const;
+	u64       fetchAdvanced(FetchVisitor* visitor) const;
 
 	/**
 	 * @brief getConn
@@ -165,6 +165,7 @@ class DB {
 	 */
 	st_mysql* getConn(bool doNotConnect = false) const;
 	u64       lastId() const;
+	u64       lastIdNoEx() const ;
 
 	// Non copyable
 	DB& operator=(const DB&) = delete;
