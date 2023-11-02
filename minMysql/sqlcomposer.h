@@ -20,6 +20,11 @@ class SScol {
 
 	SScol() = default;
 
+	SScol(const Value& key_, const Value& val_)
+	    : val(val_) {
+		key = key_.val;
+	}
+
 	template <typename K>
 	SScol(const K& key_, const Value& val_)
 	    : val(val_) {
