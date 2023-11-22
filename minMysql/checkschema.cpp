@@ -9,6 +9,8 @@
 #include <QRegularExpression>
 #include <QSaveFile>
 
+using namespace std;
+
 void removeAutoInc(QString& sql) {
 	static QRegularExpression regex(R"RX(AUTO_INCREMENT=(\d*))RX");
 	sql.replace(regex, QString());
@@ -111,17 +113,32 @@ bool CheckSchema::checkDbSchema() {
 		}
 
 		if (diskSchema.size() != dbSchema.size()) { // different number of lines
-			auto msg      = F16("schema for {}.{} has different number of lines!\n", table.database, table.table);
-			auto diskSize = diskSchema.size();
-			auto dbSize   = dbSchema.size();
-			auto size     = std::max(diskSize, dbSize);
-			for (int i = 0; i < size; i++) {
+			auto msg = F16("schema for {}.{} has different number of lines!\n", table.database, table.table);
+
+			auto rowCount = std::max(diskSchema.size(), dbSchema.size());
+			struct X1 {
+				QByteArray disk;
+				QByteArray db;
+			};
+
+			vector<X1> buffer;
+
+			int diskMaxSize = 0;
+
+			for (int i = 0; i < rowCount; i++) {
 				auto diskRow = diskSchema.value(i);
 				auto dbRow   = dbSchema.value(i);
 				auto diskCol = diskRow.value("COLUMN_NAME", "***NOTHING***");
 				auto dbCol   = dbRow.value("COLUMN_NAME", "***NOTHING***");
-				msg += F16("\t{} - {}\n", diskCol, dbCol);
+				buffer.push_back({diskCol, dbCol});
+				diskMaxSize = max(diskMaxSize, diskCol.size());
 			}
+
+			msg += F16("\t{:>{}} - {}\n", "Disk", diskMaxSize, "DB");
+			for (auto& [disk, dbVal] : buffer) {
+				msg += F16("\t{:>{}} - {}\n", disk, diskMaxSize, dbVal);
+			}
+
 			qWarning().noquote() << msg;
 			continue; // exact same CREATE TABLE result, nice!
 		}

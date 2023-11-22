@@ -32,7 +32,19 @@ class APCU : private NoCopy {
 	struct Row {
 		//Corpus munus
 		Row() = default;
-		Row(const std::string& key_, const std::any& value_, u64 expireAt_);
+		template <typename T>
+		[[nodiscard]] Row(const std::string& key_, const T& value_, u64 expireAt_) {
+			*this = Row(key_, std::make_shared<T>(value_), expireAt_);
+		}
+
+		template <typename T>
+		[[nodiscard]] Row(const std::string& key_, const std::shared_ptr<T>& value_, u64 expireAt_) {
+			*this = Row(key_, std::any(value_), expireAt_);
+		}
+
+		[[nodiscard]] Row(const std::string& key_, const std::any& value_, u64 expireAt_);
+
+		void set();
 
 		//Member
 		std::string key;
@@ -60,6 +72,8 @@ class APCU : private NoCopy {
 		(void)key;
 		auto res = fetchInner(key);
 		if (res.has_value()) {
+			//auto& type = res.type();
+			//auto  name = type.name();
 			return any_cast<std::shared_ptr<T>>(res);
 		} else {
 			return nullptr;

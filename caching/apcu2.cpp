@@ -90,6 +90,8 @@ void APCU::storeInner(const std::string& _key, const std::any& _value, bool over
 }
 
 void APCU::storeInner(const Row& row, bool overwrite_) {
+	//TODO if is persistent, check if a qbytearray too else the write on disk will fail and is lost!
+
 	auto& byKey = cache->get<ByKey>();
 
 	std::unique_lock lock(innerLock);
