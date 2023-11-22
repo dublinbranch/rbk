@@ -139,10 +139,10 @@ bool fileAppendContents(const QByteArray& pay, const QString& fileName) {
 QByteArray unzip1(QByteArray zipped) {
 	zip_error_t error;
 	zip_error_init(&error);
-	auto            src = zip_source_buffer_create(zipped, zipped.size(), 1, &error);
+	auto            src = zip_source_buffer_create(zipped, (zip_uint64_t)zipped.size(), 1, &error);
 	auto            za  = zip_open_from_source(src, 0, &error);
 	struct zip_stat sb;
-	for (int i = 0; i < zip_get_num_entries(za, 0); i++) {
+	for (auto i = 0; i < zip_get_num_entries(za, 0); i++) {
 		if (zip_stat_index(za, i, 0, &sb) == 0) {
 			//			printf("==================\n");
 			//			auto len = strlen(sb.name);

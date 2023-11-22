@@ -71,7 +71,7 @@ std::vector<std::string> asString(const std::vector<Type>& t, bool verbose = fal
 
 template <typename Type>
         requires isBetterEnum<Type>
-std::vector<int> asInteger(const std::vector<Type>& t, bool verbose = false) {
+std::vector<int> asInteger(const std::vector<Type>& t) {
 	std::vector<int> res;
 	//miserable hack to init the enum, not sure if is ok, but I have no better idea
 	Type sum   = Type::_from_index(0);

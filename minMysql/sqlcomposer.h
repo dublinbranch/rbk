@@ -59,6 +59,7 @@ class SScol {
 	bool        aritmetic = false;
 	std::string key;
 	Value       val;
+	bool        verbatim = false;
 
       private:
 };

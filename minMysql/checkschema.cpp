@@ -101,8 +101,6 @@ if (conf().skipDbCheck) {
 }
 */
 bool CheckSchema::checkDbSchema() {
-	static QRegularExpression deleteDefiner("DEFINER=(.*) SQL SECURITY DEFINER VIEW");
-
 	auto diskSchemas = loadSchema();
 	auto dbSchemas   = getDbSchema();
 	bool dirty       = false;

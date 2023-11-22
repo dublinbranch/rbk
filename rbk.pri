@@ -27,7 +27,7 @@ QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]/QtCore
 
 #Still unsure how it improoves the debug, but it cripples mold so OUT!
 #-ggdb3
-QMAKE_CXXFLAGS += -Wunused -Wunused-function
+QMAKE_CXXFLAGS += -Wunused -Wunused-function 
 QMAKE_CXXFLAGS += -std=gnu++2b
 #-Werror -Wconversion
 QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wshadow-local -Wshadow-compatible-local -Wconversion 
@@ -135,6 +135,7 @@ HEADERS += \
     $$PWD/minMysql/sqlcomposer.h \
     $$PWD/minMysql/sqlresult.h \
     $$PWD/misc/checkoptionalareset.h \
+    $$PWD/misc/ParallelForeach.h \
     $$PWD/misc/echo.h \
     $$PWD/misc/intTypes.h \
     $$PWD/misc/swapType.h \

@@ -48,33 +48,32 @@ std::string SqlComposer::compose() const {
 	final.reserve(16000);
 	//plain fmt::join is not enought here
 	bool first = true;
-	for (auto&& [aritmetic, key, val] : *this) {
+	for (auto&& col : *this) {
 		string valueS1;
 		//no ONE in his right mind will save a string called NULL in a database
-		if (aritmetic || val.noEscape || val.noQuote || val.val == "NULL") {
-			valueS1 = val.val;
+		if (col.aritmetic || col.val.noEscape || col.val.noQuote || col.val.val == "NULL") {
+			valueS1 = col.val.val;
 		} else { //no longer we will abuse base64this!
-			valueS1 = "'"s + db->escape(val.val) + "'"s;
+			valueS1 = "'"s + db->escape(col.val.val) + "'"s;
 		}
 
-		//t = F("{:>{}}", t, longestVal);
-
-		const string* kk      = nullptr;
-		const string* vv      = nullptr;
-		u64           longest = 0;
-
-		kk      = &key;
-		vv      = &valueS1;
-		longest = longestKey;
-
-		string keyS1 = F("{:>{}}", *kk, longest);
+		string keyS1 = F("{:>{}}", col.key, longestKey);
 
 		if (first) {
 			first               = false;
 			auto initialPadding = F("{:>{}} ", " ", separator.size());
-			final += F("{}{}{}{}\n"s, initialPadding, keyS1, joiner, *vv);
+			if (col.verbatim) {
+				final += F("{}{}\n"s, initialPadding, keyS1);
+			} else {
+				final += F("{}{}{}{}\n"s, initialPadding, keyS1, joiner, valueS1);
+			}
+
 		} else {
-			final.append(separator) += F(" {}{}{}\n"s, keyS1, joiner, *vv);
+			if (col.verbatim) {
+				final.append(separator) += F(" {}\n"s, keyS1);
+			} else {
+				final.append(separator) += F(" {}{}{}\n"s, keyS1, joiner, valueS1);
+			}
 		}
 	}
 

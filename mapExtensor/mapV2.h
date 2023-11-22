@@ -38,8 +38,8 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		}
 	};
 	struct Founded2 {
-		const V val   = nullptr;
-		bool    found = false;
+		const V  val{};
+		bool     found = false;
 		explicit operator bool() const {
 			return found;
 		}

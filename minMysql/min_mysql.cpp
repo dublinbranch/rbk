@@ -5,6 +5,7 @@
 #include "rbk/RAII//resetAfterUse.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/filesystem/folder.h"
+#include "rbk/fmtExtra/dynamic.h"
 #include "rbk/hash/sha.h"
 #include "rbk/misc/b64.h"
 #include "rbk/serialization/serialize.h"
@@ -130,7 +131,8 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 		case 1062: { //unique index violation
 			cxaNoStack     = true;
 			cxaLevel       = CxaLevel::none;
-			auto exception = DBException(mysql_error(conn), DBException::Error(error));
+			auto msg       = F16("After: {} \n {} \n", sqlLogger.serverTime, mysql_error(conn));
+			auto exception = DBException(msg, DBException::Error(error));
 			throw exception;
 		}
 		case 1065:
@@ -698,12 +700,17 @@ StMysqlPtr DB::connect() const {
 	}
 
 	if (!conf.isMariaDB8.value()) {
-		query(QBL("SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY';"));
+		query("SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY';");
 	}
 
 	query(QBL("SET time_zone='UTC'"));
 	if (!conf.writeBinlog) {
-		query(QBL("SET sql_log_bin = 0"));
+		query("SET sql_log_bin = 0");
+	}
+
+	{
+		//this is the normal character, enforced to avoid weird conversion in table
+		query("SET collation_server = 'utf8mb4_general_ci';");
 	}
 
 	//this function is normally called when a new instance is created in a MT program, so we have to set again the local state
@@ -1018,7 +1025,14 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 	}
 
 	if (error) {
-		auto msg = fmt::format("Mysql error for:\n{} \n----------\nError was:\n{}\nCode:{}", lastSQL.get(), mysql_error(conn), error);
+		auto msg = fmt::format(R"(Mysql error for:
+{}
+----------
+Error was:
+{}
+Code:{}
+Query: {:.3f}	Fetch: {:.3f} )",
+		                       lastSQL.get(), mysql_error(conn), error, sqlLogger->serverTime / 1E9, sqlLogger->fetchTime / 1E9);
 		throw ExceptionV2(msg);
 	}
 
