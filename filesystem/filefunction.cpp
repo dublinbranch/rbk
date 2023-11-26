@@ -31,7 +31,7 @@ bool QFileXT::open(QIODevice::OpenMode flags) {
 bool QFileXT::open(QIODevice::OpenMode flags, bool quiet) {
 	if (!QFile::open(flags)) {
 		if (!quiet) {
-			qWarning().noquote() << errorString() << "opening" << fileName() + QStacker16Light();
+			qCritical().noquote() << errorString() << "opening" << fileName() + QStacker16Light();
 		}
 		return false;
 	}

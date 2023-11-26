@@ -169,8 +169,10 @@ void APCU::diskSyncP2() {
 
 	fmt::print("{} element to write\n", toBeWritten.size());
 
-	QFile file("apcu.dat");
-	file.open(QIODevice::WriteOnly);
+	QFileXT file("apcu.dat");
+	if (!file.open(QIODevice::WriteOnly, false)) {
+		return;
+	}
 	QDataStream out(&file);
 	out << toBeWritten;
 	file.flush();
@@ -200,7 +202,10 @@ void APCU::diskLoad() {
 	fmt::print("APCU found {} element to reload\n", toBeWritten.size());
 
 	for (auto&& [key, line] : toBeWritten) {
-		APCU::Row row(key, line.value, line.expireAt);
+		APCU::Row row;
+		row.key      = key;
+		row.value    = line.value;
+		row.expireAt = line.expireAt;
 		//ofc if you reload something from disk it was born persistent!
 		row.persistent = true;
 		cache->emplace(row);
