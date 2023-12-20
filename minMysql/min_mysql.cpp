@@ -758,6 +758,10 @@ SQLBuffering::SQLBuffering(DB* _conn, uint _bufferSize, bool _useTRX) {
 	this->useTRX     = _useTRX;
 }
 
+/**
+ * @brief SQLBuffering::~SQLBuffering
+ * Exception should not leave destructor, if you want more control call flush manually
+ */
 SQLBuffering::~SQLBuffering() {
 	try {
 		flush();
@@ -817,27 +821,26 @@ void SQLBuffering::flush() {
 		conn->query(QBL("START TRANSACTION;"));
 	}
 
-	QString query;
 	// TODO just compose the query in utf8, and append in utf8
 	for (auto&& line : buffer) {
-		query.append(line);
-		query.append(QSL("\n"));
+		currentQuery.append(line);
+		currentQuery.append(QSL("\n"));
 		// this is UTF16, but MySQL run in UTF8, so can be lower or bigger (rare vey rare but possible)
 		// small safety margin + increase size for UTF16 -> UTF8 conversion
-		if ((query.size() * 1.3) > maxPacket * 0.75) {
+		if ((currentQuery.size() * 1.3) > maxPacket * 0.75) {
 			if (skipWarning) {
 				conn->skipWarning = true;
 			}
-			conn->queryDeadlockRepeater(query.toUtf8());
-			query.clear();
+			conn->queryDeadlockRepeater(currentQuery.toUtf8());
+			currentQuery.clear();
 		}
 	}
 	buffer.clear();
-	if (!query.isEmpty()) {
+	if (!currentQuery.isEmpty()) {
 		if (skipWarning) {
 			conn->skipWarning = true;
 		}
-		conn->queryDeadlockRepeater(query.toUtf8());
+		conn->queryDeadlockRepeater(currentQuery.toUtf8());
 	}
 	// This MUST be out of the buffered block! BUT WHY ?
 	if (useTRX) {
@@ -851,6 +854,10 @@ void SQLBuffering::setUseTRX(bool _useTRX) {
 
 void SQLBuffering::clear() {
 	buffer.clear();
+}
+
+QString SQLBuffering::getCurrentQuery() const {
+	return currentQuery;
 }
 
 QString Q64(const sqlRow& line, const QByteArray& b) {
@@ -1032,7 +1039,7 @@ Error was:
 {}
 Code:{}
 Query: {:.3f}	Fetch: {:.3f} )",
-		                       lastSQL.get(), mysql_error(conn), error, sqlLogger->serverTime / 1E9, sqlLogger->fetchTime / 1E9);
+							   lastSQL.get(), mysql_error(conn), error, (double)sqlLogger->serverTime / 1E9, (double)sqlLogger->fetchTime / 1E9);
 		throw ExceptionV2(msg);
 	}
 

@@ -1,6 +1,7 @@
 #include "timerange.h"
 #include "define.h"
 #include "util.h"
+#include "rbk/defines/stringDefine.h"
 
 using namespace std;
 

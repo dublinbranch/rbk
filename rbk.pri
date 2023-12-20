@@ -74,7 +74,8 @@ LIBS += -lmariadb
 
 #HTTP part that is enought common and lightweigh
 SOURCES += \
-    $$PWD/HTTP/PMFCGI.cpp
+    $$PWD/HTTP/PMFCGI.cpp \
+    $$PWD/dateTime/timerange.cpp
 
 HEADERS += \
     $$PWD/../../googleAdsListener/rbk/concept/isRvalue.h \
@@ -116,7 +117,8 @@ HEADERS += \
     $$PWD/BoostJson/fwd.h \
     $$PWD/BoostJson/depleter.h \
     #$$PWD/BoostJson/SwapperSpec.h \
-    $$PWD/BoostJson/intrusivedebug.h \
+    #need to be updated
+    #$$PWD/BoostJson/intrusivedebug.h \
     $$PWD/BoostJson/isjsonasubset.h \
     $$PWD/BoostJson/to_string.h \
     $$PWD/BoostJson/util.h \
@@ -192,7 +194,7 @@ HEADERS += \
 SOURCES += \
     $$PWD/BoostJson/depleter.cpp \
     $$PWD/BoostJson/extra.cpp \
-    $$PWD/BoostJson/intrusivedebug.cpp \
+    #$$PWD/BoostJson/intrusivedebug.cpp \
     $$PWD/BoostJson/isjsonasubset.cpp \
     $$PWD/BoostJson/to_string.cpp \
     $$PWD/BoostJson/util.cpp \

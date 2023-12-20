@@ -5,8 +5,6 @@
 #include <exception>
 #include <string>
 
-#define QSL(str) QStringLiteral(str)
-
 class QString;
 class QByteArray;
 
