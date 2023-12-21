@@ -11,9 +11,9 @@ using namespace std;
 std::string Url::prettyPrint() const {
 	string buffer = full.toStdString() + "\n";
 	//sooooo coool
-	int longest = 0;
+	qsizetype longest = 0;
 	for (auto& q : query) {
-		longest = max(longest, q.first.size());
+		longest = max(longest, (qsizetype)q.first.size());
 	}
 	for (auto& [key, value] : query) {
 		buffer += fmt::format("  |--> {:<{}} : {}\n", key.toStdString(), longest, value);

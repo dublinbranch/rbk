@@ -29,7 +29,7 @@ size_t QBReader(char* ptr, size_t size, size_t nmemb, void* userdata) {
 	auto cur    = readMe->pos;
 	readMe->pos = size * nmemb;
 
-	auto remnant = readMe->data.size() - cur;
+	size_t remnant = readMe->data.size() - cur;
 
 	auto sent = std::min(remnant, size * nmemb);
 
@@ -265,7 +265,7 @@ CurlCallResult urlGetContent2(const char* url, bool quiet, CURL* curl) {
 CurlCallResult urlGetContent2(const QByteArray& url, bool quiet, CURL* curl, bool LTS) {
 	QElapsedTimer timer;
 	if (LTS) {
-        ResetOnExit reset1(localThreadStatus->state, ThreadState::cURL);
+		ResetOnExit reset1(localThreadStatus->state, ThreadState::cURL);
 		timer.start();
 	}
 

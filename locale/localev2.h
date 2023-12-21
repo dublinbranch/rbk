@@ -18,7 +18,7 @@ class Locale {
 
 	Locale() = default;
 	Locale(const QString& nat, const QString& lang);
-	Locale(const QStringRef& nat, const QStringRef& lang);
+	Locale(const QStringView& nat, const QStringView& lang);
 	Locale(const QString& string, QString* ip = nullptr);
 	bool    fromString(const QString& string, QString* ip = nullptr);
 	bool    isNull();

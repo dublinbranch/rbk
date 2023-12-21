@@ -75,11 +75,13 @@ LIBS += -lmariadb
 #HTTP part that is enought common and lightweigh
 SOURCES += \
     $$PWD/HTTP/PMFCGI.cpp \
-    $$PWD/dateTime/timerange.cpp
+    $$PWD/dateTime/timerange.cpp \
+    $$PWD/string/qstringview.cpp
 
 HEADERS += \
     $$PWD/../../googleAdsListener/rbk/concept/isRvalue.h \
     $$PWD/HTTP/PMFCGI.h \
+    $$PWD/string/qstringview.h \
     $$PWD/types/isOptional.h
 
 defined(WITH_BOOST_BEAST,var) {
@@ -183,7 +185,6 @@ HEADERS += \
     $$PWD/serialization/QDataStreamer.h \
 	$$PWD/serialization/asstring.h \
     $$PWD/serialization/serialize.h \
-    $$PWD/string/UTF8Util.h \
     $$PWD/string/qstring.h \
     $$PWD/string/util.h \
     $$PWD/thread/threadstatush.h \
@@ -238,7 +239,6 @@ SOURCES += \
     $$PWD/misc/twilio.cpp \
     $$PWD/rand/randutil.cpp \
     $$PWD/serialization/QDataStreamer.cpp \
-    $$PWD/string/UTF8Util.cpp \
     $$PWD/string/qstring.cpp \
     $$PWD/string/util.cpp \
     $$PWD/thread/threadstatush.cpp \

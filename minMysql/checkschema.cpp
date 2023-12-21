@@ -123,7 +123,7 @@ bool CheckSchema::checkDbSchema() {
 
 			vector<X1> buffer;
 
-			int diskMaxSize = 0;
+			qsizetype diskMaxSize = 0;
 
 			for (int i = 0; i < rowCount; i++) {
 				auto diskRow = diskSchema.value(i);
@@ -131,7 +131,7 @@ bool CheckSchema::checkDbSchema() {
 				auto diskCol = diskRow.value("COLUMN_NAME", "***NOTHING***");
 				auto dbCol   = dbRow.value("COLUMN_NAME", "***NOTHING***");
 				buffer.push_back({diskCol, dbCol});
-				diskMaxSize = max(diskMaxSize, diskCol.size());
+				diskMaxSize = max(diskMaxSize, (qsizetype)diskCol.size());
 			}
 
 			msg += F16("\t{:>{}} - {}\n", "Disk", diskMaxSize, "DB");

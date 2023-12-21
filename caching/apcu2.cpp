@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include <mutex>
+#include <thread>
 
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/member.hpp>
@@ -24,10 +25,10 @@ using boost::multi_index_container;
 using namespace boost::multi_index;
 
 struct ApcuCache_index : indexed_by<
-                             hashed_unique<
-                                 tag<ByKey>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, std::string, key)>,
-                             ordered_non_unique<
-                                 tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, i64, expireAt)>> {};
+							 hashed_unique<
+								 tag<ByKey>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, std::string, key)>,
+							 ordered_non_unique<
+								 tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, i64, expireAt)>> {};
 
 using ApcuCache = multi_index_container<APCU::Row, ApcuCache_index>;
 //this is deallocated at exit before the function is called, so we just manually manage it, no idea how to do the "correct" way
@@ -46,7 +47,7 @@ void diskSync() {
 }
 
 APCU::APCU()
-    : startedAt(QDateTime::currentSecsSinceEpoch()) {
+	: startedAt(QDateTime::currentSecsSinceEpoch()) {
 	if (disableAPCU) {
 		return;
 	}
@@ -121,8 +122,8 @@ std::string APCU::info() const {
 		Delete:     {:>10} / {:>8.0f}s
 </pre>
 		)",
-	                           cache->size(), hits.load(), (double)hits / delta, miss.load(), (double)miss / delta, // 5
-	                           insert.load(), (double)insert / delta, overwrite.load(), (double)overwrite / delta, deleted.load(), (double)deleted / delta);
+							   cache->size(), hits.load(), (double)hits / delta, miss.load(), (double)miss / delta, // 5
+							   insert.load(), (double)insert / delta, overwrite.load(), (double)overwrite / delta, deleted.load(), (double)deleted / delta);
 	return msg;
 }
 
@@ -174,6 +175,8 @@ void APCU::diskSyncP2() {
 		return;
 	}
 	QDataStream out(&file);
+	//how to write in qt6 a map into the stream ?
+
 	out << toBeWritten;
 	file.flush();
 	fmt::print("{} byte wrote\n", file.size());
@@ -274,14 +277,16 @@ FetchPodResult fetchPOD(const QString& key) {
 	return fetchPOD(key.toStdString());
 }
 
-QDataStream& operator<<(QDataStream& out, const APCU::DiskValue& rhs) {
-	out << rhs.expireAt;
-	out << rhs.value;
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+QDataStream& operator<<(QDataStream& out, const APCU::DiskValue& v) {
+	out << v.expireAt;
+	out << v.value;
 	return out;
 }
 
-QDataStream& operator>>(QDataStream& in, APCU::DiskValue& rhs) {
-	in >> rhs.expireAt;
-	in >> rhs.value;
+QDataStream& operator>>(QDataStream& in, APCU::DiskValue& v) {
+	in >> v.expireAt;
+	in >> v.value;
 	return in;
 }
+#endif

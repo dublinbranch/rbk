@@ -8,8 +8,6 @@
 #include <any>
 #include <memory>
 #include <shared_mutex>
-#include <thread>
-#include <unordered_map>
 
 #define QSL(str) QStringLiteral(str)
 void throwTypeError(const std::type_info* found, const std::type_info* expected);
@@ -97,8 +95,24 @@ class APCU : private NoCopy {
 	void clear();
 
 	struct DiskValue {
-		uint       expireAt = 1;
+		quint32    expireAt = 1;
 		QByteArray value;
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+
+		friend QDataStream& operator<<(QDataStream& out, const DiskValue& v) {
+			out << v.expireAt;
+			out << v.value;
+			return out;
+		}
+
+		friend QDataStream& operator>>(QDataStream& in, DiskValue& v) {
+			//for retarded reason in qt5 this line fails -.- saying it can not find the right conversion
+			in >> v.expireAt;
+			in >> v.value;
+			return in;
+		}
+#endif
 	};
 
 	void diskSyncP2();

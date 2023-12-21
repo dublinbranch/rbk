@@ -827,7 +827,7 @@ void SQLBuffering::flush() {
 		currentQuery.append(QSL("\n"));
 		// this is UTF16, but MySQL run in UTF8, so can be lower or bigger (rare vey rare but possible)
 		// small safety margin + increase size for UTF16 -> UTF8 conversion
-		if ((currentQuery.size() * 1.3) > maxPacket * 0.75) {
+		if (((double)currentQuery.size() * 1.3) > maxPacket * 0.75) {
 			if (skipWarning) {
 				conn->skipWarning = true;
 			}

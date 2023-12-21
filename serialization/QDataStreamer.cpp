@@ -1,4 +1,5 @@
 #include "QDataStreamer.h"
+#include <QByteArray>
 
 QDataStream& operator<<(QDataStream& out, const std::string& rhs) {
 	QByteArray raw;

@@ -8,6 +8,7 @@
 #include "rbk/magicEnum/magic_enum.hpp"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/serialization/serialize.h"
+#include "rbk/string/qstringview.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
@@ -262,8 +263,8 @@ bool fileAppendContents(const std::string& pay, const QString& fileName) {
 }
 
 // Much slower but more flexible, is that ever used ?
-std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringList& separator, const QStringList& escape) {
-	std::vector<QStringRef> part;
+std::vector<QStringView> readCSVRowFlexySlow(const QString& line, const QStringList& separator, const QStringList& escape) {
+	std::vector<QStringView> part;
 	if (line.isEmpty()) {
 		return part;
 	}
@@ -309,7 +310,7 @@ std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringLi
 		if (pos >= le)
 			event = 4;
 		else {
-			auto ch = line.midRef(pos, 1);
+			auto ch = QStringView(line.data() + pos, 1);
 			pos++;
 			if (separator.contains(ch, Qt::CaseSensitive))
 				event = 0;
@@ -344,11 +345,11 @@ std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringLi
 				blockEnd = pos - 1;
 			}
 			if (currentBlockStart == -1) { // a new block has never started, we have two separator in a row
-				part.push_back(empty.midRef(0, 0));
+				part.push_back(empty);
 				blockEnd = 0;
 			} else {
-				QStringRef v = line.midRef(currentBlockStart, (blockEnd - currentBlockStart));
-				blockEnd     = 0;
+				auto v   = midView(line, currentBlockStart, (blockEnd - currentBlockStart));
+				blockEnd = 0;
 				part.push_back(v);
 				currentBlockStart = -1;
 				// curentBlock.clear();
@@ -363,12 +364,12 @@ std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringLi
 	return part;
 }
 
-std::vector<QStringRef> readCSVRow(const QString& line, const QChar& separator, const QChar& escape) {
-	return readCSVRow(QStringRef(&line), separator, escape);
+std::vector<QStringView> readCSVRow(const QString& line, const QChar& separator, const QChar& escape) {
+	return readCSVRow(QStringView(line), separator, escape);
 }
 
-std::vector<QStringRef> readCSVRow(const QStringRef& line, const QChar& separator, const QChar& escape) {
-	std::vector<QStringRef> part;
+std::vector<QStringView> readCSVRow(const QStringView& line, const QChar& separator, const QChar& escape) {
+	std::vector<QStringView> part;
 	if (line.isEmpty()) {
 		return part;
 	}
@@ -447,7 +448,7 @@ std::vector<QStringRef> readCSVRow(const QStringRef& line, const QChar& separato
 				blockEnd = pos - 1;
 			}
 			if (currentBlockStart == -1) { // a new block has never started, we have two separator in a row
-				part.push_back(empty.midRef(0, 0));
+				part.push_back(empty);
 				blockEnd = 0;
 			} else {
 				auto numbOfChars = blockEnd - currentBlockStart;

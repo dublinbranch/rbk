@@ -9,10 +9,10 @@
 #include <QString>
 
 template <>
-struct fmt::formatter<QStringRef> : formatter<string_view> {
+struct fmt::formatter<QStringView> : formatter<string_view> {
 	template <typename FormatContext>
-	auto format(const QStringRef& p, FormatContext& ctx) const {
-		return formatter<string_view>::format(p.string()->toStdString(), ctx);
+	auto format(const QStringView& p, FormatContext& ctx) const {
+		return formatter<string_view>::format(p.toString().toStdString(), ctx);
 	}
 };
 

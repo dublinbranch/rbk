@@ -4,7 +4,6 @@
 #include "rbk/defines/stringDefine.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/misc/b64.h"
-#include "rbk/string/UTF8Util.h"
 #include "url.h"
 #include <QDateTime>
 #include <QStringList>
@@ -14,14 +13,16 @@
 using namespace std;
 
 void bHeaders::add(const std::string_view& key, const std::string_view& value) {
-	QString k, v;
+	QString k = QString::fromStdString(key.data());
+	QString v = QString::fromStdString(value.data());
 
-	if (!isValidUTF8(key, &k)) {
-		throw ExceptionV2(QSL("Invalid utf8 in header %1 (value %2)").arg(base64this(key), QString::fromStdString(value.data())));
-	}
-	if (!isValidUTF8(value, &v)) {
-		throw ExceptionV2(QSL("Invalid utf8 in header %1 (value %2)").arg(QString::fromStdString(key.data()), base64this(value)));
-	}
+	//we no longer have the problem of having orrible traffic ATM, so we can skip this
+	// if (!isValidUTF8(key, &k)) {
+	// 	throw ExceptionV2(QSL("Invalid utf8 in header %1 (value %2)").arg(base64this(key), QString::fromStdString(value.data())));
+	// }
+	// if (!isValidUTF8(value, &v)) {
+	// 	throw ExceptionV2(QSL("Invalid utf8 in header %1 (value %2)").arg(QString::fromStdString(key.data()), base64this(value)));
+	// }
 
 	//https://stackoverflow.com/questions/64967098/how-to-get-nginx-to-add-a-header-without-converting-it-to-lowercase
 	//In short headers are CASE INSENSITIVE (slow -.-) but HTTP2 requires them to be lowercase
@@ -35,8 +36,8 @@ void bHeaders::set(const std::multimap<std::string, std::string>& headers) {
 }
 
 string bHeaders::serialize(const QStringList& skipHeaders, bool initialSpacer, bool skipEmptyHeaders) const {
-	string buffer;
-	int    longest = 0;
+	string    buffer;
+	qsizetype longest = 0;
 	for (auto& [key, value] : *this) {
 		if (skipHeaders.contains(key)) {
 			value.skip = true;
@@ -49,7 +50,7 @@ string bHeaders::serialize(const QStringList& skipHeaders, bool initialSpacer, b
 			continue;
 		}
 
-		longest = max(longest, key.size());
+		longest = max(longest, (qsizetype)key.size());
 	}
 	for (auto& [key, value] : *this) {
 		if (value.skip) {

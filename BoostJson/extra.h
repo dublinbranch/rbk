@@ -88,7 +88,7 @@ QString     escape_json(const QString& string);
 template <class T>
 bool getNumber(const boost::json::value& v, std::string_view key, T& val, const T def = T()) {
 	//std::string             block = pretty_print(v);
-	boost::json::error_code e;
+	//boost::json::error_code e;
 	if (auto p = v.as_object().if_contains(key); p) {
 		if (p->is_null()) {
 			val = def;
