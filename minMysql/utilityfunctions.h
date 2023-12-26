@@ -2,6 +2,8 @@
 #define MIN_MYSQL_UTILITYFUNCTIONS_H
 
 #include "min_mysql.h"
+#include "rbk/BoostJson/fwd.h"
+
 class DBDebugger : public DB {
       public:
 	DBDebugger() = default;
@@ -17,4 +19,6 @@ QString queryEssay(const sqlRow& row, bool brief);
 QString queryEssay(const sqlResult& res, bool brief, bool skipNull = false);
 
 std::vector<std::string> getTablesInDB(DB* db, std::string_view schema);
+
+boost::json::object row2json(sqlRow& row);
 #endif // UTILITYFUNCTIONS_H

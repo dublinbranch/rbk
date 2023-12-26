@@ -1,6 +1,7 @@
 #include "utilityfunctions.h"
 #include "QtDebug"
 #include "rbk/fmtExtra/includeMe.h"
+#include <boost/json/object.hpp>
 
 sqlResult filterRunningQueries(const sqlResult& sqlProcessList) {
 	sqlResult res;
@@ -63,13 +64,22 @@ SELECT TABLE_NAME
 FROM information_schema.`TABLES` 
 WHERE `TABLE_SCHEMA` = '{}' 
 	AND `TABLE_TYPE` = 'BASE TABLE'
-ORDER BY CREATE_TIME DESC)", schema);
+ORDER BY CREATE_TIME DESC)",
+	             schema);
 	auto res = db->query(sql);
-	
+
 	std::vector<std::string> f;
 
 	for (auto& row : res) {
 		f.push_back(row.rq<std::string>("TABLE_NAME"));
 	}
 	return f;
+}
+
+boost::json::object row2json(sqlRow& row) {
+	boost::json::object obj;
+	for (auto&& [k, v] : row) {
+		obj[k.toStdString()] = v.toStdString();
+	}
+	return obj;
 }

@@ -165,7 +165,7 @@ class DB {
 	 */
 	st_mysql* getConn(bool doNotConnect = false) const;
 	u64       lastId() const;
-	u64       lastIdNoEx() const ;
+	u64       lastIdNoEx() const;
 
 	// Non copyable
 	DB& operator=(const DB&) = delete;
@@ -183,7 +183,8 @@ class DB {
 
 	long getAffectedRows() const;
 	//usually set / reset via
-	//	ResetAfterUse resetMe(mainDB->state.get()
+	//	#include "rbk/RAII/resetAfterUse.h"
+	//	ResetOnExit resetMe(mainDB->state.get()
 	//						  .NULL_as_EMPTY,
 	//						  true);
 	struct InternalState {
@@ -262,7 +263,7 @@ class SQLBuffering {
 
 	QString getCurrentQuery() const;
 
-	private:
+      private:
 	QString currentQuery;
 	// https://mariadb.com/kb/en/server-system-variables/#max_allowed_packet in our system is always 16M atm
 	static const uint maxPacket = 16E6;

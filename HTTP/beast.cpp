@@ -35,9 +35,7 @@
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/includeMe.h"
-#include "rbk/misc/b64.h"
 #include "rbk/rand/randutil.h"
-#include "rbk/string/UTF8Util.h"
 #include "rbk/thread/threadstatush.h"
 
 #include "PMFCGI.h"
@@ -142,9 +140,9 @@ void handle_request(
 
 			status.remoteIp = stream.socket().remote_endpoint().address().to_string();
 			status.path     = req.target();
-			if (!isValidUTF8(status.path)) {
-				throw ExceptionV2(QSL("Invalid utf8 in the PATH %1").arg(base64this(status.path)));
-			}
+			// if (!isValidUTF8(status.path)) {
+			// 	throw ExceptionV2(QSL("Invalid utf8 in the PATH %1").arg(base64this(status.path)));
+			// }
 
 			status.body = req.body();
 

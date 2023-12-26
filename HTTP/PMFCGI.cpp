@@ -13,8 +13,8 @@
 using namespace std;
 
 void bHeaders::add(const std::string_view& key, const std::string_view& value) {
-	QString k = QString::fromStdString(key.data());
-	QString v = QString::fromStdString(value.data());
+	QString k = QString::fromLocal8Bit(key.data(), key.size());
+	QString v = QString::fromLocal8Bit(value.data(), value.size());
 
 	//we no longer have the problem of having orrible traffic ATM, so we can skip this
 	// if (!isValidUTF8(key, &k)) {
