@@ -3,8 +3,8 @@
 #include <QString>
 #include <string>
 
-std::string salt(std::string, size_t lenght = 4);
-QString     salt(QString, size_t lenght = 4);
-QString     saltQS(size_t lenght = 4);
+std::string salt(std::string, int lenght = 4);
+QString     salt(QString, int lenght = 4);
+QString     saltQS(int lenght = 4);
 
 #endif // SALT_H

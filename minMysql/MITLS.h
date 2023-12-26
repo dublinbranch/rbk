@@ -1,29 +1,47 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
+#include <memory>
+#include <mutex>
 #include <unordered_map>
+#include <vector>
 
 template <typename T>
 class mi_tls_repository {
+      private:
+	// Key = memory location of the INSTANCE
+	// Value = what you want to store
+
+	using mapT = std::unordered_map<uintptr_t, T>;
+	using mapS = std::shared_ptr<mapT>;
+
+	/*
+	 * The general per thread map that contain all resources (of this type)
+	 * It must be a ptr as it can goes out of scope before the other element, so cleaning will be a disaster
+	 */
+	inline static thread_local mapS repository = std::make_shared<mapT>();
+	mapS                            local      = nullptr;
+
+	void getRepo() {
+		return;
+		if (!repository) {
+			//repository = new mapT();
+		}
+	}
+
       protected:
 	void store(uintptr_t instance, T value) {
-		if (!repository) { // check if the application has been already terminated, and we have an out of order destruction
-			repository = new std::unordered_map<uintptr_t, T>();
-		}
+		getRepo();
 		repository->operator[](instance) = value;
 	}
 
-	T& load(uintptr_t instance) const {
-		if (!repository) { // check if the application has been already terminated, and we have an out of order destruction
-			repository = new std::unordered_map<uintptr_t, T>();
-		}
+	T& load(uintptr_t instance) {
+		getRepo();
 		return repository->operator[](instance);
 	}
 
 	void remove(uintptr_t instance) {
-		if (!repository) { // check if the application has been already terminated, and we have an out of order destruction
-			repository = new std::unordered_map<uintptr_t, T>();
-		}
+		getRepo();
 		if (repository->find(instance) != repository->cend()) {
 			repository->erase(instance);
 		}
@@ -31,34 +49,26 @@ class mi_tls_repository {
 
 	// This will be called for all constructor
 	mi_tls_repository() {
+		local = repository;
 		// but only the first in this thread will create the map
-		if (!repository) {
-			repository = new std::unordered_map<uintptr_t, T>();
-		}
+		getRepo();
 	}
 
 	~mi_tls_repository() {
-		// Stuff allocated by thread can not be automatically cleaned up as the destruction order can be wrong and so we loose access to the internal stuff
-		// Thus is impossible to close the inner content
+		//		if (repository) {
+		//			repository->clear();
 
-		// In addition FIRST one in the thread to deallocate trigger this function, thus breaking all the other
+		//			delete (repository);
 
-		// So STOP wasting time to save a 10Byte memleak, and go figure a better overall logic
+		//			//mark the local instance as clear
+		//			repository = nullptr;
+		//		}
 	}
-
-      private:
-	// Key = memory location of the INSTANCE
-	// Value = what you want to store
-	// This is manual because thread_local are auto freed, but free order can be wrong (and usually __call_tls_dtors are called before the at_exit handler)! so when the DB closes (and remove the conn) we are in the wrong place
-	// Therefore this will leak memory, once you close the program, so is 100% irrelevant
-
-	// We should create another pool managed by us, but is nowhere relavant, as long as you do not create a milion thread...
-	inline static thread_local std::unordered_map<uintptr_t, T>* repository = nullptr;
 };
 
 template <typename T>
 class mi_tls : protected mi_tls_repository<T> {
-      public:
+	  public:
 	mi_tls() = default;
 
 	mi_tls(const T& value) {
@@ -74,6 +84,13 @@ class mi_tls : protected mi_tls_repository<T> {
 		return this->load(reinterpret_cast<uintptr_t>(this));
 	}
 
+	//this is pretty cool
+	T* operator->() {
+		return &this->load(reinterpret_cast<uintptr_t>(this));
+	}
+
+	//we want this to NOT be explicit so we can just do something = mi_tls
+	//this is a dynamic https://en.cppreference.com/w/cpp/language/cast_operator even cooler
 	operator T() {
 		return this->load(reinterpret_cast<uintptr_t>(this));
 	}

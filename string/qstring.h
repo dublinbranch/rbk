@@ -5,6 +5,12 @@
 #include <string>
 
 QString    Q16(std::string s);
+QString    Q16(std::string_view s);
 QByteArray Q8(std::string s);
+
+//also remove newline and tab
+[[nodiscard]] QString simplifyMore(const QString& original);
+
+[[nodiscard]] QByteArray simplifyMore(const QByteArray& original);
 
 #endif

@@ -11,6 +11,7 @@
 inline const QString    mysqlDateFormat     = "yyyy-MM-dd";          //2022-12-05
 inline const QString    mysqlDateTimeFormat = "yyyy-MM-dd HH:mm:ss"; //2022-12-05 00:00:01
 inline const QString    fileDateTimeFormat  = "yyyy-MM-dd_HH:mm:ss";
+inline const QString    SQLTableDateFormat  = "yyyy_MM_dd";
 inline const QString    SQL_NULL            = "NULL";
 inline const QByteArray BSQL_NULL           = "NULL";
 inline const QByteArray BZero               = "0";

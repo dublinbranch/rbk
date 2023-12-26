@@ -6,6 +6,9 @@ namespace json {
 class value;
 class object;
 class array;
+//cannot fwd this one
+//template<class T>
+//struct value_to_tag { };
 } // namespace json
 } // namespace boost
 

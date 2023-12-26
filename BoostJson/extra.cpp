@@ -152,7 +152,7 @@ std::string pretty_print(const boost::json::value& jv) {
 json::value asNull(const sqlRow& row, std::string_view key) {
 
 	QByteArray k;
-	k.setRawData(key.data(), key.size());
+	k.setRawData(key.data(), static_cast<uint>(key.size()));
 	auto v = row.rq<QByteArray>(k);
 	if (v == BSQL_NULL) {
 		return nullptr;
@@ -161,7 +161,7 @@ json::value asNull(const sqlRow& row, std::string_view key) {
 }
 
 QString QS(const boost::json::string& cry) {
-	return QString::fromLatin1(cry.data(), cry.size());
+	return QString::fromStdString(cry.data());
 }
 
 QString QS(const boost::json::value* value) {
@@ -180,7 +180,7 @@ QString QS(const boost::json::value& value) {
 
 bool insertIfNotNull(boost::json::object& target, const sqlRow& row, std::string_view key) {
 	QByteArray k;
-	k.setRawData(key.data(), key.size());
+	k.setRawData(key.data(), static_cast<uint>(key.size()));
 	auto v = row.rq<QByteArray>(k);
 	if (v.isEmpty() || v == BSQL_NULL) {
 		return false;
@@ -189,21 +189,27 @@ bool insertIfNotNull(boost::json::object& target, const sqlRow& row, std::string
 	return true;
 }
 
-void pushCreate(boost::json::object& value, std::string_view key, const boost::json::value& newValue) {
-	if (auto array = value.if_contains(key); array) {
+void pushCreate(boost::json::object& json, std::string_view key, const boost::json::value& newValue) {
+	if (auto array = json.if_contains(key); array) {
 		if (!array->is_array()) {
 			throw ExceptionV2(string("this is not an array!").append(key));
 		}
 		array->as_array().push_back(newValue);
 	} else {
-		value[key] = bj::array{newValue};
+		json[key] = bj::array{newValue};
 	}
 }
 
+//TODO pass a context to support auto trowh and print in QCritical ecc
 JsonRes parseJson(std::string_view json) {
 	JsonRes res;
 
-	bj::parser  p;
+	bj::parse_options opt;            // all extensions default to off
+	opt.allow_comments        = true; // permit C and C++ style comments to appear in whitespace
+	opt.allow_trailing_commas = true; // allow an additional trailing comma in object and array element lists
+
+	//value jv = parse("[1,2,3,] // comment ", storage_ptr(), opt);
+	bj::parser  p(res.storage, opt);
 	std::size_t consumed = p.write_some(json, res.ec);
 
 	if (res.ec) {
@@ -265,7 +271,7 @@ string JsonRes::composeErrorMsg() const {
 	}
 
 	Pt          offset    = 0;
-	uint        rowNumber = 0;
+	size_t      rowNumber = 0;
 	string_view showMe;
 
 	if (auto i = newLines.lower_bound(position); i != newLines.end()) {
@@ -299,8 +305,8 @@ string JsonRes::composeErrorMsg() const {
 		}
 
 		//show a part of the json to understand the problem, do not go over end of line or before!
-		uint start = max(0u, position - 45);
-		uint end   = min(Pt(start + 80), raw.size());
+		auto start = max(0ul, position - 45);
+		auto end   = min(Pt(start + 80), raw.size());
 
 		auto len = end - start;
 
@@ -332,7 +338,7 @@ At position {} (line {}:{})
 }
 
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QStringList& t) {
-	jv = bj::value_from(t.toStdList());
+	jv = bj::value_from(std::list<QString>(t.begin(), t.end()));
 }
 
 QString serializeQS(const boost::json::value& jv) {
@@ -390,4 +396,35 @@ QString escape_json(const QString& string) {
 
 QString tag_invoke(const boost::json::value_to_tag<QString>&, const boost::json::value& jv) {
 	return QS(jv);
+}
+
+void createOrAppendObj(boost::json::object& json, std::string_view container, std::string_view newElement, const boost::json::value& newValue) {
+	if (auto* obj = json.if_contains(container); obj) {
+		obj->as_object()[newElement] = newValue;
+	} else {
+		json[container] = {{newElement, newValue}};
+	}
+}
+
+QByteArray tag_invoke(const boost::json::value_to_tag<QByteArray>&, const boost::json::value& jv) {
+	auto       s = jv.as_string();
+	QByteArray q;
+	q.setRawData(s.data(), static_cast<uint>(s.size()));
+	q.detach();
+	return q;
+}
+
+std::optional<boost::json::value*> optPointer(boost::json::value& value, std::string_view ptr) {
+	error_code jec;
+
+	auto result = value.find_pointer(ptr, jec);
+	if (jec) {
+		return {};
+	}
+	return result;
+}
+
+string asString(const boost::json::value& value) {
+	auto& r = value.as_string();
+	return std::string(r.data(), r.size());
 }

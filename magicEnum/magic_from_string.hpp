@@ -51,6 +51,11 @@ template <typename T>
 }
 
 template <typename T>
+[[nodiscard]] T fromString(const std::string_view& _string) {
+	return enum_cast<T>(_string).value();
+}
+
+template <typename T>
 void fromString(const std::string& _string, T& t) {
 	auto opt = enum_cast<T>(_string);
 	if (opt.has_value()) {

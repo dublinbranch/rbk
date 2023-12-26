@@ -2,6 +2,7 @@
 
 #include "DBConf.h"
 #include "MITLS.h"
+#include "rbk/QStacker/exceptionv2.h"
 #include "rbk/mapExtensor/mapV2.h"
 #include "sqlRow.h"
 #include "sqlresult.h"
@@ -9,10 +10,10 @@
 #include <QDebug>
 #include <QStringList>
 #include <mysql/mysql.h>
-#include "rbk/QStacker/exceptionv2.h"
 
 class DBException : public ExceptionV2 {
       public:
+	//The mysql error code are, sight, a bunch of define -.- in mysqld_error.h
 	enum Error : int {
 		NA = 0,
 		Warning,
@@ -21,7 +22,9 @@ class DBException : public ExceptionV2 {
 		InvalidDB  = 1049,
 		DeadLock   = 1213,
 		Duplicate  = 1062,
-		Connection = 2013
+		Connection = 2013,
+		//custom error code
+		InvalidState = 9000
 
 	} errorType = Error::NA;
 	DBException(const QString& _msg, Error error);
@@ -31,6 +34,26 @@ QString nullOnZero(uint v);
 
 struct st_mysql;
 struct st_mysql_res;
+
+/**
+ * @brief The MysqlW class is just to wrap the st_mysql to have RAII
+ */
+class St_mysqlW {
+      public:
+	operator st_mysql*();
+
+	void set(st_mysql* c);
+
+	~St_mysqlW();
+
+	//just a cute counter
+	inline static std::atomic_int connCounter = 0;
+
+      private:
+	st_mysql* conn = nullptr;
+};
+
+using StMysqlPtr = std::shared_ptr<St_mysqlW>;
 
 QString asString(const sqlRow& row);
 
@@ -73,9 +96,9 @@ class DB {
 	DB() = default;
 	DB(const DBConf& _conf);
 	~DB();
-	void      closeConn() const;
-	st_mysql* connect() const;
-	bool      tryConnect() const;
+	void       closeConn() const;
+	StMysqlPtr connect() const;
+	bool       tryConnect() const;
 
 	sqlRow queryLine(const std::string& sql) const;
 	sqlRow queryLine(const char* sql) const;
@@ -96,10 +119,10 @@ class DB {
 	sqlRow queryCacheLine2(const QString& sql, uint ttl = 3600, bool required = false);
 	sqlRow queryCacheLine2(const std::string& sql, uint ttl = 3600, bool required = false);
 
-	sqlResult queryCache2(const std::string& sql, const Opt& opt);
+	sqlResult queryCache2(const std::string& sql, const Opt& opt) const;
 
-	sqlResult queryCache2(const std::string& sql, uint ttl, bool required = false);
-	sqlResult queryCache2(const QString& sql, uint ttl, bool required = false);
+	sqlResult queryCache2(const std::string& sql, uint ttl, bool required = false) const;
+	sqlResult queryCache2(const QString& sql, uint ttl, bool required = false) const;
 	//Try to read data from cache, if expired read from DB, if db unavailable use the cache, if all fail throw error
 	sqlResult queryORcache(const QString& sql, uint ttl, bool required = false);
 
@@ -109,6 +132,7 @@ class DB {
 	void        pingCheck(st_mysql*& conn) const;
 	QString     escape(const QString& what) const;
 	std::string escape(const std::string& what) const;
+	std::string escape(const std::string_view what) const;
 	bool        isSSL() const;
 	/**
 	  Those 2 are used toghether for the ASYNC mode
@@ -132,7 +156,7 @@ class DB {
 	// Shared by both async and not
 	sqlResult getWarning(bool useSuppressionList = true) const;
 	sqlResult fetchResult(SQLLogger* sqlLogger = nullptr) const;
-	int       fetchAdvanced(FetchVisitor* visitor) const;
+	u64       fetchAdvanced(FetchVisitor* visitor) const;
 
 	/**
 	 * @brief getConn
@@ -140,7 +164,8 @@ class DB {
 	 * @return
 	 */
 	st_mysql* getConn(bool doNotConnect = false) const;
-	ulong     lastId() const;
+	u64       lastId() const;
+	u64       lastIdNoEx() const ;
 
 	// Non copyable
 	DB& operator=(const DB&) = delete;
@@ -154,6 +179,7 @@ class DB {
 
 	const DBConf getConf() const;
 	void         setConf(const DBConf& value);
+	void         setConfIfNotSet(const DBConf& value);
 
 	long getAffectedRows() const;
 	//usually set / reset via
@@ -184,7 +210,7 @@ class DB {
 	// Mutable is needed for all of them
 	mutable mi_tls<long> affectedRows;
 	// this allow to spam the DB handler around, and do not worry of thread, each thread will create it's own connection!
-	mutable mi_tls<st_mysql*> connPool;
+	mutable mi_tls<StMysqlPtr> connPool;
 	// used for asyncs
 	mutable mi_tls<int>        signalMask;
 	mutable mi_tls<QByteArray> lastSQL;
@@ -217,11 +243,13 @@ class SQLBuffering {
 	uint        bufferSize = 1000;
 	QStringList buffer;
 
+	bool skipWarning = false;
+
 	SQLBuffering() = default;
 	/**
 	 * @brief SQLBuffering
 	 * @param _conn
-	 * @param _bufferSize 0 disable auto flushing, 1 disable buffering
+	 * @param _bufferSize 0 disable auto flushing, 1 disable buffering (if you want to wrap lot of stuff in a TRX use 0)
 	 */
 	SQLBuffering(DB* _conn, uint _bufferSize = 1000, bool _useTRX = true);
 	~SQLBuffering();
@@ -232,7 +260,10 @@ class SQLBuffering {
 	void setUseTRX(bool _useTRX);
 	void clear();
 
-      private:
+	QString getCurrentQuery() const;
+
+	private:
+	QString currentQuery;
 	// https://mariadb.com/kb/en/server-system-variables/#max_allowed_packet in our system is always 16M atm
 	static const uint maxPacket = 16E6;
 	// Set as false in case we are running inside another TRX

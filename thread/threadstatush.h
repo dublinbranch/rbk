@@ -1,9 +1,11 @@
 #ifndef THREADSTATUSH_H
 #define THREADSTATUSH_H
 
+#include "rbk/misc/intTypes.h"
 #include "rbk/mapExtensor/hmap.h"
 
 #include <QString>
+#include <memory>
 #include <thread>
 
 #include <QElapsedTimer>
@@ -21,15 +23,15 @@ enum class ThreadState {
 
 class ElapsedTimerV2 {
       public:
-	void   start();
-	qint64 pause();
+	void start();
+	i64  pause();
 
-	qint64 nsecsElapsed() const;
+	i64 nsecsElapsed() const;
 
       private:
 	bool          paused = true;
 	QElapsedTimer timer;
-	qint64        total = 0;
+	i64           total = 0;
 };
 
 class ThreadStatus {
@@ -38,22 +40,22 @@ class ThreadStatus {
 		ElapsedTimerV2 timer;
 
 		//Total execution time including log writing, clickhouse, sql, whatever until NOW (or is called pause)
-		qint64         total() const;
+		i64            total() const;
 		ElapsedTimerV2 clickHouse;
 
 		//Time spent doing IO, mostly reading the disk cache
 		ElapsedTimerV2 IO;
 		//Once data is fully sent to browser
-		qint64 flush = 0;
+		i64 flush = 0;
 		//The actual time spend executing code
-		qint64 execution() const;
+		i64 execution() const;
 
 		//time spent in sql, this is computed only until the delivery, all sql after the http is sent are irrelevant
-		qint64 sqlImmediate = 0;
-		qint64 sqlDeferred  = 0;
+		i64 sqlImmediate = 0;
+		i64 sqlDeferred  = 0;
 
-		qint64 curlImmediate = 0;
-		qint64 curlDeferred  = 0;
+		i64 curlImmediate = 0;
+		i64 curlDeferred  = 0;
 
 		void reset();
 		//We need a function as we do the separation between Immediate and Deferred
@@ -69,11 +71,9 @@ class ThreadStatus {
 		QByteArray  sql;
 	};
 
-	Status* newStatus() const {
-		return new Status();
-	}
+	static std::shared_ptr<Status> newStatus();
 
-	hmap<std::thread::id, Status*> pool;
+	hmap<std::thread::id, std::shared_ptr<Status>> pool;
 };
 
 #endif // THREADSTATUSH_H

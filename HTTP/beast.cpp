@@ -69,7 +69,7 @@ static const std::vector<std::string> errorPrefix{
     "Look mom an"};
 
 string_view randomErrorPrefix() {
-	auto s = errorPrefix.size();
+	uint s = static_cast<uint>(errorPrefix.size());
 	auto r = rand(0, s - 1);
 	return errorPrefix[r];
 }
@@ -119,7 +119,7 @@ void sendResponseToClient(beast::tcp_stream& stream, Payload& payload) {
 	res.keep_alive(false);
 
 	//equivalente to fastcgi_close
-	send(stream, move(res));
+	send(stream, res);
 	registerFlushTime();
 }
 
@@ -155,8 +155,10 @@ void handle_request(
 			if (auto v = status.headers.get("remote_addr"); v) {
 				status.remoteIp = v.val->toStdString();
 			}
-			status.extractCookies();
 
+			if (conf->prePhase1) {
+				conf->prePhase1(status, payload);
+			}
 			/*
 			 * phase 1
 			 * execute immediate
@@ -454,6 +456,7 @@ void Beast::listen() {
 		    IOC->stop();
 		    //remove the handler ?, else the next ctrl c will not terminate the program ?
 		    signals2block->remove(SIGINT);
+		    exit(0);
 	    });
 
 	signals2block_p = signals2block;
@@ -467,7 +470,7 @@ void Beast::listen() {
 		    [status, this] {
 			    //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
 			    status->tid       = gettid();
-			    localThreadStatus = status;
+			    localThreadStatus = status.get();
 			    //and than launch to io handler
 			    IOC->run();
 		    }));

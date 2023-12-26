@@ -22,11 +22,11 @@ void ThreadStatus::Timing::addCurlTime(qint64 addMe) {
 	}
 }
 
-qint64 ThreadStatus::Timing::total() const {
+i64 ThreadStatus::Timing::total() const {
 	return timer.nsecsElapsed();
 }
 
-qint64 ThreadStatus::Timing::execution() const {
+i64 ThreadStatus::Timing::execution() const {
 	return total() - (curlDeferred + curlImmediate + sqlDeferred + sqlImmediate + IO.nsecsElapsed() + clickHouse.nsecsElapsed());
 }
 
@@ -40,7 +40,7 @@ void ElapsedTimerV2::start() {
 	timer.restart();
 }
 
-qint64 ElapsedTimerV2::pause() {
+i64 ElapsedTimerV2::pause() {
 	paused = true;
 	if (!timer.isValid()) {
 		throw ExceptionV2("invalid timer ? there must be some logic bug somewhere");
@@ -49,9 +49,13 @@ qint64 ElapsedTimerV2::pause() {
 	return total;
 }
 
-qint64 ElapsedTimerV2::nsecsElapsed() const {
+i64 ElapsedTimerV2::nsecsElapsed() const {
 	if (paused) {
 		return total;
 	}
 	return total + timer.nsecsElapsed();
+}
+
+std::shared_ptr<ThreadStatus::Status> ThreadStatus::newStatus() {
+	return std::make_shared<Status>();
 }

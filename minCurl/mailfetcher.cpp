@@ -126,7 +126,7 @@ folderUrl = {}
 searchQuery = {}
 )",
 
-			                       res,
+			                       asSWString(res),
 			                       curl_easy_strerror(res),
 			                       config.username,
 			                       config.password,

@@ -5,7 +5,7 @@
 #include "rbk/RAII//resetAfterUse.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/filesystem/folder.h"
-#include "rbk/fmtExtra/customformatter.h"
+#include "rbk/fmtExtra/dynamic.h"
 #include "rbk/hash/sha.h"
 #include "rbk/misc/b64.h"
 #include "rbk/serialization/serialize.h"
@@ -46,24 +46,8 @@ extern thread_local ThreadStatus::Status* localThreadStatus;
 
 DB::SharedState DB::sharedState;
 using namespace std;
-// I (Roy) really do not like reading warning, so we will now properly close all opened connection!
-class ConnPooler {
-      public:
-	void                        addConnPool(st_mysql* conn);
-	void                        removeConn(st_mysql* conn);
-	void                        closeAll();
-	const map<st_mysql*, bool>& getPool() const;
-	~ConnPooler();
 
-	ulong active = 0xBADF00DBADC0FFEE;
-
-      private:
-	map<st_mysql*, bool> allConn;
-	mutex                allConnMutex;
-};
-
-static ConnPooler connPooler;
-static int        somethingHappened(MYSQL* mysql, int status);
+static int somethingHappened(MYSQL* mysql, int status);
 
 sqlRow DB::queryLine(const char* sql) const {
 	return queryLine(QByteArray(sql));
@@ -75,14 +59,14 @@ sqlRow DB::queryLine(const QString& sql) const {
 
 sqlRow DB::queryLine(const std::string& sql) const {
 	QByteArray temp;
-	temp.setRawData(sql.c_str(), sql.size());
+	temp.setRawData(sql.c_str(), static_cast<uint>(sql.size()));
 	return queryLine(temp);
 }
 
 sqlRow DB::queryLine(const QByteArray& sql) const {
 	auto res = query(sql);
 	if (res.empty()) {
-		return sqlRow();
+		return {};
 	}
 	return res[0];
 }
@@ -102,7 +86,7 @@ sqlResult DB::query(const std::string& sql) const {
 }
 
 sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
-	ResetAfterUse reset1(localThreadStatus->state, ThreadState::MyQuery);
+	ResetOnExit reset1(localThreadStatus->state, ThreadState::MyQuery);
 	localThreadStatus->sql = sql;
 
 	if (sql.isEmpty()) {
@@ -113,10 +97,10 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 		throw ExceptionV2("This mysql instance is not connected!");
 	}
 
-	SQLLogger sqlLogger(sql, conf.logError, this);
+	SQLLogger sqlLogger(sql, conf.logError.value(), this);
 	if (sql != "SHOW WARNINGS") {
 		lastSQL          = sql;
-		sqlLogger.logSql = conf.logSql;
+		sqlLogger.logSql = conf.logSql.value();
 	} else {
 		sqlLogger.logSql = false;
 	}
@@ -147,7 +131,8 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 		case 1062: { //unique index violation
 			cxaNoStack     = true;
 			cxaLevel       = CxaLevel::none;
-			auto exception = DBException(mysql_error(conn), DBException::Error(error));
+			auto msg       = F16("After: {} \n {} \n", sqlLogger.serverTime, mysql_error(conn));
+			auto exception = DBException(msg, DBException::Error(error));
 			throw exception;
 		}
 		case 1065:
@@ -195,7 +180,7 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 				          .arg(state.get().queryExecuted)
 				          .arg(state.get().reconnection)
 				          .arg(sharedState.busyConnection)
-				          .arg(connPooler.getPool().size())
+				          .arg(St_mysqlW::connCounter.load())
 				          .arg((double)sqlLogger.serverTime, 0, 'G', 3)
 				          .arg(sqlLogger.serverTime)
 				          .arg(runningSqls);
@@ -227,7 +212,7 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 	}
 
 	if (noFetch) {
-		return sqlResult();
+		return {};
 	}
 	return fetchResult(&sqlLogger);
 }
@@ -273,12 +258,12 @@ sqlRow DB::queryCacheLine2(const std::string& sql, uint ttl, bool required) {
 	return queryCacheLine2(QString::fromStdString(sql), ttl, required);
 }
 
-sqlResult DB::queryCache2(const std::string& sql, const Opt& opt) {
+sqlResult DB::queryCache2(const std::string& sql, const Opt& opt) const {
 	state.get().noCacheOnEmpty = opt.noCacheOnEmpty;
 	return queryCache2(QString::fromStdString(sql), opt.ttl, opt.required);
 }
 
-sqlResult DB::queryCache2(const std::string& sql, uint ttl, bool required) {
+sqlResult DB::queryCache2(const std::string& sql, uint ttl, bool required) const {
 	return queryCache2(QString::fromStdString(sql), ttl, required);
 }
 
@@ -315,8 +300,8 @@ sqlRow DB::queryCacheLine(const QString& sql, uint ttl, bool required) {
 //		}
 //	}
 
-sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) {
-	ResetAfterUse<typeof localThreadStatus->state> reset1;
+sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) const {
+	ResetOnExit<typeof localThreadStatus->state> reset1;
 	if (localThreadStatus) {
 		reset1.set(localThreadStatus->state, ThreadState::MyCache);
 	}
@@ -327,7 +312,7 @@ sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) {
 		static bool fraud = mkdir(QSL("cachedSQL_%1/").arg(conf.cacheId));
 		(void)fraud;
 
-		//We have a lock to prevent concurrent write in this process, but nothing to protect again other, just use another folder
+		//We have a lock to prevent concurrent write in this process, but nothing to protect against other, just use another folder
 		QString                      name = QSL("cachedSQL_%1/").arg(conf.cacheId) + sha1(sql);
 		static std::mutex            lock;
 		std::scoped_lock<std::mutex> scoped(lock);
@@ -364,7 +349,6 @@ sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) {
 			}
 		}
 		fileSerialize(name, res);
-
 		return res;
 	} else {
 		return query(sql);
@@ -411,8 +395,10 @@ sqlResult DB::queryDeadlockRepeater(const QByteArray& sql, uint maxTry) const {
 					continue;
 					break;
 				default:
-					throw error;
+					throw;
 				}
+			} catch (...) {
+				throw;
 			}
 		}
 		qWarning().noquote() << "too many trial to resolve deadlock, fix your code!" + QStacker16();
@@ -427,7 +413,7 @@ void DB::pingCheck(st_mysql*& conn) const {
 	if (!conf.pingBeforeQuery) {
 		return;
 	}
-	SQLLogger sqlLogger("PING", conf.logError, this);
+	SQLLogger sqlLogger("PING", conf.logError.value(), this);
 	auto      oldConnId = mysql_thread_id(conn);
 
 	auto guard = qScopeGuard([&] {
@@ -483,6 +469,10 @@ QString DB::escape(const QString& what) const {
 }
 
 string DB::escape(const std::string& plain) const {
+	return escape(std::string_view(plain));
+}
+
+string DB::escape(const std::string_view plain) const {
 	// Ma esiste una lib in C++ per mysql ?
 	char* tStr = new char[plain.size() * 2 + 1];
 	mysql_real_escape_string(getConn(), tStr, plain.data(), plain.size());
@@ -496,18 +486,25 @@ QString QV(const sqlRow& line, const QByteArray& b) {
 }
 
 st_mysql* DB::getConn(bool doNotConnect) const {
-	st_mysql* curConn = connPool;
+	auto curConn = connPool.get();
 	if (curConn == nullptr) {
 		if (doNotConnect) {
 			return nullptr;
 		}
-		// loading in connPool is inside
-		curConn = connect();
+		connect();
 	}
-	return curConn;
+	return *connPool.get();
 }
 
-ulong DB::lastId() const {
+u64 DB::lastId() const {
+	auto lastId = mysql_insert_id(getConn());
+	if (!lastId) {
+		throw DBException("Last insert is 0, check for error!", DBException::InvalidState);
+	}
+	return lastId;
+}
+
+u64 DB::lastIdNoEx() const {
 	return mysql_insert_id(getConn());
 }
 
@@ -519,7 +516,16 @@ const DBConf DB::getConf() const {
 	return conf;
 }
 
+void DB::setConfIfNotSet(const DBConf& value) {
+	if (!confSet) {
+		setConf(value);
+	}
+}
+
 void DB::setConf(const DBConf& value) {
+	if (confSet) {
+		throw ExceptionV2("better not set twice the db config to avoid abomination");
+	}
 	conf    = value;
 	confSet = true;
 	for (auto& rx : conf.warningSuppression) {
@@ -552,7 +558,7 @@ void DBConf::setDefaultDB(const QByteArray& value) {
 QString DBConf::getInfo(bool passwd) const {
 	auto msg = QSL(" %1:%2  user: %3")
 	               .arg(QString(host))
-	               .arg(port)
+	               .arg(port.value())
 	               .arg(user.data());
 	if (passwd) {
 		msg += pass.data();
@@ -579,21 +585,17 @@ DB::~DB() {
  * @brief DB::closeConn should be called if you know the db instance is been used in a thread (and ofc will not be used anymore)
  * is not a problem if not done, it will just leave a few warn in the error log likeF
  * [Warning] Aborted connection XXX to db: 'ZYX' user: '123' host: 'something' (Got an error reading communication packets)
+ * when the mysql server will forcefully close it
  */
 void DB::closeConn() const {
-	st_mysql* curConn = connPool;
+	auto curConn = connPool.get();
 	if (curConn) {
-		// this whole conn pool architecture is wrong, ditch it and recreate something and do not realy on magic constant
-		// to detect if something is freed or not
-		if (connPooler.active == 0xBADF00DBADC0FFEE) {
-			connPooler.removeConn(curConn);
-			mysql_close(curConn);
-		}
-		connPool = nullptr;
+		curConn.reset();
 	}
 }
 
-st_mysql* DB::connect() const {
+StMysqlPtr DB::connect() const {
+	auto sptr = make_shared<St_mysqlW>();
 	// Mysql connection stuff is not thread safe!
 	{
 		static std::mutex           mutex;
@@ -639,6 +641,7 @@ st_mysql* DB::connect() const {
 		 *
 		 * https://stackoverflow.com/questions/34369376/what-is-mysqls-wait-timeout-net-read-timeout-and-net-write-timeout-variable
 		 *
+		 *Literally is MYSQL_OPT_READ_TIMEOUT: Specifies the timeout in seconds for reading packets from the server.
 		 */
 		if (conf.readTimeout) {
 			mysql_options(conn, MYSQL_OPT_READ_TIMEOUT, &conf.readTimeout);
@@ -654,9 +657,10 @@ st_mysql* DB::connect() const {
 		}
 
 		// For some reason mysql is now complaining of not having a DB selected... just select one and gg
+		auto sock      = conf.sock.has_value() ? conf.sock.value().constData() : nullptr;
 		auto connected = mysql_real_connect(conn, conf.host, conf.user.constData(), conf.pass.constData(),
 		                                    conf.getDefaultDB(),
-		                                    conf.port, conf.sock.constData(), flag);
+		                                    conf.port.value(), sock, flag);
 		if (connected == nullptr) {
 			auto    errorNo = mysql_errno(conn);
 			QString error   = mysql_error(conn);
@@ -690,23 +694,28 @@ st_mysql* DB::connect() const {
 		}
 
 		/***/
-		connPool = conn;
-		connPooler.addConnPool(conn);
+		sptr->set(conn);
+		connPool = sptr;
 		/***/
 	}
 
-	if (!conf.noSqlMode) {
-		query(QBL("SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY';"));
+	if (!conf.isMariaDB8.value()) {
+		query("SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY';");
 	}
 
 	query(QBL("SET time_zone='UTC'"));
 	if (!conf.writeBinlog) {
-		query(QBL("SET sql_log_bin = 0"));
+		query("SET sql_log_bin = 0");
+	}
+
+	{
+		//this is the normal character, enforced to avoid weird conversion in table
+		query("SET collation_server = 'utf8mb4_general_ci';");
 	}
 
 	//this function is normally called when a new instance is created in a MT program, so we have to set again the local state
 	state.get().NULL_as_EMPTY = conf.NULL_as_EMPTY;
-	return connPool;
+	return sptr;
 }
 
 bool DB::tryConnect() const {
@@ -741,35 +750,50 @@ quint64 getId(const sqlResult& res) {
 }
 
 SQLBuffering::SQLBuffering(DB* _conn, uint _bufferSize, bool _useTRX) {
+	if (!_conn) {
+		throw ExceptionV2("in nullptr we DO NOT TRUST! fix the code");
+	}
 	this->conn       = _conn;
 	this->bufferSize = _bufferSize;
 	this->useTRX     = _useTRX;
 }
 
+/**
+ * @brief SQLBuffering::~SQLBuffering
+ * Exception should not leave destructor, if you want more control call flush manually
+ */
 SQLBuffering::~SQLBuffering() {
-	flush();
+	try {
+		flush();
+	} catch (std::exception& e) {
+		qCritical().noquote() << e.what();
+	} catch (...) {
+		qCritical() << "unknow exception in " << QStacker16();
+	}
 }
 
 void SQLBuffering::append(const std::string& sql) {
-	buffer.append(QString::fromStdString(sql));
+	if (sql.empty()) {
+		return;
+	}
+	append(QString::fromStdString(sql));
 }
 
 void SQLBuffering::append(const QString& sql) {
 	if (sql.isEmpty()) {
 		return;
 	}
-	buffer.append(sql);
+
 	// 0 disable flushing, 1 disable buffering
 	if (bufferSize && (uint)buffer.size() >= bufferSize) {
 		flush();
 	}
+	buffer.append(sql);
 }
 
 void SQLBuffering::append(const QStringList& sqlList) {
-	buffer.append(sqlList);
-
-	if (bufferSize && (uint)buffer.size() >= bufferSize) {
-		flush();
+	for (auto& row : sqlList) {
+		append(row);
 	}
 }
 
@@ -778,7 +802,7 @@ void SQLBuffering::flush() {
 		return;
 	}
 	if (conn == nullptr) {
-		throw QSL("you forget to set a usable DB Conn!") + QStacker16();
+		throw DBException("you forget to set a usable DB Conn!", DBException::Error::Connection);
 	}
 	/**
 	 * To avoid having a very big packet we split
@@ -792,28 +816,33 @@ void SQLBuffering::flush() {
 	 show variables like "max_allowed_packet"
 	 */
 
-	// This MUST be out of the buffered block!
+	// This MUST be out of the buffered block!  BUT WHY ?
 	if (useTRX) {
 		conn->query(QBL("START TRANSACTION;"));
 	}
 
-	QString query;
 	// TODO just compose the query in utf8, and append in utf8
 	for (auto&& line : buffer) {
-		query.append(line);
-		query.append(QSL("\n"));
+		currentQuery.append(line);
+		currentQuery.append(QSL("\n"));
 		// this is UTF16, but MySQL run in UTF8, so can be lower or bigger (rare vey rare but possible)
 		// small safety margin + increase size for UTF16 -> UTF8 conversion
-		if ((query.size() * 1.3) > maxPacket * 0.75) {
-			conn->queryDeadlockRepeater(query.toUtf8());
-			query.clear();
+		if (((double)currentQuery.size() * 1.3) > maxPacket * 0.75) {
+			if (skipWarning) {
+				conn->skipWarning = true;
+			}
+			conn->queryDeadlockRepeater(currentQuery.toUtf8());
+			currentQuery.clear();
 		}
 	}
 	buffer.clear();
-	if (!query.isEmpty()) {
-		conn->queryDeadlockRepeater(query.toUtf8());
+	if (!currentQuery.isEmpty()) {
+		if (skipWarning) {
+			conn->skipWarning = true;
+		}
+		conn->queryDeadlockRepeater(currentQuery.toUtf8());
 	}
-	// This MUST be out of the buffered block!
+	// This MUST be out of the buffered block! BUT WHY ?
 	if (useTRX) {
 		conn->query(QBL("COMMIT;"));
 	}
@@ -825,6 +854,10 @@ void SQLBuffering::setUseTRX(bool _useTRX) {
 
 void SQLBuffering::clear() {
 	buffer.clear();
+}
+
+QString SQLBuffering::getCurrentQuery() const {
+	return currentQuery;
 }
 
 QString Q64(const sqlRow& line, const QByteArray& b) {
@@ -999,17 +1032,23 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 	}
 
 	if (error) {
-		auto msg = fmt::format("Mysql error for:\n{} \n----------\nError was:\n{}\nCode:{}", lastSQL.get(), mysql_error(conn), error);
+		auto msg = fmt::format(R"(Mysql error for:
+{}
+----------
+Error was:
+{}
+Code:{}
+Query: {:.3f}	Fetch: {:.3f} )",
+							   lastSQL.get(), mysql_error(conn), error, (double)sqlLogger->serverTime / 1E9, (double)sqlLogger->fetchTime / 1E9);
 		throw ExceptionV2(msg);
 	}
 
 	return res;
 }
 
-int DB::fetchAdvanced(FetchVisitor* visitor) const {
+u64 DB::fetchAdvanced(FetchVisitor* visitor) const {
 	auto conn = getConn();
 
-	// swap the whole result set we do not expect 1Gb+ result set here
 	MYSQL_RES* result = mysql_use_result(conn);
 	if (!result) {
 		auto error = mysql_errno(conn);
@@ -1019,6 +1058,7 @@ int DB::fetchAdvanced(FetchVisitor* visitor) const {
 			throw 1025;
 		}
 	}
+
 	if (!visitor->preCheck(result)) {
 		//???
 		throw QSL("no idea what to do whit this result set!");
@@ -1026,9 +1066,9 @@ int DB::fetchAdvanced(FetchVisitor* visitor) const {
 	while (auto row = mysql_fetch_row(result)) {
 		visitor->processLine(row);
 	}
+	auto rowCount = mysql_num_rows(result);
 	mysql_free_result(result);
-	// no idea what to return
-	return 1;
+	return rowCount;
 }
 
 /**
@@ -1111,8 +1151,8 @@ void SQLLogger::flush() {
 
 	file.write(info.toUtf8());
 
-	double     query = serverTime / 1E9;
-	double     fetch = fetchTime / 1E9;
+	double     query = static_cast<double>(serverTime) / 1E9;
+	double     fetch = static_cast<double>(fetchTime) / 1E9;
 	QByteArray buff  = "Query: " + QByteArray::number(query, 'E', 3);
 	file.write(buff.leftJustified(20, ' ').append("Fetch: " + QByteArray::number(fetch, 'E', 3)) + "\n" + sql);
 	if (!error.isEmpty()) {
@@ -1169,35 +1209,6 @@ QString sqlRow::serialize() const {
 	return out;
 }
 
-void ConnPooler::addConnPool(st_mysql* conn) {
-	lock_guard<mutex> guard(allConnMutex);
-	allConn.insert({conn, true});
-}
-
-void ConnPooler::removeConn(st_mysql* conn) {
-	lock_guard<mutex> guard(allConnMutex);
-	if (auto iter = allConn.find(conn); iter != allConn.end()) {
-		allConn.erase(iter);
-	}
-}
-
-void ConnPooler::closeAll() {
-	lock_guard<mutex> guard(allConnMutex);
-	for (auto& [conn, dummy] : allConn) {
-		mysql_close(conn);
-	}
-	allConn.clear();
-}
-
-const map<st_mysql*, bool>& ConnPooler::getPool() const {
-	return allConn;
-}
-
-ConnPooler::~ConnPooler() {
-	active = 0;
-	closeAll();
-}
-
 DBException::DBException(const QString& _msg, Error error)
     : ExceptionV2(_msg) {
 	errorType = error;
@@ -1244,5 +1255,25 @@ bool MyType::isFloat() const {
 		return true;
 	default:
 		return false;
+	}
+}
+
+St_mysqlW::operator st_mysql*() {
+	return conn;
+}
+
+void St_mysqlW::set(st_mysql* c) {
+	if (conn) {
+		throw ExceptionV2("NO! you can not reuse this class!");
+	}
+	++connCounter;
+	conn = c;
+}
+
+St_mysqlW::~St_mysqlW() {
+	if (conn) {
+		--connCounter;
+		mysql_close(conn);
+		conn = nullptr;
 	}
 }

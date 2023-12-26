@@ -3,15 +3,15 @@
 #include "sha.h"
 #include <QDateTime>
 
-std::string salt(std::string, size_t lenght) {
+std::string salt(std::string, int lenght) {
 	return saltQS(lenght).toStdString();
 }
 
-QString salt(QString, size_t lenght) {
+QString salt(QString, int lenght) {
 	return saltQS(lenght);
 }
 
-QString saltQS(size_t lenght) {
+QString saltQS(int lenght) {
 	auto ts = QDateTime::currentMSecsSinceEpoch() + rand();
 	auto n  = QByteArray::number(ts);
 	return sha1(n).left(lenght);

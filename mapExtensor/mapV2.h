@@ -4,8 +4,7 @@
 //#include "rbk/fmtExtra/includeMe.h"
 //as this will include a lot of qt stuff
 
-#include "fmt/core.h"
-#include "rbk/QStacker/exceptionv2.h"
+#include "NotFoundMixin.h"
 #include "rbk/misc/swapType.h"
 #include <map>
 
@@ -13,24 +12,6 @@
 //	(void)key;
 //	(void)location;
 //}
-
-template <typename K>
-class NotFoundMixin {
-      public:
-	using Funtor    = void (*)(const K& key);
-	NotFoundMixin() = default;
-	NotFoundMixin(Funtor f)
-	    : notFoundCallback(f){};
-
-	mutable Funtor notFoundCallback = nullptr;
-
-	[[noreturn]] void callNotFoundCallback(const K& key, const std::string location) const {
-		if (notFoundCallback) {
-			(*notFoundCallback)(key);
-		}
-		throw ExceptionV2(fmt::format("key >>>{}<<< not found in {}", key, location));
-	}
-};
 
 template <typename K, typename V, typename Compare = std::less<K>>
 class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
@@ -57,7 +38,7 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		}
 	};
 	struct Founded2 {
-		const V  val   = nullptr;
+		const V  val{};
 		bool     found = false;
 		explicit operator bool() const {
 			return found;
@@ -83,12 +64,26 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	}
 
 	template <typename T>
-	[[nodiscard]] bool get(const K& k, T& t) const {
+	T get(const K& k, const T&& t) const {
+		auto v = t;
+		if (auto iter = this->find(k); iter != this->end()) {
+			swapType(iter->second, v);
+		}
+		return v;
+	}
+
+	template <typename T>
+	bool get(const K& k, T& t) const {
 		if (auto iter = this->find(k); iter != this->end()) {
 			swapType(iter->second, t);
 			return true;
 		}
 		return false;
+	}
+
+	template <typename T>
+	[[deprecated("get with not option is now RQ")]] [[nodiscard]] T get(const K& k) const {
+		return rq<T>(k);
 	}
 
 	[[nodiscard]] V rq(const K& k) const {
@@ -143,6 +138,11 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		return v;
 	}
 
+	template <typename D>
+	void rq(const K& key, D& dest) const {
+		dest = rq<D>(key);
+	}
+
 	[[nodiscard]] auto take(const K& k) {
 		if (auto iter = this->find(k); iter != this->end()) {
 			Founded2 f{iter->second, true};
@@ -166,6 +166,16 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		return v;
 	}
 
+	[[nodiscard]] V getDefault(const K& k, const V& v, bool& isFound) const {
+		if (auto found = this->get(k); found) {
+			isFound = true;
+			return *(found.val);
+		}
+		isFound = false;
+		return v;
+	}
+
+	//same interface as normal get!
 	bool getOptional(const K& key, V& dest) const {
 		if (auto found = get(key); found) {
 			dest = *found.val;
@@ -223,11 +233,14 @@ class multiMapV2 : public NotFoundMixin<K>, public std::multimap<K, V> {
 		return V();
 	}
 
-	[[nodiscard]] std::vector<V> rqRange(const K& k) {
+	[[nodiscard]] std::vector<V> rqRange(const K& k) const {
 		std::vector<V> res;
 		auto           result = this->equal_range(k);
 		for (auto it = result.first; it != result.second; it++) {
 			res.push_back(it->second);
+		}
+		if (res.empty()) {
+			this->callNotFoundCallback(k, locationFull());
 		}
 		return res;
 	}

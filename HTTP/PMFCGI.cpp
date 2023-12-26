@@ -1,9 +1,9 @@
 #include "PMFCGI.h"
+#include "Payload.h"
 #include "rbk/QStacker/httpexception.h"
 #include "rbk/defines/stringDefine.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/misc/b64.h"
-#include "rbk/string/UTF8Util.h"
 #include "url.h"
 #include <QDateTime>
 #include <QStringList>
@@ -13,14 +13,16 @@
 using namespace std;
 
 void bHeaders::add(const std::string_view& key, const std::string_view& value) {
-	QString k, v;
+	QString k = QString::fromStdString(key.data());
+	QString v = QString::fromStdString(value.data());
 
-	if (!isValidUTF8(key, &k)) {
-		throw ExceptionV2(QSL("Invalid utf8 in header %1 (value %2)").arg(base64this(key), QString::fromStdString(value.data())));
-	}
-	if (!isValidUTF8(value, &v)) {
-		throw ExceptionV2(QSL("Invalid utf8 in header %1 (value %2)").arg(QString::fromStdString(key.data()), base64this(value)));
-	}
+	//we no longer have the problem of having orrible traffic ATM, so we can skip this
+	// if (!isValidUTF8(key, &k)) {
+	// 	throw ExceptionV2(QSL("Invalid utf8 in header %1 (value %2)").arg(base64this(key), QString::fromStdString(value.data())));
+	// }
+	// if (!isValidUTF8(value, &v)) {
+	// 	throw ExceptionV2(QSL("Invalid utf8 in header %1 (value %2)").arg(QString::fromStdString(key.data()), base64this(value)));
+	// }
 
 	//https://stackoverflow.com/questions/64967098/how-to-get-nginx-to-add-a-header-without-converting-it-to-lowercase
 	//In short headers are CASE INSENSITIVE (slow -.-) but HTTP2 requires them to be lowercase
@@ -34,8 +36,8 @@ void bHeaders::set(const std::multimap<std::string, std::string>& headers) {
 }
 
 string bHeaders::serialize(const QStringList& skipHeaders, bool initialSpacer, bool skipEmptyHeaders) const {
-	string buffer;
-	int    longest = 0;
+	string    buffer;
+	qsizetype longest = 0;
 	for (auto& [key, value] : *this) {
 		if (skipHeaders.contains(key)) {
 			value.skip = true;
@@ -48,7 +50,7 @@ string bHeaders::serialize(const QStringList& skipHeaders, bool initialSpacer, b
 			continue;
 		}
 
-		longest = max(longest, key.size());
+		longest = max(longest, (qsizetype)key.size());
 	}
 	for (auto& [key, value] : *this) {
 		if (value.skip) {
@@ -64,14 +66,21 @@ string bHeaders::serialize(const QStringList& skipHeaders, bool initialSpacer, b
 	return buffer;
 }
 
+void PMFCGI::decodeGet() {
+	Url url(path);
+	get                  = url.query;
+	get.notFoundCallback = HttpException::HttpParamErrorHandler1;
+}
+
 void PMFCGI::extractCookies() {
+	cookies = bHeaders();
 	if (auto v = headers.get("cookie"); v) {
 		for (auto& ck : v.val->split(';')) {
 			auto dp = ck.split('=');
 			if (dp.size() != 2) {
 				throw HttpException(QSL("invalid cookie %1").arg(ck));
 			}
-			cookies.insert({dp[0].trimmed(), {dp[1].trimmed()}});
+			cookies->insert({dp[0].trimmed(), {dp[1].trimmed()}});
 		}
 	}
 }
@@ -113,8 +122,6 @@ string PMFCGI::serializeBase() const {
 	return "remote ip and plain text url and header should be enought";
 }
 
-#include "Payload.h"
-
 void Payload::setStandardHeaders(bool addCors) {
 	headers.insert({"Expires", "Sun, 01 Jan 2014 00:00:00 GMT"});
 	headers.insert({"Cache-Control", "no-store, no-cache, must-revalidate"});
@@ -126,17 +133,31 @@ void Payload::setStandardHeaders(bool addCors) {
 }
 
 multiMapV2<QString, QString> decodePost(const std::string& form) {
+	auto copy = QString::fromStdString(form);
+	return decodePost(copy);
+}
+
+multiMapV2<QString, QString> decodePost(const QString& form) {
+	if (form.isEmpty()) {
+		return {};
+	}
 	multiMapV2<QString, QString> res;
-	auto                         copy = QString::fromStdString(form);
-	auto                         rows = copy.split('&');
+	auto                         rows = form.split('&');
+
 	for (auto& row : rows) {
 		auto pair = row.split('=');
 		if (pair.size() != 2) {
+			if (rows.size() == 1) {
+				//in some cases we send ONLY a single JSON back and not the post format stuff...
+				// in this case is fine to just return empty and use a custom decoder
+				return {};
+			}
 			throw HttpException("invalid line in post" + row);
 		}
+		auto t0 = QByteArray::fromPercentEncoding(pair[0].toUtf8());
 		auto t1 = QByteArray::fromPercentEncoding(pair[1].toUtf8());
 		t1.replace("+", " ");
-		res.insert({pair[0], t1});
+		res.insert({t0, t1});
 	}
 	return res;
 }

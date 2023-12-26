@@ -11,14 +11,12 @@ class HttpException : public ExceptionV2 {
 	std::string httpErrMsg;
 
 	HttpException(QString _msg);
-	HttpException(std::string _msg);
+	explicit HttpException(const std::string& msg_, const std::string& httpErrMsg_ = "");
 	HttpException(const char* _msg);
 
 	const std::string getLogFile() const noexcept override;
 
 	static void HttpParamErrorHandler1(const QString& key);
 };
-
-void testHttpException();
 
 #endif // HTTPEXCEPTION_H

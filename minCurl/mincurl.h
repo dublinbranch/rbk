@@ -40,6 +40,7 @@ size_t FakeCurlWriter(void* contents, size_t size, size_t nmemb, void* userp);
  * finish!
  */
 size_t QBWriter(void* contents, size_t size, size_t nmemb, QByteArray* userp);
+size_t QSWriter(void* contents, size_t size, size_t nmemb, QString* userp);
 // same but with std::string
 size_t STDWriter(void* contents, size_t size, size_t nmemb, std::string* userp);
 
@@ -124,6 +125,8 @@ class Header : public mapV2<QStringView, QStringView, CaseInsensitiveCompare> {
       public:
 	QString serialize() const;
 };
+
+[[nodiscard]] Header parseHeader(const QStringView headers);
 
 struct CurlCallResult {
 	CurlCallResult();

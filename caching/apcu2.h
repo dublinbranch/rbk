@@ -1,14 +1,13 @@
 #pragma once
 
 #include "rbk/QStacker/exceptionv2.h"
+#include "rbk/misc/intTypes.h"
 #include "rbk/mixin/NoCopy.h"
 #include <QDateTime>
 #include <QString>
 #include <any>
 #include <memory>
 #include <shared_mutex>
-#include <thread>
-#include <unordered_map>
 
 #define QSL(str) QStringLiteral(str)
 void throwTypeError(const std::type_info* found, const std::type_info* expected);
@@ -31,13 +30,25 @@ class APCU : private NoCopy {
 	struct Row {
 		//Corpus munus
 		Row() = default;
-		Row(const std::string& key_, const std::any& value_, int expireAt_);
+		template <typename T>
+		[[nodiscard]] Row(const std::string& key_, const T& value_, u64 expireAt_) {
+			*this = Row(key_, std::make_shared<T>(value_), expireAt_);
+		}
+
+		template <typename T>
+		[[nodiscard]] Row(const std::string& key_, const std::shared_ptr<T>& value_, u64 expireAt_) {
+			*this = Row(key_, std::any(value_), expireAt_);
+		}
+
+		[[nodiscard]] Row(const std::string& key_, const std::any& value_, u64 expireAt_);
+
+		void set();
 
 		//Member
 		std::string key;
 		std::any    value;
 		//0 will disable flushing
-		uint expireAt = 1;
+		i64 expireAt = 1;
 		//Only QByteArray is accepted for that kind, the cached type will provide the
 		//serialized / unserialize operation
 		//those key will be saved on disk on program CLOSE and reloaded, they still have the same TTL based logic
@@ -51,7 +62,7 @@ class APCU : private NoCopy {
 	 * We hide the implementation as multi index will kill compile time
 	 */
 	std::any fetchInner(const std::string& key);
-	void     storeInner(const std::string& _key, const std::any& _value, bool overwrite_ = false, int ttl = 60);
+	void     storeInner(const std::string& _key, const std::any& _value, bool overwrite_ = false, u64 ttl = 60);
 	void     storeInner(const APCU::Row& row_, bool overwrite_);
 
 	template <class T>
@@ -59,6 +70,8 @@ class APCU : private NoCopy {
 		(void)key;
 		auto res = fetchInner(key);
 		if (res.has_value()) {
+			//auto& type = res.type();
+			//auto  name = type.name();
 			return any_cast<std::shared_ptr<T>>(res);
 		} else {
 			return nullptr;
@@ -82,8 +95,24 @@ class APCU : private NoCopy {
 	void clear();
 
 	struct DiskValue {
-		uint       expireAt = 1;
+		quint32    expireAt = 1;
 		QByteArray value;
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+
+		friend QDataStream& operator<<(QDataStream& out, const DiskValue& v) {
+			out << v.expireAt;
+			out << v.value;
+			return out;
+		}
+
+		friend QDataStream& operator>>(QDataStream& in, DiskValue& v) {
+			//for retarded reason in qt5 this line fails -.- saying it can not find the right conversion
+			in >> v.expireAt;
+			in >> v.value;
+			return in;
+		}
+#endif
 	};
 
 	void diskSyncP2();

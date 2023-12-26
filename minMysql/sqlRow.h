@@ -2,6 +2,7 @@
 #include "rbk/defines/stringDefine.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/mapExtensor/qmapV2.h"
+#include "rbk/misc/intTypes.h"
 #include "rbk/misc/swapType.h"
 
 //TODO move to mapV2 as most of the stuff here is now duplicated
@@ -37,16 +38,23 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 
 	/**
-	 * @brief rqe is specific for int type enum
+	 * @brief rqe is specific for int type enum IE the one NOT using ENUM but an actual INT inside mysql
 	 * @param key
 	 * @return
 	 */
 	template <isEnum T>
 	[[nodiscard]] T rqe(const QByteArray& key) const {
-		int temp = 0;
+		i64 temp = 0;
 		rq(key, temp);
 		T t2 = T(temp);
 		return t2;
+	}
+
+	template <isEnum T>
+	void rqe(const QByteArray& key, T& t) const {
+		i64 temp = 0;
+		rq(key, temp);
+		t = T(temp);
 	}
 
 	QDateTime asDateTime(const QByteArray& key) const;
@@ -99,12 +107,19 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 
 	template <typename D>
-	D get2(const QByteArray& key) const {
+	[[nodiscard]] D get2(const QByteArray& key) const {
 		QByteArray temp;
 		D          temp2;
 		get(key, temp);
 		swapType(temp, temp2);
 		return temp2;
+	}
+
+	template <typename D>
+	[[nodiscard]] D get2(const QByteArray& key, const D& def) const {
+		D val;
+		get2(key, val, def);
+		return val;
 	}
 
 	// Sooo many time we need a QString back

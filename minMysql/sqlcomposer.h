@@ -1,6 +1,8 @@
 #pragma once
 
 #include "rbk/fmtExtra/includeMe.h"
+#include "rbk/misc/intTypes.h"
+#include "rbk/number/sanitize.h"
 #include "rbk/string/util.h"
 #include <memory>
 
@@ -18,15 +20,15 @@ class SScol {
 
 	SScol() = default;
 
-	SScol(const std::string_view& key_, const Value& val_) {
-		key = key_;
-		val = val_;
+	SScol(const Value& key_, const Value& val_)
+	    : val(val_) {
+		key = key_.val;
 	}
 
-	template <typename V>
-	SScol(const std::string_view& key_, const V& val_) {
-		key = key_;
-		setVal(val_);
+	template <typename K>
+	SScol(const K& key_, const Value& val_)
+	    : val(val_) {
+		setKey(key_);
 	}
 
 	template <typename K, typename V>
@@ -37,20 +39,27 @@ class SScol {
 
 	template <typename T>
 	void setKey(const T& key_) {
-		key = F("{}", key_);
+		key = F("`{}`", key_);
 	}
 
 	template <typename T>
 	void setVal(const T& value) {
 		if constexpr (std::is_arithmetic<T>::value) {
-			aritmetic = true;
+			aritmetic  = true;
+			auto cheap = value;
+			if constexpr (std::is_floating_point<T>::value) {
+				cheap = deNaN(value);
+			}
+			val.val = F("{}", cheap);
+		} else {
+			val.val = F("{}", value);
 		}
-		val.val = F("{}", value);
 	}
 
 	bool        aritmetic = false;
 	std::string key;
 	Value       val;
+	bool        verbatim = false;
 
       private:
 };
@@ -61,31 +70,37 @@ class SqlComposer : public std::vector<SScol> {
       private:
 	struct PrivateTag {};
 
-	size_type longestKey = 0;
-	size_type longestVal = 0;
-	DB*       db         = nullptr;
+	u64         longestKey = 0;
+	u64         longestVal = 0;
+	DB*         db         = nullptr;
+	std::string table;
 
       public:
-	SqlComposer(PrivateTag){};
+	explicit SqlComposer(PrivateTag){};
 	explicit SqlComposer(DB* db_, const std::string& separator_ = ",");
 
-	void push(const SScol& col, bool force = false);
+	void push(const SScol& col, bool replaceIf = false);
+
+	template <typename K, typename V>
+	SqlComposer& push(const K& key_, const V& val_, bool replaceIf = false) {
+		push(SScol{key_, val_}, replaceIf);
+		return *this;
+	}
 
 	template <class... T>
-	void setTable(T&&... strings) {
+	SqlComposer& setTable(T&&... strings) {
 		//TODO https://www.linkedin.com/pulse/nth-element-variadic-pack-extraction-alex-dathskovsky-/?trk=pulse-article_more-articles_related-content-card
 		constexpr auto size = sizeof...(strings);
 		//based on number of parameter I know if this is a DB + TABLE or a single entity, so I join or not them
 		std::tuple<T...> tuple(strings...);
-		auto             first = std::get<0>(tuple);
+		std::string_view first = std::get<0>(tuple);
 
 		switch (size) {
 		case 1:
-			table = toStdString(first);
+			table = F("{}", first);
 			break;
 		case 2: {
-			auto x1 = toStdString(first);
-			if (x1.ends_with(".")) {
+			if (first.ends_with(".")) {
 				table = F("{}{}", strings...);
 			} else {
 				table = F("{}.{}", strings...);
@@ -96,28 +111,35 @@ class SqlComposer : public std::vector<SScol> {
 			static_assert(size < 3, "invalid number of parameter, 2 or 1");
 			break;
 		}
+		return *this;
 	}
 
-	void setTable(const std::string& table_) {
+	SqlComposer& setTable(const std::string& table_) {
+		if (table_.empty()) {
+			throw ExceptionV2("Setting and empty table -.-");
+		}
 		table = table_;
-	}
-
-	template <typename K, typename V>
-	void push(const K& key_, const V& val_, bool force = false) {
-		push({key_, val_}, force);
+		return *this;
 	}
 
 	[[nodiscard]] std::string compose() const;
 	[[nodiscard]] QString     composeQS() const;
-
+	[[nodiscard]] std::string composeSelect();
+	[[nodiscard]] std::string composeSelectAll();
 	[[nodiscard]] std::string composeUpdate() const;
-	bool                      valid     = true;
-	std::string               separator = ",";
-	//change into " AS " for INSERT INTO / SELECT
-	std::string joiner    = " = ";
-	bool        isASelect = false;
-	std::string table;
+	[[nodiscard]] QString     composeUpdateQS() const;
+	[[nodiscard]] std::string composeInsert(bool ignore = false) const;
+	[[nodiscard]] std::string composeDelete() const;
 
-	std::unique_ptr<SqlComposer> where;
-	void                         setIsASelect();
+	[[nodiscard]] std::string composeSelect_V2();
+
+	bool        valid     = true;
+	std::string separator = ",";
+	//change into " AS " for INSERT INTO / SELECT
+	std::string joiner = " = ";
+
+	std::unique_ptr<SqlComposer> where = nullptr;
+
+	void        setIsASelect();
+	std::string getTable() const;
 };

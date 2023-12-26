@@ -48,12 +48,12 @@ struct Averager {
 	Averager(uint bs) {
 		blockSize = bs;
 	}
-	uint blockSize = 0;
+	u64 blockSize = 0;
 
-	double       restartedOn = 0;
-	double       resetAfter  = 0;
-	atomic<uint> request{0};
-	ATiming      timing;
+	u64         restartedOn = 0;
+	i64         resetAfter  = 0;
+	atomic<u64> request{0};
+	ATiming     timing;
 
 	void clear() {
 		request = 0;
@@ -71,8 +71,8 @@ struct Averager {
 	}
 
 	std::string info() const {
-		double delta = QDateTime::currentSecsSinceEpoch() - restartedOn;
-		auto   ps    = (double)request / delta;
+		auto delta = QDateTime::currentSecsSinceEpoch() - restartedOn;
+		auto ps    = (double)request / (double)delta;
 		return fmt::format(R"(
 <td>{}</td>
 <td>{:.2f} / s</td>
@@ -83,13 +83,13 @@ struct Averager {
 <td>{}</td>
 <td>{:.2f}</td>
 )",
-		                   request,
+		                   request.load(),
 		                   ps,
 		                   ((double)timing.flush) / 1E9,
 		                   ((double)timing.sqlFetch) / 1E9,
 		                   ((double)timing.sqlServer) / 1E9,
-		                   timing.sqlDone,
-		                   timing.sqlReconnect,
+		                   timing.sqlDone.load(),
+		                   timing.sqlReconnect.load(),
 		                   ((double)timing.total) / 1E9);
 	}
 };
@@ -145,7 +145,7 @@ void registerFlushTime() {
 }
 
 string composeStatus() {
-	auto rqs = ((double)request / (QDateTime::currentMSecsSinceEpoch() - startedAt)) * 1000.0;
+	auto rqs = ((double)request / (double)(QDateTime::currentMSecsSinceEpoch() - startedAt)) * 1000.0;
 	//TODO convert to json in master so can be used by hacheck easily
 
 	string generalStatus;
@@ -194,7 +194,7 @@ Used Thread : {}
 Exception   : {}
 </pre>
 )", // conf().workerLimit - threadFree
-	                             request, rqs, threadFree, 555, exceptionThrown);
+	                             request.load(), rqs, threadFree.load(), 555, exceptionThrown.load());
 
 	generalStatus += R"(
 <hr>
@@ -247,15 +247,15 @@ All time are in ms
 )",
 		                             t->tid,
 		                             asString(t->state),
-		                             m.total() / 1E6,
-		                             m.flush / 1E6,
-		                             m.execution() / 1E6,
-		                             m.IO.nsecsElapsed() / 1E6,
-		                             m.sqlImmediate / 1E6,
-		                             m.sqlDeferred / 1E6,
-		                             m.curlImmediate / 1E6,
-		                             m.curlDeferred / 1E6,
-		                             m.clickHouse.nsecsElapsed() / 1E6);
+		                             static_cast<double>(m.total()) / 1E6,
+		                             static_cast<double>(m.flush) / 1E6,
+		                             static_cast<double>(m.execution()) / 1E6,
+		                             static_cast<double>(m.IO.nsecsElapsed()) / 1E6,
+		                             static_cast<double>(m.sqlImmediate) / 1E6,
+		                             static_cast<double>(m.sqlDeferred) / 1E6,
+		                             static_cast<double>(m.curlImmediate) / 1E6,
+		                             static_cast<double>(m.curlDeferred) / 1E6,
+		                             static_cast<double>(m.clickHouse.nsecsElapsed()) / 1E6);
 	}
 	generalStatus += "</table>";
 	generalStatus += "<hr>" + sql;

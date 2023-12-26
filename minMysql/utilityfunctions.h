@@ -13,7 +13,8 @@ class DBDebugger : public DB {
 
 sqlResult filterRunningQueries(const sqlResult& sqlProcessList);
 //something like a partial result ? no clear idea what is supposed to do
-QString   queryEssay(const sqlRow& row, bool brief);
-QString   queryEssay(const sqlResult& res, bool brief, bool skipNull = false);
+QString queryEssay(const sqlRow& row, bool brief);
+QString queryEssay(const sqlResult& res, bool brief, bool skipNull = false);
 
+std::vector<std::string> getTablesInDB(DB* db, std::string_view schema);
 #endif // UTILITYFUNCTIONS_H

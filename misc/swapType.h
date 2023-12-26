@@ -3,7 +3,8 @@
 #include "rbk/defines/stringDefine.h"
 #include "rbk/magicEnum/BetterEnum.hpp"
 #include "rbk/magicEnum/magic_from_string.hpp"
-#include "rbk/misc/typename.h"
+#include "rbk/misc/typeinfo.h"
+#include "rbk/types/isOptional.h"
 #include <QByteArray>
 #include <QDate>
 #include <QDateTime>
@@ -34,7 +35,13 @@ void swapType(const QByteArray& source, D& dest) {
 		return;
 	} else if constexpr (std::is_enum_v<D>) {
 		auto s = source.toStdString();
-		magic_enum::fromString(s, dest);
+		//NULL can not be used as an ENUM value, we use in that case NA
+		if (s == "NULL") {
+			dest = D::NA;
+		} else {
+			magic_enum::fromString(s, dest);
+		}
+
 		return;
 		//} else if constexpr (isBetterEnum<D>) {
 	} else if constexpr (std::is_arithmetic_v<D>) {
@@ -42,9 +49,20 @@ void swapType(const QByteArray& source, D& dest) {
 		if constexpr (std::is_floating_point_v<D>) {
 			dest = source.toDouble(&ok);
 		} else if constexpr (std::is_signed_v<D>) {
+
+#pragma GCC diagnostic push
+//we should check if is not overflowing tbh
+#pragma GCC diagnostic ignored "-Wconversion"
 			dest = source.toLongLong(&ok);
+#pragma GCC diagnostic pop
+
 		} else if constexpr (std::is_unsigned_v<D>) {
+
+#pragma GCC diagnostic push
+//we should check if is not overflowing tbh
+#pragma GCC diagnostic ignored "-Wconversion"
 			dest = source.toULongLong(&ok);
+#pragma GCC diagnostic pop
 		}
 		if (!ok) {
 			// last chanche NULL is 0 in case we are numeric right ?
@@ -58,8 +76,16 @@ void swapType(const QByteArray& source, D& dest) {
 				return;
 			}
 			//dest
-			throw ExceptionV2(QSL("Impossible to convert >>>%1<<< as a %2").arg(QString(source)).arg(QString::fromStdString(typeName<D>())));
+			throw ExceptionV2(QSL("Impossible to convert >>>%1<<< as a %2").arg(QString(source)).arg(QString::fromStdString(getTypeName<D>())));
 		}
+	} else if constexpr (is_optional<D>) {
+		typename D::value_type t;
+		if (source == BSQL_NULL) {
+			dest.reset();
+			return;
+		}
+		swapType(source, t);
+		dest = t;
 	} else {
 		// poor man static assert that will also print for which type it failed
 		using X = typename D::something_made_up;
@@ -97,7 +123,13 @@ void swapType(const QString& source, D& dest) {
 		} else if constexpr (std::is_signed_v<D>) {
 			dest = source.toLongLong(&ok);
 		} else if constexpr (std::is_unsigned_v<D>) {
+#pragma GCC diagnostic push
+//many false warning here
+#pragma GCC diagnostic ignored "-Wconversion"
+
 			dest = source.toULongLong(&ok);
+
+#pragma GCC diagnostic pop
 		}
 		if (!ok) {
 			// last chanche NULL is 0 in case we are numeric right ?
@@ -114,6 +146,14 @@ void swapType(const QString& source, D& dest) {
 			}
 			throw ExceptionV2(QSL("Impossible to convert >>>%1<<< as a number").arg(QString(source)));
 		}
+	} else if constexpr (is_optional<D>) {
+		typename D::value_type t;
+		if (source == SQL_NULL) {
+			dest.reset();
+			return;
+		}
+		swapType(source, t);
+		dest = t;
 	} else {
 		// poor man static assert that will also print for which type it failed
 		using X = typename D::something_made_up;

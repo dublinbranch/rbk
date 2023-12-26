@@ -23,15 +23,6 @@ class QueryParams : public mapV2<QString, QString> {
 	QString get64(const QString& key) const;
 	bool    get64(const QString& key, QString& value) const;
 
-	template <class T>
-	T get2(const QString& key) const {
-		T t = T();
-		if (swap(key, t)) {
-			return t;
-		}
-		return t;
-	}
-
 	QString join() const;
 };
 
@@ -63,6 +54,7 @@ class Url {
 	QString getNlvl(int pos) const;
 
 	struct DS {
+		QString print() const;
 		QString domain;
 		QString subDomain;
 	};

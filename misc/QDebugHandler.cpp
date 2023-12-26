@@ -7,6 +7,7 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QFile>
+#include <QLoggingCategory>
 #include <curl/curl.h>
 #include <thread>
 
@@ -18,9 +19,7 @@ static const NanoSpammerConfig* config = nullptr;
 QString getHeader1() {
 	// header 1
 	auto time           = QDateTime::currentDateTime().toString(Qt::ISODate);
-	auto warningHeader1 = QSL("@ %1 From %2 instanceId %3 rev %4")
-	                          .arg(time)
-	                          .arg(QCoreApplication::applicationName(), config->instanceName, GIT_STATUS_buffer);
+	auto warningHeader1 = F16("@ {} From {} instanceId {} rev {}", time, QCoreApplication::applicationName(), config->instanceName, GIT_STATUS_buffer);
 	return warningHeader1;
 }
 
@@ -63,7 +62,7 @@ void sendMail(QString subject, QString message) {
 		//NOTE this operation is "slow" so we need a detached thread
 		auto CurlPPisBroken = [=]() {
 			CURLpp marx = CURLpp::Builder()
-			                  .set_email_details(message.toUtf8().constData(), subject.toUtf8().constData(), recipient.constData())
+			                  .set_email_details(message.toUtf8().constData(), subject.toUtf8().constData(), recipient.data())
 			                  .set_smtp_details("spammer@seisho.us", "mjsydiTODNmDLTUqRIZY", "spammer@seisho.us")
 			                  .build();
 			marx.perform();
@@ -128,12 +127,14 @@ void commonInitialization(const NanoSpammerConfig* _config) {
 	//We are server side we do not care about human broken standard
 	std::setlocale(LC_ALL, "C");
 	//Also for Qt for translation ecc
-	//QLocale::setDefault(QLocale::C);
 	QLocale l(QLocale::C, QLocale::UnitedStates);
 	QLocale::setDefault(l);
 	//If EaRTh iS FLAAAT why timezone ?!11!!?
 	setenv("TZ", "UTC", 1);
 	tzset();
+
+	// enable the printing
+	QLoggingCategory::setFilterRules("*.debug=true");
 
 	std::string header;
 

@@ -12,17 +12,10 @@
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include <QDebug>
 #include <QString>
+#include "rbk/misc/typeinfo.h"
 
 #define QBL(str) QByteArrayLiteral(str)
 #define QSL(str) QStringLiteral(str)
-
-QString demangle(const char* name);
-
-template <typename Type>
-QString getTypeName() {
-	auto name = typeid(Type).name();
-	return demangle(name);
-}
 
 class JSONReader {
       public:
@@ -140,7 +133,7 @@ class JSONReader {
 			break;
 		case SwapRes::typeMismatch:
 			qCritical().noquote() << QSL("Type mismatch! Expecting %1 found %2 for %3")
-			                                 .arg(getTypeName<Type>())
+											 .arg(QString::fromStdString(getTypeName<Type>()))
 			                                 .arg(printType(mismatchedType)) +
 			                             QStacker16Light();
 			exit(1);
@@ -267,7 +260,7 @@ class JSONReader {
 			//			value = obj->GetDouble();
 			//			return SwapRes::swapped;
 		} else if constexpr (std::is_enum_v<Type>) {
-			magic_enum::fromString(obj->GetString(), value);
+			value = magic_enum::fromString<Type>(std::string_view(obj->GetString()));
 			return SwapRes::swapped;
 		} else { //This should handle all the other
 			if (obj->GetType() == rapidjson::Type::kNumberType && std::is_arithmetic_v<Type>) {
@@ -289,7 +282,7 @@ class JSONReader {
 		empty,
 		invalid
 	} parseError = ParseError::none;
-          
+
 	bool parse(const std::string& raw);
 	bool parse(const QByteArray& raw);
 	bool parse(const char* raw);

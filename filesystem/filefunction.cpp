@@ -1,10 +1,14 @@
 #include "filefunction.h"
-#include "folder.h"
+#include "rbk/QStacker/exceptionv2.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/RAII/resetAfterUse.h"
 #include "rbk/defines/stringDefine.h"
+#include "rbk/fmtExtra/customformatter.h"
+#include "rbk/fmtExtra/dynamic.h"
 #include "rbk/magicEnum/magic_enum.hpp"
+#include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/serialization/serialize.h"
+#include "rbk/string/qstringview.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
@@ -28,7 +32,7 @@ bool QFileXT::open(QIODevice::OpenMode flags) {
 bool QFileXT::open(QIODevice::OpenMode flags, bool quiet) {
 	if (!QFile::open(flags)) {
 		if (!quiet) {
-			qWarning().noquote() << errorString() << "opening" << fileName() + QStacker16Light();
+			qCritical().noquote() << errorString() << "opening" << fileName() + QStacker16Light();
 		}
 		return false;
 	}
@@ -42,22 +46,28 @@ bool QSaveV2::open(QIODevice::OpenMode flags) {
 bool QSaveV2::open(QIODevice::OpenMode flags, bool quiet) {
 	if (!QFile::open(flags)) {
 		if (!quiet) {
-			qWarning().noquote() << errorString() << "opening" << fileName();
+			qWarning().noquote() << errorString() << "opening" << fileName() + QStacker16Light();
 		}
 		return false;
 	}
 	return true;
 }
 
-FPCRes filePutContents(const QByteArray& pay, const QString& fileName) {
+FPCRes filePutContents(const QByteArray& pay, const QString& fileName, bool verbose) {
 	QSaveFile file;
 	file.setFileName(fileName);
 	// TODO nel caso il file non sia scribile (di un altro utente) ritorna un vaghissimo WriteError, indicare se possibile meglio!
 	if (!file.open(QIODevice::Truncate | QIODevice::WriteOnly)) {
+		if (verbose) {
+			qCritical() << F16("Impossbile to write into {} due to {} in {}\n", fileName, asSWString(file.error()), QStacker16Light());
+		}
 		return {false, file.error()};
 	}
 	auto written = file.write(pay);
 	if (written != pay.size()) {
+		if (verbose) {
+			qCritical() << F16("Impossbile to write into {} due to {} in {}\n", fileName, asSWString(file.error()), QStacker16Light());
+		}
 		return {false, file.error()};
 	}
 	file.commit();
@@ -115,7 +125,11 @@ bool fileAppendContents(const QByteArray& pay, const QString& fileName) {
 
 		return false;
 	}
-	file.write(pay);
+	auto byteWritten = file.write(pay);
+	if (byteWritten != pay.size()) {
+		qCritical() << F16("Error writing into {}, wrote {} byte, should have been {}\n", fileName, byteWritten, pay.size());
+	}
+	file.flush();
 	file.write("\n");
 	file.close();
 	return true;
@@ -126,10 +140,10 @@ bool fileAppendContents(const QByteArray& pay, const QString& fileName) {
 QByteArray unzip1(QByteArray zipped) {
 	zip_error_t error;
 	zip_error_init(&error);
-	auto            src = zip_source_buffer_create(zipped, zipped.size(), 1, &error);
+	auto            src = zip_source_buffer_create(zipped, (zip_uint64_t)zipped.size(), 1, &error);
 	auto            za  = zip_open_from_source(src, 0, &error);
 	struct zip_stat sb;
-	for (int i = 0; i < zip_get_num_entries(za, 0); i++) {
+	for (auto i = 0; i < zip_get_num_entries(za, 0); i++) {
 		if (zip_stat_index(za, i, 0, &sb) == 0) {
 			//			printf("==================\n");
 			//			auto len = strlen(sb.name);
@@ -144,7 +158,7 @@ QByteArray unzip1(QByteArray zipped) {
 			}
 
 			QByteArray decompressed;
-			decompressed.resize(sb.size);
+			decompressed.resize(static_cast<int>(sb.size));
 			auto len = zip_fread(zf, decompressed.data(), sb.size);
 			if (len < 0) {
 				qCritical().noquote() << "error decompressing zip file" << QStacker16();
@@ -179,8 +193,8 @@ std::vector<QByteArray> csvExploder(QByteArray line, const char separator) {
 	std::vector<std::string> vec2;
 	auto                     cry = line.toStdString();
 	try {
-		ResetAfterUse r(cxaLevel, CxaLevel::none);
-		Tokenizer     tok(cry, sep);
+		ResetOnExit r(cxaLevel, CxaLevel::none);
+		Tokenizer   tok(cry, sep);
 		vec2.assign(tok.begin(), tok.end());
 	} catch (...) {
 		// qWarning().noquote() << "error decoding csv line " << line;
@@ -224,24 +238,24 @@ void checkFileLock(QString path, uint minDelay) {
 	filePutContents(pathTs, pathTs);
 }
 
-FPCRes filePutContents(const QString& pay, const QString& fileName) {
-	return filePutContents(pay.toUtf8(), fileName);
+FPCRes filePutContents(const QString& pay, const QString& fileName, bool verbose) {
+	return filePutContents(pay.toUtf8(), fileName, verbose);
 }
 
-FPCRes filePutContents(const std::string& pay, const QString& fileName) {
-	return filePutContents(QByteArray::fromStdString(pay), fileName);
+FPCRes filePutContents(const std::string& pay, const QString& fileName, bool verbose) {
+	return filePutContents(QByteArray::fromStdString(pay), fileName, verbose);
 }
 
-FPCRes filePutContents(const std::string& pay, const std::string& fileName) {
-	return filePutContents(QByteArray::fromStdString(pay), QString::fromStdString(fileName));
+FPCRes filePutContents(const std::string& pay, const std::string& fileName, bool verbose) {
+	return filePutContents(QByteArray::fromStdString(pay), QString::fromStdString(fileName), verbose);
 }
 
-FPCRes filePutContents(const QByteArray& pay, const std::string& fileName) {
-	return filePutContents(pay, QString::fromStdString(fileName));
+FPCRes filePutContents(const QByteArray& pay, const std::string& fileName, bool verbose) {
+	return filePutContents(pay, QString::fromStdString(fileName), verbose);
 }
 
-FPCRes filePutContents(const QByteArray& pay, const char* fileName) {
-	return filePutContents(pay, QString(fileName));
+FPCRes filePutContents(const QByteArray& pay, const char* fileName, bool verbose) {
+	return filePutContents(pay, QString(fileName), verbose);
 }
 
 bool fileAppendContents(const std::string& pay, const QString& fileName) {
@@ -249,8 +263,8 @@ bool fileAppendContents(const std::string& pay, const QString& fileName) {
 }
 
 // Much slower but more flexible, is that ever used ?
-std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringList& separator, const QStringList& escape) {
-	std::vector<QStringRef> part;
+std::vector<QStringView> readCSVRowFlexySlow(const QString& line, const QStringList& separator, const QStringList& escape) {
+	std::vector<QStringView> part;
 	if (line.isEmpty()) {
 		return part;
 	}
@@ -296,7 +310,7 @@ std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringLi
 		if (pos >= le)
 			event = 4;
 		else {
-			auto ch = line.midRef(pos, 1);
+			auto ch = QStringView(line.data() + pos, 1);
 			pos++;
 			if (separator.contains(ch, Qt::CaseSensitive))
 				event = 0;
@@ -331,11 +345,11 @@ std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringLi
 				blockEnd = pos - 1;
 			}
 			if (currentBlockStart == -1) { // a new block has never started, we have two separator in a row
-				part.push_back(empty.midRef(0, 0));
+				part.push_back(empty);
 				blockEnd = 0;
 			} else {
-				QStringRef v = line.midRef(currentBlockStart, (blockEnd - currentBlockStart));
-				blockEnd     = 0;
+				auto v   = midView(line, currentBlockStart, (blockEnd - currentBlockStart));
+				blockEnd = 0;
 				part.push_back(v);
 				currentBlockStart = -1;
 				// curentBlock.clear();
@@ -350,12 +364,12 @@ std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringLi
 	return part;
 }
 
-std::vector<QStringRef> readCSVRow(const QString& line, const QChar& separator, const QChar& escape) {
-	return readCSVRow(QStringRef(&line), separator, escape);
+std::vector<QStringView> readCSVRow(const QString& line, const QChar& separator, const QChar& escape) {
+	return readCSVRow(QStringView(line), separator, escape);
 }
 
-std::vector<QStringRef> readCSVRow(const QStringRef& line, const QChar& separator, const QChar& escape) {
-	std::vector<QStringRef> part;
+std::vector<QStringView> readCSVRow(const QStringView& line, const QChar& separator, const QChar& escape) {
+	std::vector<QStringView> part;
 	if (line.isEmpty()) {
 		return part;
 	}
@@ -434,7 +448,7 @@ std::vector<QStringRef> readCSVRow(const QStringRef& line, const QChar& separato
 				blockEnd = pos - 1;
 			}
 			if (currentBlockStart == -1) { // a new block has never started, we have two separator in a row
-				part.push_back(empty.midRef(0, 0));
+				part.push_back(empty);
 				blockEnd = 0;
 			} else {
 				auto numbOfChars = blockEnd - currentBlockStart;
@@ -522,4 +536,12 @@ QString RotableFile(const QString& name_, QString suffix) {
 		suffix.prepend(".");
 	}
 	return name_ + "_" + n2 + suffix;
+}
+
+QString resourceTryDisk(const QString& fileName) {
+	if (QFile::exists(fileName)) {
+		return fileName;
+	}
+	//if you play weird trick with path, you are looking for troubles
+	return ":/" + fileName;
 }

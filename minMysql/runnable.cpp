@@ -1,5 +1,6 @@
 #include "runnable.h"
 #include "min_mysql.h"
+#include "rbk/fmtExtra/includeMe.h"
 #include "rbk/misc/b64.h"
 
 Runnable runnable;
@@ -21,6 +22,7 @@ CREATE TABLE runnable.`runnable` (
 	`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
 	`operationCode` varchar(65000) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
 	`lastRun` int(10) unsigned NOT NULL,
+	`coolDown` int(10) unsigned NOT NULL DEFAULT 0,
 	`orario` datetime GENERATED ALWAYS AS (from_unixtime(`lastRun`)) VIRTUAL,
 	PRIMARY KEY (`id`),
 KEY `lastRun` (`lastRun`)
@@ -32,26 +34,44 @@ KEY `lastRun` (`lastRun`)
 	}
 }
 
-bool Runnable::runnable(const QString& key, qint64 second) {
+bool Runnable::runnable_64(const QString& key, qint64 second, double multiplier) {
+	return runnable(key, second, multiplier);
+}
+
+bool Runnable::runnable(const QString& key, u64 second, double multiplier) {
 	if (forceRunnable) {
 		return true;
 	}
 
-	static const QString skel = "SELECT id, lastRun FROM runnable.runnable WHERE operationCode = %1 ORDER BY lastRun DESC LIMIT 1";
-	auto                 now  = QDateTime::currentSecsSinceEpoch();
+	static const QString skel = "SELECT id, lastRun, coolDown FROM runnable.runnable WHERE operationCode = %1 ORDER BY lastRun DESC LIMIT 1";
+	u64                  now  = QDateTime::currentSecsSinceEpoch();
 	auto                 sql  = skel.arg(base64this(key));
-	auto                 res  = db->query(sql);
-	if (res.isEmpty() or res.at(0).value("lastRun", BZero).toLongLong() + second < now) {
-		static const QString insertSkel = "INSERT INTO runnable.runnable SET operationCode = %1, lastRun = %2";
-		auto                 insertSql  = insertSkel.arg(base64this(key)).arg(now);
-		db->query(insertSql);
+	auto                 row  = db->queryLine(sql);
 
+	auto insertSql = F16("INSERT INTO runnable.runnable SET operationCode = {}, lastRun = {}, coolDown = {}",
+	                     base64this(key), now, second);
+
+	if (row.isEmpty()) {
+		db->query(insertSql);
 		return true;
-	} else {
+	}
+	auto lastRun  = row.rq<u64>("lastRun");
+	auto coolDown = second;
+
+	//if we are using the cooldown scaling take into account the last one
+	if (multiplier != 1) {
+		row.rq("coolDown", coolDown);
+		coolDown = static_cast<u64>(static_cast<double>(coolDown) * multiplier);
+	}
+
+	if (lastRun + coolDown > now) {
 		return false;
 	}
+
+	db->query(insertSql);
+	return true;
 }
 
-bool Runnable::operator()(const QString& key, qint64 second) {
-	return runnable(key, second);
+bool Runnable::operator()(const QString& key, qint64 second, double multiplier) {
+	return runnable(key, second, multiplier);
 }

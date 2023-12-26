@@ -8,9 +8,9 @@
  *ResetAfterUse r{rapidAssertEnabled, false};
  */
 template <typename K>
-class ResetAfterUse {
+class ResetOnExit {
       public:
-	ResetAfterUse() = default;
+	ResetOnExit() = default;
 	void set(K& key, const K& value) {
 		//Copy the value
 		oldValue = key;
@@ -27,16 +27,16 @@ class ResetAfterUse {
 		variable = nullptr;
 	}
 	//OF COURSE you must use the returned value! else will be destroyed immediately
-	[[nodiscard]] ResetAfterUse(K& key, const K& value) {
+	[[nodiscard]] ResetOnExit(K& key, const K& value) {
 		set(key, value);
 	}
 
 	//OF COURSE you must use the returned value! else will be destroyed immediately
-	[[nodiscard]] ResetAfterUse(K& key, const std::nullptr_t& value) {
+	[[nodiscard]] ResetOnExit(K& key, const std::nullptr_t& value) {
 		set(key, value);
 	}
 
-	~ResetAfterUse() {
+	~ResetOnExit() {
 		if (variable) {
 			*variable = oldValue;
 		}

@@ -31,16 +31,23 @@ struct FileGetRes {
 struct FPCRes {
 	bool                   ok;
 	QFileDevice::FileError error = QFileDevice::FileError::NoError;
-	                       operator bool();
+	operator bool();
 };
 
+/**
+ * given a path this will first check ON DISK if we have a local copy
+ * if we have the local one, expecially used for develop/debug to avoid recompiled it will have the priority
+ * else will use the embedded resource
+ */
+QString resourceTryDisk(const QString& fileName);
+
 //I do really need to find a solution to this nonsense!
-FPCRes filePutContents(const QString& pay, const QString& fileName);
-FPCRes filePutContents(const QByteArray& pay, const QString& fileName);
-FPCRes filePutContents(const std::string& pay, const QString& fileName);
-FPCRes filePutContents(const std::string& pay, const std::string& fileName);
-FPCRes filePutContents(const QByteArray& pay, const std::string& fileName);
-FPCRes filePutContents(const QByteArray& pay, const char* fileName);
+FPCRes filePutContents(const QString& pay, const QString& fileName, bool verbose = false);
+FPCRes filePutContents(const QByteArray& pay, const QString& fileName, bool verbose = false);
+FPCRes filePutContents(const std::string& pay, const QString& fileName, bool verbose = false);
+FPCRes filePutContents(const std::string& pay, const std::string& fileName, bool verbose = false);
+FPCRes filePutContents(const QByteArray& pay, const std::string& fileName, bool verbose = false);
+FPCRes filePutContents(const QByteArray& pay, const char* fileName, bool verbose = false);
 
 QByteArray fileGetContents(const QString& fileName, bool quiet = true);
 QByteArray fileGetContents(const QString& fileName, bool quiet, bool& success);
@@ -55,14 +62,19 @@ bool fileAppendContents(const std::string& pay, const std::string& fileName);
 
 QByteArray unzip1(QByteArray zipped);
 
+//TODO why are here ?
 /**
   The parameter line MUST be kept alive, so the QStringRef can point to something valid
 */
 //Much slower but more flexible, is that ever used ?
-std::vector<QStringRef> readCSVRowFlexySlow(const QString& line, const QStringList& separator = {","}, const QStringList& escape = {"\""});
+std::vector<QStringView> readCSVRowFlexySlow(const QString& line, const QStringList& separator = {","}, const QStringList& escape = {"\""});
 //Quite fast expecially if optimizer is on
-std::vector<QStringRef> readCSVRow(const QStringRef& line, const QChar& separator = ',', const QChar& escape = 0x0);
-std::vector<QStringRef> readCSVRow(const QString& line, const QChar& separator = ',', const QChar& escape = 0x0);
+
+//how to init a QChar to the null char ?
+
+
+std::vector<QStringView> readCSVRow(const QStringView& line, const QChar& separator = ',', const QChar& escape = '\0');
+std::vector<QStringView> readCSVRow(const QString& line, const QChar& separator = ',', const QChar& escape = '\0');
 
 std::vector<QByteArray> csvExploder(QByteArray line, const char separator = 0);
 
@@ -74,6 +86,12 @@ bool softlink(const QString& source, const QString& dest, bool quiet = false);
 // HLParam::quiet | HLParam::eraseOld
 QString hardlink(const QString& source, const QString& dest, HLParam param = HLParam::eraseOld);
 
+/**
+ * @brief RotableFile is used to provide an in program logrotate functionality
+ * @param name_
+ * @param suffix
+ * @return
+ */
 QString RotableFile(const QString& name, QString suffix = "");
 
 void logWithTime(const QString& logFile, const QString& msg);

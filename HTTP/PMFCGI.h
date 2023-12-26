@@ -1,6 +1,7 @@
 #ifndef PMFCGI_H
 #define PMFCGI_H
 
+#include "url.h"
 #include <QString>
 #include <QStringList>
 #include <map>
@@ -19,15 +20,20 @@ class bHeaders : public mapV2<QString, SKQ> {
 };
 
 struct PMFCGI {
-	std::string remoteIp;
-	bHeaders    headers;
-	bHeaders    cookies;
+	std::string             remoteIp;
+	bHeaders                headers;
+	std::optional<bHeaders> cookies;
 
 	//This is only the path, and in nginx X we do the intermediate routing
 	std::string path;
 	std::string body;
+	//remember not automatically decoded! //TODO extend and decode on request ?
+	multiMapV2<QString, QString> post;
+	QueryParams                  get;
+	multiMapV2<QString, QString> request;
 	//server name, if needed must be forwarded by nginx else will be 127.0.0.1 from the header
 
+	void        decodeGet();
 	void        extractCookies();
 	std::string serializeMsg(const QByteArray& msg, bool light = false) const;
 	std::string serializeMsg(const char* msg) const;
@@ -48,12 +54,15 @@ struct PMFCGI {
 	};
 
 	uint debug = 0;
+
+      public:
 };
 
 void requestBeging();
 void requestEnd();
 void registerFlushTime();
 
+multiMapV2<QString, QString> decodePost(const QString& form);
 multiMapV2<QString, QString> decodePost(const std::string& form);
 
 #endif // PMFCGI_H

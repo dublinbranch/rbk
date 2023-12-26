@@ -19,7 +19,7 @@ Locale::Locale(const QString& nat, const QString& lang) {
 	language = lang.toLower();
 }
 
-Locale::Locale(const QStringRef& nat, const QStringRef& lang) {
+Locale::Locale(const QStringView& nat, const QStringView& lang) {
 	nation   = nat.toString().toUpper();
 	language = lang.toString().toLower();
 }
@@ -55,7 +55,7 @@ QString Locale::getString(const QString& style) const {
 	throw ExceptionV2(QSL("Invalid style \"%1\" for locale").arg(style));
 }
 
-QVector<QStringRef> splitM1(QStringRef o) {
+QList<QStringView> splitM1(QStringView o) {
 	//hopefully they no longer add more separator
 	if (o.contains('-')) {
 		return o.split('-');
@@ -66,7 +66,7 @@ QVector<QStringRef> splitM1(QStringRef o) {
 	}
 }
 
-Locale from2letter(const QStringRef& locale, QString* ip) {
+Locale from2letter(const QStringView& locale, QString* ip) {
 	if (!ip->isEmpty()) {
 #ifdef localeWithMaxMind
 		Locale res;
@@ -78,12 +78,12 @@ Locale from2letter(const QStringRef& locale, QString* ip) {
 		throw ExceptionV2("MMDB not compiled in, use the flag localeWithMaxMind and provide one");
 #endif
 	}
-	throw HttpException("Unable to decode locale " + locale + " please allow to use the ip to put a nation");
+	throw HttpException("Unable to decode locale " + locale.toString() + " please allow to use the ip to put a nation");
 }
 
 Locale decodeLocale(const QString& locale, QString* ip) {
 	if (locale.size() == 2) { //just en
-		return from2letter(&locale, ip);
+		return from2letter(locale, ip);
 	}
 	//WTF ??? TODO in teoria prendere se più avanti ci sono altri locale
 	if (locale == QSL("en-XA")) {
@@ -97,9 +97,9 @@ Locale decodeLocale(const QString& locale, QString* ip) {
 	//it,en;q=0.5
 	//And other atrocities
 
-	QStringRef block1(&locale);
+	QString block1 = locale;
 	if (locale.indexOf(";") > 0) {
-		auto part = locale.splitRef(';');
+		auto part = locale.split(';');
 		block1    = part[0];
 	}
 

@@ -1,5 +1,6 @@
 #include "rbk/QStacker/qstacker.h"
 #include "backward.hpp"
+#include "rbk/QStacker/exceptionv2.h"
 #include "rbk/string/util.h"
 #include <QDebug>
 #include <QString>

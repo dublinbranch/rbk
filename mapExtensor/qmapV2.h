@@ -17,6 +17,19 @@ class MissingKeyEX : public ExceptionV2 {
 template <class Key, class T>
 class QMapV2 : public QMap<Key, T> {
       public:
+	// Serialization and deserialization methods
+	friend QDataStream& operator<<(QDataStream& out, const QMapV2& myMap) {
+		out << static_cast<const QMap<Key, T>&>(myMap);
+		// Then, serialize any additional properties
+		return out;
+	}
+
+	friend QDataStream& operator>>(QDataStream& in, QMapV2& myMap) {
+		in >> static_cast<QMap<Key, T>&>(myMap);
+		// Then, deserialize any additional properties
+		return in;
+	}
+
 	// https://www.kdab.com/qt-range-based-for-loops-and-structured-bindings/
 	using ParentMap = QMap<Key, T>;
 	auto begin() const {

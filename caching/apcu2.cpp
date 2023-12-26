@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include <mutex>
+#include <thread>
 
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/member.hpp>
@@ -10,7 +11,6 @@
 #include <boost/multi_index_container.hpp>
 
 #include "rbk/filesystem/filefunction.h"
-#include "rbk/fmtExtra/includeMe.h"
 #include "rbk/serialization/QDataStreamer.h"
 
 #include <QDataStream>
@@ -25,10 +25,10 @@ using boost::multi_index_container;
 using namespace boost::multi_index;
 
 struct ApcuCache_index : indexed_by<
-                             hashed_unique<
-                                 tag<ByKey>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, std::string, key)>,
-                             ordered_non_unique<
-                                 tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, uint, expireAt)>> {};
+							 hashed_unique<
+								 tag<ByKey>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, std::string, key)>,
+							 ordered_non_unique<
+								 tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, i64, expireAt)>> {};
 
 using ApcuCache = multi_index_container<APCU::Row, ApcuCache_index>;
 //this is deallocated at exit before the function is called, so we just manually manage it, no idea how to do the "correct" way
@@ -47,7 +47,7 @@ void diskSync() {
 }
 
 APCU::APCU()
-    : startedAt(QDateTime::currentSecsSinceEpoch()) {
+	: startedAt(QDateTime::currentSecsSinceEpoch()) {
 	if (disableAPCU) {
 		return;
 	}
@@ -81,8 +81,8 @@ std::any APCU::fetchInner(const std::string& key) {
 	return {};
 }
 
-void APCU::storeInner(const std::string& _key, const std::any& _value, bool overwrite_, int ttl) {
-	uint expireAt = 0;
+void APCU::storeInner(const std::string& _key, const std::any& _value, bool overwrite_, u64 ttl) {
+	u64 expireAt = 0;
 	if (ttl) {
 		expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
 	}
@@ -91,6 +91,8 @@ void APCU::storeInner(const std::string& _key, const std::any& _value, bool over
 }
 
 void APCU::storeInner(const Row& row, bool overwrite_) {
+	//TODO if is persistent, check if a qbytearray too else the write on disk will fail and is lost!
+
 	auto& byKey = cache->get<ByKey>();
 
 	std::unique_lock lock(innerLock);
@@ -109,7 +111,7 @@ void APCU::storeInner(const Row& row, bool overwrite_) {
 
 std::string APCU::info() const {
 	//Poor man APCU page -.-
-	double delta = QDateTime::currentSecsSinceEpoch() - startedAt;
+	double delta = (double)(QDateTime::currentSecsSinceEpoch() - startedAt);
 	auto   msg   = fmt::format(R"(
 <pre>
 		Cache size: {:>10}
@@ -120,8 +122,8 @@ std::string APCU::info() const {
 		Delete:     {:>10} / {:>8.0f}s
 </pre>
 		)",
-	                           cache->size(), hits, hits / delta, miss, miss / delta, // 5
-	                           insert, insert / delta, overwrite, overwrite / delta, deleted, deleted / delta);
+							   cache->size(), hits.load(), (double)hits / delta, miss.load(), (double)miss / delta, // 5
+							   insert.load(), (double)insert / delta, overwrite.load(), (double)overwrite / delta, deleted.load(), (double)deleted / delta);
 	return msg;
 }
 
@@ -130,7 +132,7 @@ void throwTypeError(const type_info* found, const type_info* expected) {
 	throw ExceptionV2(QSL("Wrong type!! Found %1, expected %2, recheck where this key is used, maybe you have a collision").arg(found->name()).arg(expected->name()));
 }
 
-APCU::Row::Row(const std::string& key_, const std::any& value_, int expireAt_) {
+APCU::Row::Row(const std::string& key_, const std::any& value_, u64 expireAt_) {
 	key      = key_;
 	value    = value_;
 	expireAt = expireAt_;
@@ -159,7 +161,7 @@ void APCU::diskSyncP2() {
 		}
 		try {
 			auto copy = any_cast<QByteArray>(iter.value);
-			toBeWritten.insert(iter.key, {iter.expireAt, copy});
+			toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), copy});
 		} catch (std::bad_any_cast& e) {
 			(void)e;
 			fmt::print("key {} is not a QByteArray! \n", iter.key);
@@ -168,9 +170,13 @@ void APCU::diskSyncP2() {
 
 	fmt::print("{} element to write\n", toBeWritten.size());
 
-	QFile file("apcu.dat");
-	file.open(QIODevice::WriteOnly);
+	QFileXT file("apcu.dat");
+	if (!file.open(QIODevice::WriteOnly, false)) {
+		return;
+	}
 	QDataStream out(&file);
+	//how to write in qt6 a map into the stream ?
+
 	out << toBeWritten;
 	file.flush();
 	fmt::print("{} byte wrote\n", file.size());
@@ -199,7 +205,10 @@ void APCU::diskLoad() {
 	fmt::print("APCU found {} element to reload\n", toBeWritten.size());
 
 	for (auto&& [key, line] : toBeWritten) {
-		APCU::Row row(key, line.value, line.expireAt);
+		APCU::Row row;
+		row.key      = key;
+		row.value    = line.value;
+		row.expireAt = line.expireAt;
 		//ofc if you reload something from disk it was born persistent!
 		row.persistent = true;
 		cache->emplace(row);
@@ -268,14 +277,16 @@ FetchPodResult fetchPOD(const QString& key) {
 	return fetchPOD(key.toStdString());
 }
 
-QDataStream& operator<<(QDataStream& out, const APCU::DiskValue& rhs) {
-	out << rhs.expireAt;
-	out << rhs.value;
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+QDataStream& operator<<(QDataStream& out, const APCU::DiskValue& v) {
+	out << v.expireAt;
+	out << v.value;
 	return out;
 }
 
-QDataStream& operator>>(QDataStream& in, APCU::DiskValue& rhs) {
-	in >> rhs.expireAt;
-	in >> rhs.value;
+QDataStream& operator>>(QDataStream& in, APCU::DiskValue& v) {
+	in >> v.expireAt;
+	in >> v.value;
 	return in;
 }
+#endif

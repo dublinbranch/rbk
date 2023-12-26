@@ -5,7 +5,7 @@
 #include <QFileInfo>
 
 template <typename T>
-uint fileSerialize(QString fileName, const T& t) {
+qint64 fileSerialize(QString fileName, const T& t) {
 	QFileXT file;
 	file.setFileName(fileName);
 	if (!file.open(QIODevice::QIODevice::Truncate | QIODevice::WriteOnly, false)) {
