@@ -6,6 +6,9 @@
 
 QByteArray sha512(const QByteArray& original, bool urlSafe = true);
 
+QByteArray sha256(const QByteArray& original, bool urlSafe = true);
+QByteArray sha256(const QString& original, bool urlSafe = true);
+
 QByteArray sha1(const QByteArray& original, bool urlSafe = true);
 QByteArray sha1(const QString& original, bool urlSafe = true);
 QByteArray sha1(const std::string& original, bool urlSafe = true);

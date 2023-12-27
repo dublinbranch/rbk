@@ -164,7 +164,7 @@ void commonInitialization(const NanoSpammerConfig* _config) {
 	header += fmt::format("{0:{2}}{0:*^{1}}", "", lineLenght - initialSpace, initialSpace);
 	header += "\x1B[0m";
 	header += "\n\n";
-	fmt::print(fmt::runtime(header));
+    echo(header);
 	/*
 
 	           R"(

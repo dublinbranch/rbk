@@ -67,7 +67,7 @@ LIBS += -L'$$PWD/GeoLite2PP' -lgeolite2++
 
 LIBS += -ldw
 LIBS += -ldl
-LIBS += -lfmt
+LIBS += -lfmt   #zypper in fmt-devel should be enought
 LIBS += -lcurl
 #zypper in libmariadb3
 LIBS += -lmariadb
