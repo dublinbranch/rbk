@@ -133,6 +133,9 @@ class SqlComposer : public std::vector<SScol> {
 
 	[[nodiscard]] std::string composeSelect_V2();
 
+	[[nodiscard]] std::string composeWhere(bool required = false) const;
+	[[nodiscard]] std::string composeFrom() const;
+
 	bool        valid     = true;
 	std::string separator = ",";
 	//change into " AS " for INSERT INTO / SELECT

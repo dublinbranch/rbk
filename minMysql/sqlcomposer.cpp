@@ -93,34 +93,38 @@ string SqlComposer::composeSelect_V2() {
 	getTable();
 	setIsASelect();
 
-	auto sql = F("SELECT {} FROM {}", compose(), table);
-	if (where && !where->empty()) {
-		sql += "\n WHERE " + where->compose();
-	}
+	auto sql = "SELECT " + compose() + composeWhere() + composeFrom();
+
 	return sql;
+}
+
+string SqlComposer::composeWhere(bool required) const {
+	if (required && where->empty()) {
+		throw ExceptionV2("Nervously refusing an update without where condition (I basically saved the day from overwriting a whole table...)");
+	}
+	if (!where->empty()) {
+		return " WHERE " + where->compose();
+	}
+	return {};
+}
+
+string SqlComposer::composeFrom() const {
+	if (table.empty()) {
+		throw ExceptionV2("no table set!");
+	}
+
+	return " FROM " + table;
 }
 
 string SqlComposer::composeSelectAll() {
 	getTable();
-	string sql = "SELECT * FROM " + table;
-	if (!where->empty()) {
-		sql += " WHERE " + where->compose();
-	}
+	string sql = "SELECT * " + composeFrom() + composeWhere();
 	return sql;
 }
 
 string SqlComposer::composeUpdate() const {
 	getTable();
-	string sql = F(R"(
-UPDATE {} SET
-{})",
-	               table, compose());
-	if (!where || where->empty()) {
-		throw ExceptionV2("Nervously refusing an update without where condition (I basically saved the day from overwriting a whole table...)");
-	}
-
-	sql += "WHERE " + where->compose() + ";";
-
+	string sql = F(R"(UPDATE {} SET )", table) + compose() + composeWhere(true) + ";";
 	return sql;
 }
 

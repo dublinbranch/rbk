@@ -132,6 +132,12 @@ void Payload::setStandardHeaders(bool addCors) {
 	}
 }
 
+void Payload::setCacheHeader(uint ttl) {
+	if (ttl > 0) {
+		headers.insert({"cache-control", "public, max-age=" + std::to_string(ttl)});
+	}
+}
+
 multiMapV2<QString, QString> decodePost(const std::string& form) {
 	auto copy = QString::fromStdString(form);
 	return decodePost(copy);

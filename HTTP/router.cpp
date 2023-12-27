@@ -2,8 +2,10 @@
 #include "PMFCGI.h"
 #include "beastConfig.h"
 #include "rbk/HTTP/Payload.h"
+#include "rbk/HTTP/mime.h"
 #include "rbk/HTTP/url.h"
 #include "rbk/caching/apcu2.h"
+#include "rbk/filesystem/filefunction.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/thread/tmonitoring.h"
 #include <QDebug>
@@ -82,6 +84,15 @@ void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) 
 			//addFlag(dk.errorCode, DkError::minorException);
 			//exception type will be preserved
 			throw;
+		}
+	} else if (!conf->staticFile.empty()) {
+		auto res = fileGetContents2(conf->staticFile / path, true, 0);
+		if (res.exist) {
+			payload.html       = res.content.toStdString();
+			payload.mime       = getMimeType(path);
+			payload.statusCode = 200;
+			payload.setCacheHeader(conf->staticFileCacheTTL);
+			return;
 		}
 	}
 	payload.html       = fmt::format("invalid path >>> {} <<< no routing available", path);

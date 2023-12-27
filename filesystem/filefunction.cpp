@@ -545,3 +545,36 @@ QString resourceTryDisk(const QString& fileName) {
 	//if you play weird trick with path, you are looking for troubles
 	return ":/" + fileName;
 }
+
+FileResV2 innerOrDynamic(const QString& innerPath, const QString& dynamicPath) {
+	FileResV2 final;
+	{
+		auto res = fileGetContents2(dynamicPath, true, 0);
+		if (res.exist) {
+			final.path    = dynamicPath;
+			final.content = res.content;
+			final.type    = FileResV2::Dynamic;
+			return final;
+		}
+	}
+
+	{
+		auto res = fileGetContents2(innerPath, false, 0);
+		if (res.exist) {
+			final.path    = innerPath;
+			final.content = res.content;
+			final.type    = FileResV2::Inner;
+			return final;
+		}
+	}
+	final.type = FileResV2::missing;
+	return final;
+}
+
+FileGetRes::operator bool() {
+	return exist;
+}
+
+FileResV2::operator bool() {
+	return type != Type::missing;
+}

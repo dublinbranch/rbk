@@ -21,9 +21,7 @@ class QSaveV2 : public QFile {
 };
 
 struct FileGetRes {
-	operator bool() {
-		return exist;
-	}
+	operator bool();
 	QByteArray content;
 	bool       exist = false;
 };
@@ -72,7 +70,6 @@ std::vector<QStringView> readCSVRowFlexySlow(const QString& line, const QStringL
 
 //how to init a QChar to the null char ?
 
-
 std::vector<QStringView> readCSVRow(const QStringView& line, const QChar& separator = ',', const QChar& escape = '\0');
 std::vector<QStringView> readCSVRow(const QString& line, const QChar& separator = ',', const QChar& escape = '\0');
 
@@ -98,3 +95,23 @@ void logWithTime(const QString& logFile, const QString& msg);
 void logWithTime(const QString& logFile, const std::string& msg);
 void logWithTime(const std::string& logFile, const std::string& msg);
 void logWithTime(const QString& logFile, const QByteArray& msg);
+
+/**
+ * @brief innerOrDynamic will try to find a file in the dynamic path, if absent will load from
+ * the internal path
+ * @param innerPath
+ * @param dynamicPath
+ * @return
+ */
+struct FileResV2 {
+	QString    path;
+	QByteArray content;
+	enum Type {
+		Dynamic,
+		Inner,
+		missing
+	} type;
+	operator bool();
+};
+
+FileResV2 innerOrDynamic(const QString &innerPath, const QString& dynamicPath);

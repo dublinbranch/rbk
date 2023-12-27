@@ -197,11 +197,13 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 			throw exception;
 		} break;
 		default:
-			auto err = QSL("Mysql error for %1 \nerror was %2 code: %3\n%4")
-			               .arg(QString(sql))
-			               .arg(mysql_error(conn))
-			               .arg(error)
-			               .arg(getConf().getInfo());
+			auto err = F16(R"(Mysql error for sql:
+{}
+Error: {} 
+Code: {}
+Connection Info: {})",
+			               sql, mysql_error(conn), error, getConf().getInfo());
+
 			sqlLogger.error = err;
 			// this line is needed for proper email error reporting
 			qWarning().noquote() << err << QStacker16();
@@ -1039,7 +1041,7 @@ Error was:
 {}
 Code:{}
 Query: {:.3f}	Fetch: {:.3f} )",
-							   lastSQL.get(), mysql_error(conn), error, (double)sqlLogger->serverTime / 1E9, (double)sqlLogger->fetchTime / 1E9);
+		                       lastSQL.get(), mysql_error(conn), error, (double)sqlLogger->serverTime / 1E9, (double)sqlLogger->fetchTime / 1E9);
 		throw ExceptionV2(msg);
 	}
 

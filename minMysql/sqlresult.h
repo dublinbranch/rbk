@@ -24,7 +24,7 @@ class sqlResult : public QList<sqlRow> {
 
       private:
 	//Metadata for the column Type
-	//TODO is not always SET, so make private anche check on access
+	//TODO is not always SET, so make private and check on access
 	//FIXME also on CACHE HIT those are absent!
 
 	mapV2<QByteArray, MyType> types;

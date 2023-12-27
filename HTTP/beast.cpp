@@ -131,7 +131,6 @@ void handle_request(
 	requestBeging();
 
 	Payload payload;
-	payload.setStandardHeaders();
 	Router router;
 	PMFCGI status;
 

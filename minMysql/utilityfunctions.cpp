@@ -76,10 +76,23 @@ ORDER BY CREATE_TIME DESC)",
 	return f;
 }
 
-boost::json::object row2json(sqlRow& row) {
+namespace bj = boost::json;
+
+boost::json::object row2json(const sqlRow& row) {
 	boost::json::object obj;
 	for (auto&& [k, v] : row) {
 		obj[k.toStdString()] = v.toStdString();
 	}
 	return obj;
+}
+
+bj::object res2json(const sqlResult& res) {
+	bj::object final;
+	final["fromCache"] = res.fromCache;
+	bj::array arr;
+	for (auto& row : res) {
+		arr.push_back(row2json(row));
+	}
+	final["rows"] = arr;
+	return final;
 }

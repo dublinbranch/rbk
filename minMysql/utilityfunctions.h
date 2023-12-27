@@ -20,5 +20,6 @@ QString queryEssay(const sqlResult& res, bool brief, bool skipNull = false);
 
 std::vector<std::string> getTablesInDB(DB* db, std::string_view schema);
 
-boost::json::object row2json(sqlRow& row);
+boost::json::object row2json(const sqlRow& row);
+boost::json::object res2json(const sqlResult& row);
 #endif // UTILITYFUNCTIONS_H
