@@ -164,7 +164,7 @@ void commonInitialization(const NanoSpammerConfig* _config) {
 	header += fmt::format("{0:{2}}{0:*^{1}}", "", lineLenght - initialSpace, initialSpace);
 	header += "\x1B[0m";
 	header += "\n\n";
-    echo(header);
+	echo(header);
 	/*
 
 	           R"(
@@ -191,6 +191,12 @@ void commonInitialization(const NanoSpammerConfig* _config) {
 
 //QDebug send in stderr, but we want to use stdout
 void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg) {
+	//Qt 6.6 for *REASON* QsaveFile spam "Empty filename passed to function", but makes no sense
+	static const QString why = "Empty filename passed to function";
+	if (msg == why) {
+		return;
+	}
+
 	//Used to send the current git revision just once, when we encounter an stderr level message, that is usually via mail
 	static bool firstStdErrEvent = true;
 	auto        time             = QDateTime::currentDateTime().toString(Qt::ISODate);

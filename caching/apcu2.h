@@ -64,18 +64,24 @@ class APCU : private NoCopy {
 	std::any fetchInner(const std::string& key);
 	void     storeInner(const std::string& _key, const std::any& _value, bool overwrite_ = false, u64 ttl = 60);
 	void     storeInner(const APCU::Row& row_, bool overwrite_);
+	void     remove(const std::string& key);
 
 	template <class T>
 	std::shared_ptr<T> fetch(const std::string& key) {
 		(void)key;
 		auto res = fetchInner(key);
 		if (res.has_value()) {
-			//auto& type = res.type();
-			//auto  name = type.name();
+			// std::shared_ptr<T> x;
+			// auto&              tp    = typeid(x);
+			// auto               hash0 = tp.hash_code();
+			// auto               name0 = tp.name();
+
+			// auto& type = res.type();
+			// auto  name = type.name();
+			// auto  hash = type.hash_code();
 			return any_cast<std::shared_ptr<T>>(res);
-		} else {
-			return nullptr;
 		}
+		return nullptr;
 	}
 
 	[[nodiscard]] std::string info() const;
@@ -88,6 +94,12 @@ class APCU : private NoCopy {
 	 */
 	template <class T>
 	void store(const std::string& key, std::shared_ptr<T>& obj, int ttl = 60) {
+
+		// std::shared_ptr<T> x;
+		// auto&              tp    = typeid(x);
+		// auto               hash0 = tp.hash_code();
+		// auto               name0 = tp.name();
+
 		std::any value = obj;
 		storeInner(key, value, true, ttl);
 	}
@@ -200,6 +212,8 @@ template <class T>
 std::shared_ptr<T> apcuFetch(const QString& key) {
 	return apcuFetch<T>(key.toStdString());
 }
+
+void apcuRemove(const std::string& key);
 
 void apcuClear();
 int  apcuTest();

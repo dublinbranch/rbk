@@ -3,18 +3,39 @@
 #include <QDataStream>
 #include <QDateTime>
 #include <QFileInfo>
+#include <QSaveFile>
+#include <mutex>
 
 template <typename T>
 qint64 fileSerialize(QString fileName, const T& t) {
-	QFileXT file;
+	static QString currentFile;
+
+	//crude and imperfect way to avoid writing a file twice at the same time
+	if (fileName == currentFile) {
+		return 0;
+	}
+
+	static std::mutex           lock;
+	std::lock_guard<std::mutex> scoped(lock);
+
+	currentFile = fileName;
+
+	QSaveFile file;
 	file.setFileName(fileName);
-	if (!file.open(QIODevice::QIODevice::Truncate | QIODevice::WriteOnly, false)) {
+	if (!file.open(QIODevice::QIODevice::Truncate | QIODevice::WriteOnly)) {
+		qCritical() << "Failed to open file for writing:" << file.errorString();
 		return 0;
 	}
 
 	QDataStream out(&file);
 	out.setVersion(QDataStream::Qt_5_15);
 	out << t;
+
+	if (!file.commit()) {
+		qCritical() << "Failed to write data to file:" << file.errorString();
+		return false;
+	}
+
 	return file.size();
 }
 

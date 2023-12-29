@@ -12,4 +12,6 @@ struct StringCompare {
 
 	bool operator()(std::string_view lhs, const std::string& rhs) const;
 };
+
+
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_STRING_COMPARATOR_H

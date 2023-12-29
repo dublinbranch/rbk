@@ -76,13 +76,17 @@ LIBS += -lmariadb
 SOURCES += \
     $$PWD/HTTP/PMFCGI.cpp \
     $$PWD/dateTime/timerange.cpp \
-    $$PWD/string/qstringview.cpp
+    $$PWD/string/qstringview.cpp \
+    $$PWD/HTTP/mime.cpp \
+    $$PWD/string/comparator.cpp 
 
 HEADERS += \
     $$PWD/../../googleAdsListener/rbk/concept/isRvalue.h \
     $$PWD/HTTP/PMFCGI.h \
     $$PWD/string/qstringview.h \
-    $$PWD/types/isOptional.h
+    $$PWD/types/isOptional.h \
+    $$PWD/HTTP/mime.h \
+    $$PWD/string/comparator.h
 
 defined(WITH_BOOST_BEAST,var) {
 #HTTP part that trigger boost beast stuff
@@ -328,7 +332,6 @@ SOURCES += \
     
 DISTFILES += /
 	$$PWD/README.md 
-	
 	
 DISTFILES += \
 	$$PWD/README.md 

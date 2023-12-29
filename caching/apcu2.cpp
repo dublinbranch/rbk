@@ -25,10 +25,10 @@ using boost::multi_index_container;
 using namespace boost::multi_index;
 
 struct ApcuCache_index : indexed_by<
-							 hashed_unique<
-								 tag<ByKey>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, std::string, key)>,
-							 ordered_non_unique<
-								 tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, i64, expireAt)>> {};
+                             hashed_unique<
+                                 tag<ByKey>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, std::string, key)>,
+                             ordered_non_unique<
+                                 tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, i64, expireAt)>> {};
 
 using ApcuCache = multi_index_container<APCU::Row, ApcuCache_index>;
 //this is deallocated at exit before the function is called, so we just manually manage it, no idea how to do the "correct" way
@@ -47,7 +47,7 @@ void diskSync() {
 }
 
 APCU::APCU()
-	: startedAt(QDateTime::currentSecsSinceEpoch()) {
+    : startedAt(QDateTime::currentSecsSinceEpoch()) {
 	if (disableAPCU) {
 		return;
 	}
@@ -100,12 +100,19 @@ void APCU::storeInner(const Row& row, bool overwrite_) {
 	if (auto iter = byKey.find(row.key); iter != cache->end()) {
 		if (overwrite_) {
 			overwrite++;
-
 			byKey.replace(iter, row);
 		}
 	} else {
 		insert++;
 		cache->insert(row);
+	}
+}
+
+void APCU::remove(const std::string& key) {
+	auto&            byKey = cache->get<ByKey>();
+	std::unique_lock lock(innerLock);
+	if (byKey.erase(key)) {
+		deleted++;
 	}
 }
 
@@ -122,8 +129,8 @@ std::string APCU::info() const {
 		Delete:     {:>10} / {:>8.0f}s
 </pre>
 		)",
-							   cache->size(), hits.load(), (double)hits / delta, miss.load(), (double)miss / delta, // 5
-							   insert.load(), (double)insert / delta, overwrite.load(), (double)overwrite / delta, deleted.load(), (double)deleted / delta);
+	                           cache->size(), hits.load(), (double)hits / delta, miss.load(), (double)miss / delta, // 5
+	                           insert.load(), (double)insert / delta, overwrite.load(), (double)overwrite / delta, deleted.load(), (double)deleted / delta);
 	return msg;
 }
 
@@ -290,3 +297,8 @@ QDataStream& operator>>(QDataStream& in, APCU::DiskValue& v) {
 	return in;
 }
 #endif
+
+void apcuRemove(const std::string& key) {
+	auto a = APCU::getInstance();
+	a->remove(key);
+}

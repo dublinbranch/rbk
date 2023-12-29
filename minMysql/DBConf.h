@@ -32,6 +32,9 @@ struct DBConf {
 	std::optional<bool> logSql          = false;
 	std::optional<bool> logError        = false;
 	bool                pingBeforeQuery = true; // So if the connection is broken will be re-established
+	//we normally work in local
+	bool                compress        = false;
+
 	//Old compatibility logic for old code, we now normally alwys use TRUE
 	bool NULL_as_EMPTY = false;
 	// In certain case not beeing able to connect is bad, in other not and we just go ahead, retry later...

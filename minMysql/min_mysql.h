@@ -115,19 +115,19 @@ class DB {
 	[[deprecated("use queryCache2 - this one is problematic to use, and with redundant and never used param")]] sqlResult  queryCache(const QString& sql, bool on = false, QString name = QString(), uint ttl = 3600);
 	[[deprecated("use queryCacheLine2 - this one is problematic to use, and with redundant and never used param")]] sqlRow queryCacheLine(const QString& sql, bool on = false, QString name = QString(), uint ttl = 3600, bool required = false);
 
-	sqlRow queryCacheLine(const QString& sql, uint ttl = 3600, bool required = false);
-	sqlRow queryCacheLine2(const QString& sql, uint ttl = 3600, bool required = false);
-	sqlRow queryCacheLine2(const std::string& sql, uint ttl = 3600, bool required = false);
+	[[nodiscard]] sqlRow queryCacheLine(const QString& sql, uint ttl = 3600, bool required = false);
+	[[nodiscard]] sqlRow queryCacheLine2(const QString& sql, uint ttl = 3600, bool required = false);
+	[[nodiscard]] sqlRow queryCacheLine2(const std::string& sql, uint ttl = 3600, bool required = false);
 
-	sqlResult queryCache2(const std::string& sql, const Opt& opt) const;
+	[[nodiscard]] sqlResult queryCache2(const std::string& sql, const Opt& opt) const;
 
-	sqlResult queryCache2(const std::string& sql, uint ttl, bool required = false) const;
-	sqlResult queryCache2(const QString& sql, uint ttl, bool required = false) const;
+	[[nodiscard]] sqlResult queryCache2(const std::string& sql, uint ttl, bool required = false) const;
+	[[nodiscard]] sqlResult queryCache2(const QString& sql, uint ttl, bool required = false) const;
 	//Try to read data from cache, if expired read from DB, if db unavailable use the cache, if all fail throw error
-	sqlResult queryORcache(const QString& sql, uint ttl, bool required = false);
+	[[nodiscard]] sqlResult queryORcache(const QString& sql, uint ttl, bool required = false);
 
 	// This is to be used ONLY in case the query can have deadlock, and internally tries multiple times to insert data
-	sqlResult queryDeadlockRepeater(const QByteArray& sql, uint maxTry = 5) const;
+	[[nodiscard]] sqlResult queryDeadlockRepeater(const QByteArray& sql, uint maxTry = 5) const;
 
 	void        pingCheck(st_mysql*& conn) const;
 	QString     escape(const QString& what) const;
@@ -202,6 +202,8 @@ class DB {
 		//Reset after use, many times we DO NOT WANT an empty result cached, as will be populated very soon
 		//TODO change to be reset after use with the ResetAfter use class! (Or verify somehow, probably just easier to change type ?)
 		bool noCacheOnEmpty = false;
+		//if we want to populate the result set with the TYPE of the column, rarely used, reset after use
+		bool swapType = false;
 	};
 	mutable mi_tls<InternalState> state;
 

@@ -81,6 +81,7 @@ namespace bj = boost::json;
 boost::json::object row2json(const sqlRow& row) {
 	boost::json::object obj;
 	for (auto&& [k, v] : row) {
+		//at the moment we ignore the type of the value
 		obj[k.toStdString()] = v.toStdString();
 	}
 	return obj;

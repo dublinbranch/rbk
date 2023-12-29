@@ -17,10 +17,10 @@
 #include <QFile>
 #include <QMap>
 #include <QRegularExpression>
-#include <QScopeGuard>
 #include <memory>
 #include <mutex>
 #include <poll.h>
+#include <qscopeguard.h>
 #include <unistd.h>
 
 extern thread_local ThreadStatus::Status* localThreadStatus;
@@ -315,12 +315,11 @@ sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) const {
 		(void)fraud;
 
 		//We have a lock to prevent concurrent write in this process, but nothing to protect against other, just use another folder
-		QString                      name = QSL("cachedSQL_%1/").arg(conf.cacheId) + sha1(sql);
-		static std::mutex            lock;
-		std::scoped_lock<std::mutex> scoped(lock);
+		QString name = QSL("cachedSQL_%1/").arg(conf.cacheId) + sha1(sql);
 
+		//We do not really care about cache stampede here... and we write the file in an atomic way so we avoid torn read. So no need for mutex,
+		//if multiple thread will write the same file is not a problem they will just overwrite the final version and not mangle each other
 		sqlResult res;
-
 		{
 			localThreadStatus->time.IO.start();
 			OnExit ex([]() { localThreadStatus->time.IO.pause(); });
@@ -341,9 +340,8 @@ sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) const {
 			}
 		}
 
-		lock.unlock();
 		res = query(sql);
-		lock.lock();
+
 		//TODO add some check to serialize ONLY if the result is ok
 		if (res.empty()) {
 			if (state.get().noCacheOnEmpty) {
@@ -609,8 +607,11 @@ StMysqlPtr DB::connect() const {
 		mysql_options(conn, MYSQL_OPT_RECONNECT, &trueNonSense);
 		// This will enable non blocking capability
 		mysql_options(conn, MYSQL_OPT_NONBLOCK, 0);
-		// sensibly speed things up
-		mysql_options(conn, MYSQL_OPT_COMPRESS, &trueNonSense);
+		if (conf.compress) {
+			// sensibly speed things up if using network, else slow down
+			mysql_options(conn, MYSQL_OPT_COMPRESS, &trueNonSense);
+		}
+
 		// just spam every where to be sure is used
 		mysql_options(conn, MYSQL_SET_CHARSET_NAME, "utf8mb4");
 
@@ -974,9 +975,12 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 				first      = false;
 				num_fields = mysql_num_fields(result);
 				fields     = mysql_fetch_fields(result);
-				for (uint16_t i = 0; i < num_fields; i++) {
-					auto& field = fields[i];
-					res.types.insert({field.name, field.type});
+				if (state->swapType) {
+					for (uint16_t i = 0; i < num_fields; i++) {
+						auto& field = fields[i];
+						res.types.insert({field.name, field.type});
+					}
+					state->swapType = false;
 				}
 			}
 

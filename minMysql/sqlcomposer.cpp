@@ -89,11 +89,20 @@ string SqlComposer::composeSelect() {
 	return compose();
 }
 
+string SqlComposer::composeSelect(const std::string& fields) {
+	getTable();
+	setIsASelect();
+
+	auto sql = "SELECT " + fields + composeFrom() + composeWhere();
+
+	return sql;
+}
+
 string SqlComposer::composeSelect_V2() {
 	getTable();
 	setIsASelect();
 
-	auto sql = "SELECT " + compose() + composeWhere() + composeFrom();
+	auto sql = "SELECT " + compose() + composeFrom() + composeWhere();
 
 	return sql;
 }
