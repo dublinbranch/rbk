@@ -3,6 +3,8 @@
 
 #include <map>
 #include <string>
+#include "rbk/misc/intTypes.h"
+
 class Headers : public std::map<std::string, std::string> {
       public:
 	/**
@@ -29,10 +31,10 @@ class Headers : public std::map<std::string, std::string> {
 	        std::cout << "Cookie '" << param.first << "' has value '" << param.second << "'\n";
 	 */
 	//Not implemented const std::string& path, const std::string& domain, bool secure, bool httponly
-	void setCookie(const std::string& name,
-	               const std::string& value,
-	               uint               ttl,
-	               bool               sameSite = false);
+	void setCookie(std::string_view name,
+	               std::string_view value,
+	               uint             ttl,
+	               bool             sameSite = false);
 };
 
 struct Payload {
@@ -43,6 +45,10 @@ struct Payload {
 	Headers     headers;
 	void        setStandardHeaders(bool addCors = true);
 	void        setCacheHeader(uint ttl);
+
+	//some quality of life functions
+	void redirect(const std::string &location);
+	void setCookie(const std::string_view& key, const std::string_view& value, u32 cookieTTL);
 };
 
 #endif // PAYLOAD_H

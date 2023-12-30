@@ -2,7 +2,7 @@
 #include <fmt/format.h>
 
 //FIXME add the path parameter
-void Headers::setCookie(const std::string& name, const std::string& value, uint ttl, bool sameSite) {
+void Headers::setCookie(std::string_view name, std::string_view value, uint ttl, bool sameSite) {
 	//	string secureS = secure ? "secure" : "";
 	//	string httpOnlyS = httponly ? "HttpOnly" : "";
 	// path={:path}; domain={:domain};

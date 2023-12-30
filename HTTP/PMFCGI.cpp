@@ -138,6 +138,15 @@ void Payload::setCacheHeader(uint ttl) {
 	}
 }
 
+void Payload::redirect(const std::string& location) {
+	headers.insert({"Location", location});
+	statusCode = 302;
+}
+
+void Payload::setCookie(const std::string_view& key, const std::string_view& value, u32 cookieTTL) {
+	headers.setCookie(key, value, cookieTTL);
+}
+
 multiMapV2<QString, QString> decodePost(const std::string& form) {
 	auto copy = QString::fromStdString(form);
 	return decodePost(copy);

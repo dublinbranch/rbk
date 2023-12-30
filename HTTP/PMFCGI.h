@@ -24,6 +24,8 @@ struct PMFCGI {
 	bHeaders                headers;
 	std::optional<bHeaders> cookies;
 
+	
+	Url         url;
 	//This is only the path, and in nginx X we do the intermediate routing
 	std::string path;
 	std::string body;

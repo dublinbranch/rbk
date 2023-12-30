@@ -52,8 +52,8 @@ class Status : public RequestBase {
 };
 
 void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) {
-	Url  url(status.path);
-	auto path = url.url.path().toStdString().substr(1);
+	//take out initial /
+	auto path = status.url.url.path().toStdString().substr(1);
 
 	//	if (isUserAgentBlacklisted(dk.originalInvocationUrl)) {
 	//		Payload p;

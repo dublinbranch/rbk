@@ -10,7 +10,8 @@ class Payload;
 
 struct BeastConf {
 
-	std::function<void(PMFCGI& status, Payload& payload)> prePhase1 = nullptr;
+	std::function<bool(PMFCGI& status, Payload& payload)> loginManager = nullptr;
+	std::function<void(PMFCGI& status, Payload& payload)> prePhase1    = nullptr;
 	//std::function<void()> post = nullptr;
 
 	using SimpleRoutedType = void (*)(PMFCGI& status, Payload& payload);

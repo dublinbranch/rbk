@@ -131,14 +131,15 @@ void handle_request(
 	requestBeging();
 
 	Payload payload;
-	Router router;
-	PMFCGI status;
+	Router  router;
+	PMFCGI  status;
 
 	try {
 		try { //Yes exception can throw exceptions!
 
 			status.remoteIp = stream.socket().remote_endpoint().address().to_string();
 			status.path     = req.target();
+			status.url      = Url(status.path);
 			// if (!isValidUTF8(status.path)) {
 			// 	throw ExceptionV2(QSL("Invalid utf8 in the PATH %1").arg(base64this(status.path)));
 			// }
@@ -155,6 +156,12 @@ void handle_request(
 
 			if (conf->prePhase1) {
 				conf->prePhase1(status, payload);
+			}
+			if (conf->loginManager) {
+				if (!conf->loginManager(status, payload)) {
+					sendResponseToClient(stream, payload);
+					return;
+				}
 			}
 			/*
 			 * phase 1
