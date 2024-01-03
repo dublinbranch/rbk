@@ -76,6 +76,8 @@ LIBS += -lmariadb
 SOURCES += \
     $$PWD/HTTP/PMFCGI.cpp \
     $$PWD/dateTime/timerange.cpp \
+    $$PWD/log/log.cpp \
+    $$PWD/misc/executor.cpp \
     $$PWD/string/qstringview.cpp \
     $$PWD/HTTP/mime.cpp \
     $$PWD/string/comparator.cpp 
@@ -83,6 +85,8 @@ SOURCES += \
 HEADERS += \
     $$PWD/../../googleAdsListener/rbk/concept/isRvalue.h \
     $$PWD/HTTP/PMFCGI.h \
+    $$PWD/log/log.h \
+    $$PWD/misc/executor.h \
     $$PWD/string/qstringview.h \
     $$PWD/types/isOptional.h \
     $$PWD/HTTP/mime.h \

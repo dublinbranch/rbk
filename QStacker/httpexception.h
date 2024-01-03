@@ -11,7 +11,8 @@ class HttpException : public ExceptionV2 {
 	std::string httpErrMsg;
 
 	HttpException(QString _msg);
-	explicit HttpException(const std::string& msg_, const std::string& httpErrMsg_ = "");
+	explicit HttpException(const std::string& msg_);
+	explicit HttpException(const std::string& msg_, const std::string& httpErrMsg_);
 	HttpException(const char* _msg);
 
 	const std::string getLogFile() const noexcept override;

@@ -9,6 +9,11 @@ HttpException::HttpException(QString _msg) {
 	httpErrMsg = msg;
 }
 
+HttpException::HttpException(const std::string& msg_) {
+	msg        = msg_;
+	httpErrMsg = msg_;
+}
+
 HttpException::HttpException(const std::string& msg_, const std::string& httpErrMsg_) {
 	msg        = msg_;
 	httpErrMsg = httpErrMsg_;

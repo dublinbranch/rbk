@@ -464,7 +464,7 @@ void Beast::listen() {
 	    });
 
 	signals2block_p = signals2block;
-	fmt::print("Ready listening on {}:{}\n", conf.address, conf.port);
+	fmt::print("Ready listening on http://{}:{}\n", conf.address, conf.port);
 
 	// Run the I/O service on the requested number of threads
 	for (auto i = conf.worker; i > 0; --i) {

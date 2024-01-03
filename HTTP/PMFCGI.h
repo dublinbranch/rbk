@@ -24,8 +24,7 @@ struct PMFCGI {
 	bHeaders                headers;
 	std::optional<bHeaders> cookies;
 
-	
-	Url         url;
+	Url url;
 	//This is only the path, and in nginx X we do the intermediate routing
 	std::string path;
 	std::string body;
@@ -36,6 +35,7 @@ struct PMFCGI {
 	//server name, if needed must be forwarded by nginx else will be 127.0.0.1 from the header
 
 	void        decodeGet();
+	void        decodePost();
 	void        extractCookies();
 	std::string serializeMsg(const QByteArray& msg, bool light = false) const;
 	std::string serializeMsg(const char* msg) const;

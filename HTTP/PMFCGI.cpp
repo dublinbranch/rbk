@@ -67,9 +67,13 @@ string bHeaders::serialize(const QStringList& skipHeaders, bool initialSpacer, b
 }
 
 void PMFCGI::decodeGet() {
-	Url url(path);
 	get                  = url.query;
 	get.notFoundCallback = HttpException::HttpParamErrorHandler1;
+}
+
+void PMFCGI::decodePost() {
+	//the :: mean use the public function not the one in this class with the same name
+	post = ::decodePost(body);
 }
 
 void PMFCGI::extractCookies() {
@@ -143,8 +147,8 @@ void Payload::redirect(const std::string& location) {
 	statusCode = 302;
 }
 
-void Payload::setCookie(const std::string_view& key, const std::string_view& value, u32 cookieTTL) {
-	headers.setCookie(key, value, cookieTTL);
+void Payload::setCookie(const std::string_view& key, const std::string_view& value, u32 cookieTTL, bool sameSite, bool secure) {
+	headers.setCookie(key, value, cookieTTL, false, false);
 }
 
 multiMapV2<QString, QString> decodePost(const std::string& form) {

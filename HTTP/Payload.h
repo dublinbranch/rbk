@@ -1,9 +1,9 @@
 #ifndef PAYLOAD_H
 #define PAYLOAD_H
 
+#include "rbk/misc/intTypes.h"
 #include <map>
 #include <string>
-#include "rbk/misc/intTypes.h"
 
 class Headers : public std::map<std::string, std::string> {
       public:
@@ -34,7 +34,8 @@ class Headers : public std::map<std::string, std::string> {
 	void setCookie(std::string_view name,
 	               std::string_view value,
 	               uint             ttl,
-	               bool             sameSite = false);
+	               bool             sameSite = false,
+	               bool             secure   = true);
 };
 
 struct Payload {
@@ -47,8 +48,8 @@ struct Payload {
 	void        setCacheHeader(uint ttl);
 
 	//some quality of life functions
-	void redirect(const std::string &location);
-	void setCookie(const std::string_view& key, const std::string_view& value, u32 cookieTTL);
+	void redirect(const std::string& location);
+	void setCookie(const std::string_view& key, const std::string_view& value, u32 cookieTTL, bool sameSite = true, bool secure = true);
 };
 
 #endif // PAYLOAD_H
