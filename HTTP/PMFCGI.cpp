@@ -148,7 +148,7 @@ void Payload::redirect(const std::string& location) {
 }
 
 void Payload::setCookie(const std::string_view& key, const std::string_view& value, u32 cookieTTL, bool sameSite, bool secure) {
-	headers.setCookie(key, value, cookieTTL, false, false);
+	headers.setCookie(key, value, cookieTTL, sameSite, secure);
 }
 
 multiMapV2<QString, QString> decodePost(const std::string& form) {

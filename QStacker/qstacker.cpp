@@ -140,50 +140,52 @@ void __attribute__((__noreturn__)) __cxa_throw(
 		 * In fact we have to do nothing to properly managed them!
 		 */
 		original_cxa_throw(thrown_exception, (std::type_info*)pvtinfo, dest);
-	} else {
-		if (cxaLevel != CxaLevel::none) {
-			static const QString x;
-			static const auto    qstringCode          = typeid(x).hash_code();
-			static const auto    stdExceptionTypeCode = typeid(std::exception).hash_code();
+	}
+	if (cxaLevel != CxaLevel::none) {
+		static const QString x;
+		static const auto    qstringCode          = typeid(x).hash_code();
+		static const auto    stdExceptionTypeCode = typeid(std::exception).hash_code();
 
-			auto exceptionTypeCode = ((std::type_info*)pvtinfo)->hash_code();
+		auto exceptionTypeCode = ((std::type_info*)pvtinfo)->hash_code();
 
-			QString msg;
+		QString msg;
 
-			if (cxaNoStack) {
-				cxaNoStack = false;
-			} else {
-				msg = QStacker16Light(5);
-			}
-
-			if (exceptionTypeCode == qstringCode) { //IF QString has been thrown is by us, and usually handled too
-				auto th = static_cast<QString*>(thrown_exception);
-				msg.prepend(*th);
-			} else if (exceptionTypeCode == stdExceptionTypeCode) {
-				auto th = static_cast<std::exception*>(thrown_exception);
-				msg.prepend(th->what());
-			}
-			switch (cxaLevel) {
-			case CxaLevel::warn:
-				qWarning().noquote() << msg;
-				break;
-			case CxaLevel::debug:
-				qDebug().noquote() << msg;
-				break;
-			case CxaLevel::critical:
-				qWarning().noquote() << msg;
-				break;
-			case CxaLevel::none:
-				//none mostly to avoid the warning
-				break;
-			}
+		if (cxaNoStack) {
+			cxaNoStack = false;
+		} else {
+			msg = QStacker16Light(5);
 		}
 
-		//reset after use
-		cxaLevel = CxaLevel::critical;
-		//this will pass tru the exception to the original handler so the program will not catch fire after an exception is thrown
-		original_cxa_throw(thrown_exception, (std::type_info*)pvtinfo, dest);
+		if (exceptionTypeCode == qstringCode) { //IF QString has been thrown is by us, and usually handled too
+			auto th = static_cast<QString*>(thrown_exception);
+			msg.prepend(*th);
+		} else if (exceptionTypeCode == stdExceptionTypeCode) {
+			auto th = static_cast<std::exception*>(thrown_exception);
+			msg.prepend(th->what());
+		}
+		switch (cxaLevel) {
+		case CxaLevel::warn:
+			qWarning().noquote() << msg;
+			break;
+		case CxaLevel::debug:
+			qDebug().noquote() << msg;
+			break;
+		case CxaLevel::critical:
+			qWarning().noquote() << msg;
+			break;
+		case CxaLevel::none:
+			//none mostly to avoid the warning
+			break;
+		}
 	}
+
+	//reset after use
+	cxaLevel = CxaLevel::critical;
+	//this will pass tru the exception to the original handler so the program will not catch fire after an exception is thrown
+	original_cxa_throw(thrown_exception, (std::type_info*)pvtinfo, dest);
+
+	//we should never reach this point, but the compiler do not recognize the original_cxa_throw above so we put another one here
+	throw std::runtime_error("This should never happen!");
 }
 }
 

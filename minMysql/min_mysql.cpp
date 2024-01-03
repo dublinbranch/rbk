@@ -834,7 +834,7 @@ void SQLBuffering::flush() {
 			if (skipWarning) {
 				conn->skipWarning = true;
 			}
-			conn->queryDeadlockRepeater(currentQuery.toUtf8());
+			auto res = conn->queryDeadlockRepeater(currentQuery.toUtf8());
 			currentQuery.clear();
 		}
 	}
@@ -843,7 +843,7 @@ void SQLBuffering::flush() {
 		if (skipWarning) {
 			conn->skipWarning = true;
 		}
-		conn->queryDeadlockRepeater(currentQuery.toUtf8());
+		auto res = conn->queryDeadlockRepeater(currentQuery.toUtf8());
 	}
 	// This MUST be out of the buffered block! BUT WHY ?
 	if (useTRX) {
