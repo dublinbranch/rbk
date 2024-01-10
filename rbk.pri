@@ -75,6 +75,7 @@ LIBS += -lmariadb
 #HTTP part that is enought common and lightweigh
 SOURCES += \
     $$PWD/HTTP/PMFCGI.cpp \
+    $$PWD/caching/cachable.cpp \
     $$PWD/dateTime/timerange.cpp \
     $$PWD/log/log.cpp \
     $$PWD/misc/executor.cpp \
@@ -85,6 +86,7 @@ SOURCES += \
 HEADERS += \
     $$PWD/../../googleAdsListener/rbk/concept/isRvalue.h \
     $$PWD/HTTP/PMFCGI.h \
+    $$PWD/caching/cachable.h \
     $$PWD/log/log.h \
     $$PWD/misc/executor.h \
     $$PWD/string/qstringview.h \

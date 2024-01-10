@@ -12,6 +12,7 @@
 
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/serialization/QDataStreamer.h"
+#include "rbk/caching/cachable.h"
 
 #include <QDataStream>
 #include <rbk/mapExtensor/qmapV2.h>
@@ -166,12 +167,18 @@ void APCU::diskSyncP2() {
 		if (!iter.persistent) {
 			continue;
 		}
-		try {
-			auto copy = any_cast<QByteArray>(iter.value);
-			toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), copy});
-		} catch (std::bad_any_cast& e) {
-			(void)e;
-			fmt::print("key {} is not a QByteArray! \n", iter.key);
+		{
+			auto el = any_cast<QByteArray>(&iter.value);
+			if (el) {
+				toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), *el});
+				continue;
+			}
+		}
+		{
+			auto el = any_cast<std::shared_ptr<Cachable>>(iter.value);
+			if (el) {
+				toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), el->serialize()});
+			}
 		}
 	}
 
