@@ -16,6 +16,8 @@ QString QS(const boost::json::string& cry);
 QString QS(const boost::json::value* value);
 QString QS(const boost::json::value& value);
 
+QString QS(const boost::json::value& value, std::string_view key);
+
 std::string asString(const boost::json::value& value);
 
 /** FROM */

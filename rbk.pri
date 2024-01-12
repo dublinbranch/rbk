@@ -78,6 +78,7 @@ SOURCES += \
     $$PWD/caching/cachable.cpp \
     $$PWD/dateTime/timerange.cpp \
     $$PWD/log/log.cpp \
+    $$PWD/minMysql/sqlbuffering.cpp \
     $$PWD/misc/executor.cpp \
     $$PWD/string/qstringview.cpp \
     $$PWD/HTTP/mime.cpp \
@@ -88,6 +89,7 @@ HEADERS += \
     $$PWD/HTTP/PMFCGI.h \
     $$PWD/caching/cachable.h \
     $$PWD/log/log.h \
+    $$PWD/minMysql/sqlbuffering.h \
     $$PWD/misc/executor.h \
     $$PWD/string/qstringview.h \
     $$PWD/types/isOptional.h \

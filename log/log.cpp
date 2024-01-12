@@ -1,4 +1,22 @@
 #include "log.h"
+#include "rbk/fmtExtra/includeMe.h"
+
+QString Log::serialize()
+{
+	QString res;
+	static const std::string skel = R"(
+{} started @ {} terminated @ {}
+category: {}
+
+stackTrace: {}
+
+stdOut: {}
+
+stdErr: {}
+
+	)";
+	return {};
+}
 
 Log::Log() {
 	tsStart = QDateTime::currentDateTime();

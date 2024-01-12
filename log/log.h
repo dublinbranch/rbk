@@ -1,6 +1,7 @@
 #ifndef HOME_ROY_PUBLIC_DITER_CLASS_LOG_H
 #define HOME_ROY_PUBLIC_DITER_CLASS_LOG_H
 
+#include "rbk/minMysql/sqlbuffering.h"
 #include <QElapsedTimer>
 #include <QString>
 #include <qdatetime.h>
@@ -31,9 +32,12 @@ class Log {
 	//many times we want to aggregate log for a specific function or process execution
 	Logs subLogs;
 
+	QString      serialize();
+	SQLBuffering toSqlRow() const;
+
 	Log();
 	Log(const QByteArray& _info, Category _category = Info);
-	Log(const std::exception& e, const char *func);
+	Log(const std::exception& e, const char* func);
 	void setEnd();
 
       private:

@@ -428,3 +428,7 @@ string asString(const boost::json::value& value) {
 	auto& r = value.as_string();
 	return std::string(r.data(), r.size());
 }
+
+QString QS(const boost::json::value& value, std::string_view key) {
+	return QS(value.at(key));
+}

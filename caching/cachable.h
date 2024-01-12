@@ -5,9 +5,9 @@
 
 class Cachable {
       public:
-	virtual ~Cachable()                            = default;
-	virtual QByteArray serialize()                 = 0;
-	virtual void       deserialize(QByteArray& in) = 0;
+	virtual ~Cachable()                                  = default;
+	virtual QByteArray serialize()                       = 0;
+	virtual void       deserialize(const QByteArray& in) = 0;
 };
 
 #endif // CACHABLE_H
