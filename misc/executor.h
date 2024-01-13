@@ -10,7 +10,8 @@ class Log;
 // };
 
 //This will internally split on space and generated the arguments
-Log execute(const QString &cmd, float maxTimeInS = 999);
+Log execute(const QString& cmd, float maxTimeInS = 999);
 Log execute(QStringList& cmd, float maxTimeInS = 999);
 
+Log sudo(const QString& cmd, float maxTimeInS = 999);
 #endif // RBK_EXECUTOR_H

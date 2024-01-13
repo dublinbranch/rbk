@@ -42,3 +42,11 @@ Log execute(const QString& cmd, float maxTimeInS) {
 	auto param = cmd.split(" ");
 	return execute(param, maxTimeInS);
 }
+
+Log sudo(const QString& cmd, float maxTimeInS) {
+	QStringList pack;
+	pack << "/bin/bash";
+	pack << "-c"
+	     << "sudo " + cmd;
+	return execute(pack, maxTimeInS);
+}

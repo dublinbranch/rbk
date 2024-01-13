@@ -10,9 +10,9 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index_container.hpp>
 
+#include "rbk/caching/cachable.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/serialization/QDataStreamer.h"
-#include "rbk/caching/cachable.h"
 
 #include <QDataStream>
 #include <rbk/mapExtensor/qmapV2.h>
@@ -175,9 +175,9 @@ void APCU::diskSyncP2() {
 			}
 		}
 		{
-			auto el = any_cast<std::shared_ptr<Cachable>>(iter.value);
+			auto el = any_cast<std::shared_ptr<Cachable>>(&iter.value);
 			if (el) {
-				toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), el->serialize()});
+				toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), el->get()->serialize()});
 			}
 		}
 	}
