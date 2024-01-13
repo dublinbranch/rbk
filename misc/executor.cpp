@@ -21,7 +21,7 @@ Log execute(QStringList& cmd, float maxTimeInS) {
 	process.waitForFinished(static_cast<int>(maxTimeInS) * 1000);
 	log.setEnd();
 
-	log.section = task;
+	log.section = task + " " + cmd.join(" ");
 	log.stdErr  = process.readAllStandardError();
 	log.stdOut  = process.readAllStandardOutput();
 	if (log.stdErr.isEmpty()) {

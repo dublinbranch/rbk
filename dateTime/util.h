@@ -53,3 +53,5 @@ QDateTime getNextMidnight();
 qint64    secToNextMidnight();
 qint64    getCurrentTS();
 qint64    getCurrentMTS();
+
+QString now4file();

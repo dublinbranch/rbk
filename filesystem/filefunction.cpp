@@ -578,3 +578,11 @@ FileGetRes::operator bool() {
 FileResV2::operator bool() {
 	return type != Type::missing;
 }
+
+std::filesystem::path GetCurExecutablePath() {
+	char                   result[PATH_MAX];
+	ssize_t                count = readlink("/proc/self/exe", result, PATH_MAX);
+	std::string            path  = std::string(result, (count > 0) ? count : 0);
+	std::string::size_type pos   = path.find_last_of('/');
+	return path.substr(0, pos);
+}

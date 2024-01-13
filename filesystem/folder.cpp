@@ -80,5 +80,13 @@ QString hardLinkFolder(const QString& source, const QString& dest, HLParam param
 			return res;
 		}
 	}
-	return QString();
+	return {};
+}
+
+bool rmdirV2(const QString& path) {
+	QDir dir(path);
+	if (dir.exists()) {
+		return dir.removeRecursively();
+	}
+	return false;
 }

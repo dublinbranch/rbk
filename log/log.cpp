@@ -1,9 +1,8 @@
 #include "log.h"
 #include "rbk/fmtExtra/includeMe.h"
 
-QString Log::serialize()
-{
-	QString res;
+QString Log::serialize() {
+	QString                  res;
 	static const std::string skel = R"(
 {} started @ {} terminated @ {}
 category: {}
@@ -35,6 +34,10 @@ Log::Log(const std::exception& e, const char* func) {
 	stdErr   = e.what();
 	category = Exception;
 	section  = func;
+}
+
+void Log::push(const Log& log) {
+	subLogs.push_back(log);
 }
 
 void Log::setEnd() {

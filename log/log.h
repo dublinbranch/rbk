@@ -38,6 +38,9 @@ class Log {
 	Log();
 	Log(const QByteArray& _info, Category _category = Info);
 	Log(const std::exception& e, const char* func);
+
+	void push(const Log& log);
+
 	void setEnd();
 
       private:

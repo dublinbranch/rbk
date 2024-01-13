@@ -19,4 +19,5 @@ uint        erase(const QStringList& files);
 
 QString hardLinkFolder(const QString& source, const QString& dest, HLParam param = HLParam::eraseOld);
 
+bool rmdirV2(const QString& path);
 #endif // FOLDER_H

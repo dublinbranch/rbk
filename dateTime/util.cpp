@@ -1,4 +1,5 @@
 #include "util.h"
+#include "rbk/defines/stringDefine.h"
 #include "timespecV2.h"
 #include <math.h>
 
@@ -147,4 +148,8 @@ QDateTime getNextMidnight() {
 
 qint64 secToNextMidnight() {
 	return QDateTime::currentDateTime().secsTo(getNextMidnight());
+}
+
+QString now4file() {
+	return QDateTime::currentDateTime().toString(fileDateTimeFormat);
 }
