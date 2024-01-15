@@ -15,3 +15,9 @@ void mustache(std::string_view raw, std::string& buffer, const boost::json::obje
 void mustache(const QByteArray& raw, std::string& buffer, const boost::json::object& json) {
 	boost::mustache::render(raw.constData(), buffer, json, {});
 }
+
+std::string mustache(const QByteArray& raw, const boost::json::object& json) {
+	std::string buffer;
+	mustache(raw, buffer, json);
+	return buffer;
+}

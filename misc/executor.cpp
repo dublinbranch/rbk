@@ -5,10 +5,11 @@
 #include <QDebug>
 #include <QProcess>
 
-#include "config.h"
 #include "rbk/QStacker/qstacker.h"
 
 using namespace std;
+
+bool Execute_logStackTrace = true;
 
 Log execute(QStringList& cmd, float maxTimeInS) {
 	Log      log;
@@ -31,7 +32,7 @@ Log execute(QStringList& cmd, float maxTimeInS) {
 		log.category = Log::Error;
 	}
 
-	if (conf().devel.logStackTrace) {
+	if (Execute_logStackTrace) {
 		log.stackTrace = QStacker();
 	}
 
