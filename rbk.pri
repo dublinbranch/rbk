@@ -82,7 +82,8 @@ SOURCES += \
     $$PWD/misc/executor.cpp \
     $$PWD/string/qstringview.cpp \
     $$PWD/HTTP/mime.cpp \
-    $$PWD/string/comparator.cpp  
+    $$PWD/string/comparator.cpp   \
+    $$PWD/string/stringoso.cpp
 
 HEADERS += \
     $$PWD/../../googleAdsListener/rbk/concept/isRvalue.h \
@@ -92,6 +93,7 @@ HEADERS += \
     $$PWD/minMysql/sqlbuffering.h \
     $$PWD/misc/executor.h \
     $$PWD/string/qstringview.h \
+    $$PWD/string/stringoso.h \
     $$PWD/types/isOptional.h \
     $$PWD/HTTP/mime.h \
     $$PWD/string/comparator.h 

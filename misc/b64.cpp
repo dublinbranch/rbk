@@ -9,12 +9,13 @@ QString base64this(const char* param) {
 	return base64this(cheap);
 }
 
-QString toBase64(const QString& url, bool urlSafe) {
+QByteArray toBase64(const QByteArrayV2& url64, bool urlSafe) {
 	auto b = QByteArray::Base64Option::Base64UrlEncoding | QByteArray::Base64Option::OmitTrailingEquals;
 	if (urlSafe) {
-		return url.toUtf8().toBase64(b);
+		return url64.toBase64(b);
 	}
-	return url.toUtf8().toBase64();
+	//Trailing = are totally useless, change my mind
+	return url64.toBase64(QByteArray::Base64Option::OmitTrailingEquals);
 }
 
 QByteArray fromBase64(const QByteArray& url64, bool urlSafe) {

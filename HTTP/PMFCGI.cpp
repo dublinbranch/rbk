@@ -142,12 +142,12 @@ void Payload::setCacheHeader(uint ttl) {
 	}
 }
 
-void Payload::redirect(const std::string& location) {
+void Payload::redirect(const StringV2& location) {
 	headers.insert({"Location", location});
 	statusCode = 302;
 }
 
-void Payload::setCookie(const std::string_view& key, const std::string_view& value, u32 cookieTTL, bool sameSite, bool secure) {
+void Payload::setCookie(const std::string_view& key, const StringV2& value, u32 cookieTTL, bool sameSite, bool secure) {
 	headers.setCookie(key, value, cookieTTL, sameSite, secure);
 }
 

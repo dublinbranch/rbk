@@ -2,10 +2,11 @@
 #define PAYLOAD_H
 
 #include "rbk/misc/intTypes.h"
+#include "rbk/string/stringoso.h"
 #include <map>
 #include <string>
 
-class Headers : public std::map<std::string, std::string> {
+class Headers : public std::multimap<std::string, std::string> {
       public:
 	/**
 	 * @brief setCookie https://www.php.net/manual/en/function.setcookie.php
@@ -36,6 +37,7 @@ class Headers : public std::map<std::string, std::string> {
 	               uint             ttl,
 	               bool             sameSite = false,
 	               bool             secure   = true);
+	void deleteCookie(std::string_view name);
 };
 
 struct Payload {
@@ -48,8 +50,8 @@ struct Payload {
 	void        setCacheHeader(uint ttl);
 
 	//some quality of life functions
-	void redirect(const std::string& location);
-	void setCookie(const std::string_view& key, const std::string_view& value, u32 cookieTTL, bool sameSite = true, bool secure = true);
+	void redirect(const StringV2& location);
+	void setCookie(const std::string_view& key, const StringV2& value, u32 cookieTTL, bool sameSite = true, bool secure = true);
 };
 
 #endif // PAYLOAD_H

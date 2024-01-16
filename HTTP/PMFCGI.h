@@ -25,7 +25,11 @@ struct PMFCGI {
 	std::optional<bHeaders> cookies;
 
 	Url url;
-	//This is only the path, and in nginx X we do the intermediate routing
+	/**
+	 * This is only the path, and in nginx X we do the intermediate routing
+	 * YES is quite annoing that it has a / at the beginning, but .. just clip with
+	 * .substr(1)
+	 */
 	std::string path;
 	std::string body;
 	//remember not automatically decoded! //TODO extend and decode on request ?

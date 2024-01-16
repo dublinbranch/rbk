@@ -110,7 +110,7 @@ void sendResponseToClient(beast::tcp_stream& stream, Payload& payload) {
 	res.set(http::field::content_type, payload.mime);
 
 	for (auto& [key, value] : payload.headers) {
-		res.set(key, value);
+		res.insert(key, value);
 	}
 
 	//No idea if is ok to have keep alive for an internal thing ? Benefit will be negligible
