@@ -80,11 +80,7 @@ QByteArray fileGetContents(const QString& fileName, bool quiet) {
 	return x;
 }
 
-FileGetRes fileGetContents2(const std::string& fileName, bool quiet, uint maxAge) {
-	return fileGetContents2(QString::fromStdString(fileName), quiet, maxAge);
-}
-
-FileGetRes fileGetContents2(const QString& fileName, bool quiet, uint maxAge) {
+FileGetRes fileGetContents2(const QByteArrayV2& fileName, bool quiet, uint maxAge) {
 	FileGetRes res;
 	if (maxAge) {
 		auto cTime = QFileInfo(fileName).lastModified().toSecsSinceEpoch();

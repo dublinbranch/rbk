@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ffCommon.h"
+#include "rbk/string/stringoso.h"
 #include <QFile>
 
 inline const QString FSDateTimeFormat             = "yyyy-MM-dd_HH:mm:ss";
@@ -50,8 +51,7 @@ FPCRes filePutContents(const QByteArray& pay, const char* fileName, bool verbose
 QByteArray fileGetContents(const QString& fileName, bool quiet = true);
 QByteArray fileGetContents(const QString& fileName, bool quiet, bool& success);
 
-FileGetRes fileGetContents2(const QString& fileName, bool quiet = true, uint maxAge = 0);
-FileGetRes fileGetContents2(const std::string& fileName, bool quiet = true, uint maxAge = 0);
+FileGetRes fileGetContents2(const QByteArrayV2& fileName, bool quiet = true, uint maxAge = 0);
 
 bool fileAppendContents(const QString& pay, const QString& fileName);
 bool fileAppendContents(const QByteArray& pay, const QString& fileName);

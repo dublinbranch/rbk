@@ -3,6 +3,7 @@
 
 #include <QByteArray>
 #include <QString>
+#include <filesystem>
 #include <string_view>
 
 class QByteArrayV2 : public QByteArray {
@@ -12,6 +13,7 @@ class QByteArrayV2 : public QByteArray {
 	QByteArrayV2(const std::string& input);
 	QByteArrayV2(const std::string_view& input);
 	QByteArrayV2(const char* input);
+	QByteArrayV2(const std::filesystem::__cxx11::path& input);
 };
 
 //in many places a std::string is requried. so we can not use string_view as the base entity

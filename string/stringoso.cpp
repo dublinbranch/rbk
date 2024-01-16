@@ -22,6 +22,10 @@ QByteArrayV2::QByteArrayV2(const char* input) {
 	setRawData(input, strlen(input));
 }
 
+QByteArrayV2::QByteArrayV2(const std::filesystem::__cxx11::path& input) {
+	setRawData(input.c_str(), input.string().size());
+}
+
 StringV2::StringV2(const QByteArray& input) {
 	setRawData(input.data(), input.size());
 }
