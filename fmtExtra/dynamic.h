@@ -1,5 +1,5 @@
-#ifndef DYNAMIC_H
-#define DYNAMIC_H
+#ifndef HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_FMTEXTRA_DYNAMIC_H
+#define HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_FMTEXTRA_DYNAMIC_H
 
 #include "fmt/format.h"
 #include "rbk/misc/echo.h"
@@ -49,4 +49,4 @@ template <typename... T>
 	return QByteArray::fromStdString(fmt::vformat(fmt, fmt::make_format_args(args...)));
 }
 
-#endif // DYNAMIC_H
+#endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_FMTEXTRA_DYNAMIC_H

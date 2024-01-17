@@ -8,6 +8,7 @@
 
 class QByteArrayV2 : public QByteArray {
       public:
+	QByteArrayV2() = default;
 	QByteArrayV2(const QByteArray& input);
 	QByteArrayV2(const QString& input);
 	QByteArrayV2(const std::string& input);
@@ -29,4 +30,13 @@ class StringV2 : public std::string {
 	void setRawData(const char* data, size_t size);
 };
 
+class QStringV2 : public QString {
+      public:
+	QStringV2(const QByteArray& input);
+	QStringV2(const QString& input);
+	QStringV2(const std::string& input);
+	QStringV2(const std::string_view& input);
+	QStringV2(const char* input);
+	QStringV2(const std::filesystem::__cxx11::path& input);
+};
 #endif // HOME_ROY_PUBLIC_TESTRTY_STRINGOSO_H

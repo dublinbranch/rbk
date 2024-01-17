@@ -2,6 +2,7 @@
 #define FOLDER_H
 
 #include "ffCommon.h"
+#include "rbk/string/stringoso.h"
 #include <QString>
 
 namespace RBK {
@@ -19,5 +20,5 @@ uint        erase(const QStringList& files);
 
 QString hardLinkFolder(const QString& source, const QString& dest, HLParam param = HLParam::eraseOld);
 
-bool rmdirV2(const QString& path);
+bool rmdirV2(const QStringV2& path);
 #endif // FOLDER_H

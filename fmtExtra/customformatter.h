@@ -1,5 +1,5 @@
-#ifndef CUSTOMFORMATTER_H
-#define CUSTOMFORMATTER_H
+#ifndef HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_FMTEXTRA_CUSTOMFORMATTER_H
+#define HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_FMTEXTRA_CUSTOMFORMATTER_H
 
 //Looks like is not possible to have those function in a .cpp file for the moment
 
@@ -7,6 +7,9 @@
 #include "rbk/defines/stringDefine.h"
 #include <QDate>
 #include <QString>
+#include <filesystem>
+
+class QStringV2;
 
 template <>
 struct fmt::formatter<QStringView> : formatter<string_view> {
@@ -33,6 +36,14 @@ struct fmt::formatter<QString> : formatter<string_view> {
 };
 
 template <>
+struct fmt::formatter<QStringV2> : formatter<string_view> {
+	template <typename FormatContext>
+	auto format(const QString& p, FormatContext& ctx) const {
+		return formatter<string_view>::format(p.toStdString(), ctx);
+	}
+};
+
+template <>
 struct fmt::formatter<QByteArray> : formatter<string_view> {
 	template <typename FormatContext>
 	auto format(const QByteArray& p, FormatContext& ctx) const {
@@ -40,4 +51,12 @@ struct fmt::formatter<QByteArray> : formatter<string_view> {
 	}
 };
 
-#endif // CUSTOMFORMATTER_H
+template <>
+struct fmt::formatter<std::filesystem::__cxx11::path> : formatter<string_view> {
+	template <typename FormatContext>
+	auto format(const std::filesystem::__cxx11::path& p, FormatContext& ctx) const {
+		return formatter<string_view>::format(p.string(), ctx);
+	}
+};
+
+#endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_FMTEXTRA_CUSTOMFORMATTER_H

@@ -2,6 +2,7 @@
 #define HOME_ROY_PUBLIC_DITER_CLASS_LOG_H
 
 #include "rbk/minMysql/sqlbuffering.h"
+#include "rbk/string/stringoso.h"
 #include <QElapsedTimer>
 #include <QString>
 #include <qdatetime.h>
@@ -25,9 +26,9 @@ class Log {
 	QString section;
 
 	//the actual message
-	QByteArray stdOut;
-	QByteArray stdErr;
-	QByteArray stackTrace;
+	QByteArray   stdOut;
+	QByteArrayV2 stdErr;
+	QByteArray   stackTrace;
 
 	//many times we want to aggregate log for a specific function or process execution
 	Logs subLogs;
