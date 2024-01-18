@@ -5,11 +5,10 @@
 
 #include "fmt/format.h"
 #include "rbk/defines/stringDefine.h"
+#include "rbk/string/stringoso.h"
 #include <QDate>
 #include <QString>
 #include <filesystem>
-
-class QStringV2;
 
 template <>
 struct fmt::formatter<QStringView> : formatter<string_view> {
@@ -38,7 +37,7 @@ struct fmt::formatter<QString> : formatter<string_view> {
 template <>
 struct fmt::formatter<QStringV2> : formatter<string_view> {
 	template <typename FormatContext>
-	auto format(const QString& p, FormatContext& ctx) const {
+	auto format(const QStringV2& p, FormatContext& ctx) const {
 		return formatter<string_view>::format(p.toStdString(), ctx);
 	}
 };
@@ -47,6 +46,14 @@ template <>
 struct fmt::formatter<QByteArray> : formatter<string_view> {
 	template <typename FormatContext>
 	auto format(const QByteArray& p, FormatContext& ctx) const {
+		return formatter<string_view>::format(p.toStdString(), ctx);
+	}
+};
+
+template <>
+struct fmt::formatter<QByteArrayV2> : formatter<string_view> {
+	template <typename FormatContext>
+	auto format(const QByteArrayV2& p, FormatContext& ctx) const {
 		return formatter<string_view>::format(p.toStdString(), ctx);
 	}
 };

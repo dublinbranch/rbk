@@ -59,14 +59,14 @@ FPCRes filePutContents(const QByteArray& pay, const QString& fileName, bool verb
 	// TODO nel caso il file non sia scribile (di un altro utente) ritorna un vaghissimo WriteError, indicare se possibile meglio!
 	if (!file.open(QIODevice::Truncate | QIODevice::WriteOnly)) {
 		if (verbose) {
-			qCritical() << F16("Impossbile to write into {} due to {} in {}\n", fileName, asSWString(file.error()), QStacker16Light());
+			qCritical().noquote() << F16("Impossbile to write into {} due to {} in {}\n", fileName, asSWString(file.error()), QStacker16Light());
 		}
 		return {false, file.error()};
 	}
 	auto written = file.write(pay);
 	if (written != pay.size()) {
 		if (verbose) {
-			qCritical() << F16("Impossbile to write into {} due to {} in {}\n", fileName, asSWString(file.error()), QStacker16Light());
+			qCritical().noquote() << F16("Impossbile to write into {} due to {} in {}\n", fileName, asSWString(file.error()), QStacker16Light());
 		}
 		return {false, file.error()};
 	}

@@ -50,11 +50,11 @@ void StringV2::setRawData(const char* data, size_t size) {
 	// Directly accessing the internal data buffer of std::string
 	// This is risky and not recommended in standard C++!!!
 	// But we like to play with fire no ?
-	this->assign(data, size);
+	assign(data, size);
 }
 
 QStringV2::QStringV2(const QByteArray& input) {
-	*this = QString::fromUtf8(input);
+	append(fromUtf8(input));
 }
 
 QStringV2::QStringV2(const QString& input) {
@@ -62,17 +62,17 @@ QStringV2::QStringV2(const QString& input) {
 }
 
 QStringV2::QStringV2(const std::string& input) {
-	*this = QString::fromStdString(input);
+	append(fromStdString(input));
 }
 
 QStringV2::QStringV2(const std::string_view& input) {
-	*this = QString::fromLocal8Bit(input.data(), input.size());
+	append(fromLocal8Bit(input.data(), input.size()));
 }
 
 QStringV2::QStringV2(const char* input) {
-	*this = QString::fromLocal8Bit(input, strlen(input));
+	append(fromLocal8Bit(input, strlen(input)));
 }
 
 QStringV2::QStringV2(const std::filesystem::__cxx11::path& input) {
-	*this = QString::fromStdString(input.string());
+	append(fromStdString(input.string()));
 }

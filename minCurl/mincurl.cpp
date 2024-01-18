@@ -212,6 +212,7 @@ CurlCallResult urlPostContent(const QByteArray& url, const QByteArray& post, boo
 	CurlCallResult result;
 	char           errbuf[CURL_ERROR_SIZE] = {0};
 	CURL*          useMe                   = curl;
+
 	if (!useMe) {
 		useMe = curl_easy_init();
 		curl_easy_setopt(useMe, CURLOPT_TIMEOUT, 60); // 1 minute, if you do not like use you own curl
@@ -222,6 +223,45 @@ CurlCallResult urlPostContent(const QByteArray& url, const QByteArray& post, boo
 	} else {
 		curl_easy_setopt(useMe, CURLOPT_POSTFIELDS, post.constData());
 	}
+
+	// all those are needed
+	curl_easy_setopt(useMe, CURLOPT_URL, url.constData());
+
+	curl_easy_setopt(useMe, CURLOPT_WRITEDATA, &result.result);
+	curl_easy_setopt(useMe, CURLOPT_WRITEFUNCTION, QBWriter);
+
+	curl_easy_setopt(useMe, CURLOPT_HEADERFUNCTION, QSWriter);
+	curl_easy_setopt(useMe, CURLOPT_HEADERDATA, &result.headerRaw);
+
+	curl_easy_setopt(useMe, CURLOPT_SSL_VERIFYPEER, 0);
+	curl_easy_setopt(useMe, CURLOPT_SSL_VERIFYHOST, 0);
+
+	curl_easy_setopt(useMe, CURLOPT_ERRORBUFFER, errbuf);
+
+	result.errorCode = curl_easy_perform(useMe);
+	result.errorMsg  = errbuf;
+	curlTimer(result.timing, useMe);
+	if (result.errorCode == CURLE_OK) {
+		result.ok     = true;
+		result.header = parseHeader(result.headerRaw);
+	} else if (!quiet) {
+		qCritical().noquote() << "For:" << url << " code " << result.errorCode << "\n " << errbuf;
+	}
+
+	if (!curl) { // IF a local instance was used
+		curl_easy_cleanup(useMe);
+	}
+
+	return result;
+}
+
+CurlCallResult urlPutContent(const QByteArrayV2& url, const QByteArrayV2& put, CurlKeeper& curl, bool quiet) {
+	CurlCallResult result;
+	char           errbuf[CURL_ERROR_SIZE] = {0};
+	CURL*          useMe                   = curl;
+
+	curl_easy_setopt(useMe, CURLOPT_CUSTOMREQUEST, "PUT");
+	curl_easy_setopt(useMe, CURLOPT_POSTFIELDS, put.constData());
 
 	// all those are needed
 	curl_easy_setopt(useMe, CURLOPT_URL, url.constData());
@@ -437,4 +477,10 @@ QString Header::serialize() const {
 
 CurlCallResult urlGetContent2(const std::string& url, bool quiet, CURL* curl) {
 	return urlGetContent2(QByteArray::fromStdString(url), quiet, curl);
+}
+
+CurlCallResult urlPutContent(const QByteArrayV2& url, const QByteArrayV2& post, bool quiet) {
+	CurlKeeper curl;
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60); // 1 minute, if you do not like use you own curl
+	return urlPutContent(url, post, curl, quiet);
 }

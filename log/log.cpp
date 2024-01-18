@@ -1,20 +1,31 @@
 #include "log.h"
+#include "rbk/BoostJson/extra.h"
+#include "rbk/QStacker/qstacker.h"
 #include "rbk/fmtExtra/includeMe.h"
 
-QString Log::serialize() {
-	QString                  res;
-	static const std::string skel = R"(
-{} started @ {} terminated @ {}
-category: {}
+namespace bj = boost::json;
 
-stackTrace: {}
+std::string Log::serialize() {
+	used = true;
+	return pretty_print(toJson());
+}
 
-stdOut: {}
-
-stdErr: {}
-
-	)";
-	return {};
+boost::json::object Log::toJson() {
+	bj::object obj;
+	obj["category"]   = category;
+	obj["section"]    = section.toStdString();
+	obj["tsStart"]    = tsStart.toString(mysqlDateMicroTimeFormat).toStdString();
+	obj["elapsed"]    = elapsed;
+	obj["stdOut"]     = stdOut.toStdString();
+	obj["stdErr"]     = stdErr.toStdString();
+	obj["stackTrace"] = stackTrace.toStdString();
+	bj::array arr;
+	for (auto& log : subLogs) {
+		arr.push_back(log.toJson());
+	}
+	obj["subLogs"] = arr;
+	used           = true;
+	return obj;
 }
 
 Log::Log() {
@@ -36,8 +47,20 @@ Log::Log(const std::exception& e, const char* func) {
 	section  = func;
 }
 
-void Log::push(const Log& log) {
-	subLogs.push_back(log);
+Log::~Log() {
+	if (!used) {
+		qCritical().noquote() << "Log got wasted, this is not what you want...! use me" << QStacker16Light();
+	}
+}
+
+void Log::push(Log&& log) {
+	log.used = true;
+	subLogs.emplace_back(std::move(log));
+}
+
+void Log::push(Log& log) {
+	log.used = true;
+	subLogs.emplace_back(std::move(log));
 }
 
 void Log::setEnd() {

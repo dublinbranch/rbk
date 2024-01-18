@@ -225,6 +225,7 @@ void APCU::diskLoad() {
 		row.expireAt = line.expireAt;
 		//ofc if you reload something from disk it was born persistent!
 		row.persistent = true;
+		//fmt::print("reloaded {} expire @ {} \n", key, line.expireAt);
 		cache->emplace(row);
 	}
 }

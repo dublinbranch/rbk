@@ -3,6 +3,7 @@
 
 #include <qcontainerfwd.h>
 class Log;
+class QStringV2;
 
 // class Execute {
 //       public:
@@ -10,8 +11,15 @@ class Log;
 // };
 
 //This will internally split on space and generated the arguments
-Log execute(const QString& cmd, float maxTimeInS = 999);
-Log execute(QStringList& cmd, float maxTimeInS = 999);
 
-Log sudo(const QString& cmd, float maxTimeInS = 999);
+struct ExecuteOpt {
+	float maxTimeInS = 999;
+	//for *REASON* some program write not on stdout but on stderr like nginx...
+	bool isRetarded = false;
+};
+
+Log execute(const QString& cmd, ExecuteOpt opt = {});
+Log execute(QStringList& cmd, ExecuteOpt opt = {});
+
+Log sudo(const QStringV2& cmd, ExecuteOpt opt = {});
 #endif // RBK_EXECUTOR_H

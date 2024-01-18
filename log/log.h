@@ -1,6 +1,7 @@
 #ifndef HOME_ROY_PUBLIC_DITER_CLASS_LOG_H
 #define HOME_ROY_PUBLIC_DITER_CLASS_LOG_H
 
+#include "rbk/BoostJson/fwd.h"
 #include "rbk/minMysql/sqlbuffering.h"
 #include "rbk/string/stringoso.h"
 #include <QElapsedTimer>
@@ -9,7 +10,7 @@
 #include <vector>
 
 class Log;
-using Logs = std::vector<Log>;
+using Logs = std::list<Log>;
 
 class Log {
       public:
@@ -33,14 +34,19 @@ class Log {
 	//many times we want to aggregate log for a specific function or process execution
 	Logs subLogs;
 
-	QString      serialize();
+	[[nodiscard]] std::string serialize();
+	boost::json::object       toJson();
+
 	SQLBuffering toSqlRow() const;
 
 	Log();
 	Log(const QByteArray& _info, Category _category = Info);
 	Log(const std::exception& e, const char* func);
 
-	void push(const Log& log);
+	~Log();
+	bool used = false;
+	void push(Log&& log);
+	void push(Log& log);
 
 	void setEnd();
 
