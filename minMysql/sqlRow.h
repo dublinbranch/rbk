@@ -31,7 +31,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 
 	template <typename T>
-	[[nodiscard]] T rq(const QByteArray& key) const {
+	[[nodiscard]] T rq(const QByteArrayV2& key) const {
 		T temp;
 		rq(key, temp);
 		return temp;
