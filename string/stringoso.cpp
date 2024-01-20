@@ -47,9 +47,6 @@ StringV2::StringV2(const char* input) {
 }
 
 void StringV2::setRawData(const char* data, size_t size) {
-	// Directly accessing the internal data buffer of std::string
-	// This is risky and not recommended in standard C++!!!
-	// But we like to play with fire no ?
 	assign(data, size);
 }
 

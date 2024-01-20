@@ -64,7 +64,7 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	}
 
 	template <typename T>
-	T get(const K& k, const T&& t) const {
+	[[nodiscard]] T get(const K& k, const T&& t) const {
 		auto v = t;
 		if (auto iter = this->find(k); iter != this->end()) {
 			swapType(iter->second, v);
