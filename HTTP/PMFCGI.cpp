@@ -134,6 +134,7 @@ void Payload::setStandardHeaders(bool addCors) {
 	if (addCors) {
 		headers.insert({"Access-Control-Allow-Origin", "*"});
 	}
+	statusCode = 200;
 }
 
 void Payload::setCacheHeader(uint ttl) {

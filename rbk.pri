@@ -78,11 +78,13 @@ SOURCES += \
     $$PWD/caching/cachable.cpp \
     $$PWD/dateTime/timerange.cpp \
     $$PWD/log/log.cpp \
+    $$PWD/minMysql/rowswap.cpp \
     $$PWD/minMysql/sqlbuffering.cpp \
     $$PWD/misc/executor.cpp \
     $$PWD/string/qstringview.cpp \
     $$PWD/HTTP/mime.cpp \
     $$PWD/string/comparator.cpp   \
+    $$PWD/number/doubleoperator.cpp \
     $$PWD/string/stringoso.cpp
 
 HEADERS += \
@@ -90,12 +92,17 @@ HEADERS += \
     $$PWD/HTTP/PMFCGI.h \
     $$PWD/caching/cachable.h \
     $$PWD/log/log.h \
+    $$PWD/minMysql/rowSwappable.h \
+    $$PWD/minMysql/rowswap.h \
     $$PWD/minMysql/sqlbuffering.h \
+    $$PWD/misc/controlFlowMacro.h \
     $$PWD/misc/executor.h \
+    $$PWD/number/intTypes.h \
     $$PWD/string/qstringview.h \
     $$PWD/string/stringoso.h \
     $$PWD/types/isOptional.h \
     $$PWD/HTTP/mime.h \
+    $$PWD/number/doubleoperator.h \
     $$PWD/string/comparator.h 
 
 defined(WITH_BOOST_BEAST,var) {
