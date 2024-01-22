@@ -1,5 +1,6 @@
 #ifndef SWAPTYPE_H
 #define SWAPTYPE_H
+#include "rbk/concept/isRvalue.h"
 #include "rbk/defines/stringDefine.h"
 #include "rbk/magicEnum/BetterEnum.hpp"
 #include "rbk/magicEnum/magic_from_string.hpp"
@@ -86,6 +87,9 @@ void swapType(const QByteArray& source, D& dest) {
 		}
 		swapType(source, t);
 		dest = t;
+	} else if constexpr (TagInvokable<D>) {
+		RBK::swapTypeToTag<D> tag;
+		dest = tag_invoke(tag, source);
 	} else {
 		// poor man static assert that will also print for which type it failed
 		using X = typename D::something_made_up;
