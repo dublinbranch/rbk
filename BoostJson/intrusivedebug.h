@@ -5,6 +5,8 @@
 #include <fmt/format.h>
 #include <string>
 #include <vector>
+#include <boost/version.hpp>
+
 
 struct PushMe {
 	PushMe();
@@ -27,6 +29,12 @@ struct PushMe {
 #define BOOST_MESSAGE(x) (PushMe::message = (x));
 #endif
 
-#include "rbk/BoostJson/override/value_to.h"
+#if BOOST_VERSION == 108300
+#include "rbk/BoostJson/override/value_to_108300.hpp"
+#elif BOOST_VERSION == 108400
+#include "rbk/BoostJson/override/value_to_108400.hpp"
+#else
+#error "Unsupported Boost version for the intrusive HTTP Json customize one from json/detail/value_to.hpp"
+#endif
 
 #endif // INTRUSIVEDEBUG_H

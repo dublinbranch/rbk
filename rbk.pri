@@ -88,7 +88,7 @@ SOURCES += \
     $$PWD/string/stringoso.cpp
 
 HEADERS += \
-    $$PWD/../../googleAdsListener/rbk/concept/isRvalue.h \
+    $$PWD/concept/isRvalue.h \
     $$PWD/HTTP/PMFCGI.h \
     $$PWD/caching/cachable.h \
     $$PWD/log/log.h \
@@ -133,15 +133,14 @@ DISTFILES += \
 	$$PWD/minMysql/README.md \
 	$$PWD/minMysql/minMysql.pri
 
-#DEFINES += BOOST_NO_CXX17_HDR_STRING_VIEW
-
 HEADERS += \
+    $$PWD/BoostJson/override/value_to_108300.hpp \
+    $$PWD/BoostJson/override/value_to_108400.hpp \
     $$PWD/BoostJson/extra.h \
     $$PWD/BoostJson/fwd.h \
     $$PWD/BoostJson/depleter.h \
     #$$PWD/BoostJson/SwapperSpec.h \
-    #need to be updated
-    #$$PWD/BoostJson/intrusivedebug.h \
+    $$PWD/BoostJson/intrusivedebug.h \
     $$PWD/BoostJson/isjsonasubset.h \
     $$PWD/BoostJson/to_string.h \
     $$PWD/BoostJson/util.h \
@@ -216,7 +215,7 @@ HEADERS += \
 SOURCES += \
     $$PWD/BoostJson/depleter.cpp \
     $$PWD/BoostJson/extra.cpp \
-    #$$PWD/BoostJson/intrusivedebug.cpp \
+    $$PWD/BoostJson/intrusivedebug.cpp \
     $$PWD/BoostJson/isjsonasubset.cpp \
     $$PWD/BoostJson/to_string.cpp \
     $$PWD/BoostJson/util.cpp \
