@@ -125,7 +125,7 @@ void commonInitialization(const NanoSpammerConfig* _config) {
 
 	config = _config;
 	//We are server side we do not care about human broken standard
-	std::setlocale(LC_ALL, "C");
+	std::setlocale(LC_ALL, "C.UTF-8");
 	//Also for Qt for translation ecc
 	QLocale l(QLocale::C, QLocale::UnitedStates);
 	QLocale::setDefault(l);
