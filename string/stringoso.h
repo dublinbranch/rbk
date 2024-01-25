@@ -32,6 +32,7 @@ class StringV2 : public std::string {
 
 class QStringV2 : public QString {
       public:
+	QStringV2() = default;
 	QStringV2(const QByteArray& input);
 	QStringV2(const QString& input);
 	QStringV2(const std::string& input);
