@@ -8,6 +8,8 @@
 #include <QByteArray>
 #include <QString>
 
+#include "rbk/QStacker/httpexception.h"
+
 using namespace std;
 namespace bj = boost::json;
 using namespace std::string_literals;
@@ -201,7 +203,7 @@ void pushCreate(boost::json::object& json, std::string_view key, const boost::js
 }
 
 //TODO pass a context to support auto trowh and print in QCritical ecc
-JsonRes parseJson(std::string_view json) {
+JsonRes parseJson(std::string_view json, bool throwOnError) {
 	JsonRes res;
 
 	bj::parse_options opt;            // all extensions default to off
@@ -216,6 +218,9 @@ JsonRes parseJson(std::string_view json) {
 		//take a copy only in case of error
 		res.raw      = json;
 		res.position = consumed;
+		if (throwOnError) {
+			throw HttpException(res.composeErrorMsg());
+		}
 	} else {
 		res.json = p.release();
 	}
@@ -223,12 +228,8 @@ JsonRes parseJson(std::string_view json) {
 	return res;
 }
 
-JsonRes parseJson(const QByteArray& json) {
-	return parseJson(json.toStdString());
-}
-
-JsonRes parseJson(const QString& json) {
-	return parseJson(json.toStdString());
+JsonRes parseJson(const QByteArray& json, bool throwOnError) {
+	return parseJson(json.toStdString(), throwOnError);
 }
 
 void sqlEscape(boost::json::object& r, DB* db) {

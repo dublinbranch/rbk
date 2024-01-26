@@ -6,6 +6,10 @@
 #include <vector>
 
 class QString;
+class PMFCGI;
+class sqlResult;
+class Payload;
+class sqlRow;
 
 namespace Select2 {
 /*
@@ -42,6 +46,25 @@ struct Result {
 	std::vector<Row> rows;
 	std::string      toResultJSON() const;
 };
+
+struct PkConf {
+	//do not waste time using typedef or decltype just learn functor sintax
+	using StrReplaceFuntor     = void (*)(std::string& txt);
+	using StringAssemblyFuntor = Select2::Row(const sqlRow& txt);
+
+	//to replace a single string block (normally to place &nbsp; instead of space
+	StrReplaceFuntor strReplace = nullptr;
+
+	//to assemble it based on the result (std::function use to pass lambda)
+	std::function<StringAssemblyFuntor> stringAssembly = nullptr;
+
+	//add at the end a NONE row, with ID = NULL, used to unset the dropdown
+	bool NONE = false;
+};
+
+std::string search(std::string_view what, PMFCGI& status);
+std::string limits(PMFCGI& status);
+void        packer2(const sqlResult& rows, Payload& payload, PkConf* pkConf = nullptr);
 
 } // namespace Select2
 
