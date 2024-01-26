@@ -48,17 +48,17 @@ FPCRes filePutContents(const std::string& pay, const std::string& fileName, bool
 FPCRes filePutContents(const QByteArray& pay, const std::string& fileName, bool verbose = false);
 FPCRes filePutContents(const QByteArray& pay, const char* fileName, bool verbose = false);
 
-QByteArray fileGetContents(const QString& fileName, bool quiet = true);
-QByteArray fileGetContents(const QString& fileName, bool quiet, bool& success);
+[[nodiscard]] QByteArray fileGetContents(const QString& fileName, bool quiet = true);
+[[nodiscard]] QByteArray fileGetContents(const QString& fileName, bool quiet, bool& success);
 
-FileGetRes fileGetContents2(const QByteArrayV2& fileName, bool quiet = true, uint maxAge = 0);
+[[nodiscard]] FileGetRes fileGetContents2(const QByteArrayV2& fileName, bool quiet = true, uint maxAge = 0);
 
 bool fileAppendContents(const QString& pay, const QString& fileName);
 bool fileAppendContents(const QByteArray& pay, const QString& fileName);
 bool fileAppendContents(const std::string& pay, const QString& fileName);
 bool fileAppendContents(const std::string& pay, const std::string& fileName);
 
-QByteArray unzip1(QByteArray zipped);
+[[nodiscard]] QByteArray unzip1(QByteArray zipped);
 
 //TODO why are here ?
 /**
