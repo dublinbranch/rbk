@@ -94,7 +94,12 @@ struct Averager {
 	}
 };
 
-atomic<int>         threadFree{0};
+
+size_t getThreadCount() {
+    return threadStatus.pool.size();
+}
+
+
 static atomic<uint> request{0};
 static uint64_t     startedAt = QDateTime::currentMSecsSinceEpoch();
 static Averager     m1(60);
@@ -102,22 +107,23 @@ static Averager     m5(300);
 static Averager     m30(60 * 30);
 static Averager     m300(60 * 300);
 
+
 void requestBeging() {
 	localThreadStatus->state = ThreadState::Beast;
 	localThreadStatus->time.reset();
-	threadFree--;
-	static int minFree = 5; //floor(conf().workerLimit * 0.1);
+    threadStatus.free--;
+	//static size_t minFree = 5; //floor(conf().workerLimit * 0.1);
 	//if we care about usage, than we have a reasonable num of thread (at least 10)
-	if (minFree && threadFree < minFree) {
-		//TODO write on disk about low thread
-		for (auto& [x, t] : threadStatus.pool) {
-			(void)x;
-			(void)t;
-			//probably the actual status page is fine, just do a non html version with manual tabling suitable for log ?
-		}
-		//send a slack warning of all thread used ?
-		//but more important, what are the conseguences of using say 100 thread or 200 ? slower / overhead / X ?
-	}
+	// if (minFree && threadStatus.free < minFree) {
+	// 	//TODO write on disk about low thread
+	// 	for (auto& [x, t] : threadStatus.pool) {
+	// 		(void)x;
+	// 		(void)t;
+	// 		//probably the actual status page is fine, just do a non html version with manual tabling suitable for log ?
+	// 	}
+	// 	//send a slack warning of all thread used ?
+	// 	//but more important, what are the conseguences of using say 100 thread or 200 ? slower / overhead / X ?
+	// }
 	request++;
 	m1.bump();
 	m5.bump();
@@ -138,7 +144,7 @@ void requestEnd() {
 	m5.timing.syncFromDk_S7Db();
 	m30.timing.syncFromDk_S7Db();
 	m300.timing.syncFromDk_S7Db();
-	threadFree++;
+	threadStatus.free++;
 }
 void registerFlushTime() {
 	localThreadStatus->time.flush = localThreadStatus->time.timer.nsecsElapsed();
@@ -194,7 +200,7 @@ Used Thread : {}
 Exception   : {}
 </pre>
 )", // conf().workerLimit - threadFree
-	                             request.load(), rqs, threadFree.load(), 555, exceptionThrown.load());
+	                             request.load(), rqs, threadStatus.free.load(), getThreadCount(), exceptionThrown.load());
 
 	generalStatus += R"(
 <hr>

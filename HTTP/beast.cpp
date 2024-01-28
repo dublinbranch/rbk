@@ -484,6 +484,7 @@ void Beast::listen() {
 
 		threadStatus.pool.insert({t->get_id(), status});
 	}
+	threadStatus.free = threadStatus.pool.size();
 
 	// Block until all the threads exit
 	for (auto& t : threads) {

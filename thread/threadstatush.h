@@ -1,8 +1,8 @@
 #ifndef THREADSTATUSH_H
 #define THREADSTATUSH_H
 
-#include "rbk/misc/intTypes.h"
 #include "rbk/mapExtensor/hmap.h"
+#include "rbk/misc/intTypes.h"
 
 #include <QString>
 #include <memory>
@@ -74,6 +74,7 @@ class ThreadStatus {
 	static std::shared_ptr<Status> newStatus();
 
 	hmap<std::thread::id, std::shared_ptr<Status>> pool;
+	std::atomic<size_t>                               free{0};
 };
 
 #endif // THREADSTATUSH_H

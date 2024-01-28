@@ -7,10 +7,11 @@
 #include <mutex>
 
 template <typename T>
-qint64 fileSerialize(QString fileName, const T& t) {
+qint64 fileSerialize(const QString& fileName, const T& t) {
 	static QString currentFile;
 
 	//crude and imperfect way to avoid writing a file twice at the same time
+	//Because putting a single lock will de facto make this single threaded even if we have all different files
 	if (fileName == currentFile) {
 		return 0;
 	}
@@ -36,6 +37,7 @@ qint64 fileSerialize(QString fileName, const T& t) {
 		return false;
 	}
 
+	currentFile.clear();
 	return file.size();
 }
 
