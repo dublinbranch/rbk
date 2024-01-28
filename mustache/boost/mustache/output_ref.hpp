@@ -52,7 +52,9 @@ public:
 
     void write( core::string_view sv )
     {
-        fptr_( out_, sv );
+        if(!sv.empty()){
+            fptr_( out_, sv );
+        }
     }
 };
 

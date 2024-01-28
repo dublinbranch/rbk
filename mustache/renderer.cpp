@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <clocale>
 
+#include <immintrin.h>
+
 boost::mustache::renderer::renderer( json::value&& data, json::object&& partials, json::storage_ptr sp ):
     context_stack_( sp ), partials_( std::move( partials ), sp ),
     whitespace_( sp ), start_delim_( "{{", sp ), end_delim_( "}}", sp ),
@@ -427,9 +429,79 @@ void boost::mustache::renderer::finish_state_end_triple( output_ref out )
     tag_.clear();
 }
 
+#ifdef __AVX512F__
+const char* find_char(const char* p, const char* end, char delimiter) {
+    // Prepare a 64-byte vector with the delimiter
+    __m512i delim_vec = _mm512_set1_epi8(delimiter);
+    
+    while (p + 64 <= end) {
+        // Load 64 bytes of data from the current position (unaligned)
+        __m512i data = _mm512_loadu_si512(reinterpret_cast<const __m512i*>(p));
+        
+        // Compare each byte with the delimiter
+        uint64_t mask = _mm512_cmpeq_epi8_mask(data, delim_vec);
+        
+        if (mask != 0) {
+            // At least one match found, determine the exact position
+            int index = __builtin_ctzll(mask); // Find the index of the first set bit
+            return (p + index);
+        }
+        
+        p += 64; // Move to the next block of 64 bytes
+    }
+    
+    // Handle the remaining bytes with a scalar loop
+    while (p < end) {
+        if (*p == delimiter) {
+            return const_cast<char*>(p); // Cast needed due to returning a non-const pointer
+        }
+        ++p;
+    }
+    
+    // Delimiter not found
+    return end;
+}
+#endif
+
+#ifdef __AVX2__
+const char* find_char(const char* p, const char* end, char delimiter) {
+    // Prepare a 32-byte vector with the delimiter
+    __m256i delim_vec = _mm256_set1_epi8(delimiter);
+    
+    while (p + 32 <= end) {
+        // Load 32 bytes of data from the current position (unaligned)
+        __m256i data = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(p));
+        
+        // Compare each byte with the delimiter
+        __m256i cmp_result = _mm256_cmpeq_epi8(data, delim_vec);
+        
+        // Create a bitmask representing the comparison results
+        int mask = _mm256_movemask_epi8(cmp_result);
+        
+        if (mask != 0) {
+            // At least one match found, determine the exact position
+            int index = __builtin_ctz(mask); // Find the index of the first set bit
+            return p + index;
+        }
+        
+        p += 32; // Move to the next block of 32 bytes
+    }
+    
+    // Handle the remaining bytes with a scalar loop
+    while (p < end) {
+        if (*p == delimiter) {
+            return p;
+        }
+        ++p;
+    }
+    
+    // Delimiter not found
+    return end;
+}
+#endif
+
 // state_passthrough consumes literal input and emits it immediately,
 // without buffering
-
 boost::core::string_view boost::mustache::renderer::handle_state_passthrough( core::string_view in, output_ref out )
 {
     if( in_section_ )
@@ -439,31 +511,35 @@ boost::core::string_view boost::mustache::renderer::handle_state_passthrough( co
 
     char const* p = in.data();
     char const* end = p + in.size();
-
-    while( p != end && *p != '\n' && *p != start_delim_[0] )
-    {
-        ++p;
-    }
-
+    
+    //why the newline check ?
+    //&& *p != '\n'
+    // while( p != end && *p != start_delim_[0] )
+    // {
+    //     ++p;
+    // }
+    
+    p = find_char(p,end,start_delim_[0]);
+        
     out.write( { in.data(), static_cast<std::size_t>( p - in.data() ) } );
 
     if( p != end )
     {
-        if( *p == '\n' )
-        {
-            out.write( { p, 1 } );
-            ++p;
+        // if( *p == '\n' )
+        // {
+        //     out.write( { p, 1 } );
+        //     ++p;
 
-            state_ = state_leading_wsp;
-            whitespace_ = partial_lwsp_;
-        }
-        else
-        {
+        //     state_ = state_leading_wsp;
+        //     whitespace_ = partial_lwsp_;
+        // }
+        // else
+        // {
             standalone_ = false;
 
             state_ = state_start_delim;
             delim_index_ = 0;
-        }
+        // }
     }
 
     return { p, static_cast<std::size_t>( end - p ) };

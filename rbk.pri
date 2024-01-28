@@ -64,7 +64,7 @@ LIBS += -lmaxminddb
 # if compile error because not found "maxminddb.h" file (included in GeoLite2PP.hpp) then install "libmaxminddb-devel" package in YaST2F
 LIBS += -L'$$PWD/GeoLite2PP' -lgeolite2++
 
-
+LIBS += -ljemalloc
 LIBS += -ldw
 LIBS += -ldl
 LIBS += -lfmt   #zypper in fmt-devel should be enought
