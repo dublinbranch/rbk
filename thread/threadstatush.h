@@ -19,6 +19,7 @@ enum class ThreadState {
 	MyCache,
 	ClickHouse,
 	cURL,
+	// will take more time to update the status than perform the fetch ... APCU,
 };
 
 class ElapsedTimerV2 {
@@ -74,7 +75,7 @@ class ThreadStatus {
 	static std::shared_ptr<Status> newStatus();
 
 	hmap<std::thread::id, std::shared_ptr<Status>> pool;
-	std::atomic<size_t>                               free{0};
+	std::atomic<size_t>                            free{0};
 };
 
 #endif // THREADSTATUSH_H
