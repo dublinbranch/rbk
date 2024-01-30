@@ -15,6 +15,7 @@
 #include "rbk/serialization/QDataStreamer.h"
 
 #include <QDataStream>
+#include <QSaveFile>
 #include <rbk/mapExtensor/qmapV2.h>
 
 using namespace std;
@@ -158,7 +159,7 @@ bool APCU::Row::expired(qint64 ts) const {
 }
 
 void APCU::diskSyncP2() {
-	fmt::print("Start collecting data to write on disk\n");
+	//fmt::print("Start collecting data to write on disk\n");
 	DiskMapType      toBeWritten;
 	std::shared_lock lock(innerLock);
 
@@ -182,25 +183,25 @@ void APCU::diskSyncP2() {
 		}
 	}
 
-	fmt::print("{} element to write\n", toBeWritten.size());
+	//fmt::print("{} element to write\n", toBeWritten.size());
 
-	QFileXT file("apcu.dat");
-	if (!file.open(QIODevice::WriteOnly, false)) {
-		return;
+	QSaveFile file("apcu.dat");
+	if (!file.open(QIODevice::WriteOnly)) {
+		qCritical("impossible to save apcu cache!");
 	}
 	QDataStream out(&file);
 	//how to write in qt6 a map into the stream ?
 
 	out << toBeWritten;
-	file.flush();
-	fmt::print("{} byte wrote\n", file.size());
+	file.commit();
+	//fmt::print("{} byte wrote\n", file.size());
 }
 
 void APCU::diskSyncP1() {
 	//stop garbageCollector_F2
 
-	requestGarbageCollectorStop.test_and_set();
 	garbageCollectorRunning.wait(true);
+	requestGarbageCollectorStop.test_and_set();
 
 	diskSyncP2();
 }
@@ -267,8 +268,13 @@ void APCU::garbageCollector_F2() {
 				iter++;
 			}
 		}
-		//WARNING FIXME REMOVE ME ONLY FOR DEBUG!
-		//diskSyncP2();
+		if (diskSaveTime) {
+			static qint64 lastSync = 0;
+			if (now > lastSync + diskSaveTime) {
+				diskSyncP2();
+				lastSync = now;
+			}
+		}
 	}
 	garbageCollectorRunning.clear();
 	garbageCollectorRunning.notify_one();

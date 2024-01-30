@@ -27,9 +27,9 @@ class Log {
 	QString section;
 
 	//the actual message
-	QByteArray   stdOut;
-	QByteArrayV2 stdErr;
-	QByteArray   stackTrace;
+	QByteArray stdOut;
+	QByteArray stdErr;
+	QByteArray stackTrace;
 
 	//many times we want to aggregate log for a specific function or process execution
 	Logs subLogs;

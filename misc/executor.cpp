@@ -75,7 +75,7 @@ Log execute(const QString& cmd, ExecuteOpt opt) {
 	return execute(param, opt);
 }
 
-Log sudo(const QStringV2& cmd, ExecuteOpt opt) {
+Log sudo(const QStringViewV2& cmd, ExecuteOpt opt) {
 	QStringList pack;
 	pack << "/bin/bash";
 	pack << "-c"

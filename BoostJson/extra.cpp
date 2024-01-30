@@ -228,7 +228,11 @@ JsonRes parseJson(std::string_view json, bool throwOnError) {
 	return res;
 }
 
-JsonRes parseJson(const QByteArray& json, bool throwOnError) {
+JsonRes parseJson(const std::string& json, bool throwOnError) {
+	return parseJson(string_view(json), throwOnError);
+}
+
+JsonRes parseJson(const QByteViewV2& json, bool throwOnError) {
 	return parseJson(json.toStdString(), throwOnError);
 }
 
@@ -415,21 +419,25 @@ QByteArray tag_invoke(const boost::json::value_to_tag<QByteArray>&, const boost:
 	return q;
 }
 
-std::optional<boost::json::value*> optPointer(boost::json::value& value, std::string_view ptr) {
-	error_code jec;
-
-	auto result = value.find_pointer(ptr, jec);
-	if (jec) {
-		return {};
-	}
-	return result;
-}
-
-string asString(const boost::json::value& value) {
+string_view asString(const boost::json::value& value) {
 	auto& r = value.as_string();
-	return std::string(r.data(), r.size());
+	return std::string_view(r.data(), r.size());
 }
 
 QString QS(const boost::json::value& value, std::string_view key) {
 	return QS(value.at(key));
+}
+
+std::string_view asString(const boost::json::object& value, std::string_view key, std::string_view def) {
+	if (auto el = value.if_contains(key); el) {
+		return asString(*el);
+	}
+	return def;
+}
+
+std::string_view asString(const boost::json::object& value, std::string_view key) {
+	if (auto el = value.if_contains(key); el) {
+		return asString(*el);
+	}
+	return {};
 }

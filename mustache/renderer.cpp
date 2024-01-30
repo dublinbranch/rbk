@@ -461,9 +461,7 @@ const char* find_char(const char* p, const char* end, char delimiter) {
     // Delimiter not found
     return end;
 }
-#endif
-
-#ifdef __AVX2__
+#elif __AVX2__
 const char* find_char(const char* p, const char* end, char delimiter) {
     // Prepare a 32-byte vector with the delimiter
     __m256i delim_vec = _mm256_set1_epi8(delimiter);

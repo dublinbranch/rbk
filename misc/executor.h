@@ -3,7 +3,7 @@
 
 #include <qcontainerfwd.h>
 class Log;
-class QStringV2;
+class QStringViewV2;
 
 // class Execute {
 //       public:
@@ -21,5 +21,5 @@ struct ExecuteOpt {
 Log execute(const QString& cmd, ExecuteOpt opt = {});
 Log execute(QStringList& cmd, ExecuteOpt opt = {});
 
-Log sudo(const QStringV2& cmd, ExecuteOpt opt = {});
+Log sudo(const QStringViewV2& cmd, ExecuteOpt opt = {});
 #endif // RBK_EXECUTOR_H

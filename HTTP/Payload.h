@@ -50,8 +50,8 @@ struct Payload {
 	void        setCacheHeader(uint ttl);
 
 	//some quality of life functions
-	void redirect(const StringV2& location);
-	void setCookie(const std::string_view& key, const StringV2& value, u32 cookieTTL, bool sameSite = true, bool secure = true);
+        void redirect(const StringViewV2& location);
+        void setCookie(const std::string_view& key, const StringViewV2& value, u32 cookieTTL, bool sameSite = true, bool secure = true);
 };
 
 #endif // PAYLOAD_H

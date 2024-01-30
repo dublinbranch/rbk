@@ -2,11 +2,15 @@
 
 //This file is a disciple of the light shown in https://www.boost.org/doc/libs/1_80_0/libs/json/doc/html/json/dom/conversion.html
 
+#include "rbk/BoostJson/to_string.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
+#include "rbk/string/stringoso.h"
 #include <boost/json.hpp>
 #include <optional>
 
-//namespace bj = boost::json;
+//there is no arm in doing this
+namespace bj = boost::json;
+
 //using namespace std::string_literals; <<-- this one for the suffix s to conver from char[] to std::string
 
 class QString;
@@ -18,7 +22,9 @@ QString QS(const boost::json::value& value);
 
 QString QS(const boost::json::value& value, std::string_view key);
 
-std::string asString(const boost::json::value& value);
+std::string_view asString(const boost::json::object& value, std::string_view key);
+std::string_view asString(const boost::json::object& value, std::string_view key, std::string_view def);
+std::string_view asString(const boost::json::value& value);
 
 /** FROM */
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QString& t);
@@ -43,6 +49,7 @@ QString pretty_printQS(boost::json::value const& jv);
 
 QString serializeQS(boost::json::value const& jv);
 
+//What is the purpose of this stuff ?
 template <class T>
 boost::json::value J(T&& t) {
 	boost::json::value jv;
@@ -75,8 +82,9 @@ struct JsonRes {
 	[[nodiscard]] std::string composeErrorMsg() const;
 };
 
-JsonRes parseJson(const QByteArray& json, bool throwOnError = false);
+JsonRes parseJson(const QByteViewV2& json, bool throwOnError = false);
 JsonRes parseJson(std::string_view json, bool throwOnError = false);
+JsonRes parseJson(const std::string& json, bool throwOnError = false);
 
 std::string escape_json(const std::string& s);
 QString     escape_json(const QString& string);
@@ -104,3 +112,46 @@ bool getNumber(const boost::json::value& v, std::string_view key, T& val, const 
 
 class DB;
 void sqlEscape(boost::json::object& value, DB* db);
+
+// template <typename T>
+// T rq(boost::json::object& obj, std::string_view key) {
+// }
+
+// template <typename T>
+// T get(boost::json::object& obj, std::string_view key) {
+// }
+
+// template <typename T>
+// T get(boost::json::object& obj, std::string_view key, const T& def) {
+// 	auto* it = obj.if_contains(key);
+// 	if (!it) {
+// 		return def;
+// 	}
+// 	switch (it->kind()) {
+// 	case bj::kind::object: {
+// 		throw ExceptionV2("this is an object!");
+// 	}
+
+// 	case bj::kind::array: {
+// 		throw ExceptionV2("this is an array!");
+// 	}
+
+// 	case bj::kind::string: {
+// 		//atm we only support string_view
+// 		if constexpr (std::is_same_v<T, std::string_view>) {
+// 			return it->get_string();
+// 		}
+// 		break;
+// 	}
+// 	case bj::kind::int64:
+// 	case bj::kind::double_:
+// 	case bj::kind::uint64:
+// 		return it->to_number<T>();
+
+// 	case bj::kind::bool_:
+// 		return it->get_bool();
+
+// 	case bj::kind::null:
+// 		return def;
+// 	}
+// }

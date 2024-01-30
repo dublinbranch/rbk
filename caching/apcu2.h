@@ -26,6 +26,8 @@ class APCU : private NoCopy {
 */
 
 	static inline bool disableAPCU = false;
+	//if 0 disabled, else every how many second to save on disk
+	static inline uint diskSaveTime = 0;
 
 	struct Row {
 		//Corpus munus

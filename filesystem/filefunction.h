@@ -51,7 +51,7 @@ FPCRes filePutContents(const QByteArray& pay, const char* fileName, bool verbose
 [[nodiscard]] QByteArray fileGetContents(const QString& fileName, bool quiet = true);
 [[nodiscard]] QByteArray fileGetContents(const QString& fileName, bool quiet, bool& success);
 
-[[nodiscard]] FileGetRes fileGetContents2(const QByteArrayV2& fileName, bool quiet = true, uint maxAge = 0);
+[[nodiscard]] FileGetRes fileGetContents2(const QByteViewV2& fileName, bool quiet = true, uint maxAge = 0);
 
 bool fileAppendContents(const QString& pay, const QString& fileName);
 bool fileAppendContents(const QByteArray& pay, const QString& fileName);
