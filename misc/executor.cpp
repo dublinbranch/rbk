@@ -9,6 +9,8 @@
 #include <QProcess>
 
 #include "rbk/QStacker/qstacker.h"
+#include "rbk/filesystem/filefunction.h"
+#include "rbk/filesystem/folder.h"
 
 using namespace std;
 
@@ -81,4 +83,40 @@ Log sudo(const QStringViewV2& cmd, ExecuteOpt opt) {
 	pack << "-c"
 	     << "sudo " + cmd;
 	return execute(pack, opt);
+}
+
+Log saveInto(const QStringViewV2& path, const QByteViewV2& content, QString chown, QString chmod) {
+	Log log;
+	log.section = "saveInto";
+
+	auto temp = getTempFile(QString{});
+
+	filePutContents(content, temp, true);
+	log.push(sudo(F16("mv {} {}", temp, path)));
+	log.push(sudo(F16("chown {} {}", chown, path)));
+	log.push(sudo(F16("chmod {} {}", chmod, path)));
+
+	return log;
+}
+
+Log moveInto(const QString& old, const QString& neu, QString chown, QString chmod) {
+	Log log;
+	log.section = __FUNCTION__;
+
+	log.push(sudo(F16("mv {} {}", old, neu)));
+	log.push(sudo(F16("chown {} {}", chown, neu)));
+	log.push(sudo(F16("chmod {} {}", chmod, neu)));
+
+	return log;
+}
+
+Log copyInto(const QStringViewV2& old, const QStringViewV2& neu, QString chown, QString chmod) {
+	Log log;
+	log.section = __FUNCTION__;
+
+	log.push(sudo(F16("cp {} {}", old, neu)));
+	log.push(sudo(F16("chown {} {}", chown, neu)));
+	log.push(sudo(F16("chmod {} {}", chmod, neu)));
+
+	return log;
 }

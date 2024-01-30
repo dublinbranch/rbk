@@ -1,13 +1,13 @@
 #ifndef SHA_H
 #define SHA_H
 
+#include "rbk/string/stringoso.h"
 #include <QByteArray>
 #include <QString>
 
-QByteArray sha512(const QByteArray& original, bool urlSafe = true);
+QByteArray sha512(const QByteViewV2& original, bool urlSafe = true);
 
-QByteArray sha256(const QByteArray& original, bool urlSafe = true);
-QByteArray sha256(const QString& original, bool urlSafe = true);
+QByteArray sha256(const QByteViewV2& original, bool urlSafe = true);
 
 QByteArray sha1(const QByteArray& original, bool urlSafe = true);
 QByteArray sha1(const QString& original, bool urlSafe = true);

@@ -117,3 +117,6 @@ struct FileResV2 {
 FileResV2 innerOrDynamic(const QString& innerPath, const QString& dynamicPath);
 
 std::filesystem::path GetCurExecutablePath();
+
+std::filesystem::path getTempFile();
+QString               getTempFile(const QString&);

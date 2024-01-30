@@ -13,6 +13,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QSaveFile>
+#include <QUuid>
 #include <boost/tokenizer.hpp>
 #include <mutex>
 #include <sys/file.h>
@@ -576,9 +577,22 @@ FileResV2::operator bool() {
 }
 
 std::filesystem::path GetCurExecutablePath() {
-	char                   result[PATH_MAX];
-	ssize_t                count = readlink("/proc/self/exe", result, PATH_MAX);
-	std::string            path  = std::string(result, (count > 0) ? count : 0);
-	std::string::size_type pos   = path.find_last_of('/');
-	return path.substr(0, pos);
+	static std::filesystem::path path;
+	if (path.string().empty()) {
+		char                   result[PATH_MAX];
+		ssize_t                count = readlink("/proc/self/exe", result, PATH_MAX);
+		std::string            temp  = std::string(result, (count > 0) ? count : 0);
+		std::string::size_type pos   = temp.find_last_of('/');
+		path                         = temp.substr(0, pos);
+	}
+	return path;
+}
+
+std::filesystem::path getTempFile() {
+	return GetCurExecutablePath() / QUuid::createUuid().toByteArray().toStdString();
+}
+
+QString getTempFile(const QString& x) {
+	(void)x;
+	return QString::fromStdString(getTempFile());
 }
