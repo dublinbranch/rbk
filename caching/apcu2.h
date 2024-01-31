@@ -1,8 +1,10 @@
 #pragma once
 
 #include "rbk/QStacker/exceptionv2.h"
+#include "rbk/concept/isSharedPtr.h"
 #include "rbk/misc/intTypes.h"
 #include "rbk/mixin/NoCopy.h"
+#include "rbk/string/stringoso.h"
 #include <QDateTime>
 #include <QString>
 #include <any>
@@ -64,7 +66,7 @@ class APCU : private NoCopy {
 	 * We hide the implementation as multi index will kill compile time
 	 */
 	std::any fetchInner(const std::string& key);
-	void     storeInner(const std::string& _key, const std::any& _value, bool overwrite_ = false, u64 ttl = 60);
+	void     storeInner(const std::string& _key, const std::any& _value, bool overwrite_ = false, u64 ttl = 60, bool persistent = false);
 	void     storeInner(const APCU::Row& row_, bool overwrite_);
 	void     remove(const std::string& key);
 
@@ -95,7 +97,7 @@ class APCU : private NoCopy {
 	 * @param ttl
 	 */
 	template <class T>
-	void store(const std::string& key, std::shared_ptr<T>& obj, int ttl = 60) {
+	void store(const std::string& key, std::shared_ptr<T>& obj, uint ttl = 60, bool persistent = false) {
 
 		// std::shared_ptr<T> x;
 		// auto&              tp    = typeid(x);
@@ -103,7 +105,7 @@ class APCU : private NoCopy {
 		// auto               name0 = tp.name();
 
 		std::any value = obj;
-		storeInner(key, value, true, ttl);
+		storeInner(key, value, true, ttl, persistent);
 	}
 
 	void clear();
@@ -182,40 +184,25 @@ FetchPodResult fetchPOD(const QString& key);
 FetchPodResult fetchPOD(const std::string& key);
 
 template <class T>
-void apcuStore(const std::string& key, std::shared_ptr<T>& obj, int ttl = 60) {
-	auto a = APCU::getInstance();
-	a->store(key, obj, ttl);
+void apcuStore(const StringViewV2& key, T&& obj, uint ttl = 60, bool persistent = false) {
+	if constexpr (is_shared_ptr<std::decay_t<T>>::value) {
+		// If T is a std::shared_ptr
+		APCU::getInstance()->store(key, std::forward<T>(obj), ttl, persistent);
+	} else {
+		// If T is not a std::shared_ptr, create one and use it
+		auto sharedPtr = std::make_shared<std::decay_t<T>>(std::forward<T>(obj));
+		APCU::getInstance()->store(key, sharedPtr, ttl, persistent);
+	}
 }
 
 template <class T>
-void apcuStore(const QString& key, std::shared_ptr<T>& obj, int ttl = 60) {
-	apcuStore(key.toStdString(), obj, ttl);
-}
-
-template <class T>
-void apcuStore(const std::string& key, const T& obj, int ttl = 60) {
-	auto copy = std::make_shared<T>(obj);
-	apcuStore(key, copy, ttl);
-}
-
-template <class T>
-void apcuStore(const QString& key, const T& obj, int ttl = 60) {
-	apcuStore(key.toStdString(), obj, ttl);
-}
-
-template <class T>
-std::shared_ptr<T> apcuFetch(const std::string& key) {
+std::shared_ptr<T> apcuFetch(const StringViewV2& key) {
 	auto a   = APCU::getInstance();
 	auto res = a->fetch<T>(key);
 	return res;
 }
 
-template <class T>
-std::shared_ptr<T> apcuFetch(const QString& key) {
-	return apcuFetch<T>(key.toStdString());
-}
-
-void apcuRemove(const std::string& key);
+void apcuRemove(const StringViewV2& key);
 
 void apcuClear();
 int  apcuTest();

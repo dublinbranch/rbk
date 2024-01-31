@@ -83,12 +83,13 @@ std::any APCU::fetchInner(const std::string& key) {
 	return {};
 }
 
-void APCU::storeInner(const std::string& _key, const std::any& _value, bool overwrite_, u64 ttl) {
+void APCU::storeInner(const std::string& _key, const std::any& _value, bool overwrite_, u64 ttl, bool persistent) {
 	u64 expireAt = 0;
 	if (ttl) {
 		expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
 	}
 	Row row(_key, _value, expireAt);
+	row.persistent = persistent;
 	storeInner(row, overwrite_);
 }
 
@@ -312,7 +313,7 @@ QDataStream& operator>>(QDataStream& in, APCU::DiskValue& v) {
 }
 #endif
 
-void apcuRemove(const std::string& key) {
+void apcuRemove(const StringViewV2& key) {
 	auto a = APCU::getInstance();
 	a->remove(key);
 }
