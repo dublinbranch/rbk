@@ -10,6 +10,7 @@ class PMFCGI;
 class sqlResult;
 class Payload;
 class sqlRow;
+class QStringViewV2;
 
 namespace Select2 {
 /*
@@ -62,7 +63,13 @@ struct PkConf {
 	bool NONE = false;
 };
 
-std::string search(std::string_view what, PMFCGI& status);
+enum class SearchPattern {
+	START,
+	ANYWHERE,
+	EXACT,
+};
+
+std::string search(const QStringViewV2& http, std::string_view sql, PMFCGI& status, SearchPattern pattern = SearchPattern::START);
 std::string limits(PMFCGI& status);
 void        packer2(const sqlResult& rows, Payload& payload, PkConf* pkConf = nullptr);
 

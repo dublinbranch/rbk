@@ -46,10 +46,20 @@ Select2::Row::Row(const QString& id_, const QString& text_, bool sel) {
 	selected = sel;
 }
 
-std::string Select2::search(std::string_view what, PMFCGI& status) {
+std::string Select2::search(const QStringViewV2& http, std::string_view sql, PMFCGI& status, SearchPattern pattern) {
 	string search;
-	if (auto v = status.get.get("search"); v) {
-		search = F(" `{}` LIKE '{}%'", what, mainDB->escape(*v.val));
+	if (auto v = status.get.get(http); v) {
+		switch (pattern) {
+		case SearchPattern::START:
+			search = F(" `{}` LIKE '{}%'", sql, mainDB->escape(*v.val));
+			break;
+		case SearchPattern::ANYWHERE:
+			search = F(" `{}` LIKE '%{}%'", sql, mainDB->escape(*v.val));
+			break;
+		case SearchPattern::EXACT:
+			search = F(" `{}` = '{}'", sql, mainDB->escape(*v.val));
+			break;
+		}
 	}
 	return search;
 }
