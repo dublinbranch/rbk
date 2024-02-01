@@ -2,6 +2,7 @@
 #include "rbk/BoostJson/extra.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/fmtExtra/includeMe.h"
+#include <QDebug>
 
 namespace bj = boost::json;
 

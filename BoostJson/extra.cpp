@@ -14,57 +14,6 @@ using namespace std;
 namespace bj = boost::json;
 using namespace std::string_literals;
 
-void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QString& t) {
-	jv = t.toStdString();
-}
-
-void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QByteArray& t) {
-	jv = t.toStdString();
-}
-
-/*
-https://www.boost.org/doc/libs/1_80_0/libs/json/doc/html/json/dom/conversion.html
-
-struct customer
-{
-    std::uint64_t id;
-    std::string name;
-    bool late;
-
-    customer() = default;
-
-    customer( std::uint64_t i, const std::string& n, bool l )
-        : id( i ), name( n ), late( l ) { }
-
-
-};
-
-void tag_invoke( const bj::value_from_tag&, bj::value& jv, customer const& c )
-{
-    // Assign a JSON value
-    jv = {
-        { "id", c.id },
-        { "name", c.name },
-        { "late", c.late }
-    };
-}
-
-
-        std::vector< customer > customers = {
-                customer( 0, "Alison", false ),
-                customer( 1, "Bill", false ),
-                customer( 3, "Catherine", true ),
-                customer( 4, "Doug", false )
-         };
-
-
-
-        bj::value jv = bj::value_from( customers);
-                //So it understood was a vector...
-                assert( jv.is_array() );
-
-*/
-
 using namespace boost;
 void pretty_print(std::string& os, json::value const& jv, std::string* indent) {
 	std::string indent_;
@@ -163,7 +112,7 @@ json::value asNull(const sqlRow& row, std::string_view key) {
 }
 
 QString QS(const boost::json::string& cry) {
-	return QString::fromStdString(cry.data());
+	return QString::fromUtf8(cry.data(), cry.size());
 }
 
 QString QS(const boost::json::value* value) {
@@ -342,10 +291,6 @@ At position {} (line {}:{})
 	return msg;
 }
 
-void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QStringList& t) {
-	jv = bj::value_from(std::list<QString>(t.begin(), t.end()));
-}
-
 QString serializeQS(const boost::json::value& jv) {
 	auto t = pretty_printQS(jv);
 	return t;
@@ -399,24 +344,12 @@ QString escape_json(const QString& string) {
 	return QString::fromStdString(escape_json(string.toStdString()));
 }
 
-QString tag_invoke(const boost::json::value_to_tag<QString>&, const boost::json::value& jv) {
-	return QS(jv);
-}
-
 void createOrAppendObj(boost::json::object& json, std::string_view container, std::string_view newElement, const boost::json::value& newValue) {
 	if (auto* obj = json.if_contains(container); obj) {
 		obj->as_object()[newElement] = newValue;
 	} else {
 		json[container] = {{newElement, newValue}};
 	}
-}
-
-QByteArray tag_invoke(const boost::json::value_to_tag<QByteArray>&, const boost::json::value& jv) {
-	auto       s = jv.as_string();
-	QByteArray q;
-	q.setRawData(s.data(), static_cast<uint>(s.size()));
-	q.detach();
-	return q;
 }
 
 string_view asString(const boost::json::value& value) {

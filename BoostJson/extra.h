@@ -1,7 +1,7 @@
 #pragma once
 
 //This file is a disciple of the light shown in https://www.boost.org/doc/libs/1_80_0/libs/json/doc/html/json/dom/conversion.html
-
+#include "rbk/BoostJson/taginvoke.h"
 #include "rbk/BoostJson/to_string.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/string/stringoso.h"
@@ -25,21 +25,6 @@ QString QS(const boost::json::value& value, std::string_view key);
 std::string_view asString(const boost::json::object& value, std::string_view key);
 std::string_view asString(const boost::json::object& value, std::string_view key, std::string_view def);
 std::string_view asString(const boost::json::value& value);
-
-/** FROM */
-void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QString& t);
-void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QByteArray& t);
-void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const QStringList& t);
-
-template <isEnum T>
-void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, const T& t) {
-	jv = asSWString(t);
-}
-
-/** TO */
-
-QString    tag_invoke(const boost::json::value_to_tag<QString>&, const boost::json::value& jv);
-QByteArray tag_invoke(const boost::json::value_to_tag<QByteArray>&, const boost::json::value& jv);
 
 /***********************/
 void        pretty_print(std::string& res, boost::json::value const& jv, std::string* indent = nullptr);

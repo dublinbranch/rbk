@@ -1,6 +1,6 @@
 #ifndef SWAPTYPE_H
 #define SWAPTYPE_H
-#include "rbk/concept/isRvalue.h"
+#include "rbk/concept/concepts.h"
 #include "rbk/defines/stringDefine.h"
 #include "rbk/magicEnum/BetterEnum.hpp"
 #include "rbk/magicEnum/magic_from_string.hpp"

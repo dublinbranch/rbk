@@ -18,4 +18,8 @@ concept TagInvokable = requires(const RBK::swapTypeToTag<T> tag, const QByteArra
 	{ tag_invoke(tag, source) };
 };
 
+template <typename T>
+concept isEnum = std::is_enum_v<T>;
+
+
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_CONCEPT_ISRVALUE_H

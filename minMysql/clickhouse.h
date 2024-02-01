@@ -6,7 +6,6 @@
 #include <QByteArray>
 #include <QString>
 #include <QVariant>
-#include <concepts>
 
 class ClickHouse {
       public:

@@ -1,5 +1,4 @@
 #include "extra.h"
-#include "function.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/misc/executor.h"
 #include <QByteArray>

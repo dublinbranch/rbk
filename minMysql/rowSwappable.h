@@ -1,5 +1,5 @@
-#ifndef ROWSWAPPABLE_H
-#define ROWSWAPPABLE_H
+#ifndef HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_MINMYSQL_ROWSWAPPABLE_H
+#define HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_MINMYSQL_ROWSWAPPABLE_H
 
 //add in your type this, no need to expose in the describe
 //Boostjson use a different approach, but I do not know very well it yet
@@ -10,4 +10,4 @@ struct RowSwappableType {};
 template<typename T>
 concept isRowSwappableType = requires { T::rowSwappable; };
 
-#endif // ROWSWAPPABLE_H
+#endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_MINMYSQL_ROWSWAPPABLE_H

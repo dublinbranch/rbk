@@ -1,5 +1,5 @@
-#ifndef DBCONF_H
-#define DBCONF_H
+#ifndef HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_MINMYSQL_DBCONF_H
+#define HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_MINMYSQL_DBCONF_H
 
 #include "rbk/QStacker/CxaLevel.h"
 #include <QList>
@@ -51,4 +51,4 @@ struct DBConf {
       private:
 };
 
-#endif // DBCONF_H
+#endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_MINMYSQL_DBCONF_H

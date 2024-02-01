@@ -1,10 +1,10 @@
 #ifndef RBK_EXECUTOR_H
 #define RBK_EXECUTOR_H
 
+#include "rbk/log/log.h"
 #include "rbk/string/stringoso.h"
 #include <qcontainerfwd.h>
 
-class Log;
 class QStringViewV2;
 
 // class Execute {

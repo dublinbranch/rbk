@@ -74,6 +74,7 @@ LIBS += -lmariadb
 
 #HTTP part that is enought common and lightweigh
 SOURCES += \
+    $$PWD/BoostJson/taginvoke.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
     $$PWD/caching/cachable.cpp \
     $$PWD/dateTime/timerange.cpp \
@@ -88,7 +89,10 @@ SOURCES += \
     $$PWD/string/stringoso.cpp
 
 HEADERS += \
-    $$PWD/concept/isRvalue.h \
+	$$PWD/BoostJson/tagInvokeCrono.h \
+    $$PWD/BoostJson/taginvoke.h \
+	$$PWD/concept/concepts.h \
+	$$PWD/concept/isSharedPtr.h \
     $$PWD/HTTP/PMFCGI.h \
     $$PWD/caching/cachable.h \
     $$PWD/log/log.h \

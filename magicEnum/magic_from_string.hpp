@@ -4,9 +4,9 @@
 #include "fmt/ranges.h"
 #include "magic_enum.hpp"
 #include "rbk/QStacker/exceptionv2.h"
+#include "rbk/concept/concepts.h"
 #include <QByteArray>
 #include <QString>
-#include <concepts>
 #include <vector>
 
 //Todo is possible to do magic_enum::enum_name(INVALID_VALUE) which will silently fail and return an empty string, not what we want!
@@ -78,9 +78,6 @@ template <typename E>
 }
 
 } // namespace magic_enum
-
-template <typename T>
-concept isEnum = std::is_enum_v<T>;
 
 template <isEnum T>
 [[nodiscard]] QString asString(T t) {
