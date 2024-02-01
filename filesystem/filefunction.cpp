@@ -98,7 +98,8 @@ FileGetRes fileGetContents2(const QByteViewV2& fileName, bool quiet, uint maxAge
 
 QByteArray fileGetContents(const QString& fileName, bool quiet, bool& success) {
 	if (fileName.isEmpty()) {
-		return QByteArray();
+		//it is NEVER ok to have an empty filename!!!
+		throw ExceptionV2("empty filename !");
 	}
 	QFileXT file;
 	file.setFileName(fileName);

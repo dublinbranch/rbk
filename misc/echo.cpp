@@ -3,11 +3,7 @@
 #include "rbk/fmtExtra/customformatter.h"
 #include <QDebug>
 
-void echo(const std::string_view s) {
-	fmt::print("{}\n", s);
-}
-
-void echo(const std::string& s) {
+void echo(const StringViewV2& s) {
 	fmt::print("{}\n", s);
 }
 
@@ -21,8 +17,4 @@ void critical(const std::string& msg) {
 	QByteArray q;
 	q.setRawData(msg.data(), (uint)msg.size());
 	qCritical().noquote() << q;
-}
-
-void echo(const QByteArray& s) {
-	fmt::print("{}\n", s);
 }

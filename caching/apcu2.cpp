@@ -201,8 +201,11 @@ void APCU::diskSyncP2() {
 void APCU::diskSyncP1() {
 	//stop garbageCollector_F2
 
-	garbageCollectorRunning.wait(true);
+	//send stop signal
 	requestGarbageCollectorStop.test_and_set();
+
+	//wait for the thread to exit
+	garbageCollectorRunning.wait(true);
 
 	diskSyncP2();
 }

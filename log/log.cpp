@@ -49,7 +49,7 @@ Log::Log(const std::exception& e, const char* func) {
 }
 
 Log::~Log() {
-	if (!used) {
+if (!used) {
 		qCritical().noquote() << "Log got wasted, this is not what you want...! use me" << QStacker16Light();
 	}
 }

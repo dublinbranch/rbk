@@ -417,6 +417,8 @@ value_to_impl(
     value const& jv,
     Ctx const& ctx )
 {
+	static_assert(std::is_default_constructible<T>::value, "The destination type must be default constructible");
+
     result<T> res;
 
     auto* obj = jv.if_object();

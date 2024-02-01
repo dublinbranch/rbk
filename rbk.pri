@@ -99,6 +99,7 @@ HEADERS += \
     $$PWD/minMysql/rowSwappable.h \
     $$PWD/minMysql/rowswap.h \
     $$PWD/minMysql/sqlbuffering.h \
+	$$PWD/misc/NanoSpammerConfigDescribe.h \
     $$PWD/misc/controlFlowMacro.h \
     $$PWD/misc/executor.h \
     $$PWD/number/intTypes.h \

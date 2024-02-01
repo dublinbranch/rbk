@@ -63,4 +63,11 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, cons
 	jv = bj::array({t.hour(), t.minute(), t.second()});
 }
 
+void boost::json::tag_invoke(const value_from_tag&, value& jv, const std::filesystem::__cxx11::path& t) {
+	jv = t.string();
+}
 
+std::filesystem::__cxx11::path boost::json::tag_invoke(const bj::value_to_tag<std::filesystem::__cxx11::path>&, const value& jv) {
+	std::filesystem::path path = std::string_view(jv.as_string());
+	return path;
+}
