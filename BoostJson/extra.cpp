@@ -357,8 +357,12 @@ string_view asString(const boost::json::value& value) {
 	return std::string_view(r.data(), r.size());
 }
 
-QString QS(const boost::json::value& value, std::string_view key) {
-	return QS(value.at(key));
+QString QS(const boost::json::value& value, std::string_view key, const QString& def) {
+	if (auto el = value.as_object().if_contains(key); el) {
+		return QS(*el);
+	}
+	
+	return def;
 }
 
 std::string_view asString(const boost::json::object& value, std::string_view key, std::string_view def) {

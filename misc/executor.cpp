@@ -45,7 +45,18 @@ Log execute(QStringList& cmd, ExecuteOpt opt) {
 	process.setProcessEnvironment(env);
 	auto task = cmd.takeFirst();
 	process.start(task, cmd);
-	process.waitForFinished(static_cast<int>(opt.maxTimeInS) * 1000);
+	if (!process.waitForStarted(1000)) {
+		log.category = Log::Error;
+		log.stdErr   = "process did not start after 1000ms";
+		return log;
+	}
+
+	{
+		auto wait = static_cast<int>(opt.maxTimeInS) * 1000;
+		//this is so retarded, for REASON this is not actually wait in case the process do not exists
+		usleep(100 * 1000); //100ms;
+		process.waitForFinished(wait);
+	}
 	log.setEnd();
 
 	log.section = task + " " + cmd.join(" ");

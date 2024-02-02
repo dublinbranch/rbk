@@ -590,7 +590,7 @@ std::filesystem::path GetCurExecutablePath() {
 }
 
 std::filesystem::path getTempFile() {
-	return GetCurExecutablePath() / QUuid::createUuid().toByteArray().toStdString();
+	return GetCurExecutablePath() / "temp" / QUuid::createUuid().toByteArray().toStdString();
 }
 
 QString getTempFile(const QString& x) {

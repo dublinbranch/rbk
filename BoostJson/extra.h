@@ -20,7 +20,7 @@ QString QS(const boost::json::string& cry);
 QString QS(const boost::json::value* value);
 QString QS(const boost::json::value& value);
 
-QString QS(const boost::json::value& value, std::string_view key);
+QString QS(const boost::json::value& value, std::string_view key, const QString& def = QString());
 
 std::string_view asString(const boost::json::object& value, std::string_view key);
 std::string_view asString(const boost::json::object& value, std::string_view key, std::string_view def);
