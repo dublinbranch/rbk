@@ -6,6 +6,10 @@
 
 namespace bj = boost::json;
 
+bool Log::hasError() const {
+	return !stdErr.isEmpty();
+}
+
 std::string Log::serialize() {
 	used = true;
 	return pretty_print(toJson());
@@ -49,7 +53,7 @@ Log::Log(const std::exception& e, const char* func) {
 }
 
 Log::~Log() {
-if (!used) {
+	if (!used) {
 		qCritical().noquote() << "Log got wasted, this is not what you want...! use me" << QStacker16Light();
 	}
 }

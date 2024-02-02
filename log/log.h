@@ -34,6 +34,8 @@ class Log {
 	//many times we want to aggregate log for a specific function or process execution
 	Logs subLogs;
 
+	[[nodiscard]] bool hasError() const;
+
 	[[nodiscard]] std::string serialize();
 	boost::json::object       toJson();
 
