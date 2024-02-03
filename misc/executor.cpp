@@ -28,6 +28,9 @@ Log execute(const std::vector<string>& args, ExecuteOpt opt) {
 
 	std::error_code ec = process.start(args, options);
 
+	//we are not going to write any data, plus if you do not do this LXC will hang!!!
+	process.close(reproc::stream::in);
+
 	if (ec == std::errc::no_such_file_or_directory) {
 		throw ExceptionV2(F("Program >>>{}<<< not found. Make sure it's available from the PATH.", args.front()));
 	} else if (ec) {
@@ -41,17 +44,17 @@ Log execute(const std::vector<string>& args, ExecuteOpt opt) {
 	reproc::sink::string sinkErr(error);
 
 	ec = reproc::drain(process, sink, sinkErr);
-	if (ec) {
-		log.stdErr = F8("{} {}", ec.message(), ec.value());
-		return log;
-	}
 
 	if (!output.empty()) {
 		log.stdOut = QByteArray::fromStdString(output);
 	}
 
+	if (ec) {
+		log.stdErr.append(F8("\n{} {}\n", ec.message(), ec.value()));
+	}
+
 	if (!error.empty()) {
-		log.stdErr = QByteArray::fromStdString(error);
+		log.stdErr.append(QByteArray::fromStdString(error));
 	}
 
 	log.setEnd();
