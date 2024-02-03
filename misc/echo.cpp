@@ -3,7 +3,7 @@
 #include "rbk/fmtExtra/customformatter.h"
 #include <QDebug>
 
-void echo(const StringViewV2& s) {
+void echo(const StringAdt& s) {
 	fmt::print("{}\n", s);
 }
 

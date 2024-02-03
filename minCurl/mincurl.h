@@ -176,8 +176,8 @@ CurlCallResult urlGetContent2(const char* url, bool quiet = false, CURL* curl = 
 CurlCallResult urlPostContent(const QByteArray& url, const QByteArray& post, bool quiet = false, CURL* curl = nullptr);
 CurlCallResult urlPostContent(const std::string& url, const std::string& post, bool quiet = false, CURL* curl = nullptr);
 //LXC vuole fare il prezzemolino e usa PUT...
-CurlCallResult urlPutContent(const QByteViewV2& url, const QByteViewV2& post, CurlKeeper& curl, bool quiet = false);
-CurlCallResult urlPutContent(const QByteViewV2& url, const QByteViewV2& post, bool quiet = false);
+CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& post, CurlKeeper& curl, bool quiet = false);
+CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& post, bool quiet = false);
 
 /**
  * @brief urlGetCached

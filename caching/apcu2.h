@@ -184,7 +184,7 @@ FetchPodResult fetchPOD(const QString& key);
 FetchPodResult fetchPOD(const std::string& key);
 
 template <class T>
-void apcuStore(const StringViewV2& key, T&& obj, uint ttl = 60, bool persistent = false) {
+void apcuStore(const StringAdt& key, T&& obj, uint ttl = 60, bool persistent = false) {
 	if constexpr (is_shared_ptr<std::decay_t<T>>::value) {
 		// If T is a std::shared_ptr
 		APCU::getInstance()->store(key, std::forward<T>(obj), ttl, persistent);
@@ -196,13 +196,13 @@ void apcuStore(const StringViewV2& key, T&& obj, uint ttl = 60, bool persistent 
 }
 
 template <class T>
-std::shared_ptr<T> apcuFetch(const StringViewV2& key) {
+std::shared_ptr<T> apcuFetch(const StringAdt& key) {
 	auto a   = APCU::getInstance();
 	auto res = a->fetch<T>(key);
 	return res;
 }
 
-void apcuRemove(const StringViewV2& key);
+void apcuRemove(const StringAdt& key);
 
 void apcuClear();
 int  apcuTest();

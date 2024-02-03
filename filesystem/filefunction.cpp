@@ -81,7 +81,7 @@ QByteArray fileGetContents(const QString& fileName, bool quiet) {
 	return x;
 }
 
-FileGetRes fileGetContents2(const QByteViewV2& fileName, bool quiet, uint maxAge) {
+FileGetRes fileGetContents2(const QByteAdt& fileName, bool quiet, uint maxAge) {
 	FileGetRes res;
 	if (maxAge) {
 		auto cTime = QFileInfo(fileName).lastModified().toSecsSinceEpoch();

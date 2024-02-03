@@ -46,7 +46,7 @@ Select2::Row::Row(const QString& id_, const QString& text_, bool sel) {
 	selected = sel;
 }
 
-std::string Select2::search(const QStringViewV2& http, std::string_view sql, PMFCGI& status, SearchPattern pattern) {
+std::string Select2::search(const QStringAdt& http, std::string_view sql, PMFCGI& status, SearchPattern pattern) {
 	string search;
 	if (auto v = status.get.get(http); v) {
 		switch (pattern) {

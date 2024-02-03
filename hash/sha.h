@@ -5,9 +5,9 @@
 #include <QByteArray>
 #include <QString>
 
-QByteArray sha512(const QByteViewV2& original, bool urlSafe = true);
+QByteArray sha512(const QByteAdt& original, bool urlSafe = true);
 
-QByteArray sha256(const QByteViewV2& original, bool urlSafe = true);
+QByteArray sha256(const QByteAdt& original, bool urlSafe = true);
 
 QByteArray sha1(const QByteArray& original, bool urlSafe = true);
 QByteArray sha1(const QString& original, bool urlSafe = true);

@@ -35,9 +35,9 @@ struct fmt::formatter<QString> : formatter<string_view> {
 };
 
 template <>
-struct fmt::formatter<QStringViewV2> : formatter<string_view> {
+struct fmt::formatter<QStringAdt> : formatter<string_view> {
 	template <typename FormatContext>
-        auto format(const QStringViewV2& p, FormatContext& ctx) const {
+        auto format(const QStringAdt& p, FormatContext& ctx) const {
 		return formatter<string_view>::format(p.toStdString(), ctx);
 	}
 };
@@ -51,9 +51,9 @@ struct fmt::formatter<QByteArray> : formatter<string_view> {
 };
 
 template <>
-struct fmt::formatter<QByteViewV2> : formatter<string_view> {
+struct fmt::formatter<QByteAdt> : formatter<string_view> {
 	template <typename FormatContext>
-        auto format(const QByteViewV2& p, FormatContext& ctx) const {
+        auto format(const QByteAdt& p, FormatContext& ctx) const {
 		return formatter<string_view>::format(p.toStdString(), ctx);
 	}
 };

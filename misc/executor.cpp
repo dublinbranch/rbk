@@ -5,63 +5,56 @@
 #include "rbk/log/log.h"
 #include <QDateTime>
 #include <QDebug>
-#include <QObject>
-#include <QProcess>
 
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/filesystem/folder.h"
+
+#include <reproc++/drain.hpp>
+#include <reproc++/reproc.hpp>
 
 using namespace std;
 
 bool Execute_logStackTrace = true;
 bool Execute_printOnError  = false;
 
-void readData(QProcess& process, QProcess::ProcessChannel channel, QByteArray& buffer) {
-	process.setReadChannel(channel);
-	while (true) {
-		auto data = process.readLine(0);
-		if (data.isEmpty()) {
-			break;
-		}
-		buffer.append(data);
-		//echo(data);
+Log execute(const std::vector<string>& args, ExecuteOpt opt) {
+	Log log;
+	log.section = F16("{} {}", args.front(), fmt::join(args, ","));
+
+	reproc::process process;
+	reproc::options options;
+	options.deadline = reproc::milliseconds((int)(opt.maxTimeInS * 1000));
+
+	std::error_code ec = process.start(args, options);
+
+	if (ec == std::errc::no_such_file_or_directory) {
+		throw ExceptionV2(F("Program >>>{}<<< not found. Make sure it's available from the PATH.", args.front()));
+	} else if (ec) {
+		log.stdErr = F8("{} {}", ec.message(), ec.value());
+		return log;
 	}
-}
+	std::string          output;
+	reproc::sink::string sink(output);
 
-Log execute(QStringList& cmd, ExecuteOpt opt) {
-	Log      log;
-	QProcess process;
-	auto     env = QProcessEnvironment::systemEnvironment();
+	std::string          error;
+	reproc::sink::string sinkErr(error);
 
-	QObject::connect(&process, &QProcess::readyReadStandardError, [&process, &log]() {
-		readData(process, QProcess::StandardError, log.stdErr);
-	});
-	QObject::connect(&process, &QProcess::readyReadStandardOutput, [&process, &log]() {
-		readData(process, QProcess::StandardOutput, log.stdOut);
-	});
-
-	env.remove("LD_LIBRARY_PATH");
-	process.setProcessEnvironment(env);
-	auto task = cmd.takeFirst();
-	process.start(task, cmd);
-	if (!process.waitForStarted(1000)) {
-		log.category = Log::Error;
-		log.stdErr   = "process did not start after 1000ms";
+	ec = reproc::drain(process, sink, sinkErr);
+	if (ec) {
+		log.stdErr = F8("{} {}", ec.message(), ec.value());
 		return log;
 	}
 
-	{
-		auto wait = static_cast<int>(opt.maxTimeInS) * 1000;
-		//this is so retarded, for REASON this is not actually wait in case the process do not exists
-		usleep(100 * 1000); //100ms;
-		process.waitForFinished(wait);
+	if (!output.empty()) {
+		log.stdOut = QByteArray::fromStdString(output);
 	}
-	log.setEnd();
 
-	log.section = task + " " + cmd.join(" ");
-	readData(process, QProcess::StandardError, log.stdErr);
-	readData(process, QProcess::StandardOutput, log.stdOut);
+	if (!error.empty()) {
+		log.stdErr = QByteArray::fromStdString(error);
+	}
+
+	log.setEnd();
 
 	if (Execute_logStackTrace) {
 		log.stackTrace = QStacker();
@@ -75,7 +68,7 @@ Log execute(QStringList& cmd, ExecuteOpt opt) {
 			log.category = Log::Error;
 			if (Execute_printOnError) {
 				qCritical().noquote() << F16("For {} \n stdlog: {}\n stderr: {} \n Trace: {}",
-				                             cmd[1], log.stdOut, log.stdErr, log.stackTrace);
+				                             args.front(), log.stdOut, log.stdErr, log.stackTrace);
 			}
 		}
 	}
@@ -83,20 +76,23 @@ Log execute(QStringList& cmd, ExecuteOpt opt) {
 	return log;
 }
 
-Log execute(const QString& cmd, ExecuteOpt opt) {
-	auto param = cmd.split(" ");
-	return execute(param, opt);
+Log execute(const QStringAdt& cmd, ExecuteOpt opt) {
+	auto                param = cmd.split(" ");
+	std::vector<string> args;
+	for (auto& p : param) {
+		args.push_back(p.toStdString());
+	}
+	return execute(args, opt);
 }
 
-Log sudo(const QStringViewV2& cmd, ExecuteOpt opt) {
-	QStringList pack;
-	pack << "/bin/bash";
-	pack << "-c"
-	     << "sudo " + cmd;
+Log sudo(const StringAdt& cmd, ExecuteOpt opt) {
+	std::vector<string> pack;
+	pack.push_back("sudo");
+	pack.push_back(cmd);
 	return execute(pack, opt);
 }
 
-Log saveInto(const QStringViewV2& path, const QByteViewV2& content, QString chown, QString chmod) {
+Log saveInto(const QStringAdt& path, const QByteAdt& content, QString chown, QString chmod) {
 	Log log;
 	log.section = "saveInto";
 
@@ -121,7 +117,7 @@ Log moveInto(const QString& old, const QString& neu, QString chown, QString chmo
 	return log;
 }
 
-Log copyInto(const QStringViewV2& old, const QStringViewV2& neu, QString chown, QString chmod) {
+Log copyInto(const QStringAdt& old, const QStringAdt& neu, QString chown, QString chmod) {
 	Log log;
 	log.section = __FUNCTION__;
 

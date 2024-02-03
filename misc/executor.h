@@ -5,7 +5,7 @@
 #include "rbk/string/stringoso.h"
 #include <qcontainerfwd.h>
 
-class QStringViewV2;
+class QStringAdt;
 
 // class Execute {
 //       public:
@@ -20,10 +20,10 @@ struct ExecuteOpt {
 	bool isRetarded = false;
 };
 
-Log execute(const QString& cmd, ExecuteOpt opt = {});
-Log execute(QStringList& cmd, ExecuteOpt opt = {});
+Log execute(const QStringAdt& cmd, ExecuteOpt opt = {});
+Log execute(const std::vector<std::string>& args, ExecuteOpt opt = {});
 
-Log sudo(const QStringViewV2& cmd, ExecuteOpt opt = {});
+Log sudo(const StringAdt& cmd, ExecuteOpt opt = {});
 
 /**
  * @brief saveInto will execute sudo to move the file in place where we can not access
@@ -31,9 +31,9 @@ Log sudo(const QStringViewV2& cmd, ExecuteOpt opt = {});
  * @param path
  * @param content
  */
-Log saveInto(const QStringViewV2& path, const QByteViewV2& content, QString chown = "root:root", QString chmod = "644");
+Log saveInto(const QStringAdt& path, const QByteAdt& content, QString chown = "root:root", QString chmod = "644");
 //Similar but in case the file already exists
 Log moveInto(const QString& old, const QString& neu, QString chown = "root:root", QString chmod = "644");
-Log copyInto(const QStringViewV2& old, const QStringViewV2& neu, QString chown = "root:root", QString chmod = "644");
+Log copyInto(const QStringAdt& old, const QStringAdt& neu, QString chown = "root:root", QString chmod = "644");
 
 #endif // RBK_EXECUTOR_H

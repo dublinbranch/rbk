@@ -181,7 +181,7 @@ JsonRes parseJson(const std::string& json, bool throwOnError) {
 	return parseJson(string_view(json), throwOnError);
 }
 
-JsonRes parseJson(const QByteViewV2& json, bool throwOnError) {
+JsonRes parseJson(const QByteAdt& json, bool throwOnError) {
 	return parseJson(json.toStdString(), throwOnError);
 }
 

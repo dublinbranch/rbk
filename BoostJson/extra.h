@@ -67,7 +67,7 @@ struct JsonRes {
 	[[nodiscard]] std::string composeErrorMsg() const;
 };
 
-JsonRes parseJson(const QByteViewV2& json, bool throwOnError = false);
+JsonRes parseJson(const QByteAdt& json, bool throwOnError = false);
 JsonRes parseJson(std::string_view json, bool throwOnError = false);
 JsonRes parseJson(const std::string& json, bool throwOnError = false);
 

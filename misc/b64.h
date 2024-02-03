@@ -5,8 +5,8 @@
 #include <QString>
 
 QString    base64this(const char* param);
-QByteArray toBase64(const QByteViewV2& url64, bool urlSafe = true);
-QByteArray fromBase64(const QByteViewV2& url64, bool urlSafe = true);
+QByteArray toBase64(const QByteAdt& url64, bool urlSafe = true);
+QByteArray fromBase64(const QByteAdt& url64, bool urlSafe = true);
 QString    fromBase64(const QString& url64, bool urlSafe = true);
 //bool       isB64Valid(QString input, bool checkLength = false);
 bool    isB64Valid(const QByteArray& input, bool urlSafe = false);

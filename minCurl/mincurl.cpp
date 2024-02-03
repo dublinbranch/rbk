@@ -255,7 +255,7 @@ CurlCallResult urlPostContent(const QByteArray& url, const QByteArray& post, boo
 	return result;
 }
 
-CurlCallResult urlPutContent(const QByteViewV2& url, const QByteViewV2& put, CurlKeeper& curl, bool quiet) {
+CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& put, CurlKeeper& curl, bool quiet) {
 	CurlCallResult result;
 	char           errbuf[CURL_ERROR_SIZE] = {0};
 	CURL*          useMe                   = curl;
@@ -479,7 +479,7 @@ CurlCallResult urlGetContent2(const std::string& url, bool quiet, CURL* curl) {
 	return urlGetContent2(QByteArray::fromStdString(url), quiet, curl);
 }
 
-CurlCallResult urlPutContent(const QByteViewV2& url, const QByteViewV2& post, bool quiet) {
+CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& post, bool quiet) {
 	CurlKeeper curl;
 	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60); // 1 minute, if you do not like use you own curl
 	return urlPutContent(url, post, curl, quiet);

@@ -221,7 +221,7 @@ void APCU::diskLoad() {
 	std::shared_lock lock(innerLock);
 	in >> toBeWritten;
 
-	fmt::print("APCU found {} element to reload\n", toBeWritten.size());
+	//fmt::print("APCU found {} element to reload\n", toBeWritten.size());
 
 	for (auto&& [key, line] : toBeWritten) {
 		APCU::Row row;
@@ -236,6 +236,9 @@ void APCU::diskLoad() {
 }
 
 void APCU::garbageCollector_F2() {
+	if (disableAPCU) {
+		return;
+	}
 	//TODO On program exit stop this gc operation, else we will have double free problem
 	auto& byExpire = cache->get<ByExpire>();
 	garbageCollectorRunning.test_and_set();
@@ -316,7 +319,7 @@ QDataStream& operator>>(QDataStream& in, APCU::DiskValue& v) {
 }
 #endif
 
-void apcuRemove(const StringViewV2& key) {
+void apcuRemove(const StringAdt& key) {
 	auto a = APCU::getInstance();
 	a->remove(key);
 }

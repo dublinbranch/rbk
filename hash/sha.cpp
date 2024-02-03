@@ -1,7 +1,7 @@
 #include "sha.h"
 #include <QCryptographicHash>
 
-QByteArray sha512(const QByteViewV2& original, bool urlSafe) {
+QByteArray sha512(const QByteAdt& original, bool urlSafe) {
 	auto sha = QCryptographicHash::hash(original, QCryptographicHash::Algorithm::Sha512);
 	if (urlSafe) {
 		return sha.toBase64(QByteArray::Base64Option::Base64UrlEncoding | QByteArray::Base64Option::OmitTrailingEquals);
@@ -9,7 +9,7 @@ QByteArray sha512(const QByteViewV2& original, bool urlSafe) {
 	return sha.toBase64(QByteArray::Base64Option::OmitTrailingEquals);
 }
 
-QByteArray sha256(const QByteViewV2& original, bool urlSafe) {
+QByteArray sha256(const QByteAdt& original, bool urlSafe) {
 	auto sha = QCryptographicHash::hash(original, QCryptographicHash::Algorithm::Sha256);
 	if (urlSafe) {
 		return sha.toBase64(QByteArray::Base64Option::Base64UrlEncoding | QByteArray::Base64Option::OmitTrailingEquals);

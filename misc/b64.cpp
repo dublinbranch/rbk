@@ -9,7 +9,7 @@ QString base64this(const char* param) {
 	return base64this(cheap);
 }
 
-QByteArray toBase64(const QByteViewV2& url64, bool urlSafe) {
+QByteArray toBase64(const QByteAdt& url64, bool urlSafe) {
 	auto b = QByteArray::Base64Option::Base64UrlEncoding | QByteArray::Base64Option::OmitTrailingEquals;
 	if (urlSafe) {
 		return url64.toBase64(b);
