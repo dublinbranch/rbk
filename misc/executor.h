@@ -21,9 +21,9 @@ struct ExecuteOpt {
 };
 
 Log execute(const QStringAdt& cmd, ExecuteOpt opt = {});
-Log execute(const std::vector<std::string>& args, ExecuteOpt opt = {});
+//Log execute(const std::vector<std::string>& args, ExecuteOpt opt = {});
 
-Log sudo(const StringAdt& cmd, ExecuteOpt opt = {});
+Log sudo(const QStringAdt& cmd, ExecuteOpt opt = {});
 
 /**
  * @brief saveInto will execute sudo to move the file in place where we can not access

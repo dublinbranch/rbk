@@ -18,21 +18,28 @@ using namespace std;
 bool Execute_logStackTrace = true;
 bool Execute_printOnError  = false;
 
-Log execute(const std::vector<string>& args, ExecuteOpt opt) {
+Log execute(const QStringAdt& args, ExecuteOpt opt) {
 	Log log;
-	log.section = F16("{} {}", args.front(), fmt::join(args, ","));
+	log.section = "execute: " + args;
 
 	reproc::process process;
 	reproc::options options;
-	options.deadline = reproc::milliseconds((int)(opt.maxTimeInS * 1000));
+	options.redirect.parent   = false;
+	options.redirect.err.type = reproc::redirect::pipe;
+	options.redirect.out.type = reproc::redirect::pipe;
 
-	std::error_code ec = process.start(args, options);
+	if (opt.maxTimeInS > 0) {
+		options.deadline = reproc::milliseconds((int)(opt.maxTimeInS * 1000));
+	}
+
+	std::vector<string> ar = {"/bin/bash", "-c", args.toStdString()};
+	std::error_code     ec = process.start(ar, options);
 
 	//we are not going to write any data, plus if you do not do this LXC will hang!!!
 	process.close(reproc::stream::in);
 
 	if (ec == std::errc::no_such_file_or_directory) {
-		throw ExceptionV2(F("Program >>>{}<<< not found. Make sure it's available from the PATH.", args.front()));
+		throw ExceptionV2(F("Program >>>{}<<< not found. Make sure it's available from the PATH.", args));
 	} else if (ec) {
 		log.stdErr = F8("{} {}", ec.message(), ec.value());
 		return log;
@@ -71,7 +78,7 @@ Log execute(const std::vector<string>& args, ExecuteOpt opt) {
 			log.category = Log::Error;
 			if (Execute_printOnError) {
 				qCritical().noquote() << F16("For {} \n stdlog: {}\n stderr: {} \n Trace: {}",
-				                             args.front(), log.stdOut, log.stdErr, log.stackTrace);
+				                             args, log.stdOut, log.stdErr, log.stackTrace);
 			}
 		}
 	}
@@ -79,20 +86,8 @@ Log execute(const std::vector<string>& args, ExecuteOpt opt) {
 	return log;
 }
 
-Log execute(const QStringAdt& cmd, ExecuteOpt opt) {
-	auto                param = cmd.split(" ");
-	std::vector<string> args;
-	for (auto& p : param) {
-		args.push_back(p.toStdString());
-	}
-	return execute(args, opt);
-}
-
-Log sudo(const StringAdt& cmd, ExecuteOpt opt) {
-	std::vector<string> pack;
-	pack.push_back("sudo");
-	pack.push_back(cmd);
-	return execute(pack, opt);
+Log sudo(const QStringAdt& cmd, ExecuteOpt opt) {
+	return execute("sudo " + cmd, opt);
 }
 
 Log saveInto(const QStringAdt& path, const QByteAdt& content, QString chown, QString chmod) {
