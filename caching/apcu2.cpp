@@ -65,7 +65,7 @@ APCU* APCU::getInstance() {
 	return &theAPCU;
 }
 
-std::any APCU::fetchInner(const std::string& key) {
+any* APCU::fetchInner(const std::string& key) {
 	auto& byKey = cache->get<ByKey>();
 
 	std::shared_lock lock(innerLock);
@@ -73,24 +73,12 @@ std::any APCU::fetchInner(const std::string& key) {
 	if (auto iter = byKey.find(key); iter != cache->end()) {
 
 		hits++;
-		return iter->value;
-
-		//unlock and just relock is bad, as will leave a GAP!
-		//you should unlock, restart the operation under full lock, and than erase...
-		//who cares, in a few second the GC will remove the record anyways
+		//no idea why is const...
+		return const_cast<std::any*>(&iter->value);
 	}
 	miss++;
-	return {};
-}
-
-void APCU::storeInner(const std::string& _key, const std::any& _value, bool overwrite_, u64 ttl, bool persistent) {
-	u64 expireAt = 0;
-	if (ttl) {
-		expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
-	}
-	Row row(_key, _value, expireAt);
-	row.persistent = persistent;
-	storeInner(row, overwrite_);
+	static std::any empty;
+	return &empty;
 }
 
 void APCU::storeInner(const Row& row, bool overwrite_) {
@@ -140,12 +128,6 @@ std::string APCU::info() const {
 //only used internally
 void throwTypeError(const type_info* found, const type_info* expected) {
 	throw ExceptionV2(QSL("Wrong type!! Found %1, expected %2, recheck where this key is used, maybe you have a collision").arg(found->name()).arg(expected->name()));
-}
-
-APCU::Row::Row(const std::string& key_, const std::any& value_, u64 expireAt_) {
-	key      = key_;
-	value    = value_;
-	expireAt = expireAt_;
 }
 
 bool APCU::Row::expired() const {
@@ -295,8 +277,8 @@ void apcuStore(const APCU::Row& row) {
 FetchPodResult fetchPOD(const std::string& key) {
 	auto a   = APCU::getInstance();
 	auto res = a->fetchInner(key);
-	if (res.has_value()) {
-		return {any_cast<QByteArray>(res), true};
+	if (res->has_value()) {
+		return {any_cast<QByteArray>(*res), true};
 	}
 	return {{}, false};
 }

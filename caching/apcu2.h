@@ -14,6 +14,8 @@
 #define QSL(str) QStringLiteral(str)
 void throwTypeError(const std::type_info* found, const std::type_info* expected);
 
+class Cachable;
+
 class APCU : private NoCopy {
       public:
 	APCU();
@@ -32,25 +34,27 @@ class APCU : private NoCopy {
 	static inline uint diskSaveTime = 0;
 
 	struct Row {
+		friend class APCU;
 		//Corpus munus
 		Row() = default;
-		template <typename T>
-		[[nodiscard]] Row(const std::string& key_, const T& value_, u64 expireAt_) {
-			*this = Row(key_, std::make_shared<T>(value_), expireAt_);
-		}
 
-		template <typename T>
-		[[nodiscard]] Row(const std::string& key_, const std::shared_ptr<T>& value_, u64 expireAt_) {
-			*this = Row(key_, std::any(value_), expireAt_);
-		}
+		// template <typename T>
+		// [[nodiscard]] Row(const std::string& key_, const T& value_, u64 expireAt_) {
+		// 	*this = Row(key_, std::make_shared<T>(value_), expireAt_);
+		// }
 
-		[[nodiscard]] Row(const std::string& key_, const std::any& value_, u64 expireAt_);
+		// template <typename T>
+		// [[nodiscard]] Row(const std::string& key_, const std::shared_ptr<T>& value_, u64 expireAt_) {
+		// 	*this = Row(key_, std::any(value_), expireAt_);
+		// }
+
+		// [[nodiscard]] Row(const std::string& key_, const std::any& value_, u64 expireAt_);
 
 		void set();
 
 		//Member
 		std::string key;
-		std::any    value;
+
 		//0 will disable flushing
 		i64 expireAt = 1;
 		//Only QByteArray is accepted for that kind, the cached type will provide the
@@ -60,21 +64,62 @@ class APCU : private NoCopy {
 
 		bool expired() const;
 		bool expired(qint64 ts) const;
+
+	      public:
+		template <class T>
+		void setValue(T& obj) {
+			if constexpr (is_shared_ptr<std::decay_t<T>>::value) {
+				// If T is a std::shared_ptr
+				setValueInner(obj);
+			} else {
+				// If T is not a std::shared_ptr, create one and use it
+				auto sharedPtr = std::make_shared<std::decay_t<T>>(std::forward<T>(obj));
+				setValueInner(sharedPtr);
+			}
+		}
+
+	      private:
+		template <class T>
+		void setValueInner(std::shared_ptr<T>& value_) {
+			if constexpr (std::is_base_of<Cachable, T>::value) {
+				// Create a shared_ptr<Cachable> from the input value
+				std::shared_ptr<Cachable> cachableValue = std::static_pointer_cast<Cachable>(value_);
+				value                                   = cachableValue;
+			} else {
+				value = value_;
+			}
+		}
+		std::any value;
 	};
 
 	/**
 	 * We hide the implementation as multi index will kill compile time
 	 */
-	std::any fetchInner(const std::string& key);
-	void     storeInner(const std::string& _key, const std::any& _value, bool overwrite_ = false, u64 ttl = 60, bool persistent = false);
-	void     storeInner(const APCU::Row& row_, bool overwrite_);
-	void     remove(const std::string& key);
+	std::any* fetchInner(const std::string& key);
+
+	template <class T>
+	void storeInner(const std::string& _key, const T& _value, bool overwrite_ = false, u64 ttl = 60, bool persistent = false) {
+
+		u64 expireAt = 0;
+		if (ttl) {
+			expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
+		}
+		Row row;
+		row.key = _key;
+		row.setValue(_value);
+		row.expireAt   = expireAt;
+		row.persistent = persistent;
+		storeInner(row, overwrite_);
+	}
+
+	void storeInner(const APCU::Row& row_, bool overwrite_);
+	void remove(const std::string& key);
 
 	template <class T>
 	std::shared_ptr<T> fetch(const std::string& key) {
 		(void)key;
 		auto res = fetchInner(key);
-		if (res.has_value()) {
+		if (res->has_value()) {
 			// std::shared_ptr<T> x;
 			// auto&              tp    = typeid(x);
 			// auto               hash0 = tp.hash_code();
@@ -83,30 +128,39 @@ class APCU : private NoCopy {
 			// auto& type = res.type();
 			// auto  name = type.name();
 			// auto  hash = type.hash_code();
-			return any_cast<std::shared_ptr<T>>(res);
+
+			if constexpr (std::is_base_of<Cachable, T>::value) {
+				// Cast res to std::shared_ptr<Cachable> and then to std::shared_ptr<T>
+
+				//option 1, this is the first access, we still have a qbytearray stored
+				auto el = any_cast<QByteArray>(res);
+				if (el) {
+					auto payloadPtr = std::make_shared<T>();
+					payloadPtr->deserialize(*el);
+
+					// Store the deserialized value back to the cache
+					//downconvert to Cachable first
+					auto     cachable = std::static_pointer_cast<Cachable>(payloadPtr);
+					std::any a1       = 1;
+					*res               = cachable;
+
+					return payloadPtr;
+				}
+
+				//option 2, already mutated, just dyn cast and return
+				auto cachablePtr = any_cast<std::shared_ptr<Cachable>>(*res);
+				return std::dynamic_pointer_cast<T>(cachablePtr);
+			} else {
+				// T is not derived from Cachable, directly cast res to std::shared_ptr<T>
+				return any_cast<std::shared_ptr<T>>(res);
+			}
+
+			//	return any_cast<std::shared_ptr<T>>(res);
 		}
 		return nullptr;
 	}
 
 	[[nodiscard]] std::string info() const;
-
-	/**
-	 * @brief store will OVERWRITE IF IS FOUND
-	 * @param key
-	 * @param obj
-	 * @param ttl
-	 */
-	template <class T>
-	void store(const std::string& key, std::shared_ptr<T>& obj, uint ttl = 60, bool persistent = false) {
-
-		// std::shared_ptr<T> x;
-		// auto&              tp    = typeid(x);
-		// auto               hash0 = tp.hash_code();
-		// auto               name0 = tp.name();
-
-		std::any value = obj;
-		storeInner(key, value, true, ttl, persistent);
-	}
 
 	void clear();
 
@@ -184,15 +238,8 @@ FetchPodResult fetchPOD(const QString& key);
 FetchPodResult fetchPOD(const std::string& key);
 
 template <class T>
-void apcuStore(const StringAdt& key, T&& obj, uint ttl = 60, bool persistent = false) {
-	if constexpr (is_shared_ptr<std::decay_t<T>>::value) {
-		// If T is a std::shared_ptr
-		APCU::getInstance()->store(key, std::forward<T>(obj), ttl, persistent);
-	} else {
-		// If T is not a std::shared_ptr, create one and use it
-		auto sharedPtr = std::make_shared<std::decay_t<T>>(std::forward<T>(obj));
-		APCU::getInstance()->store(key, sharedPtr, ttl, persistent);
-	}
+void apcuStore(const StringAdt& key, T& obj, uint ttl = 60, bool persistent = false) {
+	APCU::getInstance()->storeInner(key, obj, true, ttl, persistent);
 }
 
 template <class T>
