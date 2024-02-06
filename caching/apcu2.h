@@ -66,6 +66,15 @@ class APCU : private NoCopy {
 		bool expired(qint64 ts) const;
 
 	      public:
+		void setPOD(const QByteArray& value_) {
+			value = value_;
+		}
+		//TODO create another function that will copy the object
+
+		/**
+		 * @brief setValue the value WILL BE ERASED AS THE CACHE WILL TAKE CONTROL OF IT!
+		 * @param obj
+		 */
 		template <class T>
 		void setValue(T& obj) {
 			if constexpr (is_shared_ptr<std::decay_t<T>>::value) {
@@ -142,7 +151,7 @@ class APCU : private NoCopy {
 					//downconvert to Cachable first
 					auto     cachable = std::static_pointer_cast<Cachable>(payloadPtr);
 					std::any a1       = 1;
-					*res               = cachable;
+					*res              = cachable;
 
 					return payloadPtr;
 				}
@@ -234,6 +243,7 @@ struct FetchPodResult {
 	}
 };
 
+void           storePOD(const std::string& key, const QByteArray& value, uint ttl = 60, bool persistent = false);
 FetchPodResult fetchPOD(const QString& key);
 FetchPodResult fetchPOD(const std::string& key);
 

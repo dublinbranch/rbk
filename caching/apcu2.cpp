@@ -305,3 +305,12 @@ void apcuRemove(const StringAdt& key) {
 	auto a = APCU::getInstance();
 	a->remove(key);
 }
+
+void storePOD(const std::string& key, const QByteArray& value, uint ttl, bool persistent) {
+	APCU::Row row;
+	row.key = key;
+	row.setPOD(value);
+	row.expireAt   = QDateTime::currentSecsSinceEpoch() + ttl;
+	row.persistent = persistent;
+	apcuStore(row);
+}

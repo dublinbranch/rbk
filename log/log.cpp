@@ -54,6 +54,14 @@ Log::Log(const std::exception& e, const char* func) {
 
 Log::~Log() {
 	if (!used) {
+		auto a = subLogs.empty();
+		auto b = stdErr.isEmpty();
+		auto c = stdOut.isEmpty();
+
+		//if log has never been used and contain nothing... no problem
+		if (a && b && c) {
+			return;
+		}
 		qCritical().noquote() << "Log got wasted, this is not what you want...! use me" << QStacker16Light();
 	}
 }
