@@ -1,11 +1,9 @@
 #include "localev2.h"
-#include "rbk/GeoLite2PP/GeoLite2PP.hpp"
 #include "rbk/QStacker/httpexception.h"
 #include "rbk/minMysql/min_mysql.h"
-#include "rbk/serialization/asstring.h"
-#include <mutex>
 
 #ifdef WithMaxMind
+#include "rbk/GeoLite2PP/GeoLite2PP.hpp"
 extern GeoLite2PP::DB* mmdb;
 #endif
 
