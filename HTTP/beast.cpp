@@ -17,7 +17,13 @@
 #include <boost/asio/signal_set.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/beast/core.hpp>
+
+//in suse 15.5 version of gcc13.2.1 there is a false error inside so we suppress the warning
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #include <boost/beast/http.hpp>
+#pragma GCC diagnostic pop
+
 
 #include <QCommandLineParser>
 #include <QDebug>
