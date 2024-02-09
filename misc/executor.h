@@ -15,9 +15,13 @@ class QStringAdt;
 //This will internally split on space and generated the arguments
 
 struct ExecuteOpt {
-	float maxTimeInS = 999;
+	ExecuteOpt();
+	static ExecuteOpt retarded();
+	
+	float             maxTimeInS = 999;
 	//for *REASON* some program write not on stdout but on stderr like nginx...
-	bool isRetarded = false;
+	bool                               isRetarded = false;
+	std::map<std::string, std::string> custom_env;
 };
 
 Log execute(const QStringAdt& cmd, ExecuteOpt opt = {});

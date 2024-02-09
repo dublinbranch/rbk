@@ -18,18 +18,28 @@ using namespace std;
 bool Execute_logStackTrace = true;
 bool Execute_printOnError  = false;
 
+ExecuteOpt::ExecuteOpt() {
+	//pretty sure you always want that...
+	custom_env = {{"PATH", "/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"}};
+}
+
+ExecuteOpt ExecuteOpt::retarded() {
+	ExecuteOpt opt;
+	opt.isRetarded = true;
+	return opt;
+}
+
 Log execute(const QStringAdt& args, ExecuteOpt opt) {
 	Log log;
 	log.section = "execute: " + args;
 
 	reproc::process process;
 	reproc::options options;
-	options.env.behavior                          = reproc::env::empty;
-	std::map<std::string, std::string> custom_env = {{"PATH", "/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"}};
-	options.env.extra                             = custom_env;
-	options.redirect.parent                       = false;
-	options.redirect.err.type                     = reproc::redirect::pipe;
-	options.redirect.out.type                     = reproc::redirect::pipe;
+	options.env.behavior      = reproc::env::empty;
+	options.env.extra         = opt.custom_env;
+	options.redirect.parent   = false;
+	options.redirect.err.type = reproc::redirect::pipe;
+	options.redirect.out.type = reproc::redirect::pipe;
 
 	if (opt.maxTimeInS > 0) {
 		options.deadline = reproc::milliseconds((int)(opt.maxTimeInS * 1000));
