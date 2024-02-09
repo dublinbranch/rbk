@@ -24,9 +24,12 @@ Log execute(const QStringAdt& args, ExecuteOpt opt) {
 
 	reproc::process process;
 	reproc::options options;
-	options.redirect.parent   = false;
-	options.redirect.err.type = reproc::redirect::pipe;
-	options.redirect.out.type = reproc::redirect::pipe;
+	options.env.behavior                          = reproc::env::empty;
+	std::map<std::string, std::string> custom_env = {{"PATH", "/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"}};
+	options.env.extra                             = custom_env;
+	options.redirect.parent                       = false;
+	options.redirect.err.type                     = reproc::redirect::pipe;
+	options.redirect.out.type                     = reproc::redirect::pipe;
 
 	if (opt.maxTimeInS > 0) {
 		options.deadline = reproc::milliseconds((int)(opt.maxTimeInS * 1000));

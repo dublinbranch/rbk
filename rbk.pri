@@ -69,7 +69,7 @@ LIBS += -ldw
 LIBS += -ldl
 LIBS += -lfmt   #zypper in fmt-devel should be enought
 LIBS += -lcurl
-#zypper in libmariadb3
+#zypper in libmariadb3 libmariadb-devel
 LIBS += -lmariadb
 #for the external process invocation, for *REASON* the full path is needed
 #zypper addrepo https://download.opensuse.org/repositories/devel:libraries:c_c++/openSUSE_Factory_PowerPC/devel:libraries:c_c++.repo
@@ -115,6 +115,13 @@ HEADERS += \
     $$PWD/number/doubleoperator.h \
     $$PWD/string/comparator.h 
 
+defined(WITH_ZIPPER,var) {
+SOURCES += \
+    $$PWD/misc/zip.cpp 
+HEADERS += \
+    $$PWD/misc/zip.h 
+}
+    
 defined(WITH_BOOST_BEAST,var) {
 #HTTP part that trigger boost beast stuff
 
