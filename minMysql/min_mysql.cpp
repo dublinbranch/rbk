@@ -544,7 +544,7 @@ DBConf::DBConf() {
 QByteArray DBConf::getDefaultDB() const {
 	if (defaultDB.isEmpty()) {
 
-		auto msg = F(R"(
+		auto msg = F16(R"(
 default DB is sadly required to avoid mysql complain on certain operation!"
 current config is 
 user: {} 

@@ -56,8 +56,10 @@ system(git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbre
 #QT is amazing, it can easily embedd and later read such file, there is not noticeable penalty in linking time for this operation
 RESOURCES     = $$PWD/gitTrick/resources.qrc
 
-
+#great control on memory and overall just better
+#zypper in jemalloc-devel
 LIBS += -ljemalloc
+#zypper in libdw-devel
 LIBS += -ldw
 LIBS += -ldl
 LIBS += -lfmt   #zypper in fmt-devel should be enought

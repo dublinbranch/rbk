@@ -37,6 +37,7 @@ class Log {
 	[[nodiscard]] bool hasError() const;
 
 	[[nodiscard]] std::string serialize();
+	[[nodiscard]] QString serialize(QString);
 	boost::json::object       toJson();
 
 	SQLBuffering toSqlRow() const;

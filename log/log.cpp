@@ -15,6 +15,10 @@ std::string Log::serialize() {
 	return pretty_print(toJson());
 }
 
+QString Log::serialize(QString) {
+	return QString::fromStdString(serialize());
+}
+
 boost::json::object Log::toJson() {
 	bj::object obj;
 	obj["category"]   = category;
