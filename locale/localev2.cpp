@@ -5,7 +5,7 @@
 #include "rbk/serialization/asstring.h"
 #include <mutex>
 
-#ifdef localeWithMaxMind
+#ifdef WithMaxMind
 extern GeoLite2PP::DB* mmdb;
 #endif
 
@@ -68,14 +68,14 @@ QList<QStringView> splitM1(QStringView o) {
 
 Locale from2letter(const QStringView& locale, QString* ip) {
 	if (!ip->isEmpty()) {
-#ifdef localeWithMaxMind
+#ifdef WithMaxMind
 		Locale res;
 		res.language = locale.toString().toLower();
 		auto geoMap  = mmdb->get_all_fields(ip->toStdString());
 		res.nation   = QString::fromStdString(geoMap["country_iso_code"]).toUpper();
 		return res;
 #else
-		throw ExceptionV2("MMDB not compiled in, use the flag localeWithMaxMind and provide one");
+		throw ExceptionV2("MMDB not compiled in, use the flag WithMaxMind and provide one");
 #endif
 	}
 	throw HttpException("Unable to decode locale " + locale.toString() + " please allow to use the ip to put a nation");

@@ -1,6 +1,10 @@
 #this will enable certain ip based function on localeV2, of course you will need to provide a max mind db handler
 #put those in PRO file of the project!
-#DEFINES += localeWithMaxMind
+#DEFINES += WithMaxMind
+
+
+#this will enable the boost beast part, it is a bit heavy, but it is the best for the job
+#note the different sintax, as this is only inside qmake
 #WITH_BOOST_BEAST = true
 
 #In case you drop in a project who used the older folder structure, this can save some time (add in the config.pri)
@@ -53,16 +57,11 @@ system(git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbre
 RESOURCES     = $$PWD/gitTrick/resources.qrc
 
 
-#zypper in libmaxminddb0 
-#to develop libmaxminddb-devel
-LIBS += -lmaxminddb
-# if compile error because not found "maxminddb.h" file (included in GeoLite2PP.hpp) then install "libmaxminddb-devel" package in YaST2F
-LIBS += -L'$$PWD/GeoLite2PP' -lgeolite2++
-
 LIBS += -ljemalloc
 LIBS += -ldw
 LIBS += -ldl
 LIBS += -lfmt   #zypper in fmt-devel should be enought
+#zypper in libcurl-devel
 LIBS += -lcurl
 #zypper in libmariadb3 libmariadb-devel
 LIBS += -lmariadb
@@ -138,9 +137,21 @@ HEADERS += \
     $$PWD/HTTP/router.h
 }
 
+defined(WithMaxMind,var) {
+#zypper in libmaxminddb0 
+#to develop libmaxminddb-devel
+LIBS += -lmaxminddb
+# if compile error because not found "maxminddb.h" file (included in GeoLite2PP.hpp) then install "libmaxminddb-devel" package in YaST2F
+LIBS += -L'$$PWD/GeoLite2PP' -lgeolite2++
+
 DISTFILES += \
 	$$PWD/GeoLite2PP/README.md \
 	$$PWD/GeoLite2PP/libgeolite2++.a \
+HEADERS += \
+    $$PWD/GeoLite2PP/GeoLite2PP_error_category.hpp \
+}
+
+DISTFILES += \
 	$$PWD/JSON/LICENSE \
 	$$PWD/JSON/README.md \
 	$$PWD/SpaceShipOP/LICENSE.md \
@@ -190,7 +201,6 @@ HEADERS += \
 	$$PWD/caching/apcu2.h \
 	$$PWD/dateTime/qdatetimev2.h \
     $$PWD/dateTime/timespecV2.h \
-    $$PWD/GeoLite2PP/GeoLite2PP_error_category.hpp \
     $$PWD/RAII/resetAfterUse.h \
     $$PWD/defines/stringDefine.h \
     $$PWD/filesystem/ffCommon.h \
