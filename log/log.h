@@ -24,7 +24,8 @@ class Log {
 	qint64    elapsed = 0;
 
 	//This can either be the function name or the section of the code or the actual call, it depends on the context
-	QString section;
+	QString     section;
+	std::string options;
 
 	//the actual message
 	QByteArray stdOut;
@@ -37,7 +38,7 @@ class Log {
 	[[nodiscard]] bool hasError() const;
 
 	[[nodiscard]] std::string serialize();
-	[[nodiscard]] QString serialize(QString);
+	[[nodiscard]] QString     serialize(QString);
 	boost::json::object       toJson();
 
 	SQLBuffering toSqlRow() const;

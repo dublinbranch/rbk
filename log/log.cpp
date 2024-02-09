@@ -23,6 +23,7 @@ boost::json::object Log::toJson() {
 	bj::object obj;
 	obj["category"]   = category;
 	obj["section"]    = section.toStdString();
+	obj["options"]    = options;
 	obj["tsStart"]    = tsStart.toString(mysqlDateMicroTimeFormat).toStdString();
 	obj["elapsed"]    = elapsed;
 	obj["stdOut"]     = stdOut.toStdString();
