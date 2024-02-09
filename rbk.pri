@@ -53,11 +53,6 @@ system(git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbre
 RESOURCES     = $$PWD/gitTrick/resources.qrc
 
 
-# - SETUP -
-# zypper in libzip-devel
-# OR (should be equivalent)
-LIBS += -lzip
-#to execute
 #zypper in libmaxminddb0 
 #to develop libmaxminddb-devel
 LIBS += -lmaxminddb
@@ -116,6 +111,11 @@ HEADERS += \
     $$PWD/string/comparator.h 
 
 defined(WITH_ZIPPER,var) {
+# - SETUP -
+# zypper in libzip-devel
+# OR (should be equivalent)
+LIBS += -lzip
+
 SOURCES += \
     $$PWD/misc/zip.cpp 
 HEADERS += \

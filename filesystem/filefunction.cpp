@@ -17,7 +17,6 @@
 #include <boost/tokenizer.hpp>
 #include <mutex>
 #include <sys/file.h>
-#include <zip.h>
 
 #define QBL(str) QByteArrayLiteral(str)
 #define QSL(str) QStringLiteral(str)
