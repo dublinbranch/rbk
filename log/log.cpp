@@ -73,11 +73,17 @@ Log::~Log() {
 
 void Log::push(Log&& log) {
 	log.used = true;
+	if (log.elapsed == 0) {
+		log.setEnd();
+	}
 	subLogs.emplace_back(std::move(log));
 }
 
 void Log::push(Log& log) {
 	log.used = true;
+	if (log.elapsed == 0) {
+		log.setEnd();
+	}
 	subLogs.emplace_back(std::move(log));
 }
 
