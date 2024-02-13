@@ -8,33 +8,17 @@ struct PMFCGI;
 class RequestBase {
       public:
 	//factory
+	/*
+	 * std::shared_ptr<RequestBase> CreateContainerFromJson::create() {
+	return std::make_shared<CreateContainerFromJson>();
+}
+	 */
 	[[nodiscard]] virtual std::shared_ptr<RequestBase> create() const = 0;
 	//You are required to do something
 	virtual void immediate(PMFCGI& status, Payload& payload) = 0;
 	//You are not required to do something after
 	virtual void deferred(){};
 	//https://stackoverflow.com/questions/10024796/c-virtual-functions-but-no-virtual-destructors
-	/**
-	 * #include <iostream>
-
-class Base {};
-class Derived: public Base { public: ~Derived() { std::cout << "Aargh\n"; } };
-
-int main() {
-  Base* b = new Derived();
-  Derived* d = new Derived();
-
-  delete d;
-  delete b;
-}
-
-This prints:
-
-Aargh
-
-Yep, only once. Now I hardly believe this will ever happen in our case to rely on the dtor
-but the note is here
-*/
 	virtual ~RequestBase() = default;
 };
 
