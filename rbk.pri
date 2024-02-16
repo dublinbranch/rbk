@@ -67,13 +67,7 @@ LIBS += -lfmt   #zypper in fmt-devel should be enought
 LIBS += -lcurl
 #zypper in libmariadb3 libmariadb-devel
 LIBS += -lmariadb
-#for the external process invocation, for *REASON* the full path is needed
-#zypper addrepo https://download.opensuse.org/repositories/devel:libraries:c_c++/openSUSE_Factory_PowerPC/devel:libraries:c_c++.repo
-#zypper refresh
-#zypper install libreproc14 libreproc++14 reproc-devel
-LIBS += /usr/lib64/libreproc.so.14 /usr/lib64/libreproc++.so.14
 
-#HTTP part that is enought common and lightweigh
 SOURCES += \
     $$PWD/BoostJson/taginvoke.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
@@ -82,7 +76,6 @@ SOURCES += \
     $$PWD/log/log.cpp \
     $$PWD/minMysql/rowswap.cpp \
     $$PWD/minMysql/sqlbuffering.cpp \
-    $$PWD/misc/executor.cpp \
     $$PWD/string/qstringview.cpp \
     $$PWD/HTTP/mime.cpp \
     $$PWD/string/comparator.cpp   \
@@ -102,7 +95,6 @@ HEADERS += \
     $$PWD/minMysql/sqlbuffering.h \
 	$$PWD/misc/NanoSpammerConfigDescribe.h \
     $$PWD/misc/controlFlowMacro.h \
-    $$PWD/misc/executor.h \
     $$PWD/number/intTypes.h \
     $$PWD/string/qstringview.h \
     $$PWD/string/stringoso.h \
@@ -110,6 +102,22 @@ HEADERS += \
     $$PWD/HTTP/mime.h \
     $$PWD/number/doubleoperator.h \
     $$PWD/string/comparator.h 
+
+defined(WITH_REPROC,var) {
+#for the external process invocation, for *REASON* the full path is needed
+#zypper addrepo https://download.opensuse.org/repositories/devel:libraries:c_c++/openSUSE_Factory_PowerPC/devel:libraries:c_c++.repo
+#zypper refresh
+#zypper install libreproc14 libreproc++14 reproc-devel
+LIBS += /usr/lib64/libreproc.so.14 /usr/lib64/libreproc++.so.14
+
+SOURCES += \
+   $$PWD/misc/executor.cpp
+   
+HEADERS += \
+    $$PWD/misc/executor.h 
+    
+}
+
 
 defined(WITH_ZIPPER,var) {
 # - SETUP -

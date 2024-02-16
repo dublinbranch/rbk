@@ -26,6 +26,7 @@ std::string mustache(const QByteArray& raw, const boost::json::object& json) {
 	return buffer;
 }
 
+#ifdef WITH_REPROC
 Log mustacheSudo(const std::filesystem::__cxx11::path& source, const std::filesystem::__cxx11::path& dest, const boost::json::object& json) {
 	Log l;
 	l.section       = __FUNCTION__;
@@ -35,3 +36,4 @@ Log mustacheSudo(const std::filesystem::__cxx11::path& source, const std::filesy
 	l.push(saveInto(dest, buffer));
 	return l;
 }
+#endif
