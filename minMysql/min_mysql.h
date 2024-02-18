@@ -200,8 +200,8 @@ class DB {
 		//In certain case we want to kill a running sql, is useless to emit a warning in that case, reset after USAGE
 		//TODO change to be reset after use with the ResetAfter use class! (Or verify somehow, probably just easier to change type ?)(Or verify somehow, probably just easier to change type ?)
 		bool skipNextDisconnect = false;
+
 		//Reset after use, many times we DO NOT WANT an empty result cached, as will be populated very soon
-		//TODO change to be reset after use with the ResetAfter use class! (Or verify somehow, probably just easier to change type ?)
 		bool noCacheOnEmpty = false;
 		//if we want to populate the result set with the TYPE of the column, rarely used, reset after use
 		bool swapType = false;

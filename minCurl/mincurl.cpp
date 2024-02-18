@@ -2,6 +2,7 @@
 #include "qstringtokenizer.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/RAII//resetAfterUse.h"
+#include "rbk/fmtExtra/includeMe.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/thread/threadstatush.h"
 #include <QByteArray>
@@ -9,6 +10,7 @@
 #include <QString>
 #include <boost/json.hpp>
 #include <curl/curl.h>
+
 extern thread_local ThreadStatus::Status* localThreadStatus;
 
 /**
@@ -120,20 +122,8 @@ CurlHeader::~CurlHeader() {
 	clear();
 }
 
-void CurlHeader::add(QString header) {
-	add(header.toUtf8());
-}
-
-void CurlHeader::add(QByteArray header) {
-	add(header.constData());
-}
-
-void CurlHeader::add(const char* header) {
+void CurlHeader::add(const QByteAdt& header) {
 	chunk = curl_slist_append(chunk, header);
-}
-
-void CurlHeader::add(std::string_view header) {
-	add(header.data());
 }
 
 void CurlHeader::clear() {
@@ -201,18 +191,11 @@ CURL* CurlKeeper::get() const {
 	return header;
 }
 
-CurlCallResult urlPostContent(const std::string& url, const std::string& post, bool quiet, CURL* curl) {
-	auto postSize = static_cast<int>(post.size());
-	auto urlSize  = static_cast<int>(url.size());
-
-	return urlPostContent(QByteArray::fromRawData(url.c_str(), urlSize), QByteArray::fromRawData(post.c_str(), postSize), quiet, curl);
-}
-
-CurlCallResult urlPostContent(const QByteArray& url, const QByteArray& post, bool quiet, CURL* curl) {
+CurlCallResult urlPostContent(const QByteAdt& url, const QByteAdt& post, bool quiet, CURL* curl) {
 	CurlCallResult result;
 	char           errbuf[CURL_ERROR_SIZE] = {0};
 	CURL*          useMe                   = curl;
-
+	result.url                             = url;
 	if (!useMe) {
 		useMe = curl_easy_init();
 		curl_easy_setopt(useMe, CURLOPT_TIMEOUT, 60); // 1 minute, if you do not like use you own curl
@@ -383,31 +366,23 @@ QString CurlCallResult::getError() const {
 }
 
 QString CurlCallResult::packDbgMsg(bool extraInfo) const {
-	static const QString skel = R"(
-Url: %1
-Ip: %2 | Response: %3
-Header: %4
-Timing: %5
-%6
+	static const std::string skel = R"(
+Url: {}
+Ip: {} | Response: {}
+Header: {}
+Timing: {}
+{}
 )";
-	QString              extraInfoValue;
+
+	QString extraInfoValue;
 	if (extraInfo) {
-		QString extraInfoSkel = R"(errorCode: %1
-errorMsg: %2
-result: %3)";
-		extraInfoValue        = extraInfoSkel
-		                     .arg(asString(errorCode))
-		                     .arg(errorMsg)
-		                     .arg(result.data());
+		static const std::string extraInfoSkel = R"(errorCode: {}
+errorMsg: {}
+result: {})";
+		extraInfoValue                         = F16(extraInfoSkel, asString(errorCode), errorMsg, result.data());
 	}
 
-	auto msg = skel
-	               .arg(url)
-	               .arg(ip)
-	               .arg(httpCode)
-	               .arg(header.serialize())
-	               .arg(timing.print2())
-	               .arg(extraInfoValue);
+	auto msg = F16(skel, url, ip, httpCode, header.serialize(), timing.print2(), extraInfoValue);
 	return msg;
 }
 

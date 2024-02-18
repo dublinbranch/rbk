@@ -50,10 +50,7 @@ class CurlKeeper;
 class CurlHeader : public NoCopy {
       public:
 	~CurlHeader();
-	void              add(QString header);
-	void              add(QByteArray header);
-	void              add(const char* header);
-	void              add(std::string_view header);
+	void              add(const QByteAdt& header);
 	void              clear();
 	const curl_slist* get() const;
 	void              set(CurlKeeper& curl) const;
@@ -135,9 +132,9 @@ struct CurlCallResult {
 	CURLcode errorCode = CURLE_OK;
 	QString  ip;
 	// used to keep alive all the QStringView
-	QString headerRaw;
-	Header  header;
-	QString url;
+	QString    headerRaw;
+	Header     header;
+	QByteArray url;
 	// Keep raw as can be binary stuff
 	QByteArray result;
 	//in case of a redirect
@@ -172,9 +169,9 @@ CurlCallResult urlGetContent2(const std::string& url, bool quiet = false, CURL* 
 CurlCallResult urlGetContent2(const QByteArray& url, bool quiet = false, CURL* curl = nullptr, bool LTS = true);
 CurlCallResult urlGetContent2(const QString& url, bool quiet = false, CURL* curl = nullptr);
 CurlCallResult urlGetContent2(const char* url, bool quiet = false, CURL* curl = nullptr);
-// TODO rifare la funzione e ritornare un oggetto composito per sapere se è andato a buon fine
-CurlCallResult urlPostContent(const QByteArray& url, const QByteArray& post, bool quiet = false, CURL* curl = nullptr);
-CurlCallResult urlPostContent(const std::string& url, const std::string& post, bool quiet = false, CURL* curl = nullptr);
+
+CurlCallResult urlPostContent(const QByteAdt& url, const QByteAdt& post, bool quiet = false, CURL* curl = nullptr);
+
 //LXC vuole fare il prezzemolino e usa PUT...
 CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& post, CurlKeeper& curl, bool quiet = false);
 CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& post, bool quiet = false);

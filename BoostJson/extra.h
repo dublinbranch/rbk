@@ -88,6 +88,13 @@ bool getNumber(const boost::json::value& v, std::string_view key, T& val, const 
 			val = def;
 			return false;
 		}
+		if (p->is_string()) {
+			//Cry -.-
+			//TODO do the actual correct conversion
+			val = QS(p).toDouble();
+			return true;
+		}
+
 		val = p->to_number<T>();
 		return true;
 	}
