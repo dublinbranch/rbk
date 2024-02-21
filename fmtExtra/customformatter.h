@@ -18,6 +18,17 @@ struct fmt::formatter<QStringView> : formatter<string_view> {
 	}
 };
 
+//abolished in version 6
+#if QT_VERSION_MAJOR == 5
+template <>
+struct fmt::formatter<QStringRef> : formatter<string_view> {
+	template <typename FormatContext>
+	auto format(const QStringRef& p, FormatContext& ctx) const {
+		return formatter<string_view>::format(p.toString().toStdString(), ctx);
+	}
+};
+#endif
+
 template <>
 struct fmt::formatter<QDate> : formatter<string_view> {
 	template <typename FormatContext>
@@ -37,7 +48,7 @@ struct fmt::formatter<QString> : formatter<string_view> {
 template <>
 struct fmt::formatter<QStringAdt> : formatter<string_view> {
 	template <typename FormatContext>
-        auto format(const QStringAdt& p, FormatContext& ctx) const {
+	auto format(const QStringAdt& p, FormatContext& ctx) const {
 		return formatter<string_view>::format(p.toStdString(), ctx);
 	}
 };
@@ -53,7 +64,7 @@ struct fmt::formatter<QByteArray> : formatter<string_view> {
 template <>
 struct fmt::formatter<QByteAdt> : formatter<string_view> {
 	template <typename FormatContext>
-        auto format(const QByteAdt& p, FormatContext& ctx) const {
+	auto format(const QByteAdt& p, FormatContext& ctx) const {
 		return formatter<string_view>::format(p.toStdString(), ctx);
 	}
 };
