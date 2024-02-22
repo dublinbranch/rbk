@@ -161,6 +161,10 @@ multiMapV2<QString, QString> decodePost(const QString& form) {
 	if (form.isEmpty()) {
 		return {};
 	}
+	//if is a json it will be handled by the actual function using it
+	if (form.at(0) == '{') {
+		return {};
+	}
 	multiMapV2<QString, QString> res;
 	auto                         rows = form.split('&');
 
