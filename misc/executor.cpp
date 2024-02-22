@@ -29,7 +29,7 @@ ExecuteOpt ExecuteOpt::retarded() {
 	return opt;
 }
 
-Log execute(const QStringAdt& args, ExecuteOpt opt) {
+Log execute(const QStringAdt& args, const ExecuteOpt& opt) {
 	Log log;
 	log.section = "execute: " + args;
 	log.options = F("maxTime: {} env: {} ", opt.maxTimeInS, opt.custom_env);
@@ -99,7 +99,7 @@ Log execute(const QStringAdt& args, ExecuteOpt opt) {
 	return log;
 }
 
-Log sudo(const QStringAdt& cmd, ExecuteOpt opt) {
+Log sudo(const QStringAdt& cmd, const ExecuteOpt& opt) {
 	return execute("sudo " + cmd, opt);
 }
 

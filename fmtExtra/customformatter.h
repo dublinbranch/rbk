@@ -38,6 +38,14 @@ struct fmt::formatter<QDate> : formatter<string_view> {
 };
 
 template <>
+struct fmt::formatter<QDateTime> : formatter<string_view> {
+	template <typename FormatContext>
+	auto format(const QDateTime& p, FormatContext& ctx) const {
+		return formatter<string_view>::format(p.toString(mysqlDateTimeFormat).toStdString(), ctx);
+	}
+};
+
+template <>
 struct fmt::formatter<QString> : formatter<string_view> {
 	template <typename FormatContext>
 	auto format(const QString& p, FormatContext& ctx) const {

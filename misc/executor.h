@@ -17,17 +17,17 @@ class QStringAdt;
 struct ExecuteOpt {
 	ExecuteOpt();
 	static ExecuteOpt retarded();
-	
-	float             maxTimeInS = 999;
+
+	float maxTimeInS = 999;
 	//for *REASON* some program write not on stdout but on stderr like nginx...
 	bool                               isRetarded = false;
 	std::map<std::string, std::string> custom_env;
 };
 
-Log execute(const QStringAdt& cmd, ExecuteOpt opt = {});
+Log execute(const QStringAdt& cmd, const ExecuteOpt& opt = {});
 //Log execute(const std::vector<std::string>& args, ExecuteOpt opt = {});
 
-Log sudo(const QStringAdt& cmd, ExecuteOpt opt = {});
+Log sudo(const QStringAdt& cmd, const ExecuteOpt& opt = {});
 
 /**
  * @brief saveInto will execute sudo to move the file in place where we can not access

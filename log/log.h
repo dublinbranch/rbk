@@ -9,6 +9,8 @@
 #include <qdatetime.h>
 #include <vector>
 
+#include "rbk/mixin/NoCopy.h"
+
 class Log;
 using Logs = std::list<Log>;
 
