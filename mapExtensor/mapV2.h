@@ -63,6 +63,8 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		return Founded();
 	}
 
+	//TODO add the overload for type convertible so we can use the non homogenous map
+
 	template <typename T>
 	[[nodiscard]] T get(const K& k, const T&& t) const {
 		auto v = t;

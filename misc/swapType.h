@@ -116,6 +116,16 @@ void swapType(const QString& source, D& dest) {
 	} else if constexpr (std::is_same<D, QDateTime>::value) {
 		dest = QDateTime::fromString(source, mysqlDateTimeFormat);
 		return;
+	} else if constexpr (std::is_same<D, bool>::value) {
+		//bool can be expressed in many different ways...
+		if (source == QSL("1") || source == QSL("true") || source == QSL("yes")) {
+			dest = true;
+		} else if (source == QSL("0") || source == QSL("false") || source == QSL("no")) {
+			dest = false;
+		} else {
+			throw ExceptionV2(QSL("Impossible to convert >>>%1<<< as a boolean").arg(source));
+		}
+		return;
 	} else if constexpr (std::is_enum_v<D>) {
 		auto s = source.toStdString();
 		magic_enum::fromString(s, dest);

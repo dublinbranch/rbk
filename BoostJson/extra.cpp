@@ -111,6 +111,10 @@ json::value asNull(const sqlRow& row, std::string_view key) {
 	return {v.toStdString()};
 }
 
+QString QS(const json::string_view& cry) {
+	return QString::fromUtf8(cry.data(), cry.size());
+}
+
 QString QS(const boost::json::string& cry) {
 	return QString::fromUtf8(cry.data(), cry.size());
 }
@@ -361,7 +365,7 @@ QString QS(const boost::json::value& value, std::string_view key, const QString&
 	if (auto el = value.as_object().if_contains(key); el) {
 		return QS(*el);
 	}
-	
+
 	return def;
 }
 
@@ -377,4 +381,8 @@ std::string_view asString(const boost::json::object& value, std::string_view key
 		return asString(*el);
 	}
 	return {};
+}
+
+std::string_view SW(const boost::json::string_view& cry) {
+	return std::string_view(cry);
 }

@@ -17,10 +17,13 @@ class QString;
 class QByteArray;
 
 QString QS(const boost::json::string& cry);
+QString QS(const boost::json::string_view& cry);
 QString QS(const boost::json::value* value);
 QString QS(const boost::json::value& value);
 
 QString QS(const boost::json::value& value, std::string_view key, const QString& def = QString());
+
+std::string_view SW(const boost::json::string_view& cry);
 
 std::string_view asString(const boost::json::object& value, std::string_view key);
 std::string_view asString(const boost::json::object& value, std::string_view key, std::string_view def);
