@@ -560,10 +560,13 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	return mappa;
 }
 
-QString getNationIsoCode(const QString& nation) {
+QString getNationIsoCode(const QString& nation, const QString def) {
 	auto codes = getNationsIsoCodes();
 	auto iter  = codes.find(nation.toLower());
 	if (iter == codes.end()) {
+		if (def != "") {
+			return def;
+		}
 		auto key = QSL("nation: %1 missing in getNationsIsoCodes \n").arg(nation.toLower());
 		if (runnable(key, 3600)) {
 			qCritical().noquote() << key + QStacker16Light();
