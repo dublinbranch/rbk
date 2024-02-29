@@ -40,11 +40,7 @@ class SScol {
 
 	template <typename T>
 	void setKey(const T& key_) {
-		if (verbatim) {
-			key = key_;
-		} else {
-			key = F("`{}`", key_);
-		}
+		key = key_;
 	}
 
 	template <typename T>

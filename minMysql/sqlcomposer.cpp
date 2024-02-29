@@ -50,7 +50,13 @@ std::string SqlComposer::compose() const {
 			valueS1 = "'"s + db->escape(col.val.val) + "'"s;
 		}
 
-		string keyS1 = F("{:>{}}", col.key, longestKey);
+		string keyS1;
+		if (col.verbatim) {
+			keyS1 = F("{:>{}}", col.key, longestKey);
+		} else {
+			auto t = F("`{}`", col.key);
+			keyS1  = F("{:>{}}", t, longestKey);
+		}
 
 		if (first) {
 			first               = false;
