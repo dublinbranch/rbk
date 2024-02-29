@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rbk/fmtExtra/includeMe.h"
+#include "rbk/mapExtensor/vectorV2.h"
 #include "rbk/misc/intTypes.h"
 #include "rbk/number/sanitize.h"
 #include "rbk/string/util.h"
@@ -84,10 +85,28 @@ class SqlComposer : public std::vector<SScol> {
 	explicit SqlComposer(DB* db_, const std::string& separator_ = ",");
 
 	void push(const SScol& col, bool replaceIf = false);
+	void pushNoCheck(const SScol& col);
+
+	auto findByKey(const std::string& key) {
+		for (auto iter = this->begin(); iter != this->end(); ++iter) {
+			if (iter->key == key) {
+				return iter;
+			}
+		}
+		return this->end();
+	}
 
 	template <typename K, typename V>
 	SqlComposer& push(const K& key_, const V& val_, bool replaceIf = false) {
 		push(SScol{key_, val_}, replaceIf);
+		return *this;
+	}
+
+	template <typename K, typename V>
+	SqlComposer& pushIfMissing(const K& key_, const V& val_, bool replaceIf = false) {
+		if (findByKey(key_) == this->end()) {
+			pushNoCheck(SScol{key_, val_});
+		}
 		return *this;
 	}
 

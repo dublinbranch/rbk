@@ -15,26 +15,19 @@ SqlComposer::SqlComposer(DB* db_, const std::string& separator_) {
 }
 
 void SqlComposer::push(const SScol& col, bool replaceIf) {
-
-	//This is just to showcase the usage of a lamba, in this case a normal for loop would probably have been easier
-	auto comp = [&](const SScol& a) {
-		return a.key == col.key;
-	};
-
-	{
-		auto iter = std::find_if(
-		    begin(),
-		    end(),
-		    comp);
-
-		if (iter != end()) {
-			if (!replaceIf) {
+	if (auto iter = findByKey(col.key); iter != this->end()) {
+		if (iter->key == col.key) {
+			if (replaceIf) {
+				erase(iter);
+			} else {
 				throw ExceptionV2(F("you are inserting twice the same KEY: {}, current value is {}, previous value was {}\n", col.key, col.val.val, iter->val.val));
 			}
-			erase(iter);
 		}
 	}
+	pushNoCheck(col);
+}
 
+void SqlComposer::pushNoCheck(const SScol& col) {
 	push_back(col);
 	//in padding and readability we forever trust
 	longestKey = std::max(longestKey, col.key.size());
