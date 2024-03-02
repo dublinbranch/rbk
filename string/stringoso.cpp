@@ -11,21 +11,37 @@ QByteAdt::QByteAdt(const QString& input) {
 }
 
 QByteAdt::QByteAdt(const std::string& input) {
+#if QT_VERSION_MAJOR == 5
+	setRawData(input.data(), (uint)input.size());
+#elif QT_VERSION_MAJOR == 6
 	setRawData(input.data(), input.size());
+#endif
 }
 
 QByteAdt::QByteAdt(const std::string_view& input) {
-	//we intentionally do not call detach because, well is a string view already!
+//we intentionally do not call detach because, well is a string view already!
+#if QT_VERSION_MAJOR == 5
+	setRawData(input.data(), (uint)input.size());
+#elif QT_VERSION_MAJOR == 6
 	setRawData(input.data(), input.size());
+#endif
 }
 
 QByteAdt::QByteAdt(const char* input) {
 	//we intentionally do not call detach because, well is a string view already!
+#if QT_VERSION_MAJOR == 5
+	setRawData(input, (uint)strlen(input));
+#elif QT_VERSION_MAJOR == 6
 	setRawData(input, strlen(input));
+#endif
 }
 
 QByteAdt::QByteAdt(const std::filesystem::__cxx11::path& input) {
+#if QT_VERSION_MAJOR == 5
+	setRawData(input.c_str(), (uint)input.string().size());
+#elif QT_VERSION_MAJOR == 6
 	setRawData(input.c_str(), input.string().size());
+#endif
 }
 
 StringAdt::StringAdt(const QByteArray& input) {
@@ -65,11 +81,19 @@ QStringAdt::QStringAdt(const std::string& input) {
 }
 
 QStringAdt::QStringAdt(const std::string_view& input) {
+#if QT_VERSION_MAJOR == 5
+	append(fromLocal8Bit(input.data(), (uint)input.size()));
+#elif QT_VERSION_MAJOR == 6
 	append(fromLocal8Bit(input.data(), input.size()));
+#endif
 }
 
 QStringAdt::QStringAdt(const char* input) {
+#if QT_VERSION_MAJOR == 5
+	append(fromLocal8Bit(input, (uint)strlen(input)));
+#elif QT_VERSION_MAJOR == 6
 	append(fromLocal8Bit(input, strlen(input)));
+#endif
 }
 
 QStringAdt::QStringAdt(const std::filesystem::__cxx11::path& input) {

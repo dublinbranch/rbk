@@ -112,11 +112,19 @@ json::value asNull(const sqlRow& row, std::string_view key) {
 }
 
 QString QS(const json::string_view& cry) {
+#if QT_VERSION_MAJOR == 5
+	return QString::fromUtf8(cry.data(), (uint)cry.size());
+#elif QT_VERSION_MAJOR == 6
 	return QString::fromUtf8(cry.data(), cry.size());
+#endif
 }
 
 QString QS(const boost::json::string& cry) {
+#if QT_VERSION_MAJOR == 5
+	return QString::fromUtf8(cry.data(), (uint)cry.size());
+#elif QT_VERSION_MAJOR == 6
 	return QString::fromUtf8(cry.data(), cry.size());
+#endif
 }
 
 QString QS(const boost::json::value* value) {
