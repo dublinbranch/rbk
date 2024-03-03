@@ -9,8 +9,13 @@ void rapidAssert(bool condition);
 inline thread_local bool rapidAssertEnabled    = true;
 inline thread_local bool rapidAssertPrintTrace = true;
 
-//this will require QMAKE_CXXFLAGS += -msse4.2
-#define RAPIDJSON_SSE42 1 //why not ? we do not target gameboy anymore
+
+//check if we are in X64
+#if defined(__x86_64__) || defined(_M_X64)
+#define RAPIDJSON_SSE42 1
+#elif defined(__ARM_NEON) || defined(_M_ARM_NEON)
+#define RAPIDJSON_NEON 1
+#endif
 
 #define RAPIDJSON_48BITPOINTER_OPTIMIZATION 1 //stuff some data in the high part of 64bit ptr (x64 IGNORE after bit 48)
 #define RAPIDJSON_PARSE_DEFAULT_FLAGS 32      //add the ability to have comment inside

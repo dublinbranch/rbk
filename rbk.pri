@@ -349,7 +349,7 @@ SOURCES += \
     
     
 #for rapidJson
-QMAKE_CXXFLAGS += -msse4.2
+#QMAKE_CXXFLAGS += -msse4.2
 
 
 HEADERS += \

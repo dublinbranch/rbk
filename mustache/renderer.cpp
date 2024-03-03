@@ -9,7 +9,11 @@
 #include <clocale>
 #include <utility>
 
+//check if we are in X64
+#if defined(__x86_64__) || defined(_M_X64)
 #include <immintrin.h>
+#endif
+
 
 boost::mustache::renderer::renderer(json::value&& data, json::object&& partials, json::storage_ptr sp)
     : context_stack_(sp), partials_(std::move(partials), sp),
