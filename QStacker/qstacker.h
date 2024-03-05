@@ -1,8 +1,8 @@
 #ifndef QSTACKER_H
 #define QSTACKER_H
 
-#include <QByteArray>
 #include "CxaLevel.h"
+#include <QByteArray>
 
 //Used to monitor how many exception are beeing thrown over time by hacheck, a few are ok, too many no!
 inline std::atomic<uint> exceptionThrown{0};
@@ -25,10 +25,9 @@ Q_REQUIRED_RESULT QString     QStacker16Light(uint skip = 5, QStackerOpt opt = Q
  * It must be the name of the program, or the folder from which the code has been compiled
  */
 inline std::string StackerMinLevel;
-inline uint        stackerMaxFrame = 99;
+inline uint        stackerMaxFrame = 15;
 // Next throw will not append stack trace, reset after use
 inline thread_local bool cxaNoStack = false;
-
 
 // what level shall we use ? reset after use as critical
 inline thread_local CxaLevel cxaLevel = CxaLevel::critical;
