@@ -41,6 +41,9 @@ CONFIG += object_parallel_to_source
 DEFINES += GIT_STATUS='\\"$(shell git -C '$$_PRO_FILE_PWD_' describe  --always --dirty --abbrev=99)\\"'
 DEFINES += COMPILATION_TIME='\\"$(shell TZ=UTC date +\"%Y-%m-%dT%T\")\\"'
 
+#needed for dynamic creation of file into the main source directory
+DEFINES += BasePath='\\"$$_PRO_FILE_PWD_\\"'
+
 #this should speed up the update of the submodule info
 CONFIG += resources_big
 

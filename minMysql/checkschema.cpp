@@ -67,7 +67,8 @@ WHERE table_schema='{}')",
 }
 
 void CheckSchema::saveSchema() {
-	QSaveFile file("dbSchema");
+	auto      path = BasePath + QSL("/dbSchema");
+	QSaveFile file(path);
 	if (file.open(QFile::WriteOnly | QFile::Truncate)) {
 		QByteArray  stream;
 		QDataStream out(&stream, QIODevice::WriteOnly);
@@ -93,7 +94,8 @@ CheckSchema::Schemas CheckSchema::loadSchema() {
 			qCritical() << "error decoding stream: " << asString(s);
 		}
 	} else {
-		qCritical() << "missing :/dbSchema file in the QRC !, create the symlink ecc ecc";
+		qCritical() << "missing :/db/dbSchema file in the QRC !, create the symlink ecc ecc";
+		exit(1);
 	}
 	return map;
 }
