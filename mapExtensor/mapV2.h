@@ -130,7 +130,7 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		return;
 	}
 
-	[[nodiscard]] V& rqRef(const K& k) {
+	[[nodiscard]] const V& rqRef(const K& k) const {
 		if (auto iter = this->find(k); iter != this->end()) {
 			return iter->second;
 		}
