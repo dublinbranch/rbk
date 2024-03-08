@@ -26,6 +26,7 @@ QString QS(const boost::json::value& value, std::string_view key, const QString&
 std::string_view SW(const boost::json::string_view& cry);
 
 std::string_view asString(const boost::json::object& value, std::string_view key);
+std::string_view asString(const boost::json::object& value, StringAdt key);
 std::string_view asString(const boost::json::object& value, std::string_view key, std::string_view def);
 std::string_view asString(const boost::json::value& value);
 

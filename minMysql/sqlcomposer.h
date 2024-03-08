@@ -40,7 +40,7 @@ class SScol {
 
 	template <typename T>
 	void setKey(const T& key_) {
-		key = key_;
+		key = F("{}", key_);
 	}
 
 	template <typename T>

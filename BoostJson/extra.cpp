@@ -384,6 +384,10 @@ std::string_view asString(const boost::json::object& value, std::string_view key
 	return def;
 }
 
+std::string_view asString(const boost::json::object& value, StringAdt key) {
+	return asString(value, string_view(key));
+}
+
 std::string_view asString(const boost::json::object& value, std::string_view key) {
 	if (auto el = value.if_contains(key); el) {
 		return asString(*el);
