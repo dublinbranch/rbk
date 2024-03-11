@@ -1,23 +1,35 @@
 #include "salt.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/misc/b64.h"
+#include "rbk/rand/randutil.h"
 #include "sha.h"
 #include <QDateTime>
-std::string salt(std::string, int lenght) {
-	return saltQS(lenght).toStdString();
-}
 
-QString salt(QString, int lenght) {
-	return saltQS(lenght);
+std::string salt(int lenght) {
+	std::string        salt;
+	//LOOKS LIKE salt is NOT base64 or whatever, but MUST BE a this subset of chars
+	static const char* chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	static const uint  le    = (uint)strlen(chars);
+	for (int i = 0; i < lenght; i++) {
+		salt += chars[rand(0, le)];
+	}
+	return salt;
 }
 
 QString saltQS(int lenght) {
-	if (lenght > 86) {
-		throw ExceptionV2("max salt lenght atm is 86, edit the code if you want more");
+	return QString::fromStdString(salt(lenght));
+}
+
+std::string genPassword(int lenght) {
+	std::string        salt;
+	static const char* chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%&*(){}[]!|,.;:<>?/\\";
+	static const uint  le    = (uint)strlen(chars);
+	for (int i = 0; i < lenght; i++) {
+		salt += chars[rand(0, le)];
 	}
-	auto ts  = QDateTime::currentMSecsSinceEpoch() + rand();
-	auto n   = QByteArray::number(ts);
-	auto sha = sha512(n, false);
-	//for *REASON* crypto is retarded, and is not using the standard base64 but they replace 1 character -.- the + with the .
-	return sha1(n).replace("+", ".").left(lenght);
+	return salt;
+}
+
+QString genPasswordQS(int lenght) {
+	return QString::fromStdString(genPassword(lenght));
 }

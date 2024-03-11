@@ -3,8 +3,9 @@
 #include <QString>
 #include <string>
 
-std::string salt(std::string, int lenght = 4);
-QString     salt(QString, int lenght = 4);
+std::string salt(int lenght = 4);
+std::string genPassword(int lenght = 16);
+QString     genPasswordQS(int lenght = 16);
 QString     saltQS(int lenght = 4);
 
 #endif // SALT_H
