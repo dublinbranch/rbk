@@ -10,8 +10,8 @@ inline thread_local bool rapidAssertEnabled    = true;
 inline thread_local bool rapidAssertPrintTrace = true;
 
 
-//check if we are in X64
-#if defined(__x86_64__) || defined(_M_X64)
+
+#if defined(__SSE4_2__)
 #define RAPIDJSON_SSE42 1
 #elif defined(__ARM_NEON) || defined(_M_ARM_NEON)
 #define RAPIDJSON_NEON 1

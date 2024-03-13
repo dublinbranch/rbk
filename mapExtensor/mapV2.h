@@ -44,6 +44,13 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 			return found;
 		}
 	};
+	struct FoundedRef {
+		V*       val   = nullptr;
+		bool     found = false;
+		explicit operator bool() const {
+			return found;
+		}
+	};
 
 	/*
 	 * Use like
@@ -61,6 +68,13 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 			return Founded{&iter->second, true};
 		}
 		return Founded();
+	}
+
+	[[nodiscard]] auto getRef(const K& k) {
+		if (auto iter = this->find(k); iter != this->end()) {
+			return FoundedRef{&iter->second, true};
+		}
+		return FoundedRef();
 	}
 
 	//TODO add the overload for type convertible so we can use the non homogenous map
