@@ -99,7 +99,7 @@ class SqlComposer : public std::vector<SScol> {
 	}
 
 	template <typename K, typename V>
-	SqlComposer& pushIfMissing(const K& key_, const V& val_, bool replaceIf = false) {
+	SqlComposer& pushIfMissing(const K& key_, const V& val_) {
 		if (findByKey(key_) == this->end()) {
 			pushNoCheck(SScol{key_, val_});
 		}

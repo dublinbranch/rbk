@@ -22,7 +22,7 @@ QString saltQS(int lenght) {
 
 std::string genPassword(int lenght) {
 	std::string        salt;
-	static const char* chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%&*(){}[]!|,.;:<>?/\\";
+	static const char* chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%&*(){}[]!|,.;:<>?/";
 	static const uint  le    = (uint)strlen(chars);
 	for (int i = 0; i < lenght; i++) {
 		salt += chars[rand(0, le)];
