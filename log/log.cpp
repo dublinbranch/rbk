@@ -6,7 +6,14 @@
 
 namespace bj = boost::json;
 
-bool Log::hasError() const {
+bool Log::hasError(bool recursive) const {
+	if (recursive) {
+		for (auto& log : subLogs) {
+			if (log.hasError(true)) {
+				return true;
+			}
+		}
+	}
 	return !stdErr.isEmpty();
 }
 

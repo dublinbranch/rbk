@@ -178,8 +178,16 @@ multiMapV2<QString, QString> decodePost(const QString& form) {
 			}
 			throw HttpException("invalid line in post" + row);
 		}
-		auto t0 = QByteArray::fromPercentEncoding(pair[0].toUtf8());
-		auto t1 = QByteArray::fromPercentEncoding(pair[1].toUtf8());
+		auto c0 = pair[0].toUtf8();
+		c0.replace("+", " ");
+
+		auto c1 = pair[1].toUtf8();
+		//for REASON fromPercentEncoding does not decode the + to space...
+		c1.replace("+", " ");
+
+		auto t0 = QByteArray::fromPercentEncoding(c0);
+		auto t1 = QByteArray::fromPercentEncoding(c1);
+
 		res.insert({t0, t1});
 	}
 	return res;

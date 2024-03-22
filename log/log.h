@@ -37,7 +37,7 @@ class Log {
 	//many times we want to aggregate log for a specific function or process execution
 	Logs subLogs;
 
-	[[nodiscard]] bool hasError() const;
+	[[nodiscard]] bool hasError(bool recursive = false) const;
 
 	[[nodiscard]] std::string serialize();
 	[[nodiscard]] QString     serialize(QString);
