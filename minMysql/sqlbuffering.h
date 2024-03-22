@@ -33,15 +33,11 @@ class SQLBuffering {
 	void setUseTRX(bool _useTRX);
 	void clear();
 
-	QString getCurrentQuery() const;
-
       private:
-	QString currentQuery;
 	// https://mariadb.com/kb/en/server-system-variables/#max_allowed_packet in our system is always 16M atm
 	static const uint maxPacket = 16E6;
 	// Set as false in case we are running inside another TRX
 	bool useTRX = true;
 };
-
 
 #endif // SQLBUFFERING_H

@@ -73,7 +73,7 @@ void SQLBuffering::flush() {
 	if (useTRX) {
 		conn->query(QBL("START TRANSACTION;"));
 	}
-
+	QString currentQuery;
 	// TODO just compose the query in utf8, and append in utf8
 	for (auto&& line : buffer) {
 		currentQuery.append(line);
@@ -107,8 +107,4 @@ void SQLBuffering::setUseTRX(bool _useTRX) {
 
 void SQLBuffering::clear() {
 	buffer.clear();
-}
-
-QString SQLBuffering::getCurrentQuery() const {
-	return currentQuery;
 }

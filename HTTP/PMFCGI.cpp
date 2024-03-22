@@ -180,7 +180,6 @@ multiMapV2<QString, QString> decodePost(const QString& form) {
 		}
 		auto t0 = QByteArray::fromPercentEncoding(pair[0].toUtf8());
 		auto t1 = QByteArray::fromPercentEncoding(pair[1].toUtf8());
-		t1.replace("+", " ");
 		res.insert({t0, t1});
 	}
 	return res;
