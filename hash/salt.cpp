@@ -6,10 +6,10 @@
 #include <QDateTime>
 
 std::string salt(int lenght) {
-	std::string        salt;
+	std::string salt;
 	//LOOKS LIKE salt is NOT base64 or whatever, but MUST BE a this subset of chars
 	static const char* chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-	static const uint  le    = (uint)strlen(chars);
+	static const uint  le    = (uint)strlen(chars) - 1;
 	for (int i = 0; i < lenght; i++) {
 		salt += chars[rand(0, le)];
 	}
@@ -23,7 +23,7 @@ QString saltQS(int lenght) {
 std::string genPassword(int lenght) {
 	std::string        salt;
 	static const char* chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%&*(){}[]!|,.;:<>?/";
-	static const uint  le    = (uint)strlen(chars);
+	static const uint  le    = (uint)strlen(chars) - 1;
 	for (int i = 0; i < lenght; i++) {
 		salt += chars[rand(0, le)];
 	}
