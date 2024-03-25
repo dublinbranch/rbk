@@ -24,7 +24,7 @@ qint64 fileSerialize(const QString& fileName, const T& t) {
 	QSaveFile file;
 	file.setFileName(fileName);
 	if (!file.open(QIODevice::QIODevice::Truncate | QIODevice::WriteOnly)) {
-		qCritical() << "Failed to open file for writing:" + file.errorString();
+		qCritical() << "Failed to open file for writing:" + fileName + " reason : " + file.errorString();
 		return 0;
 	}
 
@@ -33,7 +33,7 @@ qint64 fileSerialize(const QString& fileName, const T& t) {
 	out << t;
 
 	if (!file.commit()) {
-		qCritical() << "Failed to write data to file:" + file.errorString();
+		qCritical() << "Failed to write data to file:" + fileName + " reason: " + file.errorString();
 		return false;
 	}
 
