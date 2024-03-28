@@ -8,6 +8,8 @@
 #include <rbk/mapExtensor/mapV2.h>
 #include <string>
 
+class BeastConf;
+
 struct SKQ : public QString {
 	mutable bool skip = false;
 };
@@ -20,6 +22,8 @@ class bHeaders : public mapV2<QString, SKQ> {
 };
 
 struct PMFCGI {
+      public:
+	const BeastConf*        conf = nullptr;
 	std::string             remoteIp;
 	bHeaders                headers;
 	std::optional<bHeaders> cookies;
@@ -47,6 +51,8 @@ struct PMFCGI {
 	std::string serialize() const;
 	std::string serializeBase() const;
 
+	std::string getBasePath() const;
+
 	/*
 	 * 0 ->	debug not active
 	 * 1 ->	active in standard mode:
@@ -61,7 +67,8 @@ struct PMFCGI {
 
 	uint debug = 0;
 
-      public:
+      private:
+	mutable std::string curBasePath;
 };
 
 void requestBeging();

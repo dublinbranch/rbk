@@ -139,6 +139,7 @@ defined(WITH_BOOST_BEAST,var) {
 
 SOURCES += \
     $$PWD/HTTP/beast.cpp \
+    $$PWD/HTTP/beastConfig.cpp \
     $$PWD/HTTP/router.cpp \
     $$PWD/HTTP/select2.cpp
 	

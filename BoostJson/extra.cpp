@@ -402,3 +402,15 @@ std::string_view SW(const boost::json::string_view& cry) {
 std::string_view asString(const boost::json::object& value, const char* key) {
 	return asString(value, string_view(key));
 }
+
+string missingKeyError(std::string_view key, bool noThrow) {
+	auto msg = F("impossible to find elment {}", key);
+	if (noThrow) {
+		return msg;
+	}
+	throw ExceptionV2(msg);
+}
+
+std::string_view asString(const boost::json::value& value, std::string_view key) {
+	return asString(value.as_object(), key);
+}

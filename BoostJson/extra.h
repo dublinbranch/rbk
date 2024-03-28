@@ -29,6 +29,9 @@ std::string_view asString(const boost::json::object& value, const char* key);
 std::string_view asString(const boost::json::object& value, std::string_view key);
 std::string_view asString(const boost::json::object& value, StringAdt key);
 std::string_view asString(const boost::json::object& value, std::string_view key, std::string_view def);
+
+std::string_view asString(const boost::json::value& value, std::string_view key);
+
 std::string_view asString(const boost::json::value& value);
 
 /***********************/
@@ -106,6 +109,25 @@ bool getNumber(const boost::json::value& v, std::string_view key, T& val, const 
 	val = def;
 	return false;
 };
+
+std::string missingKeyError(std::string_view key, bool noThrow);
+
+template <class T>
+void rqNumber(const boost::json::value& v, std::string_view key, T& val) {
+	if (!getNumber(v, key, val)) {
+		missingKeyError(key, false);
+	}
+}
+
+template <class T>
+T rqNumber(const boost::json::value& v, std::string_view key) {
+	T val;
+	if (!getNumber(v, key, val)) {
+		missingKeyError(key, false);
+		return 0;
+	}
+	return val;
+}
 
 class DB;
 void sqlEscape(boost::json::object& value, DB* db);

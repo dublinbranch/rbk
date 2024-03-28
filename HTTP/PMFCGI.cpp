@@ -1,5 +1,6 @@
 #include "PMFCGI.h"
 #include "Payload.h"
+#include "beastConfig.h"
 #include "rbk/QStacker/httpexception.h"
 #include "rbk/defines/stringDefine.h"
 #include "rbk/fmtExtra/includeMe.h"
@@ -124,6 +125,22 @@ string PMFCGI::serialize() const {
 
 string PMFCGI::serializeBase() const {
 	return "remote ip and plain text url and header should be enought";
+}
+
+string PMFCGI::getBasePath() const {
+	if (!curBasePath.empty()) {
+		return curBasePath;
+	}
+	if (conf->basePath.empty()) {
+		if (conf->port == 80) {
+			curBasePath = F("http://{}/", remoteIp);
+		} else {
+			curBasePath = F("http://{}:{}/", remoteIp, conf->port);
+		}
+	} else {
+		curBasePath = conf->basePath;
+	}
+	return curBasePath;
 }
 
 void Payload::setStandardHeaders(bool addCors) {

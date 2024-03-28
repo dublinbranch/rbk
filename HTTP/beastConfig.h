@@ -9,6 +9,7 @@ class PMFCGI;
 class Payload;
 
 struct BeastConf {
+	friend class PMFCGI;
 
 	std::function<bool(PMFCGI& status, Payload& payload)> loginManager = nullptr;
 	std::function<void(PMFCGI& status, Payload& payload)> prePhase1    = nullptr;
@@ -30,6 +31,13 @@ struct BeastConf {
 	int         worker  = 1;
 	std::string address = "127.0.0.1";
 	ushort      port    = 8081;
+
+      public:
+	void setBasePath(const std::string& newBasePath);
+
+      private:
+	//NO GETTER, as is a dynamic property and you have to access via the PMFCGI status
+	std::string basePath;
 };
 
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_HTTP_BEASTCONFIG_H
