@@ -52,6 +52,15 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		}
 	};
 
+	template <typename T>
+	struct FoundedV2 {
+		const T  val{};
+		bool     found = false;
+		explicit operator bool() const {
+			return found;
+		}
+	};
+
 	/*
 	 * Use like
 	map2<int, string> bla;
@@ -98,8 +107,13 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	}
 
 	template <typename T>
-	[[deprecated("get with not option is now RQ")]] [[nodiscard]] T get(const K& k) const {
-		return rq<T>(k);
+	[[nodiscard]] auto get(const K& k) const {
+		if (auto iter = this->find(k); iter != this->end()) {
+			T t;
+			swapType(iter->second, t);
+			return FoundedV2<T>{t, true};
+		}
+		return FoundedV2<T>();
 	}
 
 	[[nodiscard]] V rq(const K& k) const {
