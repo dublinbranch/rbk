@@ -74,7 +74,6 @@ LIBS += -lmariadb
 SOURCES += \
     $$PWD/BoostJson/taginvoke.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
-    $$PWD/Sodium/crypto.cpp \
     $$PWD/caching/cachable.cpp \
     $$PWD/dateTime/timerange.cpp \
     $$PWD/log/log.cpp \
@@ -89,7 +88,6 @@ SOURCES += \
 HEADERS += \
 	$$PWD/BoostJson/tagInvokeCrono.h \
     $$PWD/BoostJson/taginvoke.h \
-    $$PWD/Sodium/crypto.h \
 	$$PWD/concept/concepts.h \
 	$$PWD/concept/isSharedPtr.h \
     $$PWD/HTTP/PMFCGI.h \
@@ -107,6 +105,18 @@ HEADERS += \
     $$PWD/HTTP/mime.h \
     $$PWD/number/doubleoperator.h \
     $$PWD/string/comparator.h 
+
+
+defined(WITH_SODIUM){
+#zypper in sodium-devel
+LIBS += -lsodium
+
+HEADERS += \
+    $$PWD/Sodium/crypto.h
+    
+SOURCES += \
+    $$PWD/Sodium/crypto.cpp
+}
 
 defined(WITH_REPROC,var) {
 #for the external process invocation, for *REASON* the full path is needed
