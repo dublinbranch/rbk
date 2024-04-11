@@ -74,6 +74,7 @@ LIBS += -lmariadb
 SOURCES += \
     $$PWD/BoostJson/taginvoke.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
+    $$PWD/Sodium/crypto.cpp \
     $$PWD/caching/cachable.cpp \
     $$PWD/dateTime/timerange.cpp \
     $$PWD/log/log.cpp \
@@ -88,6 +89,7 @@ SOURCES += \
 HEADERS += \
 	$$PWD/BoostJson/tagInvokeCrono.h \
     $$PWD/BoostJson/taginvoke.h \
+    $$PWD/Sodium/crypto.h \
 	$$PWD/concept/concepts.h \
 	$$PWD/concept/isSharedPtr.h \
     $$PWD/HTTP/PMFCGI.h \

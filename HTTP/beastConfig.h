@@ -11,6 +11,7 @@ class Payload;
 struct BeastConf {
 	friend class PMFCGI;
 
+	std::function<bool(PMFCGI& status, Payload& payload)> common1      = nullptr;
 	std::function<bool(PMFCGI& status, Payload& payload)> loginManager = nullptr;
 	std::function<void(PMFCGI& status, Payload& payload)> prePhase1    = nullptr;
 	//std::function<void()> post = nullptr;

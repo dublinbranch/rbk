@@ -24,7 +24,6 @@
 #include <boost/beast/http.hpp>
 #pragma GCC diagnostic pop
 
-
 #include <QCommandLineParser>
 #include <QDebug>
 #include <fmt/color.h>
@@ -142,7 +141,7 @@ void handle_request(
 
 	try {
 		try { //Yes exception can throw exceptions!
-			status.conf = conf;
+			status.conf     = conf;
 			status.remoteIp = stream.socket().remote_endpoint().address().to_string();
 			status.path     = req.target();
 			status.url      = Url(status.path);
@@ -169,6 +168,13 @@ void handle_request(
 					return;
 				}
 			}
+			if (conf->common1) {
+				if (!conf->common1(status, payload)) {
+					sendResponseToClient(stream, payload);
+					return;
+				}
+			}
+
 			/*
 			 * phase 1
 			 * execute immediate
