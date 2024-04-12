@@ -27,7 +27,7 @@ struct BeastConf {
 	//This will set the expire tag, like in NGINX if you do location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ { expires XX;
 	uint staticFileCacheTTL = 0;
 
-	std::string logFolder;
+	std::string logFolder = "httpLog";
 
 	int         worker  = 1;
 	std::string address = "127.0.0.1";
