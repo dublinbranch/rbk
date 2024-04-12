@@ -107,7 +107,7 @@ HEADERS += \
     $$PWD/string/comparator.h 
 
 
-defined(WITH_SODIUM){
+defined(WITH_SODIUM,var){
 #zypper in sodium-devel
 LIBS += -lsodium
 
