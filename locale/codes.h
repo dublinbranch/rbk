@@ -5,6 +5,10 @@
 
 const mapV2<QByteArray, bool>& getNationISO2();
 
+const mapV2<QByteArray, QByteArray>& getNationISO3();
+
+const mapV2<QByteArray, QByteArray>& getNationISO2_V2();
+
 bool                              validNation(const QByteArray& nation, bool okLatam = false);
 const mapV2<QByteArray, quint16>& getNationISO2Adapted();
 const QMap<QString, QString>&     getNationsIsoCodes();
