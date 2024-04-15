@@ -18,7 +18,7 @@ std::string encode(const std::string& message, const std::string& key) {
 	return nonce + ciphertext;
 }
 
-std::string decode(const std::string& message, const std::string& key) {
+std::optional<std::string> decode(const std::string& message, const std::string& key) {
 	if (message.size() < crypto_secretbox_NONCEBYTES + crypto_secretbox_MACBYTES) {
 		throw ExceptionV2("message is too short");
 	}
@@ -30,7 +30,7 @@ std::string decode(const std::string& message, const std::string& key) {
 	                               message.size() - crypto_secretbox_NONCEBYTES,
 	                               reinterpret_cast<const unsigned char*>(message.data()),
 	                               reinterpret_cast<const unsigned char*>(key.data())) != 0) {
-		throw ExceptionV2("decryption failed");
+		return std::nullopt;
 	}
 
 	return plaintext;
