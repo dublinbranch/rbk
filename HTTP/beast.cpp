@@ -44,6 +44,7 @@
 #include "rbk/thread/threadstatush.h"
 
 #include "PMFCGI.h"
+#include "Payload.h"
 #include "beast.h"
 #include "router.h"
 

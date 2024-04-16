@@ -1,10 +1,10 @@
 #pragma once
 
-#include "rbk/HTTP/Payload.h"
 #include <memory>
 #include <rbk/mapExtensor/mapV2.h>
 
 struct PMFCGI;
+struct Payload;
 class RequestBase {
       public:
 	//factory
@@ -17,7 +17,7 @@ class RequestBase {
 	//You are required to do something
 	virtual void immediate(PMFCGI& status, Payload& payload) = 0;
 	//You are not required to do something after
-	virtual void deferred(){};
+	virtual void deferred() {};
 	//https://stackoverflow.com/questions/10024796/c-virtual-functions-but-no-virtual-destructors
 	virtual ~RequestBase() = default;
 };
