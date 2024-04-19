@@ -4,6 +4,6 @@
 #include "beastConfig.h"
 #include <boost/describe.hpp>
 
-BOOST_DESCRIBE_STRUCT(BeastConf, (), (staticFile, staticFileCacheTTL, logFolder, worker, address, port))
+BOOST_DESCRIBE_STRUCT(BeastConf, (), (staticFile, staticFileCacheTTL, htmlAllException, logFolder, worker, address, port))
 
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_HTTP_BEASTCONFIGDESCRIBE_H

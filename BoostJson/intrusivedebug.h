@@ -1,12 +1,17 @@
-#ifndef INTRUSIVEDEBUG_H
-#define INTRUSIVEDEBUG_H
+#ifndef HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_BOOSTJSON_INTRUSIVEDEBUG_H
+#define HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_BOOSTJSON_INTRUSIVEDEBUG_H
+
+//IF THIS file is included. well we want to use it... and to work we need to override the default one!
+//so if the default one is already included we must block compilation and report the error
+#ifdef BOOST_JSON_DETAIL_VALUE_TO_HPP
+#error "You must include this file before the default one (just put in the first line the #include "rbk/BoostJson/intrusivedebug.h")"
+#endif
 
 #include "rbk/misc/typeinfo.h"
+#include <boost/version.hpp>
 #include <fmt/format.h>
 #include <string>
 #include <vector>
-#include <boost/version.hpp>
-
 
 struct PushMe {
 	PushMe();
@@ -37,4 +42,4 @@ struct PushMe {
 #error "Unsupported Boost version for the intrusive HTTP Json customize one from json/detail/value_to.hpp"
 #endif
 
-#endif // INTRUSIVEDEBUG_H
+#endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_BOOSTJSON_INTRUSIVEDEBUG_H

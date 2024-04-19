@@ -9,6 +9,7 @@ class PMFCGI;
 class Payload;
 
 struct BeastConf {
+      public:
 	friend class PMFCGI;
 
 	std::function<bool(PMFCGI& status, Payload& payload)> common1      = nullptr;
@@ -32,8 +33,8 @@ struct BeastConf {
 	int         worker  = 1;
 	std::string address = "127.0.0.1";
 	ushort      port    = 8081;
-
-      public:
+	//we do normally ONLY print the HTTPException, but in some case of self contained system is ok to print all
+	bool htmlAllException = false;
 	void setBasePath(const std::string& newBasePath);
 
       private:

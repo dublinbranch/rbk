@@ -10,12 +10,14 @@ HttpException::HttpException(QString _msg) {
 }
 
 HttpException::HttpException(const std::string& msg_) {
-	msg        = msg_;
+	auto stack = QStacker16Light().toStdString();
+	msg        = msg_ + "\n<br>" + stack;
 	httpErrMsg = msg_;
 }
 
 HttpException::HttpException(const std::string& msg_, const std::string& httpErrMsg_) {
-	msg        = msg_;
+	auto stack = QStacker16Light().toStdString();
+	msg        = msg_ + "\n<br>" + stack;
 	httpErrMsg = httpErrMsg_;
 }
 

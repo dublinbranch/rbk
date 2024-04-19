@@ -203,8 +203,19 @@ void handle_request(
 			string msg = status.serializeMsg(e.what());
 
 			string file;
-			if (auto e2 = dynamic_cast<const ExceptionV2*>(&e); e2) {
-				if (auto HE = dynamic_cast<const HttpException*>(&e); HE) {
+			auto   e2 = dynamic_cast<const ExceptionV2*>(&e);
+			auto   HE = dynamic_cast<const HttpException*>(&e);
+			if (conf->htmlAllException) {
+				if (HE) {
+					if (!HE->httpErrMsg.empty()) {
+						payload.html = HE->httpErrMsg;
+					}
+					payload.statusCode = HE->statusCode;
+				} else {
+					payload.html = msg;
+				}
+			} else if (e2) {
+				if (HE) {
 					if (!HE->httpErrMsg.empty()) {
 						payload.html = HE->httpErrMsg;
 					}
