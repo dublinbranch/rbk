@@ -228,6 +228,14 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	const V& first() const {
 		return this->begin()->second;
 	}
+
+	bool copyIfFound(const K& k, map_parent& target) const {
+		if (auto iter = this->find(k); iter != this->end()) {
+			target.insert(*iter);
+			return true;
+		}
+		return false;
+	}
 };
 
 template <typename K, typename V>

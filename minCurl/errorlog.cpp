@@ -1,10 +1,7 @@
 #include "errorlog.h"
+#include "rbk/misc/b64.h"
 #include <QDateTime>
 #include <QDebug>
-
-QString base64this_copy(const QByteArray& param) {
-	return "FROM_BASE64('" + param.toBase64() + "')";
-}
 
 QString ErrorLog::logQuery(const curlCall* call) {
 	auto curl     = call->curl;
@@ -42,6 +39,11 @@ QString ErrorLog::logQuery(const curlCall* call) {
 		sErrBuf = call->errbuf;
 	}
 
+	Header subHeader;
+	subHeader.copyIfFound(QSL("x-business-use-case-usage"), header);
+	subHeader.copyIfFound(QSL("x-fb-ads-insights-throttle"), header);
+	subHeader.copyIfFound(QSL("x-fb-connection-quality"), header);
+
 	switch (format) {
 	case Format::sql: {
 		static const QString skel = R"EOD(
@@ -55,7 +57,8 @@ QString ErrorLog::logQuery(const curlCall* call) {
 		post = %9,
 		response = %10,
 		errBuf = %11,
-		category = %12;
+		category = %12,
+		headers = %13;
 	)EOD";
 		auto                 log  = skel.arg(db)
 		               .arg(table)
@@ -64,11 +67,12 @@ QString ErrorLog::logQuery(const curlCall* call) {
 		               .arg(preTransfer)
 		               .arg(call->curlCode)
 		               .arg(httpCode)
-		               .arg(base64this_copy(get))
-		               .arg(base64this_copy(post))
-		               .arg(base64this_copy(truncatedResp))
-		               .arg(base64this_copy(sErrBuf))
-		               .arg(call->category);
+					   .arg(base64this(get))
+					   .arg(base64this(post))
+					   .arg(base64this(truncatedResp))
+					   .arg(base64this(sErrBuf))
+					   .arg(call->category)
+					   .arg(base64this(subHeader.serialize()));
 		logList.append(log);
 		return log;
 	} break;
@@ -79,6 +83,7 @@ QString ErrorLog::logQuery(const curlCall* call) {
 		robe << QString::number(preTransfer);
 		robe << QString::number(call->curlCode);
 		robe << QString::number(httpCode);
+		robe << subHeader.serialize();
 		robe << sErrBuf;
 		robe << get;
 		robe << post;

@@ -202,34 +202,27 @@ void handle_request(
 
 			string msg = status.serializeMsg(e.what());
 
-			string file;
-			auto   e2 = dynamic_cast<const ExceptionV2*>(&e);
-			auto   HE = dynamic_cast<const HttpException*>(&e);
-			if (conf->htmlAllException) {
-				if (HE) {
-					if (!HE->httpErrMsg.empty()) {
-						payload.html = HE->httpErrMsg;
-					}
-					payload.statusCode = HE->statusCode;
-				} else {
-					payload.html = msg;
+			string file = conf->logFolder + "/stdException.log";
+			auto   e2   = dynamic_cast<const ExceptionV2*>(&e);
+			if (e2) {
+				file = conf->logFolder + "/" + e2->getLogFile();
+			}
+			auto HE = dynamic_cast<const HttpException*>(&e);
+			if (HE) {
+				if (!HE->httpErrMsg.empty()) {
+					payload.html = HE->httpErrMsg;
 				}
-			} else if (e2) {
-				if (HE) {
-					if (!HE->httpErrMsg.empty()) {
-						payload.html = HE->httpErrMsg;
-					}
+				payload.statusCode = HE->statusCode;
+			}
 
-					payload.statusCode = HE->statusCode;
-				}
-				if (!e2->skipPrint) {
+			if (conf->htmlAllException) {
+				payload.html = msg;
+				fmt::print("\n------\n{}", msg);
+			} else {
+				if (!(e2 && e2->skipPrint)) {
 					fmt::print("\n------\n{}", msg);
 				}
-				file = conf->logFolder + "/" + e2->getLogFile();
-			} else {
 				payload.html = randomError();
-				file         = conf->logFolder + "/stdException.log";
-				fmt::print("\n------\n{}", msg);
 			}
 
 			fileAppendContents("\n------\n " + msg, file);

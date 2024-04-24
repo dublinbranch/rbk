@@ -21,8 +21,9 @@ class ErrorLog {
       public:
 	QString     logQuery(const curlCall* call);
 	QStringList logList{};
-	QString     db                      = "set me";
-	QString     table                   = "set me";
+	QString     db    = "set me";
+	QString     table = "set me";
+	Header      header;
 	int         truncatedResponseLength = 100;
 	enum Format {
 		sql,
