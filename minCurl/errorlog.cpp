@@ -39,11 +39,6 @@ QString ErrorLog::logQuery(const curlCall* call) {
 		sErrBuf = call->errbuf;
 	}
 
-	Header subHeader;
-	subHeader.copyIfFound(QSL("x-business-use-case-usage"), header);
-	subHeader.copyIfFound(QSL("x-fb-ads-insights-throttle"), header);
-	subHeader.copyIfFound(QSL("x-fb-connection-quality"), header);
-
 	switch (format) {
 	case Format::sql: {
 		static const QString skel = R"EOD(
@@ -72,7 +67,7 @@ QString ErrorLog::logQuery(const curlCall* call) {
 					   .arg(base64this(truncatedResp))
 					   .arg(base64this(sErrBuf))
 					   .arg(call->category)
-					   .arg(base64this(subHeader.serialize()));
+					   .arg(base64this(header.serialize()));
 		logList.append(log);
 		return log;
 	} break;
@@ -83,7 +78,7 @@ QString ErrorLog::logQuery(const curlCall* call) {
 		robe << QString::number(preTransfer);
 		robe << QString::number(call->curlCode);
 		robe << QString::number(httpCode);
-		robe << subHeader.serialize();
+		robe << header.serialize();
 		robe << sErrBuf;
 		robe << get;
 		robe << post;

@@ -353,7 +353,7 @@ CurlCallResult urlGetContent2(const QByteArray& url, bool quiet, CURL* curl, boo
 
 bool CaseInsensitiveCompare::operator()(QStringView a, QStringView b) const noexcept {
 	// we have to provide the operator<=
-	return a.compare(b, Qt::CaseInsensitive) < 1;
+	return a.compare(b, Qt::CaseInsensitive) < 0;
 }
 
 CurlCallResult::CurlCallResult() {
