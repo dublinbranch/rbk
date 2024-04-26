@@ -130,6 +130,10 @@ void throwTypeError(const type_info* found, const type_info* expected) {
 	throw ExceptionV2(QSL("Wrong type!! Found %1, expected %2, recheck where this key is used, maybe you have a collision").arg(found->name()).arg(expected->name()));
 }
 
+void APCU::Row::setTTL(i64 ttl) {
+	expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
+}
+
 bool APCU::Row::expired() const {
 	return QDateTime::currentSecsSinceEpoch() > expireAt;
 }

@@ -62,6 +62,7 @@ class APCU : private NoCopy {
 		//those key will be saved on disk on program CLOSE and reloaded, they still have the same TTL based logic
 		bool persistent = false;
 
+		void setTTL(i64 ttl);
 		bool expired() const;
 		bool expired(qint64 ts) const;
 
@@ -248,7 +249,7 @@ FetchPodResult fetchPOD(const QString& key);
 FetchPodResult fetchPOD(const std::string& key);
 
 template <class T>
-void apcuStore(const StringAdt& key, T& obj, uint ttl = 60, bool persistent = false) {
+void apcuStore(const StringAdt& key, const T& obj, uint ttl = 60, bool persistent = false) {
 	APCU::getInstance()->storeInner(key, obj, true, ttl, persistent);
 }
 
