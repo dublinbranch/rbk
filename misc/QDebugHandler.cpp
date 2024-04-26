@@ -118,6 +118,7 @@ std::string submoduleInfo() {
  * we set this initialization very early with some default value
  */
 void commonInitialization(const NanoSpammerConfig* _config) {
+	srand((uint)time(NULL));
 	//We probably ALWAYS use curl
 	curl_global_init(CURL_GLOBAL_ALL);
 	loadBuffer();

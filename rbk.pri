@@ -79,6 +79,7 @@ SOURCES += \
     $$PWD/log/log.cpp \
     $$PWD/minMysql/rowswap.cpp \
     $$PWD/minMysql/sqlbuffering.cpp \
+    $$PWD/misc/base32.cpp \
     $$PWD/string/qstringview.cpp \
     $$PWD/HTTP/mime.cpp \
     $$PWD/string/comparator.cpp   \
@@ -97,6 +98,7 @@ HEADERS += \
     $$PWD/minMysql/rowswap.h \
     $$PWD/minMysql/sqlbuffering.h \
 	$$PWD/misc/NanoSpammerConfigDescribe.h \
+    $$PWD/misc/base32.h \
     $$PWD/misc/controlFlowMacro.h \
     $$PWD/number/intTypes.h \
     $$PWD/string/qstringview.h \
