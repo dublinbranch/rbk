@@ -89,6 +89,7 @@ SOURCES += \
 HEADERS += \
 	$$PWD/BoostJson/tagInvokeCrono.h \
     $$PWD/BoostJson/taginvoke.h \
+    $$PWD/BoostJson/array.h \
 	$$PWD/concept/concepts.h \
 	$$PWD/concept/isSharedPtr.h \
     $$PWD/HTTP/PMFCGI.h \

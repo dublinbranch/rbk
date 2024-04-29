@@ -127,6 +127,30 @@ QString QS(const boost::json::string& cry) {
 #endif
 }
 
+QByteArray QB(const boost::json::string& cry) {
+#if QT_VERSION_MAJOR == 5
+	auto q = QByteArray::fromRawData(cry.data(), (uint)cry.size());
+	q.detach();
+	return q;
+#elif QT_VERSION_MAJOR == 6
+	auto q = QByteArray::fromRawData(cry.data(), cry.size());
+	q.detach();
+	return q;
+#endif
+}
+
+QByteArray QB(const boost::json::string_view& cry) {
+#if QT_VERSION_MAJOR == 5
+	auto q = QByteArray::fromRawData(cry.data(), (uint)cry.size());
+	q.detach();
+	return q;
+#elif QT_VERSION_MAJOR == 6
+	auto q = QByteArray::fromRawData(cry.data(), cry.size());
+	q.detach();
+	return q;
+#endif
+}
+
 QString QS(const boost::json::value* value) {
 	if (value->is_null()) {
 		return {};
@@ -372,6 +396,21 @@ string_view asString(const boost::json::value& value) {
 QString QS(const boost::json::value& value, std::string_view key, const QString& def) {
 	if (auto el = value.as_object().if_contains(key); el) {
 		return QS(*el);
+	}
+
+	return def;
+}
+
+QByteArray QB(const boost::json::value& value) {
+	if (value.is_null()) {
+		return {};
+	}
+	return QB(value.as_string());
+}
+
+QByteArray QB(const boost::json::value& value, std::string_view key, const QByteArray& def) {
+	if (auto el = value.as_object().if_contains(key); el) {
+		return QB(*el);
 	}
 
 	return def;
