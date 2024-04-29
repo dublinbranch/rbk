@@ -111,7 +111,7 @@ class DB {
 	sqlResult query(const QString& sql) const;
 	sqlResult query(const std::string& sql) const;
 	// simulateErr is just for testing
-	sqlResult query(const QByteArray& sql, int simulateErr = 0) const;
+	sqlResult query(const QByteArray& sql) const;
 
 	[[deprecated("use queryCache2 - this one is problematic to use, and with redundant and never used param")]] sqlResult  queryCache(const QString& sql, bool on = false, QString name = QString(), uint ttl = 3600);
 	[[deprecated("use queryCacheLine2 - this one is problematic to use, and with redundant and never used param")]] sqlRow queryCacheLine(const QString& sql, bool on = false, QString name = QString(), uint ttl = 3600, bool required = false);
@@ -189,14 +189,15 @@ class DB {
 	//						  .NULL_as_EMPTY,
 	//						  true);
 	struct InternalState {
-		uint    queryExecuted = 0;
-		uint    reconnection  = 0;
-		bool    NULL_as_EMPTY = false;
-		QString lastError;
-		quint64 totServerTime = 0;
-		quint64 totFetchTime  = 0;
-		qint64  serverTime    = 0;
-		qint64  fetchTime     = 0;
+		uint         queryExecuted = 0;
+		uint         reconnection  = 0;
+		bool         NULL_as_EMPTY = false;
+		unsigned int lastErrorCode = 0;
+		QString      lastError;
+		quint64      totServerTime = 0;
+		quint64      totFetchTime  = 0;
+		qint64       serverTime    = 0;
+		qint64       fetchTime     = 0;
 		//In certain case we want to kill a running sql, is useless to emit a warning in that case, reset after USAGE
 		//TODO change to be reset after use with the ResetAfter use class! (Or verify somehow, probably just easier to change type ?)(Or verify somehow, probably just easier to change type ?)
 		bool skipNextDisconnect = false;
@@ -205,6 +206,9 @@ class DB {
 		bool noCacheOnEmpty = false;
 		//if we want to populate the result set with the TYPE of the column, rarely used, reset after use
 		bool swapType = false;
+
+		//does not automatically reset, hand with ResetOnExit
+		bool uniqueViolationNothrow = false;
 	};
 	mutable mi_tls<InternalState> state;
 

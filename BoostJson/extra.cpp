@@ -434,6 +434,16 @@ std::string_view asString(const boost::json::object& value, std::string_view key
 	return {};
 }
 
+std::string_view asStringThrow(const boost::json::object& value, std::string_view key) {
+	if (auto el = value.if_contains(key); el) {
+		if (!el->is_string()) {
+			throw ExceptionV2(F("{} is not a string", key));
+		}
+		return asString(*el);
+	}
+	throw ExceptionV2(F("Impossible to find {} in json", key));
+}
+
 std::string_view SW(const boost::json::string_view& cry) {
 	return std::string_view(cry);
 }
@@ -452,4 +462,14 @@ string missingKeyError(std::string_view key, bool noThrow) {
 
 std::string_view asString(const boost::json::value& value, std::string_view key) {
 	return asString(value.as_object(), key);
+}
+
+std::expected<std::string_view, string> asStringVerbose(const boost::json::object& value, std::string_view key) {
+	if (auto el = value.if_contains(key); el) {
+		if (!el->is_string()) {
+			return std::unexpected(F("{} is not a string", key));
+		}
+		return asString(*el);
+	}
+	return std::unexpected(F("Impossible to find {} in json", key));
 }

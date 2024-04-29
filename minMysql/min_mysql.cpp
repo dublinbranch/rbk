@@ -85,7 +85,7 @@ sqlResult DB::query(const std::string& sql) const {
 	return query(QByteArray::fromStdString(sql));
 }
 
-sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
+sqlResult DB::query(const QByteArray& sql) const {
 	ResetOnExit reset1(localThreadStatus->state, ThreadState::MyQuery);
 	localThreadStatus->sql = sql;
 
@@ -121,19 +121,21 @@ sqlResult DB::query(const QByteArray& sql, int simulateErr) const {
 		st.totServerTime += sqlLogger.serverTime;
 	}
 
-	auto error = mysql_errno(conn);
-	if (simulateErr) {
-		error = simulateErr;
-	}
-
+	auto error           = mysql_errno(conn);
+	state->lastErrorCode = error;
 	if (error) {
 		switch (error) {
 		case 1062: { //unique index violation
-			cxaNoStack     = true;
-			cxaLevel       = CxaLevel::none;
-			auto msg       = F16("After: {} \n {} \n", sqlLogger.serverTime, mysql_error(conn));
-			auto exception = DBException(msg, DBException::Error(error));
-			throw exception;
+			if (state->uniqueViolationNothrow) {
+				state->lastError = mysql_error(conn);
+				return {};
+			} else {
+				cxaNoStack     = true;
+				cxaLevel       = CxaLevel::none;
+				auto msg       = F16("After: {} \n {} \n", sqlLogger.serverTime, mysql_error(conn));
+				auto exception = DBException(msg, DBException::Error(error));
+				throw exception;
+			}
 		}
 		case 1065:
 			// well an empty query is bad, but not too much!
@@ -551,7 +553,7 @@ user: {}
 host: {}
 stack: {}
 )",
-		             user, host, QStacker16Light());
+		               user, host, QStacker16Light());
 		qWarning().noquote() << msg;
 		cxaNoStack = true;
 		throw ExceptionV2(msg);

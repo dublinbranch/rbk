@@ -6,6 +6,7 @@
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/string/stringoso.h"
 #include <boost/json.hpp>
+#include <expected>
 #include <optional>
 
 //there is no arm in doing this
@@ -29,8 +30,11 @@ QByteArray QB(const boost::json::value& value, std::string_view key, const QByte
 /********/
 std::string_view SW(const boost::json::string_view& cry);
 
-std::string_view asString(const boost::json::object& value, const char* key);
-std::string_view asString(const boost::json::object& value, std::string_view key);
+std::string_view                             asString(const boost::json::object& value, const char* key);
+std::string_view                             asString(const boost::json::object& value, std::string_view key);
+std::expected<std::string_view, std::string> asStringVerbose(const boost::json::object& value, std::string_view key);
+std::string_view                             asStringThrow(const boost::json::object& value, std::string_view key);
+
 std::string_view asString(const boost::json::object& value, StringAdt key);
 std::string_view asString(const boost::json::object& value, std::string_view key, std::string_view def);
 
