@@ -16,6 +16,7 @@ inline const QString    SQLTableDateFormat       = "yyyy_MM_dd";
 inline const QString    SQL_NULL                 = "NULL";
 inline const QByteArray BSQL_NULL                = "NULL";
 inline const QByteArray BZero                    = "0";
-inline const QString    Zero                     = "0";
+inline const QByteArray BEmpty;
+inline const QString    Zero = "0";
 
 #endif // STRINGDEFINE_H
