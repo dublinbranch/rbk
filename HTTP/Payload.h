@@ -40,9 +40,13 @@ class Headers : public std::multimap<std::string, std::string> {
 	void deleteCookie(std::string_view name);
 };
 
+class PMFCGI;
+
 struct Payload {
-	bool        alreadySent = false;
-	unsigned    statusCode  = 200;
+	bool     alreadySent = false;
+	unsigned statusCode  = 200;
+	//a response can not exists without a request no ?
+	PMFCGI*     status = nullptr;
 	std::string html;
 	std::string mime = "text/html";
 	Headers     headers;
@@ -50,8 +54,8 @@ struct Payload {
 	void        setCacheHeader(uint ttl);
 
 	//some quality of life functions
-        void redirect(const StringAdt& location);
-        void setCookie(const std::string_view& key, const StringAdt& value, u32 cookieTTL, bool sameSite = true, bool secure = true);
+	void redirect(const StringAdt& location);
+	void setCookie(const std::string_view& key, const StringAdt& value, u32 cookieTTL, bool sameSite = true, bool secure = true);
 };
 
 #endif // PAYLOAD_H

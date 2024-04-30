@@ -42,6 +42,7 @@
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/rand/randutil.h"
 #include "rbk/thread/threadstatush.h"
+#include "rbk/thread/tmonitoring.h"
 
 #include "PMFCGI.h"
 #include "Payload.h"
@@ -110,7 +111,7 @@ void sendResponseToClient(beast::tcp_stream& stream, Payload& payload) {
 	auto size           = payload.html.size();
 
 	http::response<http::string_body> res;
-	res.body() = std::move(payload.html);
+	res.body() = payload.html;
 	res.content_length(size);
 	res.result(static_cast<http::status>(payload.statusCode));
 	res.set(http::field::content_type, payload.mime);
@@ -124,7 +125,66 @@ void sendResponseToClient(beast::tcp_stream& stream, Payload& payload) {
 
 	//equivalente to fastcgi_close
 	send(stream, res);
-	registerFlushTime();
+	auto responseTime = registerFlushTime();
+
+	if (!payload.status->conf->logRequest) {
+		return;
+	}
+
+	const auto conf = payload.status->conf;
+
+	QByteArray logLine;
+	bool       logResponse = false;
+
+	if (conf->logResponse) {
+		if (payload.status->conf->logWhitelist.empty()) {
+			logResponse = true;
+		} else {
+			for (auto& path : conf->logWhitelist) {
+				if (payload.status->path.find(path) != string::npos) {
+					logResponse = true;
+					break;
+				}
+			}
+		}
+
+		for (auto& path : conf->logBlacklist) {
+			if (payload.status->path.find(path) != string::npos) {
+				logResponse = false;
+				break;
+			}
+		}
+	}
+
+	auto dateTime = QDateTime::currentDateTime();
+	auto ts       = dateTime.toSecsSinceEpoch();
+	auto ms       = dateTime.time().msec();
+	auto time     = F("{}.{}"s, ts, ms);
+
+	if (logResponse) {
+		string_view response;
+		if (conf->maxResponseSize > 0) {
+			response = std::string_view(payload.html.data(), std::min(conf->maxResponseSize, payload.html.size()));
+		} else {
+			response = std::string_view(payload.html);
+		}
+
+		//unix ts ip path status size responseTime response
+		logLine = F8("{} {} {} {} {} {}\n-------\n{}\n-------"s, time, payload.status->remoteIp, payload.status->path, payload.statusCode,
+		             size, responseTime, response);
+	} else {
+		//unix ts	ip	path	status	size	responseTime
+		logLine = F8("{} {} {} {} {} {}"s, time, payload.status->remoteIp, payload.status->path, payload.statusCode,
+		             size, responseTime);
+	}
+
+	QString fileName;
+	if (conf->logRequestByIp) {
+		fileName = F16("{}/{}_access.log", conf->logFolder, payload.status->remoteIp);
+	} else {
+		fileName = F16("{}/access.log", payload.status->conf->logFolder);
+	}
+	fileAppendContents(logLine, fileName);
 }
 
 template <class Body, class Allocator>
@@ -139,6 +199,7 @@ void handle_request(
 	Payload payload;
 	Router  router;
 	PMFCGI  status;
+	payload.status = &status;
 
 	try {
 		try { //Yes exception can throw exceptions!

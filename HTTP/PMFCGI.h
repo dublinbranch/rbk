@@ -71,10 +71,6 @@ struct PMFCGI {
 	mutable std::string curBasePath;
 };
 
-void requestBeging();
-void requestEnd();
-void registerFlushTime();
-
 multiMapV2<QString, QString> decodePost(const QString& form);
 multiMapV2<QString, QString> decodePost(const std::string& form);
 

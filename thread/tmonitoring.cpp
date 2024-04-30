@@ -94,11 +94,9 @@ struct Averager {
 	}
 };
 
-
 size_t getThreadCount() {
-    return threadStatus.pool.size();
+	return threadStatus.pool.size();
 }
-
 
 static atomic<uint> request{0};
 static uint64_t     startedAt = QDateTime::currentMSecsSinceEpoch();
@@ -107,11 +105,10 @@ static Averager     m5(300);
 static Averager     m30(60 * 30);
 static Averager     m300(60 * 300);
 
-
 void requestBeging() {
 	localThreadStatus->state = ThreadState::Beast;
 	localThreadStatus->time.reset();
-    threadStatus.free--;
+	threadStatus.free--;
 	//static size_t minFree = 5; //floor(conf().workerLimit * 0.1);
 	//if we care about usage, than we have a reasonable num of thread (at least 10)
 	// if (minFree && threadStatus.free < minFree) {
@@ -146,8 +143,9 @@ void requestEnd() {
 	m300.timing.syncFromDk_S7Db();
 	threadStatus.free++;
 }
-void registerFlushTime() {
+i64 registerFlushTime() {
 	localThreadStatus->time.flush = localThreadStatus->time.timer.nsecsElapsed();
+	return localThreadStatus->time.flush;
 }
 
 string composeStatus() {

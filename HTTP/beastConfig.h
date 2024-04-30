@@ -35,7 +35,36 @@ struct BeastConf {
 	ushort      port    = 8081;
 	//we do normally ONLY print the HTTPException, but in some case of self contained system is ok to print all
 	bool htmlAllException = false;
-	void setBasePath(const std::string& newBasePath);
+
+	/**
+	 * @brief logRequest should be set true in case we are NOT running under a webserver (that is already logging)
+	 */
+	bool logRequest = false;
+	/**
+	 * @brief logResponse will enable saving the FULL html response to the log file,
+	 * this if uncheched will enormously inflate the log file, you normally want to use
+	 * with the whitelisted block to allow ONLY certain path to be logged
+	 */
+	bool logResponse = false;
+
+	/**
+	 * @brief logRequestByIp ^_^
+	 */
+	bool logRequestByIp = false;
+
+	/**
+	 * @brief maxResponseSize sometimes you do error, and do not want to clog the response too much
+	 * most of the important data are quite small json 99& of the times
+	 */
+	size_t maxResponseSize = 1024 * 16;
+
+	/**
+	 * @brief those list are simple pattern matching NOT REGEX
+	 * white is processed first, than black can override and block
+	 */
+	std::vector<std::string> logWhitelist;
+	std::vector<std::string> logBlacklist;
+	void                     setBasePath(const std::string& newBasePath);
 
       private:
 	//NO GETTER, as is a dynamic property and you have to access via the PMFCGI status
