@@ -204,7 +204,8 @@ void handle_request(
 	try {
 		try { //Yes exception can throw exceptions!
 			status.conf     = conf;
-			status.remoteIp = stream.socket().local_endpoint().address().to_string();
+			status.remoteIp = stream.socket().remote_endpoint().address().to_string();
+			status.localIp  = stream.socket().local_endpoint().address().to_string();
 			status.path     = req.target();
 			status.url      = Url(status.path);
 			// if (!isValidUTF8(status.path)) {

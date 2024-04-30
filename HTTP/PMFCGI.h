@@ -25,6 +25,7 @@ struct PMFCGI {
       public:
 	const BeastConf*        conf = nullptr;
 	std::string             remoteIp;
+	std::string             localIp;
 	bHeaders                headers;
 	std::optional<bHeaders> cookies;
 

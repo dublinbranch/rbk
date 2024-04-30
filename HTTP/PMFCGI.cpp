@@ -133,9 +133,9 @@ string PMFCGI::getBasePath() const {
 	}
 	if (conf->basePath.empty()) {
 		if (conf->port == 80) {
-			curBasePath = F("http://{}/", remoteIp);
+			curBasePath = F("http://{}/", localIp);
 		} else {
-			curBasePath = F("http://{}:{}/", remoteIp, conf->port);
+			curBasePath = F("http://{}:{}/", localIp, conf->port);
 		}
 	} else {
 		curBasePath = conf->basePath;
