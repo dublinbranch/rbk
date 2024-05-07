@@ -1,4 +1,5 @@
 #include "util.h"
+#include <QByteArray>
 #include <boost/algorithm/string/replace.hpp>
 #include <charconv>
 
@@ -13,25 +14,16 @@ void replace(const std::string& search, const std::string& replace, std::string&
 	boost::algorithm::replace_all(string, search, replace);
 }
 
-// std::string toStdString(const char *c) {
-// 	return {c};
-// }
-
-// std::string toStdString(const QString& c) {
-// 	return c.toStdString();
-// }
-
-// std::string toStdString(const QByteArray& c) {
-// 	return c.toStdString();
-// }
-
-// string toStdString(const std::string& c) {
-// 	return c;
-// }
-
-// string toStdString(const std::string_view& c) {
-// 	return string(c);
-// }
+QByteArray removeNonAscii(const QByteArray& input) {
+	QByteArray result;
+	result.reserve(input.size()); // Optional but improves efficiency
+	for (char c : input) {
+		if (c >= 0 && c < 128) { // Check if byte is an ASCII character
+			result.append(c);
+		}
+	}
+	return result;
+}
 
 std::optional<i64> stoi(const std::string_view& input) {
 	i64                          out    = 0;
