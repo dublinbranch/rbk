@@ -3,7 +3,7 @@
 
 #include "rbk/log/log.h"
 #include "rbk/string/stringoso.h"
-#include <qcontainerfwd.h>
+#include <map>
 
 class QStringAdt;
 
