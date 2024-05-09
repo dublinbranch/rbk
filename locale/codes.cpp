@@ -1333,6 +1333,7 @@ const mapV2<QByteArray, QByteArray>& getNationISO2_V2() {
 			{"UG", "UG"},
 			{"UM", "UM"},
 			{"US", "US"},
+			{"USA","US"},
 			{"UY", "UY"},
 			{"UZ", "UZ"},
 			{"VA", "VA"},
