@@ -126,7 +126,7 @@ defined(WITH_REPROC,var) {
 #zypper addrepo https://download.opensuse.org/repositories/devel:libraries:c_c++/openSUSE_Factory_PowerPC/devel:libraries:c_c++.repo
 #zypper refresh
 #zypper install libreproc14 libreproc++14 reproc-devel
-LIBS += /usr/lib64/libreproc.so.14 /usr/lib64/libreproc++.so.14
+LIBS += -lreproc -lreproc++
 
 SOURCES += \
    $$PWD/misc/executor.cpp
