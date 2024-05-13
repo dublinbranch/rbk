@@ -17,8 +17,8 @@ void replace(const std::string& search, const std::string& replace, std::string&
 QByteArray removeNonAscii(const QByteArray& input) {
 	QByteArray result;
 	result.reserve(input.size()); // Optional but improves efficiency
-	for (char c : input) {
-		if (c >= 0 && c < 128) { // Check if byte is an ASCII character
+	for (unsigned char c : input) {
+		if (c < 128) { // Check if byte is an ASCII character
 			result.append(c);
 		}
 	}
