@@ -15,8 +15,8 @@
 
 using namespace std;
 
-bool Execute_logStackTrace = true;
-bool Execute_printOnError  = false;
+thread_local bool Execute_logStackTrace = true;
+thread_local bool Execute_printOnError  = false;
 
 ExecuteOpt::ExecuteOpt() {
 	//pretty sure you always want that...
