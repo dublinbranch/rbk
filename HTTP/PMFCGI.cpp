@@ -128,9 +128,14 @@ string PMFCGI::serializeBase() const {
 }
 
 string PMFCGI::getBasePath() const {
+	if (conf->basePathFunctor) {
+		return conf->basePathFunctor(this);
+	}
+
 	if (!curBasePath.empty()) {
 		return curBasePath;
 	}
+
 	if (conf->basePath.empty()) {
 		if (conf->port == 80) {
 			curBasePath = F("http://{}/", localIp);

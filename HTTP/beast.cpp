@@ -203,11 +203,13 @@ void handle_request(
 
 	try {
 		try { //Yes exception can throw exceptions!
-			status.conf     = conf;
+			status.conf = conf;
+
 			status.remoteIp = stream.socket().remote_endpoint().address().to_string();
 			status.localIp  = stream.socket().local_endpoint().address().to_string();
-			status.path     = req.target();
-			status.url      = Url(status.path);
+
+			status.path = req.target();
+			status.url  = Url(status.path);
 			// if (!isValidUTF8(status.path)) {
 			// 	throw ExceptionV2(QSL("Invalid utf8 in the PATH %1").arg(base64this(status.path)));
 			// }
@@ -218,8 +220,17 @@ void handle_request(
 				status.headers.add(h.name_string(), h.value());
 			}
 
+			//in case we override the default IP because running under a proxy
+
 			if (auto v = status.headers.get("remote_addr"); v) {
 				status.remoteIp = v.val->toStdString();
+			}
+			if (auto v = status.headers.get("x-real-ip"); v) {
+				status.remoteIp = v.val->toStdString();
+			}
+
+			if (auto v = status.headers.get("x-server-ip"); v) {
+				status.localIp = v.val->toStdString();
 			}
 
 			if (conf->prePhase1) {

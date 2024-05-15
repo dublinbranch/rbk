@@ -7,11 +7,12 @@
 
 template <typename K>
 class NotFoundMixin {
-	  public:
+      public:
+	//We must use std::function and not plain functor, to be able to use lambdas
 	using Funtor    = std::function<void(const K&)>;
 	NotFoundMixin() = default;
 	explicit NotFoundMixin(Funtor f)
-		: notFoundCallback(f){};
+	    : notFoundCallback(f){};
 
 	mutable Funtor notFoundCallback = nullptr;
 

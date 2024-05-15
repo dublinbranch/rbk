@@ -52,6 +52,7 @@ struct PMFCGI {
 	std::string serialize() const;
 	std::string serializeBase() const;
 
+	//return the base path of the server
 	std::string getBasePath() const;
 
 	/*
@@ -67,9 +68,10 @@ struct PMFCGI {
 	};
 
 	uint debug = 0;
+	//can be changed by the getBasePath call
+	mutable std::string curBasePath;
 
       private:
-	mutable std::string curBasePath;
 };
 
 multiMapV2<QString, QString> decodePost(const QString& form);

@@ -12,10 +12,14 @@ struct BeastConf {
       public:
 	friend class PMFCGI;
 
+	//We must use std::function and not plain functor, to be able to use lambdas, but in this case is probably overkill...
 	std::function<bool(PMFCGI& status, Payload& payload)> common1      = nullptr;
 	std::function<bool(PMFCGI& status, Payload& payload)> loginManager = nullptr;
 	std::function<void(PMFCGI& status, Payload& payload)> prePhase1    = nullptr;
 	//std::function<void()> post = nullptr;
+
+	//we can override the function that return the base path to be used, sometimes we have to mix stuff
+	std::function<std::string(const PMFCGI* status)> basePathFunctor;
 
 	using SimpleRoutedType = void (*)(PMFCGI& status, Payload& payload);
 
