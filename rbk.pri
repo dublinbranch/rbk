@@ -57,7 +57,7 @@ system(git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbre
 #DEFINES += SmolHack2=0'$(shell git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)'
 
 #QT is amazing, it can easily embedd and later read such file, there is not noticeable penalty in linking time for this operation
-RESOURCES     = $$PWD/gitTrick/resources.qrc
+RESOURCES     += $$PWD/gitTrick/resources.qrc
 
 #great control on memory and overall just better
 #zypper in jemalloc-devel
