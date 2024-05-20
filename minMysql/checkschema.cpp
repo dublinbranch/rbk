@@ -1,15 +1,25 @@
 #include "checkschema.h"
+#include "rbk/filesystem/filefunction.h"
+#include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/dynamic.h"
 #include "rbk/hash/sha.h"
 #include "rbk/minMysql/min_mysql.h"
-
 #include <QByteArray>
 #include <QDataStream>
 #include <QFile>
 #include <QRegularExpression>
 #include <QSaveFile>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
 
+namespace fs = std::filesystem;
 using namespace std;
+
+//This is a macro passed during compilation, so we can save the schema in the right place
+const QString basePath = BasePath;
 
 void removeAutoInc(QString& sql) {
 	static QRegularExpression regex(R"RX(AUTO_INCREMENT=(\d*))RX");
@@ -67,7 +77,7 @@ WHERE table_schema='{}')",
 }
 
 void CheckSchema::saveSchema() {
-	auto      path = BasePath + QSL("/dbSchema");
+	auto      path = basePath + QSL("/db/schema");
 	QSaveFile file(path);
 	if (file.open(QFile::WriteOnly | QFile::Truncate)) {
 		QByteArray  stream;
@@ -80,9 +90,29 @@ void CheckSchema::saveSchema() {
 	file.commit();
 }
 
+void CheckSchema::saveTableData(const TableDatas& td) {
+	for (auto& row : td) {
+		auto      path = basePath + QSL("/db/") + row.name;
+		QSaveFile file(path);
+		if (file.open(QFile::WriteOnly | QFile::Truncate)) {
+			file.seek(0);
+			QByteArray  stream;
+			QDataStream out(&stream, QIODevice::WriteOnly);
+
+			auto res = db->query(row.sql);
+			out << res;
+
+			file.write(stream);
+		} else {
+			qCritical() << file.errorString();
+		}
+		file.commit();
+	}
+}
+
 CheckSchema::Schemas CheckSchema::loadSchema() {
 	CheckSchema::Schemas map;
-	QFile                file(":/db/dbSchema");
+	QFile                file(":/db/schema");
 	if (file.open(QFile::ReadOnly)) {
 		QByteArray payload;
 		auto       content = file.readAll();
@@ -99,6 +129,7 @@ CheckSchema::Schemas CheckSchema::loadSchema() {
 	}
 	return map;
 }
+
 /*
 if (conf().skipDbCheck) {
         return true;
@@ -186,6 +217,29 @@ bool CheckSchema::checkDbSchema() {
 	return true;
 }
 
+bool CheckSchema::checkTableData(const TableDatas& td) {
+	for (auto& table : td) {
+		auto    path = basePath + QSL("/db/") + table.name;
+		QFileXT file(path);
+		file.open(QFile::ReadOnly, false);
+		QDataStream in(&file);
+		sqlResult   diskData;
+		in >> diskData;
+		auto res = db->query(table.sql);
+		int  i   = 0;
+		for (auto& dbRow : res) {
+			auto diskRow = diskData[i++];
+			if (diskRow != dbRow) {
+				qWarning() << "table data mismatch! Disk is :\n"
+						   << diskRow << "\nDB is :\n"
+						   << dbRow;
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 QDebug& operator<<(QDebug& out, const CheckSchema::Key& key) {
 	QDebugStateSaver stateSaver(out);
 	out.space().noquote() << key.database << key.table;
@@ -194,6 +248,7 @@ QDebug& operator<<(QDebug& out, const CheckSchema::Key& key) {
 
 CheckSchema::CheckSchema(DB* db_, QStringList database_)
     : db(db_), databases(database_) {
+	mkdir(basePath + "/db");
 }
 
 QDataStream& operator<<(QDataStream& out, const CheckSchema::Key& key) {
@@ -206,4 +261,49 @@ QDataStream& operator>>(QDataStream& in, CheckSchema::Key& key) {
 	in >> key.database;
 	in >> key.table;
 	return in;
+}
+
+std::vector<std::string> getFilesInDirectory(const std::string& directoryPath) {
+	std::vector<std::string> filePaths;
+
+	for (const auto& entry : fs::directory_iterator(directoryPath)) {
+		if (fs::is_regular_file(entry.path())) {
+			filePaths.push_back(entry.path().string());
+		}
+	}
+
+	return filePaths;
+}
+
+void generateQrcFile(const QString& qrcFilePath, const std::vector<std::string>& filePaths, const std::string& resourcePrefix) {
+	QFileXT file(qrcFilePath);
+
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate, false)) {
+		exit(1);
+	}
+	string buffer = F(R"(
+<RCC>
+	<qresource prefix="{}">
+)",
+	                  resourcePrefix);
+	//Qt will refuse a qrc with no files inside -.-, so we just add this soft check that will add itself in this case
+	if (filePaths.empty()) {
+		buffer += "	<file>../db.qrc</file>";
+	} else {
+		for (const auto& filePath : filePaths) {
+			std::string relativePath = fs::relative(filePath, basePath.toStdString()).string();
+			buffer += F("	<file>{}</file>\n", relativePath);
+		}
+	}
+
+	buffer += "	</qresource>\n";
+	buffer += "</RCC>\n";
+
+	file.write(buffer.c_str(), buffer.size());
+}
+
+void updateQRCFile() {
+	auto qrcFilePath = basePath + "/db.qrc";
+	auto filePaths   = getFilesInDirectory(basePath.toStdString() + "/db");
+	generateQrcFile(qrcFilePath, filePaths, "");
 }

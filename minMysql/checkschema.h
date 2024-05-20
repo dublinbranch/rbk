@@ -1,9 +1,9 @@
 #ifndef TMP_QTCREATOR_HJDWZN_CLANGTOOLS_VFSO_OXXLMP_CHECKSCHEMA_H_AUTO
 #define TMP_QTCREATOR_HJDWZN_CLANGTOOLS_VFSO_OXXLMP_CHECKSCHEMA_H_AUTO
 
-#include "rbk/minMysql/sqlresult.h"
 #include "rbk/SpaceShipOP/qstringship.h"
 #include "rbk/mapExtensor/qmapV2.h"
+#include "rbk/minMysql/sqlresult.h"
 #include <QDebug>
 #include <QStringList>
 
@@ -17,14 +17,23 @@ class CheckSchema {
 		auto    operator<=>(const Key&) const = default;
 	};
 
-	using Schemas = QMapV2<Key, sqlResult>;
+	struct TableData {
+		QString sql;
+		QString name;
+	};
+
+	using TableDatas = std::vector<TableData>;
+	using Schemas    = QMapV2<Key, sqlResult>;
 
 	explicit CheckSchema(DB* db_, QStringList database_);
 	bool checkDbSchema();
+	bool checkTableData(const TableDatas& td);
 
 	//This MUST be intentionally called when schema is updated
 	//Remember to also add into the QRC file
 	void saveSchema();
+
+	void saveTableData(const TableDatas& td);
 
 	Schemas getDbSchema();
 	Schemas loadSchema();
@@ -36,4 +45,9 @@ class CheckSchema {
 QDebug&      operator<<(QDebug& d, const CheckSchema::Key& key);
 QDataStream& operator<<(QDataStream& out, const CheckSchema::Key& key);
 QDataStream& operator>>(QDataStream& in, const CheckSchema::Key& key);
+
+void                     updateQRCFile();
+void                     generateQrcFile(const QString& qrcFilePath, const std::vector<std::string>& filePaths, const std::string& resourcePrefix);
+std::vector<std::string> getFilesInDirectory(const std::string& directoryPath);
+
 #endif // TMP_QTCREATOR_HJDWZN_CLANGTOOLS_VFSO_OXXLMP_CHECKSCHEMA_H_AUTO
