@@ -219,7 +219,7 @@ bool CheckSchema::checkDbSchema() {
 
 bool CheckSchema::checkTableData(const TableDatas& td) {
 	for (auto& table : td) {
-		auto    path = basePath + QSL(":/db/") + table.name;
+		auto    path = QSL(":/db/") + table.name;
 		QFileXT file(path);
 		file.open(QFile::ReadOnly, false);
 		QDataStream in(&file);
