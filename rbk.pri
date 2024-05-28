@@ -95,6 +95,8 @@ HEADERS += \
     $$PWD/HTTP/PMFCGI.h \
     $$PWD/caching/cachable.h \
     $$PWD/log/log.h \
+    $$PWD/minMysql/checkSchema/CheckSchemaConf.h \
+    $$PWD/minMysql/checkSchema/CheckSchemaDescribe.h \
     $$PWD/minMysql/rowSwappable.h \
     $$PWD/minMysql/rowswap.h \
     $$PWD/minMysql/sqlbuffering.h \

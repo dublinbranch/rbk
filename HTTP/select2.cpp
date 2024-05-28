@@ -6,8 +6,6 @@
 #include <QString>
 #include <boost/json.hpp>
 
-extern DB* mainDB;
-
 namespace bj = boost::json;
 
 using namespace std::string_literals;
@@ -46,18 +44,18 @@ Select2::Row::Row(const QString& id_, const QString& text_, bool sel) {
 	selected = sel;
 }
 
-std::string Select2::search(const QStringAdt& http, std::string_view sql, PMFCGI& status, SearchPattern pattern) {
+std::string Select2::search(DB* db, const QStringAdt& http, std::string_view sql, PMFCGI& status, SearchPattern pattern) {
 	string search;
 	if (auto v = status.get.get(http); v) {
 		switch (pattern) {
 		case SearchPattern::START:
-			search = F(" `{}` LIKE '{}%'", sql, mainDB->escape(*v.val));
+			search = F(" `{}` LIKE '{}%'", sql, db->escape(*v.val));
 			break;
 		case SearchPattern::ANYWHERE:
-			search = F(" `{}` LIKE '%{}%'", sql, mainDB->escape(*v.val));
+			search = F(" `{}` LIKE '%{}%'", sql, db->escape(*v.val));
 			break;
 		case SearchPattern::EXACT:
-			search = F(" `{}` = '{}'", sql, mainDB->escape(*v.val));
+			search = F(" `{}` = '{}'", sql, db->escape(*v.val));
 			break;
 		}
 	}
