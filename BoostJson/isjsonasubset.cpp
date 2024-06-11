@@ -41,7 +41,7 @@ void isJsonASubset(const boost::json::value& outer, const boost::json::value& su
 	}
 	default:
 
-		boost::json::error_code ec;
+        boost::system::error_code ec;
 		if (auto inner = outer.find_pointer(basePath, ec); inner) {
 			if (*inner != subset) {
 				fmt::print("Mismatch in {} we have {} instead of {}\n", basePath, to_string(*inner), to_string(subset));
