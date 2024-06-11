@@ -280,22 +280,23 @@ void handle_request(
 			if (e2) {
 				file = conf->logFolder + "/" + e2->getLogFile();
 			}
-			auto HE = dynamic_cast<const HttpException*>(&e);
-			if (HE) {
-				if (!HE->httpErrMsg.empty()) {
-					payload.html = HE->httpErrMsg;
-				}
-				payload.statusCode = HE->statusCode;
+
+			if (!(e2 && e2->skipPrint)) {
+				fmt::print("\n------\n{}", msg);
 			}
 
 			if (conf->htmlAllException) {
 				payload.html = msg;
-				fmt::print("\n------\n{}", msg);
 			} else {
-				if (!(e2 && e2->skipPrint)) {
-					fmt::print("\n------\n{}", msg);
+				auto HE = dynamic_cast<const HttpException*>(&e);
+				if (HE) {
+					if (!HE->httpErrMsg.empty()) {
+						payload.html = HE->httpErrMsg;
+					}
+					payload.statusCode = HE->statusCode;
+				} else {
+					payload.html = randomError();
 				}
-				payload.html = randomError();
 			}
 
 			fileAppendContents("\n------\n " + msg, file);

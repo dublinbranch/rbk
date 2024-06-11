@@ -3,7 +3,7 @@
 #include "fmt/format.h"
 #include "fmt/ranges.h"
 #include "magic_enum.hpp"
-#include "rbk/QStacker/exceptionv2.h"
+#include "rbk/QStacker/httpexception.h"
 #include "rbk/concept/concepts.h"
 #include <QByteArray>
 #include <QString>
@@ -62,7 +62,8 @@ void fromString(const std::string& _string, T& t) {
 		t = opt.value();
 	} else {
 		auto msg = composeError(_string, t);
-		throw ExceptionV2(msg);
+		//TODO allow a thread local ptr to handle a custom error handler to be injected (rapid json docet)
+		throw HttpException(msg, msg);
 	}
 }
 

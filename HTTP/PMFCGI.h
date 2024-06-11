@@ -73,6 +73,7 @@ struct PMFCGI {
 
       private:
 };
+std::optional<std::string> noMoreParam(QueryParams& get);
 
 multiMapV2<QString, QString> decodePost(const QString& form);
 multiMapV2<QString, QString> decodePost(const std::string& form);

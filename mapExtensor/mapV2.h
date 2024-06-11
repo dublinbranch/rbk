@@ -37,6 +37,8 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 			return found;
 		}
 	};
+
+	//In V3 replace with std::optional ?
 	struct Founded2 {
 		const V  val{};
 		bool     found = false;
@@ -44,6 +46,8 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 			return found;
 		}
 	};
+
+	//What is the difference with Founded ???
 	struct FoundedRef {
 		V*       val   = nullptr;
 		bool     found = false;
@@ -88,6 +92,7 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 
 	//TODO add the overload for type convertible so we can use the non homogenous map
 
+	//Why this overload exists ?
 	template <typename T>
 	[[nodiscard]] T get(const K& k, const T&& t) const {
 		auto v = t;
@@ -105,6 +110,33 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		}
 		return false;
 	}
+
+	/** **/
+	template <typename T>
+	[[nodiscard]] T takeRq(const K& k) {
+		auto t = rq(k);
+		this->erase(k);
+		return t;
+	}
+
+	template <typename T>
+	[[nodiscard]] T take(const K& k, const T& def) {
+		T t = def;
+		if (get(k, t)) {
+			this->erase(k);
+		}
+		return t;
+	}
+
+	[[nodiscard]] auto takeOpt(const K& k) {
+		if (auto iter = this->find(k); iter != this->end()) {
+			Founded2 f{iter->second, true};
+			this->erase(iter);
+			return f;
+		}
+		return Founded2();
+	}
+	/** **/
 
 	template <typename T>
 	[[nodiscard]] auto get(const K& k) const {
@@ -171,15 +203,6 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	template <typename D>
 	void rq(const K& key, D& dest) const {
 		dest = rq<D>(key);
-	}
-
-	[[nodiscard]] auto take(const K& k) {
-		if (auto iter = this->find(k); iter != this->end()) {
-			Founded2 f{iter->second, true};
-			this->erase(iter);
-			return f;
-		}
-		return Founded2();
 	}
 
 	[[nodiscard]] V getDefault(const K& k) const {
