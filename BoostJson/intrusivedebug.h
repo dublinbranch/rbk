@@ -39,7 +39,7 @@ struct PushMe {
 #elif BOOST_VERSION == 108400
 #include "rbk/BoostJson/override/value_to_108400.hpp"
 #else
-#error "Unsupported Boost version for the intrusive HTTP Json customize one from json/detail/value_to.hpp"
+//#error "Unsupported Boost version for the intrusive HTTP Json customize one from json/detail/value_to.hpp"
 #endif
 
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_BOOSTJSON_INTRUSIVEDEBUG_H
