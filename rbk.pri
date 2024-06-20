@@ -76,6 +76,7 @@ SOURCES += \
     $$PWD/HTTP/PMFCGI.cpp \
     $$PWD/caching/cachable.cpp \
     $$PWD/dateTime/timerange.cpp \
+    $$PWD/filesystem/suffix.cpp \
     $$PWD/log/log.cpp \
     $$PWD/minMysql/rowswap.cpp \
     $$PWD/minMysql/sqlbuffering.cpp \
@@ -94,6 +95,7 @@ HEADERS += \
 	$$PWD/concept/isSharedPtr.h \
     $$PWD/HTTP/PMFCGI.h \
     $$PWD/caching/cachable.h \
+    $$PWD/filesystem/suffix.h \
     $$PWD/log/log.h \
     $$PWD/minMysql/checkSchema/CheckSchemaConf.h \
     $$PWD/minMysql/checkSchema/CheckSchemaDescribe.h \

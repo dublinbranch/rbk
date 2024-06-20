@@ -12,6 +12,10 @@ std::string mustache(std::string_view raw, const boost::json::object& json) {
 	return buffer;
 }
 
+string mustache(const std::string& raw, const boost::json::object& json) {
+	return mustache(string_view(raw), json);
+}
+
 void mustache(std::string_view raw, std::string& buffer, const boost::json::object& json) {
 	boost::mustache::render(raw, buffer, json, {});
 }
@@ -37,3 +41,8 @@ Log mustacheSudo(const std::filesystem::__cxx11::path& source, const std::filesy
 	return l;
 }
 #endif
+
+string mustache(const std::filesystem::__cxx11::path& source, const boost::json::object& json) {
+	auto res = fileGetContents2(source, false);
+	return mustache(res.content, json);
+}
