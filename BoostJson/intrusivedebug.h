@@ -38,6 +38,8 @@ struct PushMe {
 #include "rbk/BoostJson/override/value_to_108300.hpp"
 #elif BOOST_VERSION == 108400
 #include "rbk/BoostJson/override/value_to_108400.hpp"
+#elif BOOST_VERSION == 108500
+#include "rbk/BoostJson/override/value_to_108500.hpp"
 #else
 #pragma message "Unsupported Boost version for the intrusive HTTP Json customize one from json/detail/value_to.hpp"
 #endif

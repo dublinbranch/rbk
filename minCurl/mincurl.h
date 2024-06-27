@@ -103,6 +103,7 @@ class CurlKeeper : private NoCopy {
 	CurlHeader header;
 
 	operator CURL*() const;
+	operator bool() const = delete;
 
 	//I have no idea how to find the used url !
 	QString url;
@@ -111,6 +112,7 @@ class CurlKeeper : private NoCopy {
 
       private:
 	CURL* curl = nullptr;
+	
 };
 
 // inspired from https://github.com/whoshuu/cpr/blob/master/include/cpr/cprtypes.h

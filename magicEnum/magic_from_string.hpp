@@ -56,7 +56,7 @@ template <typename T>
 }
 
 template <typename T>
-void fromString(const std::string& _string, T& t) {
+void fromString(const std::string_view& _string, T& t) {
 	auto opt = enum_cast<T>(_string);
 	if (opt.has_value()) {
 		t = opt.value();
@@ -66,6 +66,18 @@ void fromString(const std::string& _string, T& t) {
 		throw HttpException(msg, msg);
 	}
 }
+
+// template <typename T>
+// void fromString(const std::string& _string, T& t) {
+// 	auto opt = enum_cast<T>(_string);
+// 	if (opt.has_value()) {
+// 		t = opt.value();
+// 	} else {
+// 		auto msg = composeError(_string, t);
+// 		//TODO allow a thread local ptr to handle a custom error handler to be injected (rapid json docet)
+// 		throw HttpException(msg, msg);
+// 	}
+// }
 
 template <typename T>
 void fromString(const QString& _string, T& t) {
