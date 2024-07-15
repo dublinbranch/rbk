@@ -92,7 +92,15 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 
 	//TODO add the overload for type convertible so we can use the non homogenous map
 
-	//Why this overload exists ?
+	//Higher ODR order as the requested type is the same of the one inside the class, so we skip the swap
+	bool get(const K& k, V& v) const {
+		if (auto iter = this->find(k); iter != this->end()) {
+			v = iter->second;
+			return true;
+		}
+		return false;
+	}
+
 	template <typename T>
 	[[nodiscard]] T get(const K& k, const T&& t) const {
 		auto v = t;
@@ -114,7 +122,7 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	/** **/
 	template <typename T>
 	[[nodiscard]] T takeRq(const K& k) {
-		auto t = rq(k);
+		auto t = rq<T>(k);
 		this->erase(k);
 		return t;
 	}
@@ -356,6 +364,31 @@ class multiMapV2 : public NotFoundMixin<K>, public std::multimap<K, V> {
 		swapType(v, t);
 	}
 
+	template <typename T>
+	[[nodiscard]] T takeRq(const K& k) {
+		auto t = rq<T>(k);
+		this->erase(k);
+		return t;
+	}
+
+	template <typename T>
+	[[nodiscard]] T take(const K& k, const T& def) {
+		T t = def;
+		if (get(k, t)) {
+			this->erase(k);
+		}
+		return t;
+	}
+
+	[[nodiscard]] auto takeOpt(const K& k) {
+		if (auto iter = this->find(k); iter != this->end()) {
+			Founded f{iter->second, true};
+			this->erase(iter);
+			return f;
+		}
+		return Founded();
+	}
+
 	template <typename T, typename C>
 	[[nodiscard]] T rq(const K& k, C* callback) const {
 		if (auto v = get(k); v) {
@@ -365,5 +398,13 @@ class multiMapV2 : public NotFoundMixin<K>, public std::multimap<K, V> {
 
 		//this line is normally never execute as the passed lambda supposedly throw a custom exception on miss
 		return {};
+	}
+
+	std::vector<K> getAllKeys() const {
+		std::vector<K> res;
+		for (auto& [k, v] : *this) {
+			res.push_back(k);
+		}
+		return res;
 	}
 };

@@ -27,6 +27,7 @@ class QueryParams : public mapV2<QString, QString> {
 
 	//Todo maybe is better to mark if a parameter has been swapped than to remove it ?
 	std::optional<std::string> checkIfUnused() const;
+	void                       checkIfUnused(bool) const;
 };
 
 class Url {

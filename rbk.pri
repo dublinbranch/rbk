@@ -81,6 +81,7 @@ SOURCES += \
     $$PWD/minMysql/rowswap.cpp \
     $$PWD/minMysql/sqlbuffering.cpp \
     $$PWD/misc/base32.cpp \
+    $$PWD/misc/qelapsedtimerv2.cpp \
     $$PWD/string/qstringview.cpp \
     $$PWD/HTTP/mime.cpp \
     $$PWD/string/comparator.cpp   \
@@ -105,6 +106,7 @@ HEADERS += \
 	$$PWD/misc/NanoSpammerConfigDescribe.h \
     $$PWD/misc/base32.h \
     $$PWD/misc/controlFlowMacro.h \
+    $$PWD/misc/qelapsedtimerv2.h \
     $$PWD/number/intTypes.h \
     $$PWD/string/qstringview.h \
     $$PWD/string/stringoso.h \

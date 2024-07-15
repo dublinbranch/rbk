@@ -214,3 +214,10 @@ multiMapV2<QString, QString> decodePost(const QString& form) {
 	}
 	return res;
 }
+
+void Post::checkIfUnused(bool) const {
+	if (this->empty()) {
+		return;
+	}
+	throw HttpException(F("Unused parameter found! {}", fmt::join(this->getAllKeys(), ";")));
+}
