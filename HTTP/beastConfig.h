@@ -74,9 +74,9 @@ struct BeastConf {
 	std::vector<std::string> logBlacklist;
 	void                     setBasePath(const std::string& newBasePath);
 
+	std::optional<std::string> basePath;
+
       private:
-	//NO GETTER, as is a dynamic property and you have to access via the PMFCGI status
-	std::string basePath;
 };
 
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_HTTP_BEASTCONFIG_H
