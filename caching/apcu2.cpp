@@ -225,6 +225,8 @@ void APCU::garbageCollector_F2() {
 	if (disableAPCU) {
 		return;
 	}
+	//set thread name
+	pthread_setname_np(pthread_self(), "APCU GC");
 	//TODO On program exit stop this gc operation, else we will have double free problem
 	auto& byExpire = cache->get<ByExpire>();
 	garbageCollectorRunning.test_and_set();

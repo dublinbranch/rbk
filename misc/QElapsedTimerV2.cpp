@@ -20,7 +20,7 @@ std::string QElapsedTimerV2::format() {
 
 	fractional_part_str.insert(3, "m");
 
-	fractional_part_str.insert(6 + 2, "µ"); // Adjusted index to account for inserted characters
+	fractional_part_str.insert(6 + 1, "µ"); // Adjusted index to account for inserted characters
 
 	fractional_part_str.insert(9 + 3, "n"); // Adjusted index to account for inserted characters
 

@@ -2,6 +2,7 @@
 #include "QDebugConfig.h"
 #include <QDebug>
 
+void initLocaleTZ();
 void commonInitialization(const NanoSpammerConfig* _config);
 
 //use like
