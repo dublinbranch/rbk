@@ -84,6 +84,7 @@ SOURCES += \
     $$PWD/misc/qelapsedtimerv2.cpp \
     $$PWD/string/qstringview.cpp \
     $$PWD/HTTP/mime.cpp \
+	 $$PWD/HTTP/util.cpp \
     $$PWD/string/comparator.cpp   \
     $$PWD/number/doubleoperator.cpp \
     $$PWD/string/stringoso.cpp
@@ -112,6 +113,7 @@ HEADERS += \
     $$PWD/string/stringoso.h \
     $$PWD/types/isOptional.h \
     $$PWD/HTTP/mime.h \
+	 $$PWD/HTTP/util.h \
     $$PWD/number/doubleoperator.h \
     $$PWD/string/comparator.h 
 
