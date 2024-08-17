@@ -412,7 +412,7 @@ sqlResult DB::queryDeadlockRepeater(const QByteArray& sql, uint maxTry) const {
 
 void DB::pingCheck(st_mysql*& conn) const {
 	// can be disabled in local host to run a bit faster on laggy connection
-	if (!conf.pingBeforeQuery) {
+	if (!conf.pingBeforeQuery.value_or(true)) {
 		return;
 	}
 	SQLLogger sqlLogger("PING", conf.logError.value(), this);

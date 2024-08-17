@@ -47,3 +47,17 @@ std::string trim(const std::string& str) {
 
 	return std::string(start, end + 1);
 }
+
+std::string toLower(string& request) {
+	std::transform(request.begin(), request.end(), request.begin(), ::tolower);
+	return request;
+}
+
+string toLower(const std::string& request) {
+	string copy = request;
+	return toLower(copy);
+}
+
+string toLower(std::string_view request) {
+	return toLower(string(request));
+}

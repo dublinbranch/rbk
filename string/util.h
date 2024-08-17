@@ -11,3 +11,6 @@ void               replace(const std::string& search, const std::string& replace
 std::optional<i64> stoi(const std::string_view& input);
 QByteArray         removeNonAscii(const QByteArray& input);
 std::string        trim(const std::string& str);
+std::string        toLower(const std::string& request);
+std::string        toLower(std::string& request);
+std::string        toLower(std::string_view request);

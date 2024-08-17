@@ -229,7 +229,7 @@ void sqlEscape(boost::json::object& r, DB* db) {
 
 string JsonRes::composeErrorMsg() const {
 	if (!position) {
-		return "Valid JSON";
+		return "Invalid JSON";
 	}
 
 	using Pt = string::size_type;
@@ -472,4 +472,29 @@ std::expected<std::string_view, string> asStringVerbose(const boost::json::objec
 		return asString(*el);
 	}
 	return std::unexpected(F("Impossible to find {} in json", key));
+}
+
+void mergeJson(bj::object& target, const bj::object& source, bool overwrite) {
+	for (auto const& item : source) {
+		auto const& key   = item.key();
+		auto const& value = item.value();
+
+		if (target.contains(key)) {
+			if (value.is_object() && target.at(key).is_object()) {
+				// Recursively merge sub-objects
+				mergeJson(target.at(key).as_object(), value.as_object(), overwrite);
+			} else if (value.is_array() && target.at(key).is_array()) {
+				// If both are arrays, you can decide to concatenate them or not
+				auto&       target_array = target.at(key).as_array();
+				auto const& source_array = value.as_array();
+				target_array.insert(target_array.end(), source_array.begin(), source_array.end());
+			} else if (overwrite) {
+				// Overwrite the value if the key exists and overwrite is true
+				target.insert_or_assign(key, value);
+			}
+		} else {
+			// Insert the new key-value pair if the key does not exist in the target
+			target.insert_or_assign(key, value);
+		}
+	}
 }

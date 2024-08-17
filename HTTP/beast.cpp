@@ -209,7 +209,7 @@ void handle_request(
 			status.localIp  = stream.socket().local_endpoint().address().to_string();
 
 			status.path = req.target();
-			status.url  = Url(status.path);
+
 			// if (!isValidUTF8(status.path)) {
 			// 	throw ExceptionV2(QSL("Invalid utf8 in the PATH %1").arg(base64this(status.path)));
 			// }
@@ -232,6 +232,8 @@ void handle_request(
 			if (auto v = status.headers.get("x-server-ip"); v) {
 				status.localIp = v.val->toStdString();
 			}
+
+			status.url = Url(status.getBasePath() + status.path.substr(1));
 
 			if (conf->prePhase1) {
 				conf->prePhase1(status, payload);
@@ -562,15 +564,15 @@ void Beast::listen() {
 	for (auto i = conf.worker; i > 0; --i) {
 		auto status = ThreadStatus::newStatus();
 
-		auto& t = threads.emplace_back(new std::thread(
-		    [status, this] {
-			    //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
-			    status->tid       = gettid();
-			    localThreadStatus = status.get();
-			    pthread_setname_np(pthread_self(), "HttpHandler");
-			    //and than launch to io handler
-			    IOC->run();
-		    }));
+		auto& t       = threads.emplace_back(new std::thread(
+                    [status, this] {
+                            //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
+                            status->tid       = gettid();
+                            localThreadStatus = status.get();
+                            pthread_setname_np(pthread_self(), "HttpHandler");
+                            //and than launch to io handler
+                            IOC->run();
+                    }));
 		status->state = ThreadState::Idle;
 		status->info  = "just created";
 
