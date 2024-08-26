@@ -34,7 +34,7 @@ QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]/QtCore
 QMAKE_CXXFLAGS += -Wunused -Wunused-function 
 QMAKE_CXXFLAGS += -std=gnu++2b
 #-Werror -Wconversion
-QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wshadow-local -Wshadow-compatible-local -Wconversion 
+QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wshadow-local -Wshadow-compatible-local -Wconversion -fno-permissive -Werror=return-type
 
 CONFIG += object_parallel_to_source
 

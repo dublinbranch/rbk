@@ -66,15 +66,15 @@ void pretty_print(std::string& os, json::value const& jv, std::string* indent) {
 	}
 
 	case json::kind::uint64:
-		os += std::to_string(jv.get_uint64());
+		os += F("{}"sv, jv.get_uint64());
 		break;
 
 	case json::kind::int64:
-		os += std::to_string(jv.get_int64());
+		os += F("{}"sv, jv.get_int64());
 		break;
 
 	case json::kind::double_:
-		os += std::to_string(jv.get_double());
+		os += F("{}"sv, jv.get_double());
 		break;
 
 	case json::kind::bool_:

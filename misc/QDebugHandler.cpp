@@ -284,6 +284,7 @@ void initLocaleTZ() {
 	//We are server side we do not care about human broken standard
 	std::setlocale(LC_ALL, "C");
 	std::locale::global(std::locale("C"));
+	
 	// qDebug()
 	// 	<< "Applicationlocale setting is "
 	// 	<< std::locale().name().c_str() << '\n';
