@@ -140,7 +140,7 @@ T rqNumber(const boost::json::value& v, std::string_view key) {
 class DB;
 void sqlEscape(boost::json::object& value, DB* db);
 
-void mergeJson(bj::object& target, const bj::object& source, bool overwrite = false);
+void mergeJson(bj::object& target, const bj::object& mixMe, bool overwrite = false);
 
 // template <typename T>
 // T rq(boost::json::object& obj, std::string_view key) {

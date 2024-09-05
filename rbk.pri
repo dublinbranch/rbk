@@ -99,6 +99,7 @@ HEADERS += \
     $$PWD/caching/cachable.h \
     $$PWD/filesystem/suffix.h \
     $$PWD/log/log.h \
+    $$PWD/mapExtensor/ThreadSafeMultiIndex.hpp \
     $$PWD/minMysql/checkSchema/CheckSchemaConf.h \
     $$PWD/minMysql/checkSchema/CheckSchemaDescribe.h \
     $$PWD/minMysql/rowSwappable.h \

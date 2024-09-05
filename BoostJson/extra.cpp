@@ -474,8 +474,8 @@ std::expected<std::string_view, string> asStringVerbose(const boost::json::objec
 	return std::unexpected(F("Impossible to find {} in json", key));
 }
 
-void mergeJson(bj::object& target, const bj::object& source, bool overwrite) {
-	for (auto const& item : source) {
+void mergeJson(bj::object& target, const bj::object& mixMe, bool overwrite) {
+	for (auto const& item : mixMe) {
 		auto const& key   = item.key();
 		auto const& value = item.value();
 
