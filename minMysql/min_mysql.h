@@ -4,9 +4,11 @@
 #include "MITLS.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/mapExtensor/mapV2.h"
+#include "rbk/string/stringoso.h"
 #include "sqlRow.h"
 #include "sqlbuffering.h"
 #include "sqlresult.h"
+#include "sqlrowv2.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QStringList>
@@ -28,7 +30,7 @@ class DBException : public ExceptionV2 {
 		InvalidState = 9000
 
 	} errorType = Error::NA;
-	DBException(const QString& _msg, Error error);
+	DBException(const StringAdt& _msg, Error error);
 };
 
 QString nullOnZero(uint v);
@@ -64,15 +66,15 @@ class DB;
 struct DBConf;
 
 struct SQLLogger {
-	SQLLogger(const QByteArray& _sql, bool _enabled, const DB* _db);
+	SQLLogger(const std::string& _sql, bool _enabled, const DB* _db);
 	void flush();
 	~SQLLogger();
 
-	qint64           serverTime;
-	qint64           fetchTime;
-	const QByteArray sql;
-	sqlResult        res;
-	QString          error;
+	qint64      serverTime;
+	qint64      fetchTime;
+	std::string sql;
+	sqlResult   res;
+	std::string error;
 	// TODO questi due leggili dal conf dell db*
 	bool logSql   = false;
 	bool logError = false;
@@ -106,12 +108,10 @@ class DB {
 	sqlRow queryLine(const QString& sql) const;
 	sqlRow queryLine(const QByteArray& sql) const;
 
-	void      setMaxQueryTime(uint time) const;
-	sqlResult query(const char* sql) const;
-	sqlResult query(const QString& sql) const;
-	sqlResult query(const std::string& sql) const;
-	// simulateErr is just for testing
-	sqlResult query(const QByteArray& sql) const;
+	void setMaxQueryTime(uint time) const;
+
+	sqlResult query(const StringAdt& sql) const;
+	SQLLogger queryInner(const std::string& sql) const;
 
 	[[deprecated("use queryCache2 - this one is problematic to use, and with redundant and never used param")]] sqlResult  queryCache(const QString& sql, bool on = false, QString name = QString(), uint ttl = 3600);
 	[[deprecated("use queryCacheLine2 - this one is problematic to use, and with redundant and never used param")]] sqlRow queryCacheLine(const QString& sql, bool on = false, QString name = QString(), uint ttl = 3600, bool required = false);
@@ -130,6 +130,9 @@ class DB {
 	// This is to be used ONLY in case the query can have deadlock, and internally tries multiple times to insert data
 	[[nodiscard]] sqlResult queryDeadlockRepeater(const QByteArray& sql, uint maxTry = 5) const;
 
+	[[nodiscard]] SqlResultV2 queryV2(const StringAdt& sql);
+	[[nodiscard]] SqlResultV2 queryCacheV2(const StringAdt& sql, uint ttl);
+
 	void        pingCheck(st_mysql*& conn) const;
 	QString     escape(const QString& what) const;
 	std::string escape(const std::string& what) const;
@@ -141,9 +144,8 @@ class DB {
 	 * @param sql
 	 *
 	 */
-	void startQuery(const QByteArray& sql) const;
-	void startQuery(const QString& sql) const;
-	void startQuery(const char* sql) const;
+	void startQuery(const StringAdt& sql) const;
+
 	/** use something like
 	        while (!db.completedQuery()) {
 	                usleep(100);
@@ -156,8 +158,11 @@ class DB {
 
 	// Shared by both async and not
 	sqlResult getWarning(bool useSuppressionList = true) const;
-	sqlResult fetchResult(SQLLogger* sqlLogger = nullptr) const;
-	u64       fetchAdvanced(FetchVisitor* visitor) const;
+
+	sqlResult   fetchResult(SQLLogger* sqlLogger = nullptr) const;
+	SqlResultV2 fetchResultV2(SQLLogger* sqlLogger = nullptr) const;
+
+	u64 fetchAdvanced(FetchVisitor* visitor) const;
 
 	/**
 	 * @brief getConn
@@ -189,15 +194,18 @@ class DB {
 	//						  .NULL_as_EMPTY,
 	//						  true);
 	struct InternalState {
-		uint         queryExecuted = 0;
-		uint         reconnection  = 0;
-		bool         NULL_as_EMPTY = false;
-		unsigned int lastErrorCode = 0;
-		QString      lastError;
-		quint64      totServerTime = 0;
-		quint64      totFetchTime  = 0;
-		qint64       serverTime    = 0;
-		qint64       fetchTime     = 0;
+		std::string lastSQL;
+		QString     lastError;
+		quint64     totServerTime = 0;
+		quint64     totFetchTime  = 0;
+		qint64      serverTime    = 0;
+		qint64      fetchTime     = 0;
+
+		uint lastErrorCode = 0;
+		uint queryExecuted = 0;
+		uint reconnection  = 0;
+		bool NULL_as_EMPTY = false;
+
 		//In certain case we want to kill a running sql, is useless to emit a warning in that case, reset after USAGE
 		//TODO change to be reset after use with the ResetAfter use class! (Or verify somehow, probably just easier to change type ?)(Or verify somehow, probably just easier to change type ?)
 		bool skipNextDisconnect = false;
@@ -220,8 +228,7 @@ class DB {
 	// this allow to spam the DB handler around, and do not worry of thread, each thread will create it's own connection!
 	mutable mi_tls<StMysqlPtr> connPool;
 	// used for asyncs
-	mutable mi_tls<int>        signalMask;
-	mutable mi_tls<QByteArray> lastSQL;
+	mutable mi_tls<int> signalMask;
 	struct SharedState {
 		std::atomic<uint> busyConnection = 0;
 	};

@@ -72,12 +72,16 @@ LIBS += -lcurl
 LIBS += -lmariadb
 
 SOURCES += \
+    $$PWD/../../googleAdsListener/rbk/minMysql/sqlrowv2.cpp \
     $$PWD/BoostJson/taginvoke.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
     $$PWD/caching/cachable.cpp \
     $$PWD/dateTime/timerange.cpp \
     $$PWD/filesystem/suffix.cpp \
+    $$PWD/hash/string.cpp \
     $$PWD/log/log.cpp \
+    $$PWD/mapExtensor/ankerv2.cpp \
+    $$PWD/mapExtensor/missingkeyex.cpp \
     $$PWD/minMysql/rowswap.cpp \
     $$PWD/minMysql/sqlbuffering.cpp \
     $$PWD/misc/base32.cpp \
@@ -90,6 +94,7 @@ SOURCES += \
     $$PWD/string/stringoso.cpp
 
 HEADERS += \
+    $$PWD/../../googleAdsListener/rbk/minMysql/sqlrowv2.h \
 	$$PWD/BoostJson/tagInvokeCrono.h \
     $$PWD/BoostJson/taginvoke.h \
     $$PWD/BoostJson/array.h \
@@ -98,8 +103,13 @@ HEADERS += \
     $$PWD/HTTP/PMFCGI.h \
     $$PWD/caching/cachable.h \
     $$PWD/filesystem/suffix.h \
+    $$PWD/hash/rapidhash.h \
+    $$PWD/hash/string.h \
     $$PWD/log/log.h \
     $$PWD/mapExtensor/ThreadSafeMultiIndex.hpp \
+    $$PWD/mapExtensor/ankerl_unordered_dense.h \
+    $$PWD/mapExtensor/ankerv2.h \
+    $$PWD/mapExtensor/missingkeyex.h \
     $$PWD/minMysql/checkSchema/CheckSchemaConf.h \
     $$PWD/minMysql/checkSchema/CheckSchemaDescribe.h \
     $$PWD/minMysql/rowSwappable.h \

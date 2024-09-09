@@ -1,18 +1,12 @@
 #pragma once
 
+#include "missingkeyex.h"
 #include "fmt/core.h"
-#include "rbk/QStacker/exceptionv2.h"
 #include "rbk/fmtExtra/customformatter.h"
 #include <QDate>
 #include <QMap>
 
-class MissingKeyEX : public ExceptionV2 {
-      public:
-	MissingKeyEX(const QString& _msg)
-	    : ExceptionV2(_msg, 6) {
-		forcePrint = true;
-	}
-};
+
 
 template <class Key, class T>
 class QMapV2 : public QMap<Key, T> {

@@ -41,10 +41,10 @@ struct DBConf {
 	CxaLevel connErrorVerbosity = CxaLevel::none;
 
 	// Corpus munus
-	QByteArray getDefaultDB() const;
-	void       setDefaultDB(const QByteArray& value);
-	QString    getInfo(bool passwd = false) const;
-	void       setWarningSuppression(std::vector<QString> regex);
+	QByteArray  getDefaultDB() const;
+	void        setDefaultDB(const QByteArray& value);
+	std::string getInfo(bool passwd = false) const;
+	void        setWarningSuppression(std::vector<QString> regex);
 
 	QByteArray defaultDB;
 

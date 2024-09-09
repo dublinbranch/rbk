@@ -69,7 +69,7 @@ class ThreadStatus {
 		int         tid = 0;
 		Timing      time;
 		QString     info;
-		QByteArray  sql;
+		std::string sql;
 	};
 
 	static std::shared_ptr<Status> newStatus();

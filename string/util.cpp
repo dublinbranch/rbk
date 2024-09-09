@@ -1,7 +1,9 @@
 #include "util.h"
 #include <QByteArray>
+#include <QDataStream>
 #include <boost/algorithm/string/replace.hpp>
 #include <charconv>
+#include <string>
 
 using namespace std;
 

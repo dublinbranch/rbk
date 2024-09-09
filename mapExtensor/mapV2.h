@@ -6,6 +6,7 @@
 
 #include "NotFoundMixin.h"
 #include "rbk/misc/swapType.h"
+#include <QDataStream>
 #include <map>
 
 //void callNotFoundCallback(const QString& key, const std::string location) {
@@ -30,6 +31,37 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	    : map_parent(map_init), mixin_parent(f) {
 	}
 
+	friend QDataStream& operator<<(QDataStream& out, const mapV2<K, V, Compare>& map) {
+		// Serialize the size of the map first
+		out << static_cast<quint32>(map.size());
+
+		// Serialize each key-value pair in the map
+		for (const auto& pair : map) {
+			out << pair.first << pair.second;
+		}
+
+		return out;
+	}
+
+	friend QDataStream& operator>>(QDataStream& in, mapV2<K, V, Compare>& map) {
+		// Clear the map first to prepare for deserialization
+		map.clear();
+
+		// Deserialize the size of the map
+		quint32 size;
+		in >> size;
+
+		// Deserialize each key-value pair and insert it into the map
+		for (quint32 i = 0; i < size; ++i) {
+			K key;
+			V value;
+			in >> key >> value;
+			map[key] = value;
+		}
+
+		return in;
+	}
+
 	struct Founded {
 		const V* val   = nullptr;
 		bool     found = false;
@@ -41,15 +73,6 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	//In V3 replace with std::optional ?
 	struct Founded2 {
 		const V  val{};
-		bool     found = false;
-		explicit operator bool() const {
-			return found;
-		}
-	};
-
-	//What is the difference with Founded ???
-	struct FoundedRef {
-		V*       val   = nullptr;
 		bool     found = false;
 		explicit operator bool() const {
 			return found;
@@ -83,13 +106,6 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		return Founded();
 	}
 
-	[[nodiscard]] auto getRef(const K& k) {
-		if (auto iter = this->find(k); iter != this->end()) {
-			return FoundedRef{&iter->second, true};
-		}
-		return FoundedRef();
-	}
-
 	//TODO add the overload for type convertible so we can use the non homogenous map
 
 	//Higher ODR order as the requested type is the same of the one inside the class, so we skip the swap
@@ -119,7 +135,7 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		return false;
 	}
 
-	/** **/
+	/** TAKE **/
 	template <typename T>
 	[[nodiscard]] T takeRq(const K& k) {
 		auto t = rq<T>(k);
@@ -253,7 +269,7 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	 * so we redefine ...
 	 */
 	[[nodiscard]] auto& operator[](const K& k) {
-		return std::map<K, V>::operator[](k);
+		return this->map_parent::operator[](k);
 	}
 
 	const V& first() const {
