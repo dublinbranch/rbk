@@ -70,6 +70,15 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		}
 	};
 
+	//Non Constant version
+	struct FoundedNC {
+		V*       val   = nullptr;
+		bool     found = false;
+		explicit operator bool() const {
+			return found;
+		}
+	};
+
 	//In V3 replace with std::optional ?
 	struct Founded2 {
 		const V  val{};
@@ -104,6 +113,13 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 			return Founded{&iter->second, true};
 		}
 		return Founded();
+	}
+
+	[[nodiscard]] auto get(const K& k) {
+		if (auto iter = this->find(k); iter != this->end()) {
+			return FoundedNC{&iter->second, true};
+		}
+		return FoundedNC();
 	}
 
 	//TODO add the overload for type convertible so we can use the non homogenous map

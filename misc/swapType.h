@@ -115,7 +115,11 @@ void swapType(const std::string& source, D& dest) {
 		return;
 	} else if constexpr (std::is_same<D, QDateTime>::value) {
 		bool convertible;
+#if QT_VERSION_MAJOR >= 6
 		auto val = QByteArrayView(source.data(), source.length()).toUInt(&convertible);
+#else
+		auto val = QByteArray(source.data(), source.length()).toUInt(&convertible);
+#endif
 		if (val && convertible) {
 			dest.setSecsSinceEpoch(val);
 		} else {
@@ -134,8 +138,12 @@ void swapType(const std::string& source, D& dest) {
 		return;
 		//} else if constexpr (isBetterEnum<D>) {
 	} else if constexpr (std::is_arithmetic_v<D>) {
-		bool        ok = false;
-		const auto& qb = QByteArrayView(source.data(), source.length());
+		bool ok = false;
+#if QT_VERSION_MAJOR >= 6
+		auto qb = QByteArrayView(source.data(), source.length());
+#else
+		auto qb = QByteArray(source.data(), source.length());
+#endif
 		if constexpr (std::is_floating_point_v<D>) {
 			dest = qb.toDouble(&ok);
 		} else if constexpr (std::is_signed_v<D>) {

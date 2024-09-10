@@ -125,7 +125,7 @@ SQLLogger DB::queryInner(const std::string& sql) const {
 		}
 		case 1065:
 			// well an empty query is bad, but not too much!
-			qWarning().noquote() << "empty query (or equivalent for) " << sql << "in" << QStacker16();
+			qWarning().noquote() << F16("empty query (or equivalent for) {} in {}", sql, stacker());
 			return sqlLogger;
 
 		// Lock wait timeout exceeded; try restarting transaction
@@ -175,7 +175,7 @@ thread: {}, queryDone: {}, reconnection: {}, busyConn: {}, totConn: {}, queryTim
 
 				sqlLogger.error = err;
 
-				qWarning().noquote() << err << QStacker16();
+				qWarning().noquote() << QString::fromStdString(err) << QStacker16();
 			}
 
 			closeConn();
@@ -195,7 +195,7 @@ Connection Info: {})",
 
 			sqlLogger.error = err;
 			// this line is needed for proper email error reporting
-			qWarning().noquote() << err << QStacker16();
+			qWarning().noquote() << QString::fromStdString(err) << QStacker16();
 			cxaNoStack     = true;
 			auto exception = DBException(err, DBException::Error::NA);
 			throw exception;
@@ -454,7 +454,7 @@ void DB::pingCheck(st_mysql*& conn) const {
 		           stacker();
 		sqlLogger.error = err;
 		// this line is needed for proper email error reporting
-		qWarning().noquote() << err;
+		qWarning().noquote() << QString::fromStdString(err);
 		cxaNoStack = true;
 		throw err;
 	}
@@ -792,7 +792,7 @@ bool DB::completedQuery() const {
 
 	auto error = mysql_errno(conn);
 	if (error != 0) {
-		qWarning().noquote() << "Mysql error for " << state->lastSQL << "error was " << mysql_error(conn) << " code: " << error << QStacker(3);
+		qWarning().noquote() << F16("Mysql error for {} error was {} code: {}\n{}", state->lastSQL, mysql_error(conn), error, stacker(3));
 		throw 1025;
 	}
 	int err;
@@ -909,8 +909,7 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 	} else {
 		auto warn = this->getWarning(true);
 		if (!warn.isEmpty()) {
-			qDebug().noquote() << "warning for " << state->lastSQL << warn << "\n"
-			                   << QStacker16Light();
+			qDebug().noquote() << F16("warning for {} \n{}\n{}", state->lastSQL, warn, stacker());
 		}
 	}
 
@@ -1007,8 +1006,7 @@ SqlResultV2 DB::fetchResultV2(SQLLogger* sqlLogger) const {
 	} else {
 		auto warn = this->getWarning(true);
 		if (!warn.isEmpty()) {
-			qDebug().noquote() << "warning for " << state->lastSQL << warn << "\n"
-			                   << QStacker16Light();
+			qDebug().noquote() << F16("warning for {} \n{}\n{}", state->lastSQL, warn, stacker());
 		}
 	}
 
@@ -1041,7 +1039,7 @@ u64 DB::fetchAdvanced(FetchVisitor* visitor) const {
 	if (!result) {
 		auto error = mysql_errno(conn);
 		if (error != 0) {
-			qWarning().noquote() << "Mysql error for " << state->lastSQL << "error was " << mysql_error(conn) << " code: " << error << QStacker(3);
+			qWarning().noquote() << F16("Mysql error for {} error was {} code: {}\n{}", state->lastSQL, mysql_error(conn), error, stacker(3));
 			cxaNoStack = true;
 			throw 1025;
 		}
