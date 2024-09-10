@@ -50,21 +50,7 @@ using namespace std;
 
 static int somethingHappened(MYSQL* mysql, int status);
 
-sqlRow DB::queryLine(const char* sql) const {
-	return queryLine(QByteArray(sql));
-}
-
-sqlRow DB::queryLine(const QString& sql) const {
-	return queryLine(sql.toUtf8());
-}
-
-sqlRow DB::queryLine(const std::string& sql) const {
-	QByteArray temp;
-	temp.setRawData(sql.c_str(), static_cast<uint>(sql.size()));
-	return queryLine(temp);
-}
-
-sqlRow DB::queryLine(const QByteArray& sql) const {
+sqlRow DB::queryLine(const StringAdt& sql) const {
 	auto res = query(sql);
 	if (res.empty()) {
 		return {};
@@ -218,30 +204,27 @@ Connection Info: {})",
 	return sqlLogger;
 }
 
-sqlResult DB::queryCache(const QString& sql, bool on, QString name, uint ttl) {
-	(void)on;
-	(void)name;
-	return queryCache2(sql, ttl);
+SqlRowV2 DB::queryCacheLineV2(const StringAdt& sql, uint ttl, bool required) {
+	auto res = queryCacheV2(sql, ttl);
+	if (auto r = res.size(); r > 1) {
+		auto msg = F("invalid number of row for: {}\nExpected 1, got {} \n", sql, r);
+		throw ExceptionV2(msg);
+	} else if (r == 1) {
+		return *res.begin();
+	} else {
+		if (required) {
+			throw DBException("no result for " + sql, DBException::NoResult);
+		} else {
+			return {};
+		}
+	}
 }
 
-sqlRow DB::queryCacheLine(const QString& sql, bool on, QString name, uint ttl, bool required) {
-	(void)on;
-	(void)name;
-	return queryCacheLine2(sql, ttl, required);
-}
-
-sqlRow DB::queryCacheLine2(const QString& sql, uint ttl, bool required) {
+sqlRow DB::queryCacheLine2(const StringAdt& sql, uint ttl, bool required) {
 	//TODO forward the check into query cache line ?
 	auto res = queryCache2(sql, ttl);
 	if (auto r = res.size(); r > 1) {
-		auto   msg = QSL("invalid number of row for: %1\nExpected 1, got %2 \n").arg(sql).arg(r);
-		QDebug dbg(&msg);
-		for (int i = 0; i < 3; i++) {
-			if (!res.empty()) {
-				dbg.noquote() << res.takeFirst() << "\n--------------------\n";
-			}
-		}
-
+		auto msg = F("invalid number of row for: {}\nExpected 1, got {} \n", sql, r);
 		throw ExceptionV2(msg);
 	} else if (r == 1) {
 		auto& row = res[0];
@@ -255,21 +238,9 @@ sqlRow DB::queryCacheLine2(const QString& sql, uint ttl, bool required) {
 	}
 }
 
-sqlRow DB::queryCacheLine2(const std::string& sql, uint ttl, bool required) {
-	return queryCacheLine2(QString::fromStdString(sql), ttl, required);
-}
-
-sqlResult DB::queryCache2(const std::string& sql, const Opt& opt) const {
+sqlResult DB::queryCache2(const StringAdt& sql, const Opt& opt) const {
 	state.get().noCacheOnEmpty = opt.noCacheOnEmpty;
 	return queryCache2(QString::fromStdString(sql), opt.ttl, opt.required);
-}
-
-sqlResult DB::queryCache2(const std::string& sql, uint ttl, bool required) const {
-	return queryCache2(QString::fromStdString(sql), ttl, required);
-}
-
-sqlRow DB::queryCacheLine(const QString& sql, uint ttl, bool required) {
-	return queryCacheLine2(sql, ttl, required);
 }
 
 //To force load from cache use something like
@@ -301,7 +272,7 @@ sqlRow DB::queryCacheLine(const QString& sql, uint ttl, bool required) {
 //		}
 //	}
 
-sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) const {
+sqlResult DB::queryCache2(const StringAdt& sql, uint ttl, bool required) const {
 	ResetOnExit<typeof localThreadStatus->state> reset1;
 	if (localThreadStatus) {
 		reset1.set(localThreadStatus->state, ThreadState::MyCache);
@@ -395,7 +366,7 @@ SqlResultV2 DB::queryCacheV2(const StringAdt& sql, uint ttl) {
 	}
 }
 
-sqlResult DB::queryORcache(const QString& sql, uint ttl, bool required) {
+sqlResult DB::queryORcache(const StringAdt& sql, uint ttl, bool required) {
 	try {
 		return queryCache2(sql, ttl, false);
 	} catch (DBException& e) {
@@ -1007,12 +978,12 @@ SqlResultV2 DB::fetchResultV2(SQLLogger* sqlLogger) const {
 					// Plus if you have the string NULL in a DB you are really looking for trouble
 					if (row[i] == nullptr && lengths[i] == 0) {
 						if (state.get().NULL_as_EMPTY) {
-							thisItem.data.push_back(QByteArray());
+							thisItem.data.push_back({});
 						} else {
-							thisItem.data.push_back(BSQL_NULL);
+							thisItem.data.push_back(S_SQL_NULL);
 						}
 					} else {
-						thisItem.data.push_back(QByteArray(row[i], static_cast<int>(lengths[i])));
+						thisItem.data.push_back(std::string(row[i], static_cast<int>(lengths[i])));
 					}
 				}
 				res.push_back(thisItem);
@@ -1257,7 +1228,7 @@ QStringList getIdList(const sqlResult& sqlRes, const QString& idName) {
 	return rangeIdList;
 }
 
-MyType::MyType(enum_field_types& t) {
+MyType::MyType(const enum_field_types& t) {
 	type = t;
 }
 

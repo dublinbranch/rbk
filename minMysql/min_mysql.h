@@ -103,35 +103,29 @@ class DB {
 	StMysqlPtr connect() const;
 	bool       tryConnect() const;
 
-	sqlRow queryLine(const std::string& sql) const;
-	sqlRow queryLine(const char* sql) const;
-	sqlRow queryLine(const QString& sql) const;
-	sqlRow queryLine(const QByteArray& sql) const;
-
 	void setMaxQueryTime(uint time) const;
 
+	/* Old Deprecated Method */
 	sqlResult query(const StringAdt& sql) const;
+	sqlRow    queryLine(const StringAdt& sql) const;
+
 	SQLLogger queryInner(const std::string& sql) const;
 
-	[[deprecated("use queryCache2 - this one is problematic to use, and with redundant and never used param")]] sqlResult  queryCache(const QString& sql, bool on = false, QString name = QString(), uint ttl = 3600);
-	[[deprecated("use queryCacheLine2 - this one is problematic to use, and with redundant and never used param")]] sqlRow queryCacheLine(const QString& sql, bool on = false, QString name = QString(), uint ttl = 3600, bool required = false);
+	[[nodiscard]] sqlRow queryCacheLine2(const StringAdt& sql, uint ttl = 3600, bool required = false);
 
-	[[nodiscard]] sqlRow queryCacheLine(const QString& sql, uint ttl = 3600, bool required = false);
-	[[nodiscard]] sqlRow queryCacheLine2(const QString& sql, uint ttl = 3600, bool required = false);
-	[[nodiscard]] sqlRow queryCacheLine2(const std::string& sql, uint ttl = 3600, bool required = false);
+	[[nodiscard]] sqlResult queryCache2(const StringAdt& sql, const Opt& opt) const;
+	[[nodiscard]] sqlResult queryCache2(const StringAdt& sql, uint ttl, bool required = false) const;
 
-	[[nodiscard]] sqlResult queryCache2(const std::string& sql, const Opt& opt) const;
-
-	[[nodiscard]] sqlResult queryCache2(const std::string& sql, uint ttl, bool required = false) const;
-	[[nodiscard]] sqlResult queryCache2(const QString& sql, uint ttl, bool required = false) const;
 	//Try to read data from cache, if expired read from DB, if db unavailable use the cache, if all fail throw error
-	[[nodiscard]] sqlResult queryORcache(const QString& sql, uint ttl, bool required = false);
+	[[nodiscard]] sqlResult queryORcache(const StringAdt& sql, uint ttl, bool required = false);
 
 	// This is to be used ONLY in case the query can have deadlock, and internally tries multiple times to insert data
 	[[nodiscard]] sqlResult queryDeadlockRepeater(const QByteArray& sql, uint maxTry = 5) const;
 
+	/* V2 */
 	[[nodiscard]] SqlResultV2 queryV2(const StringAdt& sql);
 	[[nodiscard]] SqlResultV2 queryCacheV2(const StringAdt& sql, uint ttl);
+	[[nodiscard]] SqlRowV2 queryCacheLineV2(const StringAdt& sql, uint ttl, bool required = false);
 
 	void        pingCheck(st_mysql*& conn) const;
 	QString     escape(const QString& what) const;

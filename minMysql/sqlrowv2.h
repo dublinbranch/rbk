@@ -1,7 +1,6 @@
 #ifndef SQLROWV2_H
 #define SQLROWV2_H
 
-#include "rbk/mapExtensor/missingkeyex.h"
 #include "rbk/minMysql/sqlresult.h"
 #include "rbk/serialization/QDataStreamer.h"
 #include "rbk/string/comparator.h"
@@ -34,9 +33,11 @@ using TypeMap = mapV2<std::string, Field, std::less<>>;
 //using for key std string has many advantage at the moment compared to qbarray, which is still better for type conversion
 class SqlRowV2 {
       public:
-	QVector<QByteArray> data;
-	//this one is stored in the SqlResultV2, a Row can not exists without a result
+	//std:string has the massive advantage of SSO... and is quite easy to create on the fly a no copy QByteArray if we need conversion
+	QVector<std::string> data;
+
 	std::shared_ptr<SqlResV2::TypeMap> columns = nullptr;
+	[[nodiscard]] bool                 empty() const;
 
 	// Friend declaration for serialization
 	friend QDataStream& operator<<(QDataStream& out, const SqlRowV2& row) {
@@ -105,12 +106,22 @@ class SqlRowV2 {
 			throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
 		}
 	}
+
+	template <class Value, class Key>
+	Value rq(const Key& k) const {
+		Value v;
+		if (!get(k, v)) {
+			throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
+		}
+		return v;
+	}
 };
 
 class SqlResultV2 : public QVector<SqlRowV2> {
       public:
 	friend class DB;
 	SqlResultV2();
+	SqlResultV2(const sqlResult& old);
 	// Friend declaration for serialization
 	friend QDataStream& operator<<(QDataStream& out, const SqlResultV2& result) {
 		// Serialize QVector<SqlRowV2> (inherited part)

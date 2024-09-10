@@ -8,7 +8,7 @@
 class MyType {
       public:
 	MyType() = default;
-	MyType(enum_field_types& t);
+	MyType(const enum_field_types& t);
 	enum_field_types type;
 	bool             isNumeric() const;
 	bool             isFloat() const;

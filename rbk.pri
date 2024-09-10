@@ -118,6 +118,7 @@ HEADERS += \
 	$$PWD/misc/NanoSpammerConfigDescribe.h \
     $$PWD/misc/base32.h \
     $$PWD/misc/controlFlowMacro.h \
+    $$PWD/misc/decimate.h \
     $$PWD/misc/qelapsedtimerv2.h \
     $$PWD/number/intTypes.h \
     $$PWD/string/qstringview.h \
