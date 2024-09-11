@@ -115,7 +115,7 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		return Founded();
 	}
 
-	[[nodiscard]] auto get(const K& k) {
+	[[nodiscard]] auto getRef(const K& k) {
 		if (auto iter = this->find(k); iter != this->end()) {
 			return FoundedNC{&iter->second, true};
 		}
