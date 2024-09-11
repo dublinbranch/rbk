@@ -72,7 +72,7 @@ LIBS += -lcurl
 LIBS += -lmariadb
 
 SOURCES += \
-    $$PWD/../../googleAdsListener/rbk/minMysql/sqlrowv2.cpp \
+    $$PWD/minMysql/sqlrowv2.cpp \
     $$PWD/BoostJson/taginvoke.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
     $$PWD/caching/cachable.cpp \
@@ -94,7 +94,7 @@ SOURCES += \
     $$PWD/string/stringoso.cpp
 
 HEADERS += \
-    $$PWD/../../googleAdsListener/rbk/minMysql/sqlrowv2.h \
+    $$PWD/minMysql/sqlrowv2.h \
 	$$PWD/BoostJson/tagInvokeCrono.h \
     $$PWD/BoostJson/taginvoke.h \
     $$PWD/BoostJson/array.h \

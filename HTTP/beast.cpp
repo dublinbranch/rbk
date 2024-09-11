@@ -595,8 +595,8 @@ void Beast::listen(const BeastConf& conf_) {
 
 void Beast::okToRun() const {
 	if (conf.logFolder.empty()) {
-		string str = "missing config file to run the Beast HTTP server, set one" + stacker();
-		fmt::print(stderr, fg(fmt::color::red), str);
+        string str = "missing config file to run the Beast HTTP server, set one" + stacker();
+        fmt::print(stderr, fg(fmt::color::red), "{}" , str);
 		exit(2);
 	}
 	RBK::mkdir(conf.logFolder);

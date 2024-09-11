@@ -66,7 +66,8 @@ string Select2::limits(PMFCGI& status) {
 	if (auto page = status.get.get("page"); !page) {
 		return " LIMIT 50";
 	} else {
-		auto p = page.val->toUInt();
+        //Looks like some version are ignorant and start to count from 1 and not 0 -.- so we have to compensate for they ignorance!
+        auto p = page.val->toUInt() - 1;
 		if (p == 0) {
 			return " LIMIT 50";
 		}

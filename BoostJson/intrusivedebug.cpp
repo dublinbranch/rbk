@@ -1,6 +1,7 @@
 #include "intrusivedebug.h"
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 std::string PushMe::compose() {
 	return fmt::format("/{}", fmt::join(path, "/"));
