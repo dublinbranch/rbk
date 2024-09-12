@@ -78,11 +78,7 @@ struct JsonRes {
 	boost::json::value json;
 	//if position is set, it means there was an error and this is the position
 	size_t                    position = 0;
-<<<<<<< HEAD
     boost::system::error_code   ec;
-=======
-	boost::system::error_code ec;
->>>>>>> fc6d96cec95521fa34683d4228a0b62b8fabc62b
 	boost::json::storage_ptr  storage;
 	[[nodiscard]] std::string composeErrorMsg() const;
 };
