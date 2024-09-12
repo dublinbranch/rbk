@@ -6,7 +6,7 @@
 
 #include "funkz.h"
 #include <QDebug>
-#include <QStacker/qstacker.h>
+#include "rbk/QStacker/qstacker.h"
 
 template <typename MType, typename Key>
 auto valueMitWarn(const MType& map, const Key& key) {

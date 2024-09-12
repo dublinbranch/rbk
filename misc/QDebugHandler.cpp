@@ -13,6 +13,8 @@
 
 static const NanoSpammerConfig* config = nullptr;
 
+static bool initLocaleTZDone = false;
+
 #define QBL(str) QByteArrayLiteral(str)
 #define QSL(str) QStringLiteral(str)
 
@@ -118,30 +120,8 @@ std::string submoduleInfo() {
  * we set this initialization very early with some default value
  */
 void commonInitialization(const NanoSpammerConfig* _config) {
-	srand((uint)time(NULL));
-	//We probably ALWAYS use curl
-	curl_global_init(CURL_GLOBAL_ALL);
-	loadBuffer();
-	//Maybe not the best thing, but no idea how else to achieve a better globalish
-
+	initLocaleTZ();
 	config = _config;
-	//We are server side we do not care about human broken standard
-	std::setlocale(LC_ALL, "C");
-	std::locale::global(std::locale("C"));
-
-	// qDebug()
-	// 	<< "Applicationlocale setting is "
-	// 	<< std::locale().name().c_str() << '\n';
-
-	//Also for Qt for translation ecc
-	QLocale l(QLocale::C, QLocale::UnitedStates);
-	QLocale::setDefault(l);
-	//If EaRTh iS FLAAAT why timezone ?!11!!?
-	setenv("TZ", "UTC", 1);
-	tzset();
-
-	// enable the printing
-	QLoggingCategory::setFilterRules("*.debug=true");
 
 	std::string header;
 
@@ -192,8 +172,6 @@ void commonInitialization(const NanoSpammerConfig* _config) {
 	                   lineLenght-10,
 	                   "");
 	                   */
-
-	qInstallMessageHandler(generalMsgHandler);
 }
 
 //QDebug send in stderr, but we want to use stdout
@@ -291,4 +269,35 @@ void lowSpamMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 		break;
 	}
 	fprintf(stream, "%s\n", localMsg.constData());
+}
+
+void initLocaleTZ() {
+	if (initLocaleTZDone) {
+		return;
+	}
+	initLocaleTZDone = true;
+	srand((uint)time(NULL));
+	//We probably ALWAYS use curl in any case
+	curl_global_init(CURL_GLOBAL_ALL);
+	loadBuffer();
+
+	//We are server side we do not care about human broken standard
+	std::setlocale(LC_ALL, "C");
+	std::locale::global(std::locale("C"));
+	
+	// qDebug()
+	// 	<< "Applicationlocale setting is "
+	// 	<< std::locale().name().c_str() << '\n';
+
+	//Also for Qt for translation ecc
+	QLocale l(QLocale::C, QLocale::UnitedStates);
+	QLocale::setDefault(l);
+	//If EaRTh iS FLAAAT why timezone ?!11!!?
+	setenv("TZ", "UTC", 1);
+	tzset();
+
+	// enable the printing
+	QLoggingCategory::setFilterRules("*.debug=true");
+
+	qInstallMessageHandler(generalMsgHandler);
 }

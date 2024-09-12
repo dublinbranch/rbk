@@ -6,6 +6,7 @@
 
 #include "NotFoundMixin.h"
 #include "rbk/misc/swapType.h"
+#include <QDataStream>
 #include <map>
 
 //void callNotFoundCallback(const QString& key, const std::string location) {
@@ -30,6 +31,37 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	    : map_parent(map_init), mixin_parent(f) {
 	}
 
+	friend QDataStream& operator<<(QDataStream& out, const mapV2<K, V, Compare>& map) {
+		// Serialize the size of the map first
+		out << static_cast<quint32>(map.size());
+
+		// Serialize each key-value pair in the map
+		for (const auto& pair : map) {
+			out << pair.first << pair.second;
+		}
+
+		return out;
+	}
+
+	friend QDataStream& operator>>(QDataStream& in, mapV2<K, V, Compare>& map) {
+		// Clear the map first to prepare for deserialization
+		map.clear();
+
+		// Deserialize the size of the map
+		quint32 size;
+		in >> size;
+
+		// Deserialize each key-value pair and insert it into the map
+		for (quint32 i = 0; i < size; ++i) {
+			K key;
+			V value;
+			in >> key >> value;
+			map[key] = value;
+		}
+
+		return in;
+	}
+
 	struct Founded {
 		const V* val   = nullptr;
 		bool     found = false;
@@ -37,15 +69,19 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 			return found;
 		}
 	};
-	struct Founded2 {
-		const V  val{};
+
+	//Non Constant version
+	struct FoundedNC {
+		V*       val   = nullptr;
 		bool     found = false;
 		explicit operator bool() const {
 			return found;
 		}
 	};
-	struct FoundedRef {
-		V*       val   = nullptr;
+
+	//In V3 replace with std::optional ?
+	struct Founded2 {
+		const V  val{};
 		bool     found = false;
 		explicit operator bool() const {
 			return found;
@@ -81,12 +117,21 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 
 	[[nodiscard]] auto getRef(const K& k) {
 		if (auto iter = this->find(k); iter != this->end()) {
-			return FoundedRef{&iter->second, true};
+			return FoundedNC{&iter->second, true};
 		}
-		return FoundedRef();
+		return FoundedNC();
 	}
 
 	//TODO add the overload for type convertible so we can use the non homogenous map
+
+	//Higher ODR order as the requested type is the same of the one inside the class, so we skip the swap
+	bool get(const K& k, V& v) const {
+		if (auto iter = this->find(k); iter != this->end()) {
+			v = iter->second;
+			return true;
+		}
+		return false;
+	}
 
 	template <typename T>
 	[[nodiscard]] T get(const K& k, const T&& t) const {
@@ -105,6 +150,33 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		}
 		return false;
 	}
+
+	/** TAKE **/
+	template <typename T>
+	[[nodiscard]] T takeRq(const K& k) {
+		auto t = rq<T>(k);
+		this->erase(k);
+		return t;
+	}
+
+	template <typename T>
+	[[nodiscard]] T take(const K& k, const T& def) {
+		T t = def;
+		if (get(k, t)) {
+			this->erase(k);
+		}
+		return t;
+	}
+
+	[[nodiscard]] auto takeOpt(const K& k) {
+		if (auto iter = this->find(k); iter != this->end()) {
+			Founded2 f{iter->second, true};
+			this->erase(iter);
+			return f;
+		}
+		return Founded2();
+	}
+	/** **/
 
 	template <typename T>
 	[[nodiscard]] auto get(const K& k) const {
@@ -173,15 +245,6 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		dest = rq<D>(key);
 	}
 
-	[[nodiscard]] auto take(const K& k) {
-		if (auto iter = this->find(k); iter != this->end()) {
-			Founded2 f{iter->second, true};
-			this->erase(iter);
-			return f;
-		}
-		return Founded2();
-	}
-
 	[[nodiscard]] V getDefault(const K& k) const {
 		if (auto v = this->get(k); v) {
 			return *(v.val);
@@ -222,7 +285,7 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 	 * so we redefine ...
 	 */
 	[[nodiscard]] auto& operator[](const K& k) {
-		return std::map<K, V>::operator[](k);
+		return this->map_parent::operator[](k);
 	}
 
 	const V& first() const {
@@ -333,6 +396,31 @@ class multiMapV2 : public NotFoundMixin<K>, public std::multimap<K, V> {
 		swapType(v, t);
 	}
 
+	template <typename T>
+	[[nodiscard]] T takeRq(const K& k) {
+		auto t = rq<T>(k);
+		this->erase(k);
+		return t;
+	}
+
+	template <typename T>
+	[[nodiscard]] T take(const K& k, const T& def) {
+		T t = def;
+		if (get(k, t)) {
+			this->erase(k);
+		}
+		return t;
+	}
+
+	[[nodiscard]] auto takeOpt(const K& k) {
+		if (auto iter = this->find(k); iter != this->end()) {
+			Founded f{iter->second, true};
+			this->erase(iter);
+			return f;
+		}
+		return Founded();
+	}
+
 	template <typename T, typename C>
 	[[nodiscard]] T rq(const K& k, C* callback) const {
 		if (auto v = get(k); v) {
@@ -342,5 +430,13 @@ class multiMapV2 : public NotFoundMixin<K>, public std::multimap<K, V> {
 
 		//this line is normally never execute as the passed lambda supposedly throw a custom exception on miss
 		return {};
+	}
+
+	std::vector<K> getAllKeys() const {
+		std::vector<K> res;
+		for (auto& [k, v] : *this) {
+			res.push_back(k);
+		}
+		return res;
 	}
 };

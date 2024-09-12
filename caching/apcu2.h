@@ -10,6 +10,7 @@
 #include <any>
 #include <memory>
 #include <shared_mutex>
+#include <concepts>
 
 #define QSL(str) QStringLiteral(str)
 void throwTypeError(const std::type_info* found, const std::type_info* expected);
@@ -248,12 +249,15 @@ void           storePOD(const std::string& key, const QByteArray& value, uint tt
 FetchPodResult fetchPOD(const QString& key);
 FetchPodResult fetchPOD(const std::string& key);
 
-template <class T>
+template <typename T>
+concept DerivedFromCachable = std::derived_from<T, Cachable>;
+
+template <DerivedFromCachable T>
 void apcuStore(const StringAdt& key, const T& obj, uint ttl = 60, bool persistent = false) {
 	APCU::getInstance()->storeInner(key, obj, true, ttl, persistent);
 }
 
-template <class T>
+template <DerivedFromCachable T>
 std::shared_ptr<T> apcuFetch(const StringAdt& key) {
 	auto a   = APCU::getInstance();
 	auto res = a->fetch<T>(key);

@@ -21,6 +21,16 @@ class bHeaders : public mapV2<QString, SKQ> {
 	std::string serialize(const QStringList& skipHeaders, bool initialTab, bool skipEmptyHeaders) const;
 };
 
+class Post : public multiMapV2<QString, QString> {
+      public:
+	Post& operator=(const multiMapV2<QString, QString>& other) {
+		// Use the base class assignment operator
+		multiMapV2<QString, QString>::operator=(other);
+		return *this;
+	}
+	void checkIfUnused(bool) const;
+};
+
 struct PMFCGI {
       public:
 	const BeastConf*        conf = nullptr;
@@ -38,7 +48,7 @@ struct PMFCGI {
 	std::string path;
 	std::string body;
 	//remember not automatically decoded! //TODO extend and decode on request ?
-	multiMapV2<QString, QString> post;
+	Post                         post;
 	QueryParams                  get;
 	multiMapV2<QString, QString> request;
 	//server name, if needed must be forwarded by nginx else will be 127.0.0.1 from the header
@@ -73,6 +83,7 @@ struct PMFCGI {
 
       private:
 };
+std::optional<std::string> noMoreParam(QueryParams& get);
 
 multiMapV2<QString, QString> decodePost(const QString& form);
 multiMapV2<QString, QString> decodePost(const std::string& form);

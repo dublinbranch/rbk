@@ -82,16 +82,11 @@ void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) 
 		}
 		//dk.processingEnd.setNow();
 	} else if (auto v2 = conf->routingSimple.get(path); v2) {
-		try {
-			(*(v2.val))(status, payload);
-			return;
-		} catch (std::exception& e) {
-			//addFlag(dk.errorCode, DkError::minorException);
-			//exception type will be preserved
-			throw;
-		}
+		(*(v2.val))(status, payload);
+		return;
 	} else if (!conf->staticFile.empty()) {
-		auto res = fileGetContents2(conf->staticFile / path, true, 0);
+		auto p   = conf->staticFile / path;
+		auto res = fileGetContents2(p, true, 0);
 		if (res.exist) {
 			payload.html       = res.content.toStdString();
 			payload.mime       = getMimeType(path);

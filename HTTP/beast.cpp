@@ -209,7 +209,7 @@ void handle_request(
 			status.localIp  = stream.socket().local_endpoint().address().to_string();
 
 			status.path = req.target();
-			status.url  = Url(status.path);
+
 			// if (!isValidUTF8(status.path)) {
 			// 	throw ExceptionV2(QSL("Invalid utf8 in the PATH %1").arg(base64this(status.path)));
 			// }
@@ -232,6 +232,8 @@ void handle_request(
 			if (auto v = status.headers.get("x-server-ip"); v) {
 				status.localIp = v.val->toStdString();
 			}
+
+			status.url = Url(status.getBasePath() + status.path.substr(1));
 
 			if (conf->prePhase1) {
 				conf->prePhase1(status, payload);
@@ -280,22 +282,23 @@ void handle_request(
 			if (e2) {
 				file = conf->logFolder + "/" + e2->getLogFile();
 			}
-			auto HE = dynamic_cast<const HttpException*>(&e);
-			if (HE) {
-				if (!HE->httpErrMsg.empty()) {
-					payload.html = HE->httpErrMsg;
-				}
-				payload.statusCode = HE->statusCode;
+
+			if (!(e2 && e2->skipPrint)) {
+				fmt::print("\n------\n{}", msg);
 			}
 
 			if (conf->htmlAllException) {
 				payload.html = msg;
-				fmt::print("\n------\n{}", msg);
 			} else {
-				if (!(e2 && e2->skipPrint)) {
-					fmt::print("\n------\n{}", msg);
+				auto HE = dynamic_cast<const HttpException*>(&e);
+				if (HE) {
+					if (!HE->httpErrMsg.empty()) {
+						payload.html = HE->httpErrMsg;
+					}
+					payload.statusCode = HE->statusCode;
+				} else {
+					payload.html = randomError();
 				}
-				payload.html = randomError();
 			}
 
 			fileAppendContents("\n------\n " + msg, file);
@@ -526,6 +529,7 @@ class listener : public std::enable_shared_from_this<listener> {
 
 void Beast::listen() {
 	okToRun();
+	pthread_setname_np(pthread_self(), "BeastHandler");
 	// The io_context is required for all I/O
 	IOC = new net::io_context{conf.worker};
 
@@ -558,17 +562,17 @@ void Beast::listen() {
 
 	// Run the I/O service on the requested number of threads
 	for (auto i = conf.worker; i > 0; --i) {
-		auto status = threadStatus.newStatus();
+		auto status = ThreadStatus::newStatus();
 
-		auto& t = threads.emplace_back(new std::thread(
-		    [status, this] {
-			    //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
-			    status->tid       = gettid();
-			    localThreadStatus = status.get();
-			    //and than launch to io handler
-			    IOC->run();
-		    }));
-
+		auto& t       = threads.emplace_back(new std::thread(
+                    [status, this] {
+                            //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
+                            status->tid       = gettid();
+                            localThreadStatus = status.get();
+                            pthread_setname_np(pthread_self(), "HttpHandler");
+                            //and than launch to io handler
+                            IOC->run();
+                    }));
 		status->state = ThreadState::Idle;
 		status->info  = "just created";
 
@@ -591,8 +595,8 @@ void Beast::listen(const BeastConf& conf_) {
 
 void Beast::okToRun() const {
 	if (conf.logFolder.empty()) {
-		string str = "missing config file to run the Beast HTTP server, set one" + stacker();
-		fmt::print(stderr, fg(fmt::color::red), str);
+        string str = "missing config file to run the Beast HTTP server, set one" + stacker();
+        fmt::print(stderr, fg(fmt::color::red), "{}" , str);
 		exit(2);
 	}
 	RBK::mkdir(conf.logFolder);

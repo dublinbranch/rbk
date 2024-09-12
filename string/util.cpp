@@ -1,7 +1,9 @@
 #include "util.h"
 #include <QByteArray>
+#include <QDataStream>
 #include <boost/algorithm/string/replace.hpp>
 #include <charconv>
+#include <string>
 
 using namespace std;
 
@@ -32,4 +34,32 @@ std::optional<i64> stoi(const std::string_view& input) {
 		return std::nullopt;
 	}
 	return out;
+}
+
+std::string trim(const std::string& str) {
+	auto start = str.begin();
+	while (start != str.end() && std::isspace(*start)) {
+		start++;
+	}
+
+	auto end = str.end();
+	do {
+		end--;
+	} while (std::distance(start, end) > 0 && std::isspace(*end));
+
+	return std::string(start, end + 1);
+}
+
+std::string toLower(string& request) {
+	std::transform(request.begin(), request.end(), request.begin(), ::tolower);
+	return request;
+}
+
+string toLower(const std::string& request) {
+	string copy = request;
+	return toLower(copy);
+}
+
+string toLower(std::string_view request) {
+	return toLower(string(request));
 }

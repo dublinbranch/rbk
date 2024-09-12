@@ -31,9 +31,9 @@ struct DBConf {
 	std::optional<uint> port            = 3306;
 	std::optional<bool> logSql          = false;
 	std::optional<bool> logError        = false;
-	bool                pingBeforeQuery = true; // So if the connection is broken will be re-established
+	std::optional<bool> pingBeforeQuery = true; // So if the connection is broken will be re-established
 	//we normally work in local
-	bool                compress        = false;
+	bool compress = false;
 
 	//Old compatibility logic for old code, we now normally alwys use TRUE
 	bool NULL_as_EMPTY = false;
@@ -41,10 +41,10 @@ struct DBConf {
 	CxaLevel connErrorVerbosity = CxaLevel::none;
 
 	// Corpus munus
-	QByteArray getDefaultDB() const;
-	void       setDefaultDB(const QByteArray& value);
-	QString    getInfo(bool passwd = false) const;
-	void       setWarningSuppression(std::vector<QString> regex);
+	QByteArray  getDefaultDB() const;
+	void        setDefaultDB(const QByteArray& value);
+	std::string getInfo(bool passwd = false) const;
+	void        setWarningSuppression(std::vector<QString> regex);
 
 	QByteArray defaultDB;
 

@@ -75,6 +75,11 @@ std::vector<QStringView> readCSVRow(const QString& line, const QChar& separator 
 
 std::vector<QByteArray> csvExploder(QByteArray line, const char separator = 0);
 
+/**
+ * @brief checkFileLock
+ * @param path
+ * @param minDelay, if 0 disable the delay
+ */
 void checkFileLock(QString path, uint minDelay = 5);
 
 bool softlink(const QString& source, const QString& dest, bool quiet = false);

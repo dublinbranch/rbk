@@ -49,6 +49,20 @@ QString QueryParams::join() const {
 	return list.join("&");
 }
 
+std::optional<string> QueryParams::checkIfUnused() const {
+	if (this->empty()) {
+		return {};
+	}
+
+	return "Unused parameter found! " + join().toStdString();
+}
+
+void QueryParams::checkIfUnused(bool) const {
+	if (auto v = checkIfUnused(); v.has_value()) {
+		throw HttpException(v.value(), v.value());
+	}
+}
+
 void QueryParams::setQuery(const QString& val) {
 	QUrlQuery p;
 	p.setQuery(val);

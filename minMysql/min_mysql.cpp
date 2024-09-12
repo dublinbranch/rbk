@@ -8,6 +8,7 @@
 #include "rbk/fmtExtra/dynamic.h"
 #include "rbk/hash/sha.h"
 #include "rbk/misc/b64.h"
+#include "rbk/serialization/QDataStreamer.h"
 #include "rbk/serialization/serialize.h"
 #include "rbk/thread/threadstatush.h"
 #include "utilityfunctions.h"
@@ -49,21 +50,7 @@ using namespace std;
 
 static int somethingHappened(MYSQL* mysql, int status);
 
-sqlRow DB::queryLine(const char* sql) const {
-	return queryLine(QByteArray(sql));
-}
-
-sqlRow DB::queryLine(const QString& sql) const {
-	return queryLine(sql.toUtf8());
-}
-
-sqlRow DB::queryLine(const std::string& sql) const {
-	QByteArray temp;
-	temp.setRawData(sql.c_str(), static_cast<uint>(sql.size()));
-	return queryLine(temp);
-}
-
-sqlRow DB::queryLine(const QByteArray& sql) const {
+sqlRow DB::queryLine(const StringAdt& sql) const {
 	auto res = query(sql);
 	if (res.empty()) {
 		return {};
@@ -75,23 +62,22 @@ void DB::setMaxQueryTime(uint time) const {
 	query(QSL("SET @@max_statement_time  = %1").arg(time));
 }
 
-sqlResult DB::query(const QString& sql) const {
-	//I have no idea but libasan reported the error if is inlined o.O ?
-	auto copy = sql.toUtf8();
-	return query(copy);
+sqlResult DB::query(const StringAdt& sql) const {
+	if (sql.empty()) {
+		return {};
+	}
+	auto logger = queryInner(sql);
+
+	if (noFetch) {
+		return {};
+	}
+	return fetchResult(&logger);
 }
 
-sqlResult DB::query(const std::string& sql) const {
-	return query(QByteArray::fromStdString(sql));
-}
-
-sqlResult DB::query(const QByteArray& sql) const {
+SQLLogger DB::queryInner(const std::string& sql) const {
 	ResetOnExit reset1(localThreadStatus->state, ThreadState::MyQuery);
 	localThreadStatus->sql = sql;
 
-	if (sql.isEmpty()) {
-		return {};
-	}
 	auto conn = getConn();
 	if (conn == nullptr) {
 		throw ExceptionV2("This mysql instance is not connected!");
@@ -99,8 +85,8 @@ sqlResult DB::query(const QByteArray& sql) const {
 
 	SQLLogger sqlLogger(sql, conf.logError.value(), this);
 	if (sql != "SHOW WARNINGS") {
-		lastSQL          = sql;
-		sqlLogger.logSql = conf.logSql.value();
+		state.get().lastSQL = sql;
+		sqlLogger.logSql    = conf.logSql.value();
 	} else {
 		sqlLogger.logSql = false;
 	}
@@ -112,7 +98,7 @@ sqlResult DB::query(const QByteArray& sql) const {
 		timer.start();
 
 		sharedState.busyConnection++;
-		mysql_query(conn, sql.constData());
+		mysql_query(conn, sql.c_str());
 		sharedState.busyConnection--;
 		sqlLogger.serverTime = timer.nsecsElapsed();
 		auto& st             = state.get();
@@ -128,19 +114,19 @@ sqlResult DB::query(const QByteArray& sql) const {
 		case 1062: { //unique index violation
 			if (state->uniqueViolationNothrow) {
 				state->lastError = mysql_error(conn);
-				return {};
+				return sqlLogger;
 			} else {
 				cxaNoStack     = true;
 				cxaLevel       = CxaLevel::none;
-				auto msg       = F16("After: {} \n {} \n", sqlLogger.serverTime, mysql_error(conn));
+				auto msg       = F("After: {} \n {} \n", sqlLogger.serverTime, mysql_error(conn));
 				auto exception = DBException(msg, DBException::Error(error));
 				throw exception;
 			}
 		}
 		case 1065:
 			// well an empty query is bad, but not too much!
-			qWarning().noquote() << "empty query (or equivalent for) " << sql << "in" << QStacker16();
-			return sqlResult();
+			qWarning().noquote() << F16("empty query (or equivalent for) {} in {}", sql, stacker());
+			return sqlLogger;
 
 		// Lock wait timeout exceeded; try restarting transaction
 		case 1205:
@@ -148,19 +134,19 @@ sqlResult DB::query(const QByteArray& sql) const {
 		case 1213:
 		// Lost connection to MySQL server during query
 		case 2013: {
-			QString err;
+			string err;
+
 			if (state.get().skipNextDisconnect) {
 				state.get().skipNextDisconnect = false;
 			} else {
 				// This is sometimes happening, and I really have no idea how to fix, there is already the ping at the beginning, but looks like is not working...
 				// so we try to get some info
 
-				QString errSkel = R"(
-	Mysql error for %1
-	error was %2 code: %3, connInfo: %4
-	thread: %5, queryDone: %6, reconnection: %7, busyConn: %8, totConn: %9, queryTime: %10 nanoseconds (%11 nanoseconds)
-	%12
-	)";
+				static const auto errSkel = R"(Mysql error for {}
+error was {} code: {}, connInfo: {}
+thread: {}, queryDone: {}, reconnection: {}, busyConn: {}, totConn: {}, queryTime: {:.3f} nanoseconds ({} nanoseconds)
+{})";
+
 				// if error is deadlock then list all running sql's
 				QString runningSqls;
 				if ((error == 1213) or (error == 1205)) {
@@ -173,22 +159,23 @@ sqlResult DB::query(const QByteArray& sql) const {
 					runningSqls  = QSL("running sql's:\n%1").arg(queryEssay(res, false, true));
 				}
 
-				err = errSkel
-				          .arg(QString(sql))
-				          .arg(mysql_error(conn))
-				          .arg(error)
-				          .arg(conf.getInfo())
-				          .arg(mysql_thread_id(conn))
-				          .arg(state.get().queryExecuted)
-				          .arg(state.get().reconnection)
-				          .arg(sharedState.busyConnection)
-				          .arg(St_mysqlW::connCounter.load())
-				          .arg((double)sqlLogger.serverTime, 0, 'G', 3)
-				          .arg(sqlLogger.serverTime)
-				          .arg(runningSqls);
+				err = F(errSkel,
+				        sql,
+				        mysql_error(conn),
+				        error,
+				        conf.getInfo(),
+				        mysql_thread_id(conn),
+				        state.get().queryExecuted,
+				        state.get().reconnection,
+				        sharedState.busyConnection.load(),
+				        St_mysqlW::connCounter.load(),
+				        static_cast<double>(sqlLogger.serverTime),
+				        sqlLogger.serverTime,
+				        runningSqls);
+
 				sqlLogger.error = err;
 
-				qWarning().noquote() << err << QStacker16();
+				qWarning().noquote() << QString::fromStdString(err) << QStacker16();
 			}
 
 			closeConn();
@@ -199,52 +186,45 @@ sqlResult DB::query(const QByteArray& sql) const {
 			throw exception;
 		} break;
 		default:
-			auto err = F16(R"(Mysql error for sql:
+			auto err = F(R"(Mysql error for sql:
 {}
 Error: {} 
 Code: {}
 Connection Info: {})",
-			               sql, mysql_error(conn), error, getConf().getInfo());
+			             sql, mysql_error(conn), error, getConf().getInfo());
 
 			sqlLogger.error = err;
 			// this line is needed for proper email error reporting
-			qWarning().noquote() << err << QStacker16();
+			qWarning().noquote() << QString::fromStdString(err) << QStacker16();
 			cxaNoStack     = true;
 			auto exception = DBException(err, DBException::Error::NA);
 			throw exception;
 		}
 	}
+	return sqlLogger;
+}
 
-	if (noFetch) {
-		return {};
+SqlRowV2 DB::queryCacheLineV2(const StringAdt& sql, uint ttl, bool required) {
+	auto res = queryCacheV2(sql, ttl);
+	if (auto r = res.size(); r > 1) {
+		auto msg = F("invalid number of row for: {}\nExpected 1, got {} \n", sql, r);
+		throw ExceptionV2(msg);
+	} else if (r == 1) {
+		return *res.begin();
+	} else {
+		if (required) {
+			throw DBException("no result for " + sql, DBException::NoResult);
+		} else {
+			return {};
+		}
 	}
-	return fetchResult(&sqlLogger);
 }
 
-sqlResult DB::queryCache(const QString& sql, bool on, QString name, uint ttl) {
-	(void)on;
-	(void)name;
-	return queryCache2(sql, ttl);
-}
-
-sqlRow DB::queryCacheLine(const QString& sql, bool on, QString name, uint ttl, bool required) {
-	(void)on;
-	(void)name;
-	return queryCacheLine2(sql, ttl, required);
-}
-
-sqlRow DB::queryCacheLine2(const QString& sql, uint ttl, bool required) {
+sqlRow DB::queryCacheLine2(const StringAdt& sql, uint ttl, bool required) {
 	//TODO forward the check into query cache line ?
 	auto res = queryCache2(sql, ttl);
 	if (auto r = res.size(); r > 1) {
-		auto   msg = QSL("invalid number of row for: %1\nExpected 1, got %2 \n").arg(sql).arg(r);
-		QDebug dbg(&msg);
-		for (int i = 0; i < 3; i++) {
-			if (!res.empty()) {
-				dbg.noquote() << res.takeFirst() << "\n--------------------\n";
-			}
-		}
-
+		auto msg = F("invalid number of row for: {}\nExpected 1, got {} \n", sql, r);
 		throw ExceptionV2(msg);
 	} else if (r == 1) {
 		auto& row = res[0];
@@ -258,21 +238,9 @@ sqlRow DB::queryCacheLine2(const QString& sql, uint ttl, bool required) {
 	}
 }
 
-sqlRow DB::queryCacheLine2(const std::string& sql, uint ttl, bool required) {
-	return queryCacheLine2(QString::fromStdString(sql), ttl, required);
-}
-
-sqlResult DB::queryCache2(const std::string& sql, const Opt& opt) const {
+sqlResult DB::queryCache2(const StringAdt& sql, const Opt& opt) const {
 	state.get().noCacheOnEmpty = opt.noCacheOnEmpty;
 	return queryCache2(QString::fromStdString(sql), opt.ttl, opt.required);
-}
-
-sqlResult DB::queryCache2(const std::string& sql, uint ttl, bool required) const {
-	return queryCache2(QString::fromStdString(sql), ttl, required);
-}
-
-sqlRow DB::queryCacheLine(const QString& sql, uint ttl, bool required) {
-	return queryCacheLine2(sql, ttl, required);
 }
 
 //To force load from cache use something like
@@ -304,7 +272,7 @@ sqlRow DB::queryCacheLine(const QString& sql, uint ttl, bool required) {
 //		}
 //	}
 
-sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) const {
+sqlResult DB::queryCache2(const StringAdt& sql, uint ttl, bool required) const {
 	ResetOnExit<typeof localThreadStatus->state> reset1;
 	if (localThreadStatus) {
 		reset1.set(localThreadStatus->state, ThreadState::MyCache);
@@ -357,7 +325,48 @@ sqlResult DB::queryCache2(const QString& sql, uint ttl, bool required) const {
 	}
 }
 
-sqlResult DB::queryORcache(const QString& sql, uint ttl, bool required) {
+SqlResultV2 DB::queryCacheV2(const StringAdt& sql, uint ttl) {
+	ResetOnExit<typeof localThreadStatus->state> reset1;
+	if (localThreadStatus) {
+		reset1.set(localThreadStatus->state, ThreadState::MyCache);
+	}
+
+	SetOnExit noCache(state.get().noCacheOnEmpty, false);
+	if (ttl) {
+		// small trick to avoid calling over and over the function
+		static bool fraud = mkdir(QSL("cachedSQL_%1/").arg(conf.cacheId));
+		(void)fraud;
+
+		//We have a lock to prevent concurrent write in this process, but nothing to protect against other, just use another folder
+		QString name = QSL("cachedSQL_%1/").arg(conf.cacheId) + sha1(sql);
+
+		//We do not really care about cache stampede here... and we write the file in an atomic way so we avoid torn read. So no need for mutex,
+		//if multiple thread will write the same file is not a problem they will just overwrite the final version and not mangle each other
+		SqlResultV2 res;
+		{
+			localThreadStatus->time.IO.start();
+			OnExit ex([]() { localThreadStatus->time.IO.pause(); });
+			if (auto file = fileUnSerialize(name, res, ttl); file.valid) {
+				return res;
+			}
+		}
+
+		res = queryV2(sql);
+
+		//TODO add some check to serialize ONLY if the result is ok
+		if (res.empty()) {
+			if (state.get().noCacheOnEmpty) {
+				return res;
+			}
+		}
+		fileSerialize(name, res);
+		return res;
+	} else {
+		return queryV2(sql);
+	}
+}
+
+sqlResult DB::queryORcache(const StringAdt& sql, uint ttl, bool required) {
 	try {
 		return queryCache2(sql, ttl, false);
 	} catch (DBException& e) {
@@ -412,7 +421,7 @@ sqlResult DB::queryDeadlockRepeater(const QByteArray& sql, uint maxTry) const {
 
 void DB::pingCheck(st_mysql*& conn) const {
 	// can be disabled in local host to run a bit faster on laggy connection
-	if (!conf.pingBeforeQuery) {
+	if (!conf.pingBeforeQuery.value_or(true)) {
 		return;
 	}
 	SQLLogger sqlLogger("PING", conf.logError.value(), this);
@@ -440,17 +449,12 @@ void DB::pingCheck(st_mysql*& conn) const {
 	// last ping check
 	if (mysql_ping(conn)) { // 1 on error
 		auto error = mysql_errno(conn);
-		auto err   = QSL("Mysql error for %1 \nerror was %2 code: %3, connRetry for %4, connectionId: %5, conf: ")
-		               .arg(QString(sqlLogger.sql))
-		               .arg(mysql_error(conn))
-		               .arg(error)
-		               .arg(connRetry)
-		               .arg(mysql_error(conn)) +
+		auto err   = F("Mysql error for {} \nerror was {} code: {}, connRetry for {}, connectionId: {}, conf: ", sqlLogger.sql, mysql_error(conn), error, connRetry, mysql_error(conn)) +
 		           conf.getInfo() +
-		           QStacker16();
+		           stacker();
 		sqlLogger.error = err;
 		// this line is needed for proper email error reporting
-		qWarning().noquote() << err;
+		qWarning().noquote() << QString::fromStdString(err);
 		cxaNoStack = true;
 		throw err;
 	}
@@ -565,11 +569,8 @@ void DBConf::setDefaultDB(const QByteArray& value) {
 	defaultDB = value;
 }
 
-QString DBConf::getInfo(bool passwd) const {
-	auto msg = QSL(" %1:%2  user: %3")
-	               .arg(QString(host))
-	               .arg(port.value())
-	               .arg(user.data());
+std::string DBConf::getInfo(bool passwd) const {
+	auto msg = F(" {}:{}  user: {}", host, port.value(), user.data());
 	if (passwd) {
 		msg += pass.data();
 	}
@@ -680,9 +681,7 @@ StMysqlPtr DB::connect() const {
 
 			if (errorNo == ER_BAD_DB_ERROR) {
 				auto& msg = state.get().lastError;
-				msg       = QSL("Mysql connection error (mysql_init). for %1 \n Error %2 \n Use a VALID default DB..!")
-				          .arg(conf.getInfo())
-				          .arg(error);
+				msg       = F16("Mysql connection error (mysql_init). for {} \n Error {} \n Use a VALID default DB..!", conf.getInfo(), error);
 
 				throw DBException(msg, DBException::Error::InvalidDB);
 			}
@@ -697,9 +696,7 @@ StMysqlPtr DB::connect() const {
 			}
 
 			auto& msg = state.get().lastError;
-			msg       = QSL("Mysql connection error (mysql_init). for %1 \n Error %2 \n Did you forget to enable SSL ?")
-			          .arg(conf.getInfo())
-			          .arg(error);
+			msg       = F16("Mysql connection error (mysql_init). for {} \n Error {} \n Did you forget to enable SSL ?", conf.getInfo(), error);
 
 			mysql_close(conn);
 			messanger(msg, conf.connErrorVerbosity);
@@ -770,10 +767,6 @@ QByteArray Q8(const sqlRow& line, const QByteArray& b) {
 	return line.value(b);
 }
 
-sqlResult DB::query(const char* sql) const {
-	return query(QByteArray(sql));
-}
-
 bool DB::isSSL() const {
 	auto res = query("SHOW STATUS LIKE 'Ssl_cipher'");
 	if (res.isEmpty()) {
@@ -785,21 +778,13 @@ bool DB::isSSL() const {
 	}
 }
 
-void DB::startQuery(const QByteArray& sql) const {
+void DB::startQuery(const StringAdt& sql) const {
 	int  err;
 	auto conn  = getConn();
-	signalMask = mysql_real_query_start(&err, conn, sql.constData(), sql.length());
+	signalMask = mysql_real_query_start(&err, conn, sql.c_str(), sql.length());
 	if (!signalMask) {
 		throw QSL("Error executing ASYNC query (start):") + mysql_error(conn);
 	}
-}
-
-void DB::startQuery(const QString& sql) const {
-	return startQuery(sql.toUtf8());
-}
-
-void DB::startQuery(const char* sql) const {
-	return startQuery(QByteArray(sql));
 }
 
 bool DB::completedQuery() const {
@@ -807,7 +792,7 @@ bool DB::completedQuery() const {
 
 	auto error = mysql_errno(conn);
 	if (error != 0) {
-		qWarning().noquote() << "Mysql error for " << lastSQL << "error was " << mysql_error(conn) << " code: " << error << QStacker(3);
+		qWarning().noquote() << F16("Mysql error for {} error was {} code: {}\n{}", state->lastSQL, mysql_error(conn), error, stacker(3));
 		throw 1025;
 	}
 	int err;
@@ -924,8 +909,7 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 	} else {
 		auto warn = this->getWarning(true);
 		if (!warn.isEmpty()) {
-			qDebug().noquote() << "warning for " << lastSQL << warn << "\n"
-			                   << QStacker16Light();
+			qDebug().noquote() << F16("warning for {} \n{}\n{}", state->lastSQL, warn, stacker());
 		}
 	}
 
@@ -944,7 +928,104 @@ Error was:
 {}
 Code:{}
 Query: {:.3f}	Fetch: {:.3f} )",
-		                       lastSQL.get(), mysql_error(conn), error, (double)sqlLogger->serverTime / 1E9, (double)sqlLogger->fetchTime / 1E9);
+		                       state->lastSQL, mysql_error(conn), error, (double)sqlLogger->serverTime / 1E9, (double)sqlLogger->fetchTime / 1E9);
+		throw ExceptionV2(msg);
+	}
+
+	return res;
+}
+
+SqlResultV2 DB::fetchResultV2(SQLLogger* sqlLogger) const {
+	QElapsedTimer timer;
+	timer.start(); // this will be stopped in the destructor of sql logger
+	SqlResultV2 res;
+	res.reserve(512);
+
+	auto conn = getConn();
+	// If you batch more than two select, you are crazy, it is POSSIBLE, but there are SCARCE real use case for it,
+	// and will just break this library logic / will require much more metadata and a custom fetchResult
+	// just the first one will be returned and you will be in bad situation later
+	// this iteration is just if you batch mulitple update, result is NULL, but mysql insist that you fetch them...
+	bool         first      = true;
+	unsigned int num_fields = 0;
+	MYSQL_FIELD* fields     = nullptr;
+	do {
+		// swap the whole result set we do not expect 1Gb+ result set if we use this function
+		MYSQL_RES* result = mysql_store_result(conn);
+
+		if (result) {
+			if (first) {
+				first      = false;
+				num_fields = mysql_num_fields(result);
+				fields     = mysql_fetch_fields(result);
+				for (uint16_t i = 0; i < num_fields; i++) {
+					auto& field = fields[i];
+					res.columns->insert({field.name, {field.type, i}});
+				}
+			}
+
+			my_ulonglong row_count = mysql_num_rows(result);
+			for (uint j = 0; j < row_count; j++) {
+				MYSQL_ROW row = mysql_fetch_row(result);
+
+				SqlRowV2 thisItem;
+				thisItem.columns = res.columns;
+				auto lengths     = mysql_fetch_lengths(result);
+				for (uint16_t i = 0; i < num_fields; i++) {
+					//auto& field = fields[i];
+					// this is how sql NULL is signaled, instead of having a wrapper and check ALWAYS before access, we normally just ceck on result swap if a NULL has any sense here or not.
+					// Plus if you have the string NULL in a DB you are really looking for trouble
+					if (row[i] == nullptr && lengths[i] == 0) {
+						if (state.get().NULL_as_EMPTY) {
+							thisItem.data.push_back({});
+						} else {
+							thisItem.data.push_back(S_SQL_NULL);
+						}
+					} else {
+						thisItem.data.push_back(std::string(row[i], static_cast<int>(lengths[i])));
+					}
+				}
+				res.push_back(thisItem);
+			}
+			mysql_free_result(result);
+		}
+	} while (mysql_next_result(conn) == 0);
+	sqlLogger->fetchTime = timer.nsecsElapsed();
+	auto& st             = state.get();
+	st.fetchTime         = sqlLogger->fetchTime;
+	st.totFetchTime += sqlLogger->fetchTime;
+
+	localThreadStatus->time.addSqlTime(sqlLogger->fetchTime + sqlLogger->serverTime);
+
+	affectedRows = mysql_affected_rows(conn);
+
+	// auto affected  = mysql_affected_rows(conn);
+	if (skipWarning) {
+		// reset
+		skipWarning = false;
+	} else {
+		auto warn = this->getWarning(true);
+		if (!warn.isEmpty()) {
+			qDebug().noquote() << F16("warning for {} \n{}\n{}", state->lastSQL, warn, stacker());
+		}
+	}
+
+	unsigned int error = mysql_errno(conn);
+	if (error && sqlLogger) {
+		sqlLogger->error = mysql_error(conn);
+		//There should be a better way...
+		//sqlLogger->res = res;
+	}
+
+	if (error) {
+		auto msg = fmt::format(R"(Mysql error for:
+{}
+----------
+Error was:
+{}
+Code:{}
+Query: {:.3f}	Fetch: {:.3f} )",
+		                       state->lastSQL, mysql_error(conn), error, (double)sqlLogger->serverTime / 1E9, (double)sqlLogger->fetchTime / 1E9);
 		throw ExceptionV2(msg);
 	}
 
@@ -958,7 +1039,7 @@ u64 DB::fetchAdvanced(FetchVisitor* visitor) const {
 	if (!result) {
 		auto error = mysql_errno(conn);
 		if (error != 0) {
-			qWarning().noquote() << "Mysql error for " << lastSQL << "error was " << mysql_error(conn) << " code: " << error << QStacker(3);
+			qWarning().noquote() << F16("Mysql error for {} error was {} code: {}\n{}", state->lastSQL, mysql_error(conn), error, stacker(3));
 			cxaNoStack = true;
 			throw 1025;
 		}
@@ -1012,7 +1093,7 @@ static int somethingHappened(MYSQL* mysql, int status) {
 	}
 }
 
-SQLLogger::SQLLogger(const QByteArray& _sql, bool _enabled, const DB* _db)
+SQLLogger::SQLLogger(const string& _sql, bool _enabled, const DB* _db)
     : sql(_sql),
       logError(_enabled),
       db(_db) {
@@ -1052,16 +1133,16 @@ void SQLLogger::flush() {
 		mysqlThreadId = mysql_thread_id(dbConn);
 	}
 
-	QString info = QSL("PID: %1, MySQL Thread: %2 \n").arg(pid).arg(mysqlThreadId);
+	auto info = F("PID: {}, MySQL Thread: {} \n", pid, mysqlThreadId);
+	{
+		double query = static_cast<double>(serverTime) / 1E9;
+		double fetch = static_cast<double>(fetchTime) / 1E9;
+		info += F("Query: {:.3e} Fetch: {:.3e}\n{}", query, fetch, sql);
+	}
 
-	file.write(info.toUtf8());
+	if (!error.empty()) {
+		info += "\nError: " + error;
 
-	double     query = static_cast<double>(serverTime) / 1E9;
-	double     fetch = static_cast<double>(fetchTime) / 1E9;
-	QByteArray buff  = "Query: " + QByteArray::number(query, 'E', 3);
-	file.write(buff.leftJustified(20, ' ').append("Fetch: " + QByteArray::number(fetch, 'E', 3)) + "\n" + sql);
-	if (!error.isEmpty()) {
-		file.write(QBL("\nError: ") + error.toUtf8());
 		if (!res.isEmpty()) {
 			file.write("\n");
 			// nice trick to use qDebug operator << on a custom stream!
@@ -1070,6 +1151,7 @@ void SQLLogger::flush() {
 		}
 	}
 
+	file.write(info.c_str(), info.size());
 	file.write("\n-------------\n");
 	file.flush();
 }
@@ -1114,7 +1196,7 @@ QString sqlRow::serialize() const {
 	return out;
 }
 
-DBException::DBException(const QString& _msg, Error error)
+DBException::DBException(const StringAdt& _msg, Error error)
     : ExceptionV2(_msg) {
 	errorType = error;
 }
@@ -1144,7 +1226,7 @@ QStringList getIdList(const sqlResult& sqlRes, const QString& idName) {
 	return rangeIdList;
 }
 
-MyType::MyType(enum_field_types& t) {
+MyType::MyType(const enum_field_types& t) {
 	type = t;
 }
 
@@ -1181,4 +1263,18 @@ St_mysqlW::~St_mysqlW() {
 		mysql_close(conn);
 		conn = nullptr;
 	}
+}
+
+SqlResultV2 DB::queryV2(const StringAdt& sql) {
+	if (sql.empty()) {
+		return {};
+	}
+
+	auto logger = queryInner(sql);
+
+	if (noFetch) {
+		return {};
+	}
+
+	return fetchResultV2(&logger);
 }

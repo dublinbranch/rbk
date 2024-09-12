@@ -1,5 +1,6 @@
 #include "folder.h"
 #include "filefunction.h"
+#include "rbk/QStacker/qstacker.h"
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
@@ -11,7 +12,9 @@ bool mkdir(const QString& dirName) {
 	QDir                         dir = QDir(dirName);
 	if (!dir.mkpath(".")) {
 		qWarning().noquote() << "impossible to create working dir" << dirName << "\n"
-		                     << "maybe" << QCoreApplication::applicationName() << "is running without the necessary privileges";
+                             << "maybe" << QCoreApplication::applicationName() << "is running without the necessary privileges"
+                             << QStacker16Light();
+
 		return false;
 	}
 	return true;

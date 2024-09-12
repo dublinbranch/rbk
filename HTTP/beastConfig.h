@@ -13,10 +13,14 @@ struct BeastConf {
 	friend class PMFCGI;
 
 	//We must use std::function and not plain functor, to be able to use lambdas, but in this case is probably overkill...
-	std::function<bool(PMFCGI& status, Payload& payload)> common1      = nullptr;
+
+	//This is done immediately after loading the bare data (cookie, get)
+	std::function<void(PMFCGI& status, Payload& payload)> prePhase1 = nullptr;
+
 	std::function<bool(PMFCGI& status, Payload& payload)> loginManager = nullptr;
-	std::function<void(PMFCGI& status, Payload& payload)> prePhase1    = nullptr;
-	//std::function<void()> post = nullptr;
+
+	//This is done AFTER the loginManager
+	std::function<bool(PMFCGI& status, Payload& payload)> common1 = nullptr;
 
 	//we can override the function that return the base path to be used, sometimes we have to mix stuff
 	std::function<std::string(const PMFCGI* status)> basePathFunctor;
@@ -70,9 +74,9 @@ struct BeastConf {
 	std::vector<std::string> logBlacklist;
 	void                     setBasePath(const std::string& newBasePath);
 
+	std::optional<std::string> basePath;
+
       private:
-	//NO GETTER, as is a dynamic property and you have to access via the PMFCGI status
-	std::string basePath;
 };
 
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_HTTP_BEASTCONFIG_H

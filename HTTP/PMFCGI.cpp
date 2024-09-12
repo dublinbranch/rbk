@@ -136,14 +136,14 @@ string PMFCGI::getBasePath() const {
 		return curBasePath;
 	}
 
-	if (conf->basePath.empty()) {
+	if (!conf->basePath) {
 		if (conf->port == 80) {
 			curBasePath = F("http://{}/", localIp);
 		} else {
 			curBasePath = F("http://{}:{}/", localIp, conf->port);
 		}
 	} else {
-		curBasePath = conf->basePath;
+		curBasePath = conf->basePath.value();
 	}
 	return curBasePath;
 }
@@ -213,4 +213,11 @@ multiMapV2<QString, QString> decodePost(const QString& form) {
 		res.insert({t0, t1});
 	}
 	return res;
+}
+
+void Post::checkIfUnused(bool) const {
+	if (this->empty()) {
+		return;
+	}
+	throw HttpException(F("Unused parameter found! {}", fmt::join(this->getAllKeys(), ";")));
 }

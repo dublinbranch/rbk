@@ -224,6 +224,7 @@ CurlCallResult urlPostContent(const QByteAdt& url, const QByteAdt& post, bool qu
 	result.errorCode = curl_easy_perform(useMe);
 	result.errorMsg  = errbuf;
 	curlTimer(result.timing, useMe);
+	curl_easy_getinfo(useMe, CURLINFO_RESPONSE_CODE, &result.httpCode);
 	if (result.errorCode == CURLE_OK) {
 		result.ok     = true;
 		result.header = parseHeader(result.headerRaw);
@@ -268,10 +269,6 @@ CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& put, CurlKeepe
 		result.header = parseHeader(result.headerRaw);
 	} else if (!quiet) {
 		qCritical().noquote() << "For:" << url << " code " << result.errorCode << "\n " << errbuf;
-	}
-
-	if (!curl) { // IF a local instance was used
-		curl_easy_cleanup(useMe);
 	}
 
 	return result;

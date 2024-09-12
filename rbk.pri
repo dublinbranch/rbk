@@ -34,7 +34,7 @@ QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]/QtCore
 QMAKE_CXXFLAGS += -Wunused -Wunused-function 
 QMAKE_CXXFLAGS += -std=gnu++2b
 #-Werror -Wconversion
-QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wshadow-local -Wshadow-compatible-local -Wconversion 
+QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wshadow-local -Wshadow-compatible-local -Wconversion -fno-permissive -Werror=return-type
 
 CONFIG += object_parallel_to_source
 
@@ -72,21 +72,29 @@ LIBS += -lcurl
 LIBS += -lmariadb
 
 SOURCES += \
+    $$PWD/minMysql/sqlrowv2.cpp \
     $$PWD/BoostJson/taginvoke.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
     $$PWD/caching/cachable.cpp \
     $$PWD/dateTime/timerange.cpp \
+    $$PWD/filesystem/suffix.cpp \
+    $$PWD/hash/string.cpp \
     $$PWD/log/log.cpp \
+    $$PWD/mapExtensor/ankerv2.cpp \
+    $$PWD/mapExtensor/missingkeyex.cpp \
     $$PWD/minMysql/rowswap.cpp \
     $$PWD/minMysql/sqlbuffering.cpp \
     $$PWD/misc/base32.cpp \
+    $$PWD/misc/qelapsedtimerv2.cpp \
     $$PWD/string/qstringview.cpp \
     $$PWD/HTTP/mime.cpp \
+	 $$PWD/HTTP/util.cpp \
     $$PWD/string/comparator.cpp   \
     $$PWD/number/doubleoperator.cpp \
     $$PWD/string/stringoso.cpp
 
 HEADERS += \
+    $$PWD/minMysql/sqlrowv2.h \
 	$$PWD/BoostJson/tagInvokeCrono.h \
     $$PWD/BoostJson/taginvoke.h \
     $$PWD/BoostJson/array.h \
@@ -94,18 +102,30 @@ HEADERS += \
 	$$PWD/concept/isSharedPtr.h \
     $$PWD/HTTP/PMFCGI.h \
     $$PWD/caching/cachable.h \
+    $$PWD/filesystem/suffix.h \
+    $$PWD/hash/rapidhash.h \
+    $$PWD/hash/string.h \
     $$PWD/log/log.h \
+    $$PWD/mapExtensor/ThreadSafeMultiIndex.hpp \
+    $$PWD/mapExtensor/ankerl_unordered_dense.h \
+    $$PWD/mapExtensor/ankerv2.h \
+    $$PWD/mapExtensor/missingkeyex.h \
+    $$PWD/minMysql/checkSchema/CheckSchemaConf.h \
+    $$PWD/minMysql/checkSchema/CheckSchemaDescribe.h \
     $$PWD/minMysql/rowSwappable.h \
     $$PWD/minMysql/rowswap.h \
     $$PWD/minMysql/sqlbuffering.h \
 	$$PWD/misc/NanoSpammerConfigDescribe.h \
     $$PWD/misc/base32.h \
     $$PWD/misc/controlFlowMacro.h \
+    $$PWD/misc/decimate.h \
+    $$PWD/misc/qelapsedtimerv2.h \
     $$PWD/number/intTypes.h \
     $$PWD/string/qstringview.h \
     $$PWD/string/stringoso.h \
     $$PWD/types/isOptional.h \
     $$PWD/HTTP/mime.h \
+	 $$PWD/HTTP/util.h \
     $$PWD/number/doubleoperator.h \
     $$PWD/string/comparator.h 
 
