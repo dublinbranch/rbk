@@ -72,6 +72,8 @@ LIBS += -lcurl
 LIBS += -lmariadb
 
 SOURCES += \
+    $$PWD/QR/qr_code.cpp \
+    $$PWD/QR/qrcodegen.cpp \
     $$PWD/minMysql/sqlrowv2.cpp \
     $$PWD/BoostJson/taginvoke.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
@@ -94,6 +96,8 @@ SOURCES += \
     $$PWD/string/stringoso.cpp
 
 HEADERS += \
+    $$PWD/QR/qr_code.h \
+    $$PWD/QR/qrcodegen.hpp \
     $$PWD/minMysql/sqlrowv2.h \
 	$$PWD/BoostJson/tagInvokeCrono.h \
     $$PWD/BoostJson/taginvoke.h \
@@ -139,6 +143,17 @@ HEADERS += \
     
 SOURCES += \
     $$PWD/Sodium/crypto.cpp
+}
+
+defined(WITH_SSL,var){
+#zypper in libopenssl-devel
+LIBS += -lssl -lcrypto
+
+HEADERS += \
+    $$PWD/totp/totp.h
+    
+SOURCES += \
+    $$PWD/totp/totp.cpp
 }
 
 defined(WITH_REPROC,var) {
