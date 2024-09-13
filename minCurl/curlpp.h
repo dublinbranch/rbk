@@ -89,8 +89,8 @@ class CURLpp {
 	void          smtp_prepare_message();
 	bool          smtp_send(bool rawHtml = false);
 
-	CURL*       marx      = nullptr;
-	std::string lastError = "noerr";
+	CURL*       marx = nullptr;
+	std::string lastError;
 	std::string lastUrl;
 	std::string lastParam;
 	std::string lastResponse;
@@ -162,7 +162,7 @@ class CURLpp::Builder {
 	Builder& set_cookiejar(const std::string i);
 	Builder& set_cookie(const std::string i);
 	Builder& set_email_details(const std::string msg, const std::string sbj, const std::string to);
-	Builder& set_smtp_details(const std::string usr, const std::string pwd, const std::string from);
+	Builder& set_smtp_details(std::string_view usr, std::string_view pwd, std::string_view from, std::string_view url_);
 	Builder& set_ssl_verifier(const int flag);
 
 	CURLpp build();

@@ -35,13 +35,13 @@ class Url {
 	QUrl        url;   //usato per il path e alcune funzioni per la query
 	QueryParams query; //più comodo per sapere cosa contiene la query
 	QString     full;  //per comodità nel debug
-
+	
+	QString     path;
+	
 	Url() = default;
-	Url(const std::string& _url, bool fix = true);
-	Url(const QString& _url, bool fix = true);
-	Url(const QByteArray& _url, bool fix = true);
-	void        set(const std::string& _url, bool fix = true);
-	void        set(const QString& _url, bool fix = true);
+	Url(const QStringAdt& _url, bool fix = true);
+	
+	void        set(const QStringAdt& _url, bool fix = true);
 	std::string prettyPrint() const;
 
 	/**

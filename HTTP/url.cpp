@@ -31,13 +31,13 @@ QString Url::get2lvl() const {
 
 QString Url::getNlvl(int pos) const {
 	//for now let's start assuming we do not have nonsense in the url
-	auto path = url.host().split('.');
-	auto s    = path.size();
+	auto p = url.host().split('.');
+	auto s = p.size();
 	if (s < pos) {
 		return QString();
 	}
 
-	return path.at(s - pos);
+	return p.at(s - pos);
 }
 
 QString QueryParams::join() const {
@@ -96,23 +96,11 @@ bool QueryParams::get64(const QString& key, QString& value) const {
 	return false;
 }
 
-Url::Url(const std::string& _url, bool fix) {
-	*this = Url(QString::fromStdString(_url), fix);
-}
-
-Url::Url(const QString& _url, bool fix) {
+Url::Url(const QStringAdt& _url, bool fix) {
 	set(_url, fix);
 }
 
-Url::Url(const QByteArray& _url, bool fix) {
-	set(_url, fix);
-}
-
-void Url::set(const std::string& _url, bool fix) {
-	set(QString::fromStdString(_url), fix);
-}
-
-void Url::set(const QString& _url, bool fix) {
+void Url::set(const QStringAdt& _url, bool fix) {
 	if (_url.isEmpty()) {
 		return;
 	}
@@ -145,6 +133,8 @@ void Url::set(const QString& _url, bool fix) {
 	//do not use FullyDecoded here! else the other encoded parameter will be decoded and lost in fullUrl and put in the main one
 	auto sQuery = url.query(QUrl::FullyEncoded);
 	query.setQuery(sQuery);
+
+	path = url.path().mid(1);
 }
 
 Url::DS Url::getDomain_SubDomain() {

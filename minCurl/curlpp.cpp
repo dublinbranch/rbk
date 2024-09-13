@@ -17,6 +17,7 @@ std::mutex                                      CURLpp::error_mutex;
  * @return a string containing "error:" if something went wrong, the curl response otherwise
  */
 std::string CURLpp::perform() {
+	lastError.clear();
 	CURLcode     res;
 	std::string  response;
 	CurlPPStruct chunk;
@@ -57,7 +58,7 @@ std::string CURLpp::perform() {
 	}
 #endif
 
-	if (lastError != "noerr") {
+	if (!lastError.empty()) {
 		std::lock_guard<std::mutex>        el_gringo(error_mutex);
 		std::map<std::string, std::string> error;
 		std::time_t                        c_ts = std::time(nullptr);
@@ -408,12 +409,12 @@ CURLpp::Builder& CURLpp::Builder::set_email_details(const string msg, const stri
 	return *this;
 }
 
-CURLpp::Builder& CURLpp::Builder::set_smtp_details(const string usr, const string pwd, const string from) {
+CURLpp::Builder& CURLpp::Builder::set_smtp_details(string_view usr, string_view pwd, string_view from, string_view url_) {
 	this->smtp_from     = from;
 	this->smtp_user     = usr;
 	this->smtp_password = pwd;
 	this->smtp          = 1;
-	this->url           = "smtp://seisho.us:25";
+	this->url           = url_;
 	return *this;
 }
 
