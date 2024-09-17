@@ -1,0 +1,3 @@
+#pragma once
+
+#define BOOST_MYSQL_SEPARATE_COMPILATION

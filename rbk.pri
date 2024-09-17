@@ -90,7 +90,7 @@ SOURCES += \
     $$PWD/misc/qelapsedtimerv2.cpp \
     $$PWD/string/qstringview.cpp \
     $$PWD/HTTP/mime.cpp \
-	 $$PWD/HTTP/util.cpp \
+    $$PWD/HTTP/util.cpp \
     $$PWD/string/comparator.cpp   \
     $$PWD/number/doubleoperator.cpp \
     $$PWD/string/stringoso.cpp
@@ -133,6 +133,13 @@ HEADERS += \
     $$PWD/number/doubleoperator.h \
     $$PWD/string/comparator.h 
 
+defined(WITH_BoostMysql,var){
+SOURCES += \
+    $$PWD/BoostMysql/includeme.cpp
+    
+HEADERS += \
+    $$PWD/BoostMysql/includeme.h
+}
 
 defined(WITH_SODIUM,var){
 #zypper in sodium-devel
