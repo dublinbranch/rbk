@@ -25,6 +25,18 @@ SqlResultV2::SqlResultV2(const sqlResult& old) {
 	}
 }
 
+SqlRowV2::SqlRowV2(const sqlRow& old) {
+	columns  = std::make_shared<SqlResV2::TypeMap>();
+	uint   i = 0;
+	MyType mt(enum_field_types::MAX_NO_FIELD_TYPES);
+
+	for (auto&& [key, value] : old) {
+		columns->insert({key.toStdString(), SqlResV2::Field{mt, i}});
+		i++;
+		data.push_back(value.toStdString());
+	}
+}
+
 bool SqlRowV2::empty() const {
 	return data.empty();
 }
