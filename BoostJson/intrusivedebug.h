@@ -8,31 +8,39 @@
 #endif
 
 #include "rbk/misc/typeinfo.h"
+#include <boost/json/fwd.hpp>
+#include <boost/system/error_code.hpp>
 #include <boost/version.hpp>
 #include <fmt/format.h>
 #include <string>
 #include <vector>
 
-struct PushMe {
-	PushMe();
-	static void                            push(const char* str);
-	static void                            pop();
-	static std::string                     compose();
-	static inline std::string              message;
-	static inline std::vector<const char*> path;
+struct BJIntrusive {
+	BJIntrusive();
+	static void                             push(const char* str);
+	static void                             pop();
+	static std::string                      composePath();
+	static std::string                      composeMessage(boost::json::value* original_, boost::json::value target);
+	static inline std::string               message;
+	static inline std::vector<const char*>  path;
+	static inline std::string_view          key;
+	static inline boost::system::error_code error;
+	static inline boost::json::value*       original = nullptr;
 };
 
 #ifndef BOOST_PATH_PUSH
-#define BOOST_PATH_PUSH(x) (PushMe::push(x));
+#define BOOST_PATH_PUSH(x) (BJIntrusive::push(x));
 #endif
 
 #ifndef BOOST_PATH_POP
-#define BOOST_PATH_POP (PushMe::pop());
+#define BOOST_PATH_POP (BJIntrusive::pop());
 #endif
 
 #ifndef BOOST_MESSAGE
-#define BOOST_MESSAGE(x) (PushMe::message = (x));
+#define BOOST_MESSAGE(x) (BJIntrusive::message = (x));
 #endif
+
+#define BOOST_JSON_INTRUSIVE
 
 #if BOOST_VERSION == 108300
 #include "rbk/BoostJson/override/value_to_108300.hpp"

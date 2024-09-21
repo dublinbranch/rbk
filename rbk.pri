@@ -75,7 +75,6 @@ SOURCES += \
     $$PWD/QR/qr_code.cpp \
     $$PWD/QR/qrcodegen.cpp \
     $$PWD/minMysql/sqlrowv2.cpp \
-    $$PWD/BoostJson/taginvoke.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
     $$PWD/caching/cachable.cpp \
     $$PWD/dateTime/timerange.cpp \
@@ -236,6 +235,7 @@ DISTFILES += \
 HEADERS += \
     $$PWD/BoostJson/override/value_to_108300.hpp \
     $$PWD/BoostJson/override/value_to_108400.hpp \
+    $$PWD/BoostJson/override/value_to_108500.hpp \
     $$PWD/BoostJson/extra.h \
     $$PWD/BoostJson/fwd.h \
     $$PWD/BoostJson/depleter.h \
@@ -244,6 +244,7 @@ HEADERS += \
     $$PWD/BoostJson/isjsonasubset.h \
     $$PWD/BoostJson/to_string.h \
     $$PWD/BoostJson/util.h \
+    $$PWD/BoostJson/math.h \
     $$PWD/QStacker/CxaLevel.h \
     $$PWD/dateTime/util.h \
     $$PWD/fmtExtra/dynamic.h \
@@ -318,6 +319,8 @@ SOURCES += \
     $$PWD/BoostJson/isjsonasubset.cpp \
     $$PWD/BoostJson/to_string.cpp \
     $$PWD/BoostJson/util.cpp \
+    $$PWD/BoostJson/taginvoke.cpp \
+    $$PWD/BoostJson/math.cpp \
     $$PWD/HTTP/Payload.cpp \
 	$$PWD/asanOption.cpp \
     $$PWD/dateTime/util.cpp \

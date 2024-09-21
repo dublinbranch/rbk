@@ -379,7 +379,8 @@ struct to_described_member
         {
             BOOST_IF_CONSTEXPR( !is_optional_like<M>::value )
             {
-                BOOST_MESSAGE(fmt::format("{} is non optional and missing in path {}", D::name, PushMe::compose()))
+                BJIntrusive::key = D::name;
+                BOOST_MESSAGE(fmt::format("the key >> {} << is non optional and missing in path {}", D::name, BJIntrusive::composePath()))
                 system::error_code ec;
                 BOOST_JSON_FAIL(ec, error::unknown_name);
                 res = {boost::system::in_place_error, ec};
@@ -441,10 +442,9 @@ value_to_impl(
 
     if( member_converter.count != obj->size() )
     {
-        system::error_code ec;
-        BOOST_JSON_FAIL(ec, error::size_mismatch);
-        res = {boost::system::in_place_error, ec};
-        BOOST_MESSAGE(fmt::format("Converted {} element out of {} in the json, while processing obj {} in {}", member_converter.count,obj->size(), getTypeName<T>(), PushMe::compose()))
+        BOOST_JSON_FAIL(BJIntrusive::error, error::size_mismatch);
+        res = {boost::system::in_place_error, BJIntrusive::error};
+        BOOST_MESSAGE(fmt::format("Converted {} element out of {} in the json, while processing obj {} in {}", member_converter.count,obj->size(), getTypeName<T>(), BJIntrusive::composePath()))
         return res;
     }
 
