@@ -2,6 +2,7 @@
 
 QByteAdt::QByteAdt(const QByteArray& input) {
 	setRawData(input.data(), input.length());
+	detach();
 }
 
 QByteAdt::QByteAdt(const QString& input) {
@@ -16,6 +17,7 @@ QByteAdt::QByteAdt(const std::string& input) {
 #elif QT_VERSION_MAJOR == 6
 	setRawData(input.data(), input.size());
 #endif
+	detach();
 }
 
 QByteAdt::QByteAdt(const std::string_view& input) {
@@ -25,6 +27,7 @@ QByteAdt::QByteAdt(const std::string_view& input) {
 #elif QT_VERSION_MAJOR == 6
 	setRawData(input.data(), input.size());
 #endif
+	detach();
 }
 
 QByteAdt::QByteAdt(const char* input) {
@@ -34,6 +37,7 @@ QByteAdt::QByteAdt(const char* input) {
 #elif QT_VERSION_MAJOR == 6
 	setRawData(input, strlen(input));
 #endif
+	detach();
 }
 
 QByteAdt::QByteAdt(const std::filesystem::__cxx11::path& input) {
@@ -42,6 +46,7 @@ QByteAdt::QByteAdt(const std::filesystem::__cxx11::path& input) {
 #elif QT_VERSION_MAJOR == 6
 	setRawData(input.c_str(), input.string().size());
 #endif
+	detach();
 }
 
 StringAdt::StringAdt(const QByteArray& input) {
@@ -69,15 +74,15 @@ void StringAdt::setRawData(const char* data, size_t size) {
 }
 
 QStringAdt::QStringAdt(const QByteArray& input) {
-	append(fromUtf8(input));
+	*this = fromUtf8(input);
 }
 
 QStringAdt::QStringAdt(const QString& input) {
-	setRawData(input.data(), input.size());
+	*this = input;
 }
 
 QStringAdt::QStringAdt(const std::string& input) {
-	append(fromStdString(input));
+	*this = fromStdString(input);
 }
 
 QStringAdt::QStringAdt(const std::string_view& input) {
@@ -97,5 +102,5 @@ QStringAdt::QStringAdt(const char* input) {
 }
 
 QStringAdt::QStringAdt(const std::filesystem::__cxx11::path& input) {
-	append(fromStdString(input.string()));
+	*this = fromStdString(input.string());
 }
