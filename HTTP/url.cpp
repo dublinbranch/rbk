@@ -1,6 +1,6 @@
 #include "url.h"
 #include "rbk/QStacker/qstacker.h"
-#include "rbk/fmtExtra/customformatter.h"
+#include "rbk/fmtExtra/includeMe.h"
 #include <QDebug>
 #include <QRegularExpression>
 #include <QUrl>
@@ -113,7 +113,7 @@ void Url::set(const QStringAdt& _url, bool fix) {
 
 	url.setUrl(this->full);
 	if (!url.isValid()) {
-		auto err = QSL("invalid url %1").arg(_url);
+		auto err = F("invalid url >>>{}<<<", _url);
 
 		//TODO
 		// 1 - runnable globale è thread local, non dovrebbe essere condiviso per tutti i thread?

@@ -78,7 +78,8 @@ QStringAdt::QStringAdt(const QByteArray& input) {
 }
 
 QStringAdt::QStringAdt(const QString& input) {
-	*this = input;
+	setRawData(input.data(), input.size());
+	detach();
 }
 
 QStringAdt::QStringAdt(const std::string& input) {
