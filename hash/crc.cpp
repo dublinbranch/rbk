@@ -3,13 +3,13 @@
 #include <QString>
 #include <boost/crc.hpp>
 
-uint crc32(const QString& val) {
+u64 crc32(const QString& val) {
 	return crc32(val.toUtf8());
 }
 
-unsigned int crc32(const QByteArray& val) {
+u64 crc32(const QByteArray& val) {
 	boost::crc_32_type c;
-	c.process_bytes(val.data(), val.size());
+    c.process_bytes(val.data(), (std::size_t)val.size());
 	auto cc = c.checksum();
 	return cc;
 }
