@@ -503,7 +503,7 @@ QString resourceTryDisk(const QString& fileName) {
 	return ":/" + fileName;
 }
 
-FileResV2 innerOrDynamic(const QString& innerPath, const QString& dynamicPath) {
+FileResV2 innerOrDynamic(const QString& innerPath, const QString& dynamicPath, bool quiet) {
 	FileResV2 final;
 	{
 		auto res = fileGetContents2(dynamicPath, true, 0);
@@ -523,6 +523,10 @@ FileResV2 innerOrDynamic(const QString& innerPath, const QString& dynamicPath) {
 			final.type    = FileResV2::Inner;
 			return final;
 		}
+	}
+
+	if (!quiet) {
+		throw ExceptionV2(F("Both the dynamic {} and static {} file are missing!", dynamicPath, innerPath));
 	}
 	final.type = FileResV2::missing;
 	return final;

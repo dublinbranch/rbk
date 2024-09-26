@@ -119,7 +119,7 @@ struct FileResV2 {
 	operator bool();
 };
 
-FileResV2 innerOrDynamic(const QString& innerPath, const QString& dynamicPath);
+FileResV2 innerOrDynamic(const QString& innerPath, const QString& dynamicPath, bool quiet = true);
 
 std::filesystem::path GetCurExecutablePath();
 

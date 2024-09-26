@@ -112,21 +112,16 @@ void CheckSchema::saveTableData(const TableDatas& td) {
 
 CheckSchema::Schemas CheckSchema::loadSchema() {
 	CheckSchema::Schemas map;
-	QFile                file(":/db/schema");
-	if (file.open(QFile::ReadOnly)) {
-		QByteArray payload;
-		auto       content = file.readAll();
-		//auto sha                = sha1(content, false).toHex();
-		file.seek(0);
-		QDataStream in(&file);
-		in >> map;
-		if (auto s = in.status(); s != QDataStream::Ok) {
-			qCritical() << "error decoding stream: " << asString(s);
-		}
-	} else {
-		qCritical() << "missing :/db/dbSchema file in the QRC !, create the symlink ecc ecc";
-		exit(1);
+	auto                 inner(":/db/schema");
+	auto                 dynamic = basePath + "/db/schema";
+	auto                 file    = innerOrDynamic(inner, dynamic, false);
+
+	QDataStream in(file.content);
+	in >> map;
+	if (auto s = in.status(); s != QDataStream::Ok) {
+		qCritical() << "error decoding stream: " << asString(s);
 	}
+
 	return map;
 }
 
@@ -219,10 +214,10 @@ bool CheckSchema::checkDbSchema() {
 
 bool CheckSchema::checkTableData(const TableDatas& td) {
 	for (auto& table : td) {
-		auto    path = QSL(":/db/") + table.name;
-		QFileXT file(path);
-		file.open(QFile::ReadOnly, false);
-		QDataStream in(&file);
+		auto        inner   = QSL(":/db/") + table.name;
+		auto        dynamic = basePath + QSL("/db/") + table.name;
+		auto        file    = innerOrDynamic(inner, dynamic, false);
+		QDataStream in(file.content);
 		sqlResult   diskData;
 		in >> diskData;
 		auto res = db->query(table.sql);
