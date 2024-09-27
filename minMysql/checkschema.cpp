@@ -225,9 +225,9 @@ bool CheckSchema::checkTableData(const TableDatas& td) {
 		for (auto& dbRow : res) {
 			auto diskRow = diskData[i++];
 			if (diskRow != dbRow) {
-				qCritical().noquote() << "table data mismatch! Disk is :\n"
-				                      << diskRow << "\nDB is :\n"
-				                      << dbRow;
+				qCritical().noquote() << F16(
+				    R"(table {} data mismatch! Disk is :\n{}\nDB is :\n{})",
+				    table.name, diskRow, dbRow);
 				return false;
 			}
 		}
