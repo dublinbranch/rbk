@@ -11,8 +11,8 @@ class QRegularExpression;
 struct DBConf {
 	DBConf();
 	QByteArray                host = "127.0.0.1";
+    QByteArray                user;
 	QByteArray                pass;
-	QByteArray                user;
 	std::optional<QByteArray> sock;
 	int64_t                   cacheId = 0;
 	std::optional<bool>       ssl     = false;

@@ -11,7 +11,9 @@
 #include <curl/curl.h>
 #include <thread>
 
-static const NanoSpammerConfig* config = nullptr;
+static const NanoSpammerConfig configDefault;
+static const NanoSpammerConfig* config = &configDefault;
+
 
 static bool initLocaleTZDone = false;
 

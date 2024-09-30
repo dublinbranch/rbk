@@ -62,6 +62,7 @@ RESOURCES     += $$PWD/gitTrick/resources.qrc
 #great control on memory and overall just better
 #zypper in jemalloc-devel
 LIBS += -ljemalloc
+
 #zypper in libdw-devel
 LIBS += -ldw
 LIBS += -ldl

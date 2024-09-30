@@ -2,6 +2,7 @@
 #include "min_mysql.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/misc/b64.h"
+#include <iostream>
 
 Runnable runnable;
 
@@ -29,7 +30,7 @@ KEY `lastRun` (`lastRun`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 					  )";
 
-		qCritical().noquote() << e.what() << msg;
+        std::cerr << e.what() << msg;
 		exit(1);
 	}
 }
