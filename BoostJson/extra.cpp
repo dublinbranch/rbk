@@ -313,15 +313,15 @@ string JsonRes::composeErrorMsg() const {
 	auto msg = F(R"(
 Invalid json 
 Error {} 
-At position {} (line {}:{})
+At line {}:{} (byte from start {})
 --------------------
 {}
 {}
 --------------------
 )",
 	             ec.message(),
-	             position,
 	             rowNumber, offset,
+	             position,
 	             showMe,
 	             fancy);
 	return msg;
@@ -423,12 +423,10 @@ std::string_view asString(const boost::json::object& value, std::string_view key
 	return def;
 }
 
-string asStdString(const boost::json::value &value)
-{
-    auto& r = value.as_string();
-    return std::string(r.data(), r.size());
+string asStdString(const boost::json::value& value) {
+	auto& r = value.as_string();
+	return std::string(r.data(), r.size());
 }
-
 
 std::string_view asString(const boost::json::object& value, StringAdt key) {
 	return asString(value, string_view(key));
