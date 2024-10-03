@@ -1211,9 +1211,14 @@ QString base64Nullable(const QString* param, bool emptyAsNull) {
 	}
 }
 
-QString asString(const sqlRow& row) {
+QString asString(const sqlRow& row, bool noQuote) {
 	QString s;
-	QDebug(&s) << row;
+	if (noQuote) {
+		QDebug(&s).noquote() << row;
+	} else {
+		QDebug(&s) << row;
+	}
+
 	return s;
 }
 

@@ -34,7 +34,7 @@ class sqlResult : public QList<sqlRow> {
       public:
 	friend class DB;
 	bool    fromCache = false;
-	QString toString();
+	QString toString(bool noQuote = false);
 
 	const mapV2<QByteArray, MyType>& getTypes() const;
 
@@ -46,6 +46,6 @@ class sqlResult : public QList<sqlRow> {
 	mapV2<QByteArray, MyType> types;
 };
 
-QString asString(const sqlRow& row);
+QString asString(const sqlRow& row, bool noQuote = false);
 
 #endif // SQLRESULT_H

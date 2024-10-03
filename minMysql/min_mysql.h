@@ -58,8 +58,6 @@ class St_mysqlW {
 
 using StMysqlPtr = std::shared_ptr<St_mysqlW>;
 
-QString asString(const sqlRow& row);
-
 QStringList getIdList(const sqlResult& sqlRes, const QString& idName);
 
 class DB;
@@ -125,7 +123,7 @@ class DB {
 	/* V2 */
 	[[nodiscard]] SqlResultV2 queryV2(const StringAdt& sql);
 	[[nodiscard]] SqlResultV2 queryCacheV2(const StringAdt& sql, uint ttl);
-	[[nodiscard]] SqlRowV2 queryCacheLineV2(const StringAdt& sql, uint ttl, bool required = false);
+	[[nodiscard]] SqlRowV2    queryCacheLineV2(const StringAdt& sql, uint ttl, bool required = false);
 
 	void        pingCheck(st_mysql*& conn) const;
 	QString     escape(const QString& what) const;

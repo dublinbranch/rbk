@@ -18,8 +18,9 @@ class CheckSchema {
 	};
 
 	struct TableData {
-		QString sql;
-		QString name;
+		QString    sql;
+		QString    name;
+		QByteArray primaryKey;
 	};
 
 	using TableDatas = std::vector<TableData>;

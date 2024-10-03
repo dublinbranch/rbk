@@ -1,9 +1,9 @@
 #include "sqlresult.h"
 
-QString sqlResult::toString() {
+QString sqlResult::toString(bool noQuote) {
 	QString s;
 	for (sqlRow& row : *this) {
-		s += asString(row) + "\n";
+		s += asString(row,noQuote) + "\n";
 	}
 	return s;
 }

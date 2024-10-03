@@ -213,6 +213,7 @@ bool CheckSchema::checkDbSchema() {
 }
 
 bool CheckSchema::checkTableData(const TableDatas& td) {
+	bool ok = true;
 	for (auto& table : td) {
 		auto        inner   = QSL(":/db/") + table.name;
 		auto        dynamic = basePath + QSL("/db/") + table.name;
@@ -225,14 +226,35 @@ bool CheckSchema::checkTableData(const TableDatas& td) {
 		for (auto& dbRow : res) {
 			auto diskRow = diskData[i++];
 			if (diskRow != dbRow) {
-				qCritical().noquote() << F16(
-				    R"(table {} data mismatch! Disk is :\n{}\nDB is :\n{})",
-				    table.name, diskRow, dbRow);
-				return false;
+				QByteArray valuePrimaryKey = diskRow.rq(table.primaryKey);
+				//check the actual column
+				for (auto [kDisk, vDisk] : diskRow) {
+					auto vRow = dbRow.rq(kDisk);
+					if (vRow != vDisk) {
+						auto msg = F16(
+						    R"(
+
+table {} {} data mismatch at row {}={}:
+Disk is ({} char):
+---***---
+{}
+---***---
+DB is ({} char):
+---***---
+{}
+---***---
+)",
+						    table.name, kDisk, table.primaryKey, valuePrimaryKey,
+						    vDisk.size(), vDisk,
+						    vRow.size(), vRow);
+						echo(msg);
+						ok = false;
+					}
+				}
 			}
 		}
 	}
-	return true;
+	return ok;
 }
 
 QDebug& operator<<(QDebug& out, const CheckSchema::Key& key) {
