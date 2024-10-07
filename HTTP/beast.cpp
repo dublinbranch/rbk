@@ -543,9 +543,9 @@ void Beast::listen() {
 
 	// Capture SIGINT to perform a clean shutdown
 	//(if not already captured by other, which is quite rare so not under config)
-	auto signals2block = new net::signal_set(IOC, SIGINT, SIGTERM);
+	auto signals2block = net::signal_set(IOC, SIGINT, SIGTERM);
 
-	signals2block->async_wait(
+	signals2block.async_wait(
 	    [&](beast::error_code const&, int) {
 		    // Stop the `io_context`. This will cause `run()`
 		    // to return immediately, eventually destroying the
@@ -553,7 +553,7 @@ void Beast::listen() {
 		    fmt::print("Stopping\n");
 		    IOC.stop();
 		    //remove the handler ?, else the next ctrl c will not terminate the program ?
-		    signals2block->remove(SIGINT);
+		    signals2block.remove(SIGINT);
 		    exit(0);
 	    });
 
