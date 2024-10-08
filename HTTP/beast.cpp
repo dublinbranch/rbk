@@ -119,9 +119,10 @@ void sendResponseToClient(beast::tcp_stream& stream, Payload& payload) {
 	for (auto& [key, value] : payload.headers) {
 		res.insert(key, value);
 	}
+	res.insert("Connection", "keep-alive");
 
-	//No idea if is ok to have keep alive for an internal thing ? Benefit will be negligible
-	res.keep_alive(false);
+	res.keep_alive(true);
+	//res.prepare_payload();
 
 	//equivalente to fastcgi_close
 	send(stream, res);
@@ -595,8 +596,8 @@ void Beast::listen(const BeastConf& conf_) {
 
 void Beast::okToRun() const {
 	if (conf.logFolder.empty()) {
-        string str = "missing config file to run the Beast HTTP server, set one" + stacker();
-        fmt::print(stderr, fg(fmt::color::red), "{}" , str);
+		string str = "missing config file to run the Beast HTTP server, set one" + stacker();
+		fmt::print(stderr, fg(fmt::color::red), "{}", str);
 		exit(2);
 	}
 	RBK::mkdir(conf.logFolder);
