@@ -535,12 +535,12 @@ void Beast::listen() {
 	auto IOC = net::io_context{conf.worker};
 
 	// Create and launch a listening port
-	auto listener_p = listener(
+	auto listener_p = std::make_shared<listener>(
 	    IOC,
 	    tcp::endpoint{net::ip::make_address(conf.address), conf.port},
 	    &conf);
 
-	listener_p.run();
+	listener_p->run();
 
 	// Capture SIGINT to perform a clean shutdown
 	//(if not already captured by other, which is quite rare so not under config)
