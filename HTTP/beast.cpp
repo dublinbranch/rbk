@@ -532,47 +532,48 @@ void Beast::listen() {
 	okToRun();
 	pthread_setname_np(pthread_self(), "BeastHandler");
 	// The io_context is required for all I/O
-	IOC = new net::io_context{conf.worker};
+	auto IOC = net::io_context{conf.worker};
 
 	// Create and launch a listening port
-	listener_p = std::make_shared<listener>(
-	    *IOC,
+	auto listener_p = listener(
+	    IOC,
 	    tcp::endpoint{net::ip::make_address(conf.address), conf.port},
 	    &conf);
 
-	listener_p->run();
+	listener_p.run();
 
 	// Capture SIGINT to perform a clean shutdown
 	//(if not already captured by other, which is quite rare so not under config)
-	auto signals2block = new net::signal_set(*IOC, SIGINT, SIGTERM);
+	auto signals2block = net::signal_set(IOC, SIGINT, SIGTERM);
 
-	signals2block->async_wait(
+	signals2block.async_wait(
 	    [&](beast::error_code const&, int) {
 		    // Stop the `io_context`. This will cause `run()`
 		    // to return immediately, eventually destroying the
 		    // `io_context` and all of the sockets in it.
 		    fmt::print("Stopping\n");
-		    IOC->stop();
+		    IOC.stop();
 		    //remove the handler ?, else the next ctrl c will not terminate the program ?
-		    signals2block->remove(SIGINT);
+		    signals2block.remove(SIGINT);
 		    exit(0);
 	    });
 
-	signals2block_p = signals2block;
 	fmt::print("Ready listening on http://{}:{}\n", conf.address, conf.port);
+
+	vector<std::thread*> threads;
 
 	// Run the I/O service on the requested number of threads
 	for (auto i = conf.worker; i > 0; --i) {
 		auto status = ThreadStatus::newStatus();
 
 		auto& t       = threads.emplace_back(new std::thread(
-                    [status, this] {
+                    [status, &IOC] {
                             //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
                             status->tid       = gettid();
                             localThreadStatus = status.get();
                             pthread_setname_np(pthread_self(), "HttpHandler");
                             //and than launch to io handler
-                            IOC->run();
+                            IOC.run();
                     }));
 		status->state = ThreadState::Idle;
 		status->info  = "just created";
