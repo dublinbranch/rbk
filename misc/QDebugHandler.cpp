@@ -11,9 +11,8 @@
 #include <curl/curl.h>
 #include <thread>
 
-static const NanoSpammerConfig configDefault;
+static const NanoSpammerConfig  configDefault;
 static const NanoSpammerConfig* config = &configDefault;
-
 
 static bool initLocaleTZDone = false;
 
@@ -183,6 +182,9 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 	if (msg == why) {
 		return;
 	}
+	if (msg.contains("The cached device pixel ratio value was stale on window")) {
+		return;
+	}
 
 	//Used to send the current git revision just once, when we encounter an stderr level message, that is usually via mail
 	static bool firstStdErrEvent = true;
@@ -286,7 +288,7 @@ void initLocaleTZ() {
 	//We are server side we do not care about human broken standard
 	std::setlocale(LC_ALL, "C");
 	std::locale::global(std::locale("C"));
-	
+
 	// qDebug()
 	// 	<< "Applicationlocale setting is "
 	// 	<< std::locale().name().c_str() << '\n';

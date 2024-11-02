@@ -686,6 +686,7 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	    {"morocco", "MA"},
 	    {"monaco", "MC"},
 	    {"republic of moldova", "MD"},
+		{"moldova", "MD"},
 	    {"montenegro", "ME"},
 	    {"saint martin", "MF"},
 	    {"madagascar", "MG"},
