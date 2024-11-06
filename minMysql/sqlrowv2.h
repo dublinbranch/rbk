@@ -110,21 +110,6 @@ class SqlRowV2 {
 		}
 	}
 
-	template <isEnum T, class Key>
-	[[nodiscard]] T rqe(const Key& key) const {
-		i64 temp = 0;
-		rq(key, temp);
-		T t2 = T(temp);
-		return t2;
-	}
-
-	template <class Key, isEnum T>
-	void rqe(const Key& key, T& t) const {
-		i64 temp = 0;
-		rq(key, temp);
-		t = T(temp);
-	}
-
 	template <class Value, class Key>
 	Value rq(const Key& k) const {
 		Value v;

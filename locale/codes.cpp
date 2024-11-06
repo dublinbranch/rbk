@@ -583,6 +583,7 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	    {"canada", "CA"},
 	    {"cocos [keeling] islands", "CC"},
 	    {"congo", "CD"},
+		{"congo - kinshasa", "CD"},
 	    {"central african republic", "CF"},
 	    {"republic of the congo", "CG"},
 	    {"switzerland", "CH"},
