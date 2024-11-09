@@ -118,6 +118,15 @@ class SqlRowV2 {
 		}
 		return v;
 	}
+
+	template <class Key>
+	std::string rq(const Key& k) const {
+		std::string v;
+		if (!get(k, v)) {
+			throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
+		}
+		return v;
+	}
 };
 
 class SqlResultV2 : public QVector<SqlRowV2> {
