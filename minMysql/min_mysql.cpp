@@ -1,6 +1,4 @@
 #include "min_mysql.h"
-#include "mysql/mysql.h"
-#include "mysql/mysqld_error.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/RAII//resetAfterUse.h"
 #include "rbk/filesystem/filefunction.h"

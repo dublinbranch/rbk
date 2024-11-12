@@ -42,9 +42,9 @@ struct BJIntrusive {
 
 #define BOOST_JSON_INTRUSIVE
 
-#if BOOST_VERSION == 108300
-#include "rbk/BoostJson/override/value_to_108300.hpp"
-#elif BOOST_VERSION == 108400
+//#if BOOST_VERSION == 108300
+//#include "rbk/BoostJson/override/value_to_108300.hpp"
+#if BOOST_VERSION == 108400
 #include "rbk/BoostJson/override/value_to_108400.hpp"
 #elif BOOST_VERSION == 108500
 #include "rbk/BoostJson/override/value_to_108500.hpp"
