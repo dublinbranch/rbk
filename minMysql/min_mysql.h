@@ -12,7 +12,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QStringList>
-#include <mysql/mysql.h>
+#include "mymaria.h"
 
 class DBException : public ExceptionV2 {
       public:

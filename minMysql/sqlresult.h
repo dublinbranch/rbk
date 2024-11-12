@@ -3,7 +3,7 @@
 
 #include "rbk/mapExtensor/mapV2.h"
 #include "sqlRow.h"
-#include <mysql/mysql.h>
+#include "mymaria.h"
 
 class MyType {
       public:
