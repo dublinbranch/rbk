@@ -148,6 +148,14 @@ string PMFCGI::getBasePath() const {
 	return curBasePath;
 }
 
+void PMFCGI::setCurBasePath(const std::string& newCurBasePath) const {
+	curBasePath = newCurBasePath;
+}
+
+std::string PMFCGI::getCurBasePath() const {
+	return curBasePath;
+}
+
 void Payload::setStandardHeaders(bool addCors) {
 	headers.insert({"Expires", "Sun, 01 Jan 2014 00:00:00 GMT"});
 	headers.insert({"Cache-Control", "no-store, no-cache, must-revalidate"});

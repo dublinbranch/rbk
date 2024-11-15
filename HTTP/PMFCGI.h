@@ -78,10 +78,15 @@ struct PMFCGI {
 	};
 
 	uint debug = 0;
-	//can be changed by the getBasePath call
-	mutable std::string curBasePath;
+
+	void setCurBasePath(const std::string& newCurBasePath) const;
+
+	//You do not want to use this function in the vast majority of the cases
+	std::string getCurBasePath() const;
 
       private:
+	//can be changed by the getBasePath call
+	mutable std::string curBasePath;
 };
 std::optional<std::string> noMoreParam(QueryParams& get);
 
