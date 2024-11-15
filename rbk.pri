@@ -254,6 +254,7 @@ HEADERS += \
     $$PWD/hash/sha.h \
     #$$PWD/isIterable.h \
     $$PWD/locale/codes.h \
+    $$PWD/minMysql/mymaria.h \
     $$PWD/minMysql/DBConf.h \
     $$PWD/minMysql/checkschema.h \
     $$PWD/minMysql/runnable.h \
