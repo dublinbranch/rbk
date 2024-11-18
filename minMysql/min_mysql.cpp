@@ -116,7 +116,7 @@ SQLLogger DB::queryInner(const std::string& sql) const {
 			} else {
 				cxaNoStack     = true;
 				cxaLevel       = CxaLevel::none;
-				auto msg       = F("After: {} \n {} \n", sqlLogger.serverTime, mysql_error(conn));
+				auto msg       = F("After: {} \n {} \nFor:\n{}", sqlLogger.serverTime, mysql_error(conn), sql);
 				auto exception = DBException(msg, DBException::Error(error));
 				throw exception;
 			}
@@ -711,18 +711,18 @@ StMysqlPtr DB::connect() const {
 		query("SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY';");
 	}
 
-    try{
-        query(QBL("SET time_zone='UTC'"));
-    }catch(...){
-        qCritical() << R"(
+	try {
+		query(QBL("SET time_zone='UTC'"));
+	} catch (...) {
+		qCritical() << R"(
 # You are missing the Timezone in the db install the packet with
 zypper in mariadb-tools
 
 # be sure the execute the next command as a root user
 mariadb_tzinfo_to_sql /usr/share/zoneinfo | mariadb -u root mysql
 )";
-        throw;
-    }
+		throw;
+	}
 
 	if (!conf.writeBinlog) {
 		query("SET sql_log_bin = 0");
