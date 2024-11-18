@@ -17,11 +17,12 @@ SqlResultV2::SqlResultV2(const sqlResult& old) {
 	}
 	// Copy rows
 	for (auto& row : old) {
+		SqlRowV2 r;
+		r.columns = columns;
 		for (const auto& col : row) {
-			SqlRowV2 r;
 			r.data.push_back(col.second.toStdString());
-			push_back(r);
 		}
+		push_back(r);
 	}
 }
 

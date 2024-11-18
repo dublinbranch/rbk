@@ -60,7 +60,17 @@ class SScol {
 	bool        aritmetic = false;
 	std::string key;
 	Value       val;
-	bool        verbatim = false;
+	/**
+	 * @brief verbatim
+	 * usage:
+	{
+	        SScol col;
+	        col.verbatim = true;
+	        col.key = F("name LIKE '%{}%'", search);
+	        sql.where->push(col);
+	}
+	 */
+	bool verbatim = false;
 
       private:
 };
@@ -77,7 +87,7 @@ class SqlComposer : public std::vector<SScol> {
 	std::string table;
 
       public:
-	explicit SqlComposer(PrivateTag){};
+	explicit SqlComposer(PrivateTag) {};
 	explicit SqlComposer(DB* db_, const std::string& separator_ = ",");
 
 	void push(const SScol& col, bool replaceIf = false);
@@ -95,6 +105,12 @@ class SqlComposer : public std::vector<SScol> {
 	template <typename K, typename V>
 	SqlComposer& push(const K& key_, const V& val_, bool replaceIf = false) {
 		push(SScol{key_, val_}, replaceIf);
+		return *this;
+	}
+
+	template <typename K>
+	SqlComposer& push(const K& key_, bool replaceIf = false) {
+		push(SScol{key_, key_}, replaceIf);
 		return *this;
 	}
 
