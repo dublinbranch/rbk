@@ -110,6 +110,9 @@ void swapType(const std::string& source, D& dest) {
 	} else if constexpr (std::is_same<D, std::string>::value) {
 		dest = source;
 		return;
+	} else if constexpr (std::is_same<D, std::string_view>::value) {
+		dest = std::string_view(source);
+		return;
 	} else if constexpr (std::is_same<D, QDate>::value) {
 		dest = QDate::fromString(QString::fromStdString(source), mysqlDateFormat);
 		return;
