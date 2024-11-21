@@ -185,7 +185,7 @@
 // Note that only one of the define should be set to 1 at a time.
 //
 #ifdef __linux
-BACKWARD_HAS_DW 1
+#define BACKWARD_HAS_DW 1
 #endif
 
 #if BACKWARD_HAS_DW == 1
