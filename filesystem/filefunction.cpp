@@ -7,18 +7,18 @@
 #include "rbk/fmtExtra/dynamic.h"
 #include "rbk/magicEnum/magic_enum.hpp"
 #include "rbk/magicEnum/magic_from_string.hpp"
+#include "rbk/misc/sleep.h"
 #include "rbk/serialization/serialize.h"
 #include "rbk/string/qstringview.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
+#include <QLockFile>
 #include <QSaveFile>
 #include <QUuid>
 #include <boost/tokenizer.hpp>
 #include <mutex>
 #include <sys/file.h>
-#include <QLockFile>
-#include "rbk/misc/sleep.h"
 
 #define QBL(str) QByteArrayLiteral(str)
 #define QSL(str) QStringLiteral(str)
@@ -168,30 +168,29 @@ std::vector<QByteArray> csvExploder(QByteArray line, const char separator) {
 
 using namespace std::literals;
 void checkFileLock(QString path, uint minDelay) {
-    {
-        QFileXT file(path);
-        file.open(QIODevice::WriteOnly);
-        file.close();
-    }
+	{
+		QFileXT file(path);
+		file.open(QIODevice::WriteOnly);
+		file.close();
+	}
 	// check if there is another instance running...
-    QLockFile file(path);
+	QLockFile file(path);
 
-    if (!file.isLocked()) {
-        //qWarning() << "Failed to lock file:" << file.errorString();
-        auto msg = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss ") + path + " is already locked, I refuse to start.\n (The application is already running.) ";
-        qDebug().noquote() << msg;
-        sleep(minDelay);
-        exit(1);
-    }
-
-
+	if (file.isLocked()) {
+		//qWarning() << "Failed to lock file:" << file.errorString();
+		auto msg = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss ") + path + " is already locked, I refuse to start.\n (The application is already running.) ";
+		qDebug().noquote() << msg;
+		sleep(minDelay);
+		exit(1);
+	}
 
 	auto pathTs = path + ".lastExec";
 	if (minDelay) {
 		QByteArray x;
 		auto       f = fileUnSerialize(pathTs, x, minDelay);
 		if (f.fileExists && f.valid) {
-			auto msg = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss ") + QSL(" file %1 is NOT locked, but is too recent, last application start was less than %2 second ago (so we will wait a bit to avoid spamming)").arg(path).arg(minDelay);
+			auto msg = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss ")
+                       + QSL(" file %1 is NOT locked, but is too recent, last application start was less than %2 second ago (so we will wait a bit to avoid spamming)").arg(path).arg(minDelay);
 			qWarning() << msg;
 			sleep(minDelay);
 			exit(1);
