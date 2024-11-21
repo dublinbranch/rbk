@@ -27,10 +27,10 @@ class Snowflake : public NoCopy {
 		u64 pad  = 0;
 	};
 
-	inline static constinit Adp srvIdX = {(((1 << 8) - 1) << 10), 10};
+    inline static constinit Adp srvIdX = {(((1ull << 8) - 1) << 10), 10};
 	inline static constinit Adp seqX   = {1023, 0};
-	inline static constinit Adp msX    = {(((1ul << 10) - 1) << 18), 18};
-	inline static constinit Adp tsX    = {(((1ul << 32) - 1) << 28), 28};
+    inline static constinit Adp msX    = {(((1ull << 10) - 1) << 18), 18};
+    inline static constinit Adp tsX    = {(((1ull << 32) - 1) << 28), 28};
 
 	//In theory we should check if we exceed 1024 values in a millisecond, I hardly believe this will happen!
 	std::atomic<u64> seq   = 0; //10

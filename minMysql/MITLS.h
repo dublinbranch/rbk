@@ -19,7 +19,7 @@ class mi_tls_repository {
 	 * The general per thread map that contain all resources (of this type)
 	 * It must be a ptr as it can goes out of scope before the other element, so cleaning will be a disaster
 	 */
-	inline static thread_local mapS repository = std::make_shared<mapT>();
+    static thread_local mapS repository;
 	mapS                            local      = nullptr;
 
 	void getRepo() {

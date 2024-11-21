@@ -17,6 +17,8 @@
 #include <boost/tokenizer.hpp>
 #include <mutex>
 #include <sys/file.h>
+#include <QLockFile>
+#include "rbk/misc/sleep.h"
 
 #define QBL(str) QByteArrayLiteral(str)
 #define QSL(str) QStringLiteral(str)
@@ -166,20 +168,23 @@ std::vector<QByteArray> csvExploder(QByteArray line, const char separator) {
 
 using namespace std::literals;
 void checkFileLock(QString path, uint minDelay) {
+    {
+        QFileXT file(path);
+        file.open(QIODevice::WriteOnly);
+        file.close();
+    }
 	// check if there is another instance running...
+    QLockFile file(path);
 
-	int fd = open(path.toUtf8().data(), O_CREAT | O_RDWR, 0666);
-	if (fd == -1) {
-		qWarning() << path << "error opening" << path;
-		exit(1);
-	}
+    if (!file.isLocked()) {
+        //qWarning() << "Failed to lock file:" << file.errorString();
+        auto msg = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss ") + path + " is already locked, I refuse to start.\n (The application is already running.) ";
+        qDebug().noquote() << msg;
+        sleep(minDelay);
+        exit(1);
+    }
 
-	if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
-		auto msg = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss ") + path + " is already locked, I refuse to start.\n (The application is already running.) ";
-		qDebug().noquote() << msg;
-		sleep(minDelay);
-		exit(1);
-	}
+
 
 	auto pathTs = path + ".lastExec";
 	if (minDelay) {
@@ -431,6 +436,7 @@ bool softlink(const QString& source, const QString& dest, bool quiet) {
 	return res;
 }
 
+#ifdef __linux__
 QString hardlink(const QString& source, const QString& dest, HLParam param) {
 	using namespace magic_enum::bitwise_operators;
 	QString msg;
@@ -447,6 +453,7 @@ QString hardlink(const QString& source, const QString& dest, HLParam param) {
 	}
 	return msg;
 }
+#endif
 
 FPCRes::operator bool() {
 	return ok;
@@ -540,6 +547,7 @@ FileResV2::operator bool() {
 	return type != Type::missing;
 }
 
+#ifdef __linux__
 std::filesystem::path GetCurExecutablePath() {
 	static std::filesystem::path path;
 	if (path.string().empty()) {
@@ -564,3 +572,4 @@ QString getTempFile(const QString& x) {
 	(void)x;
 	return QString::fromStdString(getTempFile());
 }
+#endif

@@ -1,4 +1,5 @@
-#include <QtCore>
+#include "qdateship.h"
+#include "qstringship.h"
 
 #if (QT_VERSION <= QT_VERSION_CHECK(6, 7, 0))
 
@@ -19,6 +20,7 @@ std::strong_ordering operator<=>(const QDate& lhs, const QDate& rhs) {
 
 #endif
 
+#if (QT_VERSION < QT_VERSION_CHECK(6, 8, 0))
 
 std::strong_ordering operator<=>(const QString& lhs, const QString& rhs) {
     auto c = lhs.compare(rhs);
@@ -45,3 +47,5 @@ std::strong_ordering operator<=>(const QByteArray& lhs, const QByteArray& rhs) {
         return std::strong_ordering::greater;
     }
 }
+
+#endif

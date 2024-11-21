@@ -1,15 +1,17 @@
 #include "QDebugHandler.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/gitTrick/buffer.h"
-#include "rbk/minCurl/curlpp.h"
 #include "slacksender.h"
 #include "twilio.h"
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QFile>
 #include <QLoggingCategory>
-#include <curl/curl.h>
 #include <thread>
+
+#ifdef useMinCurl
+#include "rbk/minCurl/curlpp.h"
+#endif
 
 static const NanoSpammerConfig  configDefault;
 static const NanoSpammerConfig* config = &configDefault;
@@ -34,47 +36,51 @@ QString getHeader2(const char* file, int line, const char* func) {
 	return warningHeader2;
 }
 
-void sendSlack(const QString& msg, std::string channel) {
-	if (!config->slackOpt.warningON) {
-		return;
-	}
-	if (channel.empty()) {
-		channel = config->slackOpt.warningChannel;
-	}
+// void sendSlack(const QString& msg, std::string channel) {
+// 	if (!config->slackOpt.warningON) {
+// 		return;
+// 	}
+// 	if (channel.empty()) {
+// 		channel = config->slackOpt.warningChannel;
+// 	}
 
-	SlackSender::sendAsync(channel, msg);
-}
-void callViaTwilio() {
-	if (config->BRUTAL_INHUMAN_REPORTING) {
-		std::thread twilio(Twilio::call);
-		twilio.detach();
-	}
-}
+// 	SlackSender::sendAsync(channel, msg);
+// }
+
+// void callViaTwilio() {
+// 	if (config->BRUTAL_INHUMAN_REPORTING) {
+// 		std::thread twilio(Twilio::call);
+// 		twilio.detach();
+// 	}
+// }
+
 void sendMail(QString subject, QString message) {
 	if (!config->warningToMail) {
 		return;
 	}
 
-	//	CURLpp marx = CURLpp::Builder()
-	//	                  .set_email_details("ciao", "soggetto", "admin@seisho.us")
-	//	                  .set_smtp_details("spammer@seisho.us", "mjsydiTODNmDLTUqRIZY", "spammer@seisho.us")
-	//	                  .build();
-	//	marx.perform();
+#ifdef useMinCurl
+    for (auto& recipient : config->warningMailRecipients) {
+        //NOTE this operation is "slow" so we need a detached thread
+        auto CurlPPisBroken = [=]() {
+            CURLpp marx = CURLpp::Builder()
+            .set_email_details(message.toUtf8().constData(), subject.toUtf8().constData(), recipient.data())
+                .set_smtp_details("spammer@seisho.us", "mjsydiTODNmDLTUqRIZY", "spammer@seisho.us", "smtp://seisho.us:25")
+                .build();
+            marx.perform();
+        };
+        std::thread Carlo(CurlPPisBroken);
+        //The only real problem of this approach, is that if the program immediately exit, nothing will be sent
+        //We can survive
+        Carlo.detach();
+    }
+#else
+    (void)subject;
+    (void)message;
+    throw ExceptionV2("asked to send a mail, but curl support is not compiled in!");
+#endif
 
-	for (auto& recipient : config->warningMailRecipients) {
-		//NOTE this operation is "slow" so we need a detached thread
-		auto CurlPPisBroken = [=]() {
-			CURLpp marx = CURLpp::Builder()
-			                  .set_email_details(message.toUtf8().constData(), subject.toUtf8().constData(), recipient.data())
-			                  .set_smtp_details("spammer@seisho.us", "mjsydiTODNmDLTUqRIZY", "spammer@seisho.us", "smtp://seisho.us:25")
-			                  .build();
-			marx.perform();
-		};
-		std::thread Carlo(CurlPPisBroken);
-		//The only real problem of this approach, is that if the program immediately exit, nothing will be sent
-		//We can survive
-		Carlo.detach();
-	}
+
 }
 
 //In loving memory of 80 / 72 char punch card
@@ -86,7 +92,10 @@ std::string submoduleInfo() {
 	static const QVector<QByteArray> stopWords{"Entering", "Entrando"};
 	std::string                      final;
 	QFile                            submoduleInfo(":/submoduleInfo");
-	submoduleInfo.open(QFile::ReadOnly);
+    if(!submoduleInfo.open(QFile::ReadOnly)){
+        return {};
+    }
+
 	QByteArray moduleName;
 	while (true) {
 		auto line = submoduleInfo.readLine();
@@ -213,7 +222,7 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 	case QtCriticalMsg:
 		[[fallthrough]];
 	case QtFatalMsg:
-		callViaTwilio();
+        //callViaTwilio();
 		[[fallthrough]];
 	case QtWarningMsg:
 		if (firstStdErrEvent) {
@@ -229,10 +238,10 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 		auto warningHeader1 = getHeader1();
 		auto warningHeader2 = getHeader2(file, context.line, funkz);
 
-		{
-			QString msg2slack = QSL("<@U93PHQ62J> ") + warningHeader1 + QSL("\n") + warningHeader2 + QSL("\n\n") + msg;
-			sendSlack(msg2slack, config->slackOpt.warningChannel);
-		}
+        // {
+        // 	QString msg2slack = QSL("<@U93PHQ62J> ") + warningHeader1 + QSL("\n") + warningHeader2 + QSL("\n\n") + msg;
+        // 	sendSlack(msg2slack, config->slackOpt.warningChannel);
+        // }
 		{
 			// subject
 			auto subject = QSL("Error from %1 @ %2 in %3").arg(QCoreApplication::applicationName(), config->instanceName, funkz);
@@ -281,8 +290,11 @@ void initLocaleTZ() {
 	}
 	initLocaleTZDone = true;
 	srand((uint)time(NULL));
-	//We probably ALWAYS use curl in any case
+
+#ifdef useMinCurl
 	curl_global_init(CURL_GLOBAL_ALL);
+#endif
+
 	loadBuffer();
 
 	//We are server side we do not care about human broken standard
@@ -296,8 +308,16 @@ void initLocaleTZ() {
 	//Also for Qt for translation ecc
 	QLocale l(QLocale::C, QLocale::UnitedStates);
 	QLocale::setDefault(l);
+
 	//If EaRTh iS FLAAAT why timezone ?!11!!?
-	setenv("TZ", "UTC", 1);
+#ifdef _WIN32
+    // Windows: Use _putenv
+    _putenv("TZ=UTC");
+#else
+    // POSIX: Use setenv
+    setenv("TZ", "UTC", 1);
+#endif
+
 	tzset();
 
 	// enable the printing

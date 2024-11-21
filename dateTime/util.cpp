@@ -114,8 +114,8 @@ timespec TimespecV2::toTimespec() const {
 	timespec t;
 	double   s = 0, ns;
 	ns         = fmod(time, s);
-	t.tv_nsec  = static_cast<__syscall_slong_t>(s);
-	t.tv_sec   = static_cast<__time_t>(ns);
+    t.tv_nsec  = static_cast<long>(s);
+    t.tv_sec   = static_cast<time_t>(ns);
 	return t;
 }
 

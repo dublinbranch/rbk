@@ -1,3 +1,4 @@
+#git@github.com:dublinbranch/rbk.git
 #this will enable certain ip based function on localeV2, of course you will need to provide a max mind db handler
 #put those in PRO file of the project!
 #DEFINES += WithMaxMind
@@ -32,14 +33,44 @@ QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]/QtCore
 #Still unsure how it improoves the debug, but it cripples mold so OUT!
 #-ggdb3
 QMAKE_CXXFLAGS += -Wunused -Wunused-function 
+#CONFIG += c++2b
 QMAKE_CXXFLAGS += -std=gnu++2b
 #-Werror -Wconversion
 QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wshadow-local -Wshadow-compatible-local -Wconversion -fno-permissive -Werror=return-type
 
 CONFIG += object_parallel_to_source
+linux {
+    DEFINES += GIT_STATUS='\\"$(shell git -C '$$_PRO_FILE_PWD_' describe  --always --dirty --abbrev=99)\\"'
 
-DEFINES += GIT_STATUS='\\"$(shell git -C '$$_PRO_FILE_PWD_' describe  --always --dirty --abbrev=99)\\"'
-DEFINES += COMPILATION_TIME='\\"$(shell TZ=UTC date +\"%Y-%m-%dT%T\")\\"'
+    #except slows down everything immensely -.- so when needed I will just bump before putting live
+    #usually only Roy leaves this one as is only relevant for live code
+    #DEFINES += SmolHack1=0'$(shell touch '$$PWD'/gitTrick/buffer.cpp)'
+
+    #this one need to be stored in a file as contain newline and other complex char, same stuff as above cache all!
+    #sometime, for some reason is not able to auto create the file, just touch rbk/gitTrick/submoduleInfo
+    system(git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)
+    #DEFINES += SmolHack2=0'$(shell git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)'
+
+    #QT is amazing, it can easily embedd and later read such file, there is not noticeable penalty in linking time for this operation
+    RESOURCES     += $$PWD/gitTrick/resources.qrc
+
+    #great control on memory and overall just better
+    #zypper in jemalloc-devel
+    LIBS += -ljemalloc
+
+
+    #zypper in libdw-devel
+    LIBS += -ldw
+    LIBS += -ldl
+    LIBS += -lfmt   #zypper in fmt-devel should be enought
+
+    #zypper in libmariadb3 libmariadb-devel
+    LIBS += -lmariadb
+}
+win32{
+#win equivalent of ldw
+    LIBS += -ldbghelp
+}
 
 #needed for dynamic creation of file into the main source directory
 DEFINES += BasePath='\\"$$_PRO_FILE_PWD_\\"'
@@ -47,30 +78,6 @@ DEFINES += BasePath='\\"$$_PRO_FILE_PWD_\\"'
 #this should speed up the update of the submodule info
 CONFIG += resources_big
 
-#except slows down everything immensely -.- so when needed I will just bump before putting live
-#usually only Roy leaves this one as is only relevant for live code
-#DEFINES += SmolHack1=0'$(shell touch '$$PWD'/gitTrick/buffer.cpp)'
-
-#this one need to be stored in a file as contain newline and other complex char, same stuff as above cache all!
-#sometime, for some reason is not able to auto create the file, just touch rbk/gitTrick/submoduleInfo
-system(git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)
-#DEFINES += SmolHack2=0'$(shell git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)'
-
-#QT is amazing, it can easily embedd and later read such file, there is not noticeable penalty in linking time for this operation
-RESOURCES     += $$PWD/gitTrick/resources.qrc
-
-#great control on memory and overall just better
-#zypper in jemalloc-devel
-LIBS += -ljemalloc
-
-#zypper in libdw-devel
-LIBS += -ldw
-LIBS += -ldl
-LIBS += -lfmt   #zypper in fmt-devel should be enought
-#zypper in libcurl-devel
-LIBS += -lcurl
-#zypper in libmariadb3 libmariadb-devel
-LIBS += -lmariadb
 
 SOURCES += \
     $$PWD/QR/qr_code.cpp \
@@ -88,6 +95,7 @@ SOURCES += \
     $$PWD/minMysql/sqlbuffering.cpp \
     $$PWD/misc/base32.cpp \
     $$PWD/misc/qelapsedtimerv2.cpp \
+    $$PWD/misc/sleep.cpp \
     $$PWD/string/qstringview.cpp \
     $$PWD/HTTP/mime.cpp \
     $$PWD/HTTP/util.cpp \
@@ -124,6 +132,7 @@ HEADERS += \
     $$PWD/misc/controlFlowMacro.h \
     $$PWD/misc/decimate.h \
     $$PWD/misc/qelapsedtimerv2.h \
+    $$PWD/misc/sleep.h \
     $$PWD/number/intTypes.h \
     $$PWD/string/qstringview.h \
     $$PWD/string/stringoso.h \
@@ -175,7 +184,7 @@ SOURCES += \
    $$PWD/misc/executor.cpp
    
 HEADERS += \
-    $$PWD/misc/executor.h 
+    $$PWD/misc/executor.h
     
 }
 
@@ -187,9 +196,9 @@ defined(WITH_ZIPPER,var) {
 LIBS += -lzip
 
 SOURCES += \
-    $$PWD/misc/zip.cpp 
+    $$PWD/misc/zip.cpp
 HEADERS += \
-    $$PWD/misc/zip.h 
+    $$PWD/misc/zip.h
 }
     
 defined(WITH_BOOST_BEAST,var) {
@@ -210,28 +219,64 @@ HEADERS += \
 }
 
 defined(WithMaxMind,var) {
-#zypper in libmaxminddb0 
+#zypper in libmaxminddb0
 #to develop libmaxminddb-devel
 LIBS += -lmaxminddb
 # if compile error because not found "maxminddb.h" file (included in GeoLite2PP.hpp) then install "libmaxminddb-devel" package in YaST2F
 LIBS += -L'$$PWD/GeoLite2PP' -lgeolite2++
 
 DISTFILES += \
-	$$PWD/GeoLite2PP/README.md \
-	$$PWD/GeoLite2PP/libgeolite2++.a \
+        $$PWD/GeoLite2PP/README.md \
+        $$PWD/GeoLite2PP/libgeolite2++.a \
 HEADERS += \
-    $$PWD/GeoLite2PP/GeoLite2PP_error_category.hpp \
+    $$PWD/GeoLite2PP/GeoLite2PP_error_category.hpp
+
+}
+#End with maxmind
+
+
+defined(withMinCurl,var){
+
+    DEFINES += useMinCurl
+
+    #zypper in libcurl-devel
+    LIBS += -lcurl
+
+    HEADERS += \
+        $$PWD/minCurl/curlpp.h \
+        $$PWD/minCurl/errorlog.h \
+        $$PWD/minCurl/mailfetcher.h \
+        $$PWD/minCurl/mincurl.h \
+        $$PWD/minCurl/qstringtokenizer.h \
+        $$PWD/minCurl/urlgetcontent.h
+
+    SOURCES += \
+        $$PWD/minCurl/curlpp.cpp \
+        $$PWD/minCurl/errorlog.cpp \
+        $$PWD/minCurl/mailfetcher.cpp \
+        $$PWD/minCurl/mincurl.cpp \
+        $$PWD/minCurl/urlgetcontent.cpp
+
+}
+
+defined(withClickHouse,var){
+    HEADERS += \
+        $$PWD/minMysql/ClickHouseException.h \
+        $$PWD/minMysql/clickhouse.h
+
+    SOURCES += \
+        $$PWD/minMysql/clickhouse.cpp
 }
 
 DISTFILES += \
-	$$PWD/JSON/LICENSE \
-	$$PWD/JSON/README.md \
-	$$PWD/SpaceShipOP/LICENSE.md \
-	$$PWD/SpaceShipOP/README.md \
-	$$PWD/SpaceShipOP/qspaceship.pri \
-	$$PWD/minCurl/README.md \
-	$$PWD/minMysql/README.md \
-	$$PWD/minMysql/minMysql.pri
+        $$PWD/JSON/LICENSE \
+        $$PWD/JSON/README.md \
+        $$PWD/SpaceShipOP/LICENSE.md \
+        $$PWD/SpaceShipOP/README.md \
+        $$PWD/SpaceShipOP/qspaceship.pri \
+        $$PWD/minCurl/README.md \
+        $$PWD/minMysql/README.md \
+        $$PWD/minMysql/minMysql.pri
 
 HEADERS += \
     $$PWD/BoostJson/override/value_to_108300.hpp_FIX_ME \
@@ -266,15 +311,15 @@ HEADERS += \
     $$PWD/misc/echo.h \
     $$PWD/misc/intTypes.h \
     $$PWD/misc/swapType.h \
-	$$PWD/misc/typeinfo.h \
+    $$PWD/misc/typeinfo.h \
     $$PWD/number/sanitize.h \
-	$$PWD/rand/clampednormaldistribution.h \
+    $$PWD/rand/clampednormaldistribution.h \
     $$PWD/JSON/JSONReaderConst.h \
     $$PWD/JSON/jsonreader.h \
     $$PWD/SpaceShipOP/qdateship.h \
     $$PWD/SpaceShipOP/qstringship.h \
-	$$PWD/caching/apcu2.h \
-	$$PWD/dateTime/qdatetimev2.h \
+    $$PWD/caching/apcu2.h \
+    $$PWD/dateTime/qdatetimev2.h \
     $$PWD/dateTime/timespecV2.h \
     $$PWD/RAII/resetAfterUse.h \
     $$PWD/defines/stringDefine.h \
@@ -282,37 +327,28 @@ HEADERS += \
     $$PWD/filesystem/filefunction.h \
     $$PWD/filesystem/folder.h \
     $$PWD/fmtExtra/customformatter.h \
-	$$PWD/fmtExtra/includeMe.h \
+    $$PWD/fmtExtra/includeMe.h \
     $$PWD/gitTrick/buffer.h \
     $$PWD/hash/crc.h \
     $$PWD/locale/localev2.h \
-    $$PWD/minCurl/curlpp.h \
-    $$PWD/minCurl/errorlog.h \
-    $$PWD/minCurl/mailfetcher.h \
-    $$PWD/minCurl/mincurl.h \
-    $$PWD/minCurl/qstringtokenizer.h \
-    $$PWD/minCurl/urlgetcontent.h \
     $$PWD/misc/QCommandLineParserV2.h \
     $$PWD/misc/QDebugConfig.h \
     $$PWD/misc/QDebugHandler.h \
-    $$PWD/misc/UaDecoder.h \
     $$PWD/misc/b64.h \
-    $$PWD/misc/slacksender.h \
     $$PWD/misc/snowflake.h \
     $$PWD/misc/sourcelocation.h \
-    $$PWD/misc/twilio.h \
     $$PWD/mixin/CopyAssignable.h \
     $$PWD/mixin/NoCopy.h \
     $$PWD/rand/randutil.h \
     $$PWD/serialization/QDataStreamer.h \
-	$$PWD/serialization/asstring.h \
+    $$PWD/serialization/asstring.h \
     $$PWD/serialization/serialize.h \
     $$PWD/string/qstring.h \
     $$PWD/string/util.h \
     $$PWD/thread/threadstatush.h \
     $$PWD/thread/threadvector.h \
     $$PWD/thread/tmonitoring.h \
-	$$PWD/versioncheck.h
+    $$PWD/versioncheck.h
 
 SOURCES += \
     $$PWD/BoostJson/depleter.cpp \
@@ -324,20 +360,20 @@ SOURCES += \
     $$PWD/BoostJson/taginvoke.cpp \
     $$PWD/BoostJson/math.cpp \
     $$PWD/HTTP/Payload.cpp \
-	$$PWD/asanOption.cpp \
+    $$PWD/asanOption.cpp \
     $$PWD/dateTime/util.cpp \
     $$PWD/hash/salt.cpp \
     $$PWD/hash/sha.cpp \
-	$$PWD/locale/codes.cpp \
+    $$PWD/locale/codes.cpp \
     $$PWD/minMysql/checkschema.cpp \
     $$PWD/minMysql/runnable.cpp \
     $$PWD/minMysql/sqlcomposer.cpp \
     $$PWD/minMysql/sqlresult.cpp \
     $$PWD/misc/checkoptionalareset.cpp \
     $$PWD/misc/echo.cpp \
-	$$PWD/misc/typeinfo.cpp \
+    $$PWD/misc/typeinfo.cpp \
     $$PWD/number/sanitize.cpp \
-	$$PWD/rand/clampednormaldistribution.cpp \
+    $$PWD/rand/clampednormaldistribution.cpp \
     $$PWD/JSON/jsonreader.cpp \
     $$PWD/SpaceShipOP/implementation.cpp \
     $$PWD/caching/apcu2.cpp \
@@ -345,22 +381,13 @@ SOURCES += \
     $$PWD/filesystem/filefunction.cpp \
     $$PWD/filesystem/folder.cpp \
     $$PWD/fmtExtra/customformatter.cpp \
-    $$PWD/gitTrick/buffer.cpp \
     $$PWD/hash/crc.cpp \
     $$PWD/locale/localev2.cpp \
-    $$PWD/minCurl/curlpp.cpp \
-    $$PWD/minCurl/errorlog.cpp \
-    $$PWD/minCurl/mailfetcher.cpp \
-    $$PWD/minCurl/mincurl.cpp \
-    $$PWD/minCurl/urlgetcontent.cpp \
     $$PWD/misc/QCommandLineParserV2.cpp \
     $$PWD/misc/QDebugHandler.cpp \
-    $$PWD/misc/UaDecoder.cpp \
     $$PWD/misc/b64.cpp \
-    $$PWD/misc/slacksender.cpp \
     $$PWD/misc/snowflake.cpp \
     $$PWD/misc/sourcelocation.cpp \
-    $$PWD/misc/twilio.cpp \
     $$PWD/rand/randutil.cpp \
     $$PWD/serialization/QDataStreamer.cpp \
     $$PWD/string/qstring.cpp \
@@ -368,49 +395,58 @@ SOURCES += \
     $$PWD/thread/threadstatush.cpp \
     $$PWD/thread/threadvector.cpp \
     $$PWD/thread/tmonitoring.cpp \
-	$$PWD/versioncheck.cpp
+    $$PWD/gitTrick/buffer.cpp \
+    $$PWD/versioncheck.cpp
 
-SOURCES += $$PWD/HTTP/url.cpp 
+#this will force it to recompile each time, to have fresh data
+linux {
+    QMAKE_PRE_LINK += touch $$PWD/gitTrick/buffer.cpp
+}
+#ofc win is laking the most basic command, so we skip for now
+
+
+
+SOURCES += $$PWD/HTTP/url.cpp
 	
-HEADERS += $$PWD/HTTP/url.h 
+HEADERS += $$PWD/HTTP/url.h
 
 SOURCES += \
-	$$PWD/QStacker/exceptionv2.cpp \
-	$$PWD/QStacker/httpexception.cpp \
-    $$PWD/QStacker/qstacker.cpp 
+        $$PWD/QStacker/exceptionv2.cpp \
+        $$PWD/QStacker/httpexception.cpp \
+    $$PWD/QStacker/qstacker.cpp
     
 HEADERS += \
     $$PWD/QStacker/backward.hpp \
     $$PWD/QStacker/exceptionv2.h \
     $$PWD/QStacker/httpexception.h \
-    $$PWD/QStacker/qstacker.h 
+    $$PWD/QStacker/qstacker.h
 
 INCLUDEPATH += $$PWD/rapidjson/
 
-SOURCES += $$PWD/rapidjson/rapidAssert.cpp 
+SOURCES += $$PWD/rapidjson/rapidAssert.cpp
 HEADERS += $$PWD/rapidjson/includeMe.h
 
 
 HEADERS += \
-	$$PWD/mapExtensor/RRList.h \
-	$$PWD/mapExtensor/fixedSizeVector.h \
-	$$PWD/mapExtensor/hmap.h \
-	$$PWD/mapExtensor/indexedvector.h \
-	$$PWD/mapExtensor/lockguardv2.h \
-	$$PWD/mapExtensor/mapV2.h \
-	$$PWD/mapExtensor/qmapV2.h  \
-	$$PWD/mapExtensor/rwguard.h \
-	$$PWD/mapExtensor/valueMitWarning.h \
-	$$PWD/mapExtensor/vectorV2.h \
-	$$PWD/mapExtensor/NotFoundMixin.h \
-	$$PWD/mapExtensor/joinVector.h
+        $$PWD/mapExtensor/RRList.h \
+        $$PWD/mapExtensor/fixedSizeVector.h \
+        $$PWD/mapExtensor/hmap.h \
+        $$PWD/mapExtensor/indexedvector.h \
+        $$PWD/mapExtensor/lockguardv2.h \
+        $$PWD/mapExtensor/mapV2.h \
+        $$PWD/mapExtensor/qmapV2.h  \
+        $$PWD/mapExtensor/rwguard.h \
+        $$PWD/mapExtensor/valueMitWarning.h \
+        $$PWD/mapExtensor/vectorV2.h \
+        $$PWD/mapExtensor/NotFoundMixin.h \
+        $$PWD/mapExtensor/joinVector.h
 
 DISTFILES += /
-	$$PWD/mapExtensor/README.md
+        $$PWD/mapExtensor/README.md
 
 SOURCES += \
     $$PWD/mapExtensor/indexedvector.cpp \
-	$$PWD/mapExtensor/lockguardv2.cpp \
+        $$PWD/mapExtensor/lockguardv2.cpp \
     $$PWD/mapExtensor/mapV2.cpp \
     $$PWD/mapExtensor/rwguard.cpp
     
@@ -421,11 +457,11 @@ SOURCES += \
 
 HEADERS += \
     $$PWD/JSON/safeGet.h \
-    $$PWD/JSON/various.h 
+    $$PWD/JSON/various.h
 
 SOURCES += \
     $$PWD/JSON/safeGet.cpp \
-    $$PWD/JSON/various.cpp 
+    $$PWD/JSON/various.cpp
 
     
 HEADERS += \
@@ -437,30 +473,30 @@ HEADERS += \
     
     
 HEADERS += \
-    $$PWD/minMysql/ClickHouseException.h \
-	$$PWD/minMysql/MITLS.h \
-    $$PWD/minMysql/clickhouse.h \
+    $$PWD/minMysql/MITLS.h \
     $$PWD/minMysql/min_mysql.h  \
     $$PWD/minMysql/ttlcache.h \
-	$$PWD/minMysql/utilityfunctions.h
+    $$PWD/minMysql/utilityfunctions.h
     
 SOURCES += \
-    $$PWD/minMysql/clickhouse.cpp \
+    $$PWD/minMysql/MITLS.cpp \
     $$PWD/minMysql/min_mysql.cpp \
     $$PWD/minMysql/ttlcache.cpp \
     $$PWD/minMysql/utilityfunctions.cpp
     
 DISTFILES += /
-	$$PWD/README.md 
+        $$PWD/README.md
 	
 DISTFILES += \
-	$$PWD/README.md 
+        $$PWD/README.md
 
 #is you perform QT += network somewhere
 defined(HAS_QT_NETWORK, var) {
-	HEADERS += $$PWD/qhostaddress.h 
-	SOURCES += $$PWD/qhostaddress.cpp 
+        HEADERS += $$PWD/qhostaddress.h
+        SOURCES += $$PWD/qhostaddress.cpp
 }
+
+
 
 
 #Mustache
@@ -471,4 +507,12 @@ SOURCES += \
 
 HEADERS += $$PWD/mustache/boost/mustache.hpp \
     $$PWD/mustache/extra.h
+
+#Stuff no longer used
+    #$$PWD/misc/UaDecoder.h \
+    #$$PWD/misc/UaDecoder.cpp \
+    #$$PWD/misc/slacksender.cpp \
+    #$$PWD/misc/slacksender.h \
+    #$$PWD/misc/twilio.h \
+    #$$PWD/misc/twilio.cpp \
 

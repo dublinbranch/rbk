@@ -18,7 +18,6 @@
 #include <QRegularExpression>
 #include <memory>
 #include <mutex>
-#include <poll.h>
 #include <qscopeguard.h>
 #include <unistd.h>
 
@@ -797,30 +796,6 @@ void DB::startQuery(const StringAdt& sql) const {
 	}
 }
 
-bool DB::completedQuery() const {
-	auto conn = getConn();
-
-	auto error = mysql_errno(conn);
-	if (error != 0) {
-		qWarning().noquote() << F16("Mysql error for {} error was {} code: {}\n{}", state->lastSQL, mysql_error(conn), error, stacker(3));
-		throw 1025;
-	}
-	int err;
-
-	auto event = somethingHappened(conn, signalMask);
-	if (event) {
-		event = mysql_real_query_cont(&err, conn, event);
-		if (err) {
-			throw QSL("Error executing ASYNC query (cont):") + mysql_error(conn);
-		}
-		// if we are still listening to an event, return false
-		// else if we have no more event to wait return true
-		return !event;
-	} else {
-		return false;
-	}
-}
-
 sqlResult DB::getWarning(bool useSuppressionList) const {
 	sqlResult ok;
 	auto      warnCount = mysql_warning_count(getConn());
@@ -1042,6 +1017,36 @@ Query: {:.3f}	Fetch: {:.3f} )",
 	return res;
 }
 
+//Linux only ATM
+#if __has_include(<poll.h>)
+#include <poll.h>
+
+
+bool DB::completedQuery() const {
+    auto conn = getConn();
+
+    auto error = mysql_errno(conn);
+    if (error != 0) {
+        qWarning().noquote() << F16("Mysql error for {} error was {} code: {}\n{}", state->lastSQL, mysql_error(conn), error, stacker(3));
+        throw 1025;
+    }
+    int err;
+
+    auto event = somethingHappened(conn, signalMask);
+    if (event) {
+        event = mysql_real_query_cont(&err, conn, event);
+        if (err) {
+            throw QSL("Error executing ASYNC query (cont):") + mysql_error(conn);
+        }
+        // if we are still listening to an event, return false
+        // else if we have no more event to wait return true
+        return !event;
+    } else {
+        return false;
+    }
+}
+
+
 u64 DB::fetchAdvanced(FetchVisitor* visitor) const {
 	auto conn = getConn();
 
@@ -1102,6 +1107,7 @@ static int somethingHappened(MYSQL* mysql, int status) {
 		return _status;
 	}
 }
+#endif
 
 SQLLogger::SQLLogger(const string& _sql, bool _enabled, const DB* _db)
     : sql(_sql),

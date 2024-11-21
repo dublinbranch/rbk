@@ -3,6 +3,7 @@
 
 #include <compare>
 #include <sys/types.h>
+#include "rbk/number/intTypes.h"
 
 struct timespec;
 class TimespecV2 {

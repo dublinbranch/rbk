@@ -295,7 +295,8 @@ string JsonRes::composeErrorMsg() const {
 		}
 
 		//show a part of the json to understand the problem, do not go over end of line or before!
-		auto start = max(0ul, position - 45);
+        size_t zero = 0;
+        auto start = max(zero, position - 45);
 		auto end   = min(Pt(start + 80), raw.size());
 
 		auto len = end - start;

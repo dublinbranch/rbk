@@ -44,7 +44,8 @@ QByteAdt::QByteAdt(const std::filesystem::__cxx11::path& input) {
 #if QT_VERSION_MAJOR == 5
 	setRawData(input.c_str(), (uint)input.string().size());
 #elif QT_VERSION_MAJOR == 6
-	setRawData(input.c_str(), input.string().size());
+    std::string inputStr = input.string();
+    setRawData(inputStr.c_str(), inputStr.size());
 #endif
 	detach();
 }

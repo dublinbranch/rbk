@@ -5,9 +5,15 @@
 #include <QDebug>
 #include <QString>
 #include <boost/algorithm/string.hpp>
+#include <mutex>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <dlfcn.h>
 #include <execinfo.h>
-#include <mutex>
+#endif
+
 
 std::string stacker(uint skip, QStackerOpt opt) {
 	/** For loading from an arbitrary position
@@ -80,24 +86,6 @@ QString QStacker16(uint skip, QStackerOpt opt) {
 	return QString::fromStdString(stacker(skip, opt));
 }
 
-/**
- * @brief qt_assert_x is the internal handle used by qt to report error, sadly is missing the stack trace so 99% of the time
- * you have ABSOLUTELY no clue where it happened, fixed!
- * @param where
- * @param what
- * @param file
- * @param line
- */
-Q_CORE_EXPORT void qt_assert_x(const char* where, const char* what, const char* file, int line) Q_DECL_NOTHROW {
-	(void)(where);
-	(void)(what);
-	(void)(file);
-	(void)(line);
-	qWarning().noquote() << QStacker16();
-	//We can not throw! this function is forcefully declared Q_DECL_NOTHROW and can not be changed, but at least we now know why...
-	abort();
-}
-
 ///** ***************/
 ///** POWER SUPREME */
 ///** ***************/
@@ -105,7 +93,39 @@ Q_CORE_EXPORT void qt_assert_x(const char* where, const char* what, const char* 
 //define the functor
 using cxa_throw_type = void(void*, std::type_info*, void (*)(void*));
 //now take the address of the REAL __cxa_throw
-static cxa_throw_type* original_cxa_throw = (cxa_throw_type*)dlsym(RTLD_NEXT, "__cxa_throw");
+//static cxa_throw_type* original_cxa_throw = (cxa_throw_type*)dlsym(RTLD_NEXT, "__cxa_throw");
+
+// Cross-platform symbol resolution
+static cxa_throw_type* resolve_cxa_throw() {
+#ifdef _WIN32
+    // Windows equivalent for dynamic symbol lookup
+    HMODULE handle = GetModuleHandle(nullptr); // Get the current module
+    if (!handle) {
+        return nullptr;
+    }
+    FARPROC func = GetProcAddress(handle, "__cxa_throw");
+    if (!func) {
+        return nullptr;
+    }
+    //windows is still in 16bit era with FARPROC
+// Suppress the warning for this specific cast
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+    auto result = reinterpret_cast<cxa_throw_type*>(func);
+#pragma GCC diagnostic pop
+    return result;
+#else
+    // POSIX dynamic symbol lookup
+    return reinterpret_cast<cxa_throw_type*>(dlsym(RTLD_NEXT, "__cxa_throw"));
+#endif
+}
+
+static cxa_throw_type* original_cxa_throw = resolve_cxa_throw();
+
+//Looks like on windows this trick is not ok, we have to check how bombela does that!
+
+#ifdef __linux__
+
 extern "C" {
 //And NOW override it
 
@@ -188,6 +208,12 @@ void __attribute__((__noreturn__)) __cxa_throw(
 	throw std::runtime_error("This should never happen!");
 }
 }
+
+#endif
+
+#if WIN32
+backward::SignalHandling sh;
+#endif
 
 QString QStacker16Light(uint skip, QStackerOpt opt) {
 	return QStacker16(skip, opt);

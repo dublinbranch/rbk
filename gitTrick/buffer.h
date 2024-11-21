@@ -1,5 +1,7 @@
 #pragma once
-inline const char* COMPILATION_TIME_buffer = nullptr;
-inline const char* GIT_STATUS_buffer       = nullptr;
-inline const char* GIT_SUBMODULES_buffer   = nullptr;
+#include <QByteArray>
+
+inline QByteArray COMPILATION_TIME_buffer = nullptr;
+inline QByteArray GIT_STATUS_buffer       = nullptr;
+inline QByteArray GIT_SUBMODULES_buffer   = nullptr;
 void               loadBuffer();

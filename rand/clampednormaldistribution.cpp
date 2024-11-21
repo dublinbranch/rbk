@@ -1,5 +1,7 @@
 #include "clampednormaldistribution.h"
 #include <chrono>
+#include "rbk/number/intTypes.h"
+
 ClampedNormalDistribution::ClampedNormalDistribution(double _fixed) {
 	setFixed(_fixed);
 }

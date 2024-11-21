@@ -4,6 +4,7 @@
 #include "rbk/misc/sourcelocation.h"
 #include <exception>
 #include <string>
+#include "rbk/number/intTypes.h"
 
 class QString;
 class QByteArray;
@@ -12,8 +13,8 @@ class ExceptionV2 : public std::exception {
       public:
 	//This is an ugly hack to achieve a weird objective, but is a quite commont techique https://en.wikipedia.org/wiki/Hexspeak
 	//We cast the obj and check if start with that to know is ours
-	static constexpr ulong uukey     = 0xBADBEEFBADBEEF02;
-	const ulong            canaryKey = uukey;
+    static constexpr u64 uukey     = 0xBADBEEFBADBEEF02;
+    const u64            canaryKey = uukey;
 	//This will force the exception to print immediately in case is a "bad error" that we need to be informed about
 	bool forcePrint = false;
 	//This will SKIP printing when we handle the exception, in case is a minor thing and just save in the log

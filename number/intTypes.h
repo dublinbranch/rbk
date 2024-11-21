@@ -11,5 +11,7 @@ using i32 = int32_t;
 
 using u8  = uint8_t;
 
+using ulong = unsigned long;
 
+using uint = unsigned int;
 #endif // RBK_INTTYPES_H

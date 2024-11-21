@@ -74,6 +74,7 @@ uint erase(const QStringList& files) {
 	return erased;
 }
 
+#if __linux__
 QString hardLinkFolder(const QString& source, const QString& dest, HLParam param) {
 	mkdir(dest);
 	for (auto& file : search(source)) {
@@ -85,6 +86,7 @@ QString hardLinkFolder(const QString& source, const QString& dest, HLParam param
 	}
 	return {};
 }
+#endif
 
 bool rmdirV2(const QStringAdt& path) {
 	QDir dir(path);

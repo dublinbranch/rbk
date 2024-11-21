@@ -1,7 +1,8 @@
 #include "snowflake.h"
 #include <QDebug>
 #include <math.h>
-u_int64_t Snowflake::next() {
+
+u64 Snowflake::next() {
 	auto t2 = TimespecV2::now();
 	if (t2 != lastUse) {
 		lastUse = t2;
@@ -13,8 +14,8 @@ u_int64_t Snowflake::next() {
 	return toUint();
 }
 
-u_int64_t Snowflake::toUint() const {
-	u_int64_t v = 0;
+u64 Snowflake::toUint() const {
+    u64 v = 0;
 	v           = ts << 28;
 	v |= (ms & 1023) << 18;
 	v |= (srvId & 255) << 10;
@@ -22,7 +23,7 @@ u_int64_t Snowflake::toUint() const {
 	return v;
 }
 
-void Snowflake::fromUint(const u_int64_t v) {
+void Snowflake::fromUint(const u64 v) {
 	seq   = (v & seqX.mask) >> seqX.pad;
 	srvId = (v & srvIdX.mask) >> srvIdX.pad;
 	ms    = (v & msX.mask) >> msX.pad;
