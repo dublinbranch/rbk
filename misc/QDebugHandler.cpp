@@ -242,7 +242,7 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
         // 	QString msg2slack = QSL("<@U93PHQ62J> ") + warningHeader1 + QSL("\n") + warningHeader2 + QSL("\n\n") + msg;
         // 	sendSlack(msg2slack, config->slackOpt.warningChannel);
         // }
-		{
+        if (config->warningToMail){
 			// subject
 			auto subject = QSL("Error from %1 @ %2 in %3").arg(QCoreApplication::applicationName(), config->instanceName, funkz);
 			// message
