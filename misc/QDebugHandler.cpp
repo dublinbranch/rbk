@@ -1,4 +1,5 @@
 #include "QDebugHandler.h"
+#include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/gitTrick/buffer.h"
 #include "slacksender.h"
@@ -7,6 +8,7 @@
 #include <QDateTime>
 #include <QFile>
 #include <QLoggingCategory>
+#include <sys/stat.h>
 #include <thread>
 
 #ifdef useMinCurl
@@ -60,27 +62,25 @@ void sendMail(QString subject, QString message) {
 	}
 
 #ifdef useMinCurl
-    for (auto& recipient : config->warningMailRecipients) {
-        //NOTE this operation is "slow" so we need a detached thread
-        auto CurlPPisBroken = [=]() {
-            CURLpp marx = CURLpp::Builder()
-            .set_email_details(message.toUtf8().constData(), subject.toUtf8().constData(), recipient.data())
-                .set_smtp_details("spammer@seisho.us", "mjsydiTODNmDLTUqRIZY", "spammer@seisho.us", "smtp://seisho.us:25")
-                .build();
-            marx.perform();
-        };
-        std::thread Carlo(CurlPPisBroken);
-        //The only real problem of this approach, is that if the program immediately exit, nothing will be sent
-        //We can survive
-        Carlo.detach();
-    }
+	for (auto& recipient : config->warningMailRecipients) {
+		//NOTE this operation is "slow" so we need a detached thread
+		auto CurlPPisBroken = [=]() {
+			CURLpp marx = CURLpp::Builder()
+			                  .set_email_details(message.toUtf8().constData(), subject.toUtf8().constData(), recipient.data())
+			                  .set_smtp_details("spammer@seisho.us", "mjsydiTODNmDLTUqRIZY", "spammer@seisho.us", "smtp://seisho.us:25")
+			                  .build();
+			marx.perform();
+		};
+		std::thread Carlo(CurlPPisBroken);
+		//The only real problem of this approach, is that if the program immediately exit, nothing will be sent
+		//We can survive
+		Carlo.detach();
+	}
 #else
-    (void)subject;
-    (void)message;
-    throw ExceptionV2("asked to send a mail, but curl support is not compiled in!");
+	(void)subject;
+	(void)message;
+	throw ExceptionV2("asked to send a mail, but curl support is not compiled in!");
 #endif
-
-
 }
 
 //In loving memory of 80 / 72 char punch card
@@ -92,9 +92,9 @@ std::string submoduleInfo() {
 	static const QVector<QByteArray> stopWords{"Entering", "Entrando"};
 	std::string                      final;
 	QFile                            submoduleInfo(":/submoduleInfo");
-    if(!submoduleInfo.open(QFile::ReadOnly)){
-        return {};
-    }
+	if (!submoduleInfo.open(QFile::ReadOnly)) {
+		return {};
+	}
 
 	QByteArray moduleName;
 	while (true) {
@@ -186,6 +186,18 @@ void commonInitialization(const NanoSpammerConfig* _config) {
 
 //QDebug send in stderr, but we want to use stdout
 void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg) {
+	static QFile logFile;
+	static QFile errFile;
+	if (!logFile.isOpen()) {
+		mkdir("log");
+		auto time = QDateTime::currentDateTime().toString(mysqlDateTimeFormat);
+		logFile.setFileName(QString("log/%1.log").arg(time));
+		logFile.open(QIODevice::Append | QIODevice::Text);
+
+		errFile.setFileName(QString("log/%1.err").arg(time));
+		errFile.open(QIODevice::Append | QIODevice::Text);
+	}
+
 	//Qt 6.6 for *REASON* QsaveFile spam "Empty filename passed to function", but makes no sense
 	static const QString why = "Empty filename passed to function";
 	if (msg == why) {
@@ -214,15 +226,19 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 	if (funkz == nullptr) {
 		funkz = "NOT VALID FUNCTION";
 	}
+
+	QFile* diskLog;
+
 	switch (type) {
 	case QtDebugMsg:
 	case QtInfoMsg:
-		stream = stdout;
+		stream  = stdout;
+		diskLog = &logFile;
 		break;
 	case QtCriticalMsg:
 		[[fallthrough]];
 	case QtFatalMsg:
-        //callViaTwilio();
+		//callViaTwilio();
 		[[fallthrough]];
 	case QtWarningMsg:
 		if (firstStdErrEvent) {
@@ -250,13 +266,21 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 			sendMail(subject, warningMessage);
 		}
 
-		stream = stderr;
+		stream  = stderr;
+		diskLog = &errFile;
 		break;
 	}
 
-	auto msgFinal = localMsg.constData();
+	auto msgFinal = F("{} {}:{} ({})\n{}\n----------\n",
+	                  time,
+	                  file,
+	                  context.line,
+	                  funkz,
+	                  localMsg);
 
-	fprintf(stream, "%s %s:%u (%s)\n%s\n----------\n", time.toUtf8().constData(), file, context.line, funkz, msgFinal);
+	diskLog->write(QByteArray::fromStdString(msgFinal));
+
+	fmt::print(stream, "{}", msgFinal);
 }
 
 //QDebug send in stderr, but we want to use stdout
@@ -311,11 +335,11 @@ void initLocaleTZ() {
 
 	//If EaRTh iS FLAAAT why timezone ?!11!!?
 #ifdef _WIN32
-    // Windows: Use _putenv
-    _putenv("TZ=UTC");
+	// Windows: Use _putenv
+	_putenv("TZ=UTC");
 #else
-    // POSIX: Use setenv
-    setenv("TZ", "UTC", 1);
+	// POSIX: Use setenv
+	setenv("TZ", "UTC", 1);
 #endif
 
 	tzset();
