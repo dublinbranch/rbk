@@ -14,7 +14,6 @@
 #include <execinfo.h>
 #endif
 
-
 std::string stacker(uint skip, QStackerOpt opt) {
 	/** For loading from an arbitrary position
 	ucontext_t uctx;
@@ -98,25 +97,25 @@ using cxa_throw_type = void(void*, std::type_info*, void (*)(void*));
 // Cross-platform symbol resolution
 static cxa_throw_type* resolve_cxa_throw() {
 #ifdef _WIN32
-    // Windows equivalent for dynamic symbol lookup
-    HMODULE handle = GetModuleHandle(nullptr); // Get the current module
-    if (!handle) {
-        return nullptr;
-    }
-    FARPROC func = GetProcAddress(handle, "__cxa_throw");
-    if (!func) {
-        return nullptr;
-    }
-    //windows is still in 16bit era with FARPROC
+	// Windows equivalent for dynamic symbol lookup
+	HMODULE handle = GetModuleHandle(nullptr); // Get the current module
+	if (!handle) {
+		return nullptr;
+	}
+	FARPROC func = GetProcAddress(handle, "__cxa_throw");
+	if (!func) {
+		return nullptr;
+	}
+	//windows is still in 16bit era with FARPROC
 // Suppress the warning for this specific cast
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-function-type"
-    auto result = reinterpret_cast<cxa_throw_type*>(func);
+	auto result = reinterpret_cast<cxa_throw_type*>(func);
 #pragma GCC diagnostic pop
-    return result;
+	return result;
 #else
-    // POSIX dynamic symbol lookup
-    return reinterpret_cast<cxa_throw_type*>(dlsym(RTLD_NEXT, "__cxa_throw"));
+	// POSIX dynamic symbol lookup
+	return reinterpret_cast<cxa_throw_type*>(dlsym(RTLD_NEXT, "__cxa_throw"));
 #endif
 }
 
