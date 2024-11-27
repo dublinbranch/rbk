@@ -12,18 +12,6 @@
 #ifndef BOOST_JSON_DETAIL_VALUE_TO_HPP
 #define BOOST_JSON_DETAIL_VALUE_TO_HPP
 
-#ifndef BOOST_PATH_PUSH
-#define BOOST_PATH_PUSH(x) /* x */
-#endif
-
-#ifndef BOOST_PATH_POP
-#define BOOST_PATH_POP
-#endif
-
-#ifndef BOOST_MESSAGE
-#define BOOST_MESSAGE(x) /* x */
-#endif
-
 #include <boost/json/value.hpp>
 #include <boost/json/conversion.hpp>
 #include <boost/json/result_for.hpp>
@@ -379,8 +367,9 @@ struct to_described_member
         {
             BOOST_IF_CONSTEXPR( !is_optional_like<M>::value )
             {
-                BJIntrusive::key = D::name;
+				BJIntrusive::key = D::name;
                 BOOST_MESSAGE(fmt::format("the key >> {} << is non optional and missing in path {}", D::name, BJIntrusive::composePath()))
+               
                 system::error_code ec;
                 BOOST_JSON_FAIL(ec, error::unknown_name);
                 res = {boost::system::in_place_error, ec};
@@ -388,8 +377,8 @@ struct to_described_member
             return;
         }
 
-        BOOST_PATH_PUSH(D::name)
-
+		BOOST_PATH_PUSH(D::name)
+		
 #if defined(__GNUC__) && BOOST_GCC_VERSION >= 80000 && BOOST_GCC_VERSION < 11000
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wunused"
@@ -427,7 +416,7 @@ value_to_impl(
     {
         system::error_code ec;
         BOOST_JSON_FAIL(ec, error::not_object);
-        res = {boost::system::in_place_error, ec};        
+        res = {boost::system::in_place_error, ec};
         return res;
     }
 
