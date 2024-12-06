@@ -306,6 +306,7 @@ HEADERS += \
     $$PWD/minMysql/sqlRow.h \
     $$PWD/minMysql/sqlcomposer.h \
     $$PWD/minMysql/sqlresult.h \
+    $$PWD/minMysql/sqlrowv2swap.h \
     $$PWD/misc/checkoptionalareset.h \
     $$PWD/misc/ParallelForeach.h \
     $$PWD/misc/echo.h \
@@ -369,6 +370,7 @@ SOURCES += \
     $$PWD/minMysql/runnable.cpp \
     $$PWD/minMysql/sqlcomposer.cpp \
     $$PWD/minMysql/sqlresult.cpp \
+    $$PWD/minMysql/sqlrowv2swap.cpp \
     $$PWD/misc/checkoptionalareset.cpp \
     $$PWD/misc/echo.cpp \
     $$PWD/misc/typeinfo.cpp \
