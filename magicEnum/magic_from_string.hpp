@@ -35,9 +35,14 @@ std::vector<std::string_view> asString(const std::vector<Type>& t) {
 }
 
 template <typename Type>
-std::string composeError(std::string_view key, Type) {
+std::string composeError(std::string_view key) {
 	auto names = enum_names<Type>();
 	return fmt::format("The key >>>{}<<< is not contained in the enum >>>{}<<<", key, fmt::join(names, " - "));
+}
+
+template <typename Type>
+std::string composeError(std::string_view key, Type) {
+	return composeError<Type>(key);
 }
 
 template <typename T>
@@ -52,7 +57,12 @@ template <typename T>
 
 template <typename T>
 [[nodiscard]] T fromString(const std::string_view& _string) {
-	return enum_cast<T>(_string).value();
+	auto v = enum_cast<T>(_string);
+	if (v.has_value()) {
+		return v.value();
+	}
+	auto msg = composeError<T>(_string);
+	throw ExceptionV2(msg);
 }
 
 template <typename T>

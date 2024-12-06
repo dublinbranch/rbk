@@ -9,6 +9,8 @@
 #include "rbk/types/isDescribed.h"
 #include "rbk/types/isOptional.h"
 
+#include "rbk/minMysql/sqlcomposer.h"
+
 //To use this the mapped obj need to be described
 
 template <class T,
@@ -50,6 +52,29 @@ std::vector<T> resultSwap(const SqlResultV2& res) {
 		result.push_back(std::move(t));
 	}
 	return result;
+}
+
+template <class T,
+          class Bd = boost::describe::describe_bases<T, boost::describe::mod_any_access>,
+          class Md = boost::describe::describe_members<T, boost::describe::mod_any_access>>
+        requires isDescribedClass<T>
+void toSql(const T& src, SqlComposer& sql) {
+	boost::mp11::mp_for_each<Bd>([&](auto D) {
+		using B = typename decltype(D)::type;
+		toSql((B const&)src, sql);
+	});
+
+	boost::mp11::mp_for_each<Md>([&](auto D) {
+		using Type = std::remove_cvref_t<decltype(src.*D.pointer)>;
+
+		if constexpr (boost::describe::has_describe_members<Type>::value) {
+			// Nested struct, call recursiveTraversal
+			toSql(src, sql);
+		} else {
+			//TODO handle optional to emulate null ?
+			sql.push(D.name,src.*D.pointer);
+		}
+	});
 }
 
 #endif // SQLROWV2SWAP_H
