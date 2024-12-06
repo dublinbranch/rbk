@@ -124,7 +124,6 @@ HEADERS += \
     $$PWD/mapExtensor/missingkeyex.h \
     $$PWD/minMysql/checkSchema/CheckSchemaConf.h \
     $$PWD/minMysql/checkSchema/CheckSchemaDescribe.h \
-    $$PWD/minMysql/rowSwappable.h \
     $$PWD/minMysql/rowswap.h \
     $$PWD/minMysql/sqlbuffering.h \
 	$$PWD/misc/NanoSpammerConfigDescribe.h \
