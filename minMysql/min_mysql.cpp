@@ -192,10 +192,14 @@ Connection Info: {})",
 
 			sqlLogger.error = err;
 			// this line is needed for proper email error reporting
-			qWarning().noquote() << QString::fromStdString(err) << QStacker16();
-			cxaNoStack     = true;
-			auto exception = DBException(err, DBException::Error::NA);
-			throw exception;
+			{
+				//many times this call is very nested, so we bump the default stack trace lenght
+				ResetOnExit r(stackerMaxFrame, (uint)25);
+				qWarning().noquote() << QString::fromStdString(err) << QStacker16();
+				cxaNoStack     = true;
+				auto exception = DBException(err, DBException::Error::NA);
+				throw exception;
+			}
 		}
 	}
 	return sqlLogger;
@@ -1021,31 +1025,29 @@ Query: {:.3f}	Fetch: {:.3f} )",
 #if __has_include(<poll.h>)
 #include <poll.h>
 
-
 bool DB::completedQuery() const {
-    auto conn = getConn();
+	auto conn = getConn();
 
-    auto error = mysql_errno(conn);
-    if (error != 0) {
-        qWarning().noquote() << F16("Mysql error for {} error was {} code: {}\n{}", state->lastSQL, mysql_error(conn), error, stacker(3));
-        throw 1025;
-    }
-    int err;
+	auto error = mysql_errno(conn);
+	if (error != 0) {
+		qWarning().noquote() << F16("Mysql error for {} error was {} code: {}\n{}", state->lastSQL, mysql_error(conn), error, stacker(3));
+		throw 1025;
+	}
+	int err;
 
-    auto event = somethingHappened(conn, signalMask);
-    if (event) {
-        event = mysql_real_query_cont(&err, conn, event);
-        if (err) {
-            throw QSL("Error executing ASYNC query (cont):") + mysql_error(conn);
-        }
-        // if we are still listening to an event, return false
-        // else if we have no more event to wait return true
-        return !event;
-    } else {
-        return false;
-    }
+	auto event = somethingHappened(conn, signalMask);
+	if (event) {
+		event = mysql_real_query_cont(&err, conn, event);
+		if (err) {
+			throw QSL("Error executing ASYNC query (cont):") + mysql_error(conn);
+		}
+		// if we are still listening to an event, return false
+		// else if we have no more event to wait return true
+		return !event;
+	} else {
+		return false;
+	}
 }
-
 
 u64 DB::fetchAdvanced(FetchVisitor* visitor) const {
 	auto conn = getConn();
