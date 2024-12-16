@@ -254,11 +254,11 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 		auto warningHeader1 = getHeader1();
 		auto warningHeader2 = getHeader2(file, context.line, funkz);
 
-        // {
-        // 	QString msg2slack = QSL("<@U93PHQ62J> ") + warningHeader1 + QSL("\n") + warningHeader2 + QSL("\n\n") + msg;
-        // 	sendSlack(msg2slack, config->slackOpt.warningChannel);
-        // }
-        if (config->warningToMail){
+		// {
+		// 	QString msg2slack = QSL("<@U93PHQ62J> ") + warningHeader1 + QSL("\n") + warningHeader2 + QSL("\n\n") + msg;
+		// 	sendSlack(msg2slack, config->slackOpt.warningChannel);
+		// }
+		if (config->warningToMail) {
 			// subject
 			auto subject = QSL("Error from %1 @ %2 in %3").arg(QCoreApplication::applicationName(), config->instanceName, funkz);
 			// message
@@ -322,16 +322,7 @@ void initLocaleTZ() {
 	loadBuffer();
 
 	//We are server side we do not care about human broken standard
-	std::setlocale(LC_ALL, "C");
-	std::locale::global(std::locale("C"));
-
-	// qDebug()
-	// 	<< "Applicationlocale setting is "
-	// 	<< std::locale().name().c_str() << '\n';
-
-	//Also for Qt for translation ecc
-	QLocale l(QLocale::C, QLocale::UnitedStates);
-	QLocale::setDefault(l);
+	std::setlocale(LC_NUMERIC, "C");
 
 	//If EaRTh iS FLAAAT why timezone ?!11!!?
 #ifdef _WIN32

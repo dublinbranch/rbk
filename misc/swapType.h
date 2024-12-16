@@ -187,7 +187,7 @@ void swapType(const std::string& source, D& dest) {
 		}
 		swapType(source, t);
 		dest = t;
-	} else if constexpr (TagInvokable<D>) {
+	} else if constexpr (TagInvokable_SS<D>) {
 		RBK::swapTypeToTag<D> tag;
 		dest = tag_invoke(tag, source);
 	} else {
