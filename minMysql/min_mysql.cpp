@@ -335,11 +335,11 @@ SqlResultV2 DB::queryCacheV2(const StringAdt& sql, uint ttl) {
 	SetOnExit noCache(state.get().noCacheOnEmpty, false);
 	if (ttl) {
 		// small trick to avoid calling over and over the function
-		static bool fraud = mkdir(QSL("cachedSQL_%1/").arg(conf.cacheId));
+		static bool fraud = mkdir(QSL("cachedSQL_V2_%1/").arg(conf.cacheId));
 		(void)fraud;
 
 		//We have a lock to prevent concurrent write in this process, but nothing to protect against other, just use another folder
-		QString name = QSL("cachedSQL_%1/").arg(conf.cacheId) + sha1(sql);
+		QString name = QSL("cachedSQL_V2_%1/").arg(conf.cacheId) + sha1(sql);
 
 		//We do not really care about cache stampede here... and we write the file in an atomic way so we avoid torn read. So no need for mutex,
 		//if multiple thread will write the same file is not a problem they will just overwrite the final version and not mangle each other
