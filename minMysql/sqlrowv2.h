@@ -9,22 +9,6 @@ namespace SqlResV2 {
 struct Field {
 	MyType type;
 	uint   pos;
-
-	// Friend declaration for serialization
-	friend QDataStream& operator<<(QDataStream& out, const Field& field) {
-		// Serialize each member
-		out << field.type;
-		out << field.pos;
-		return out;
-	}
-
-	// Friend declaration for deserialization
-	friend QDataStream& operator>>(QDataStream& in, Field& field) {
-		// Deserialize each member
-		in >> field.type;
-		in >> field.pos;
-		return in;
-	}
 };
 
 using TypeMap = mapV2<std::string, Field, std::less<>>;
@@ -43,18 +27,10 @@ class SqlRowV2 {
 	[[nodiscard]] bool                 empty() const;
 
 	// Friend declaration for serialization
-	friend QDataStream& operator<<(QDataStream& out, const SqlRowV2& row) {
-		out << row.data;
-		return out;
-	}
+	friend QDataStream& operator<<(QDataStream& out, const SqlRowV2& row);
 
 	// Friend declaration for deserialization
-	friend QDataStream& operator>>(QDataStream& in, SqlRowV2& row) {
-		// Clear the map first to prepare for deserialization
-		row.data.clear();
-		in >> row.data;
-		return in;
-	}
+	friend QDataStream& operator>>(QDataStream& in, SqlRowV2& row);
 
 	struct Founded {
 		const QByteArray* val   = nullptr;
@@ -135,31 +111,14 @@ class SqlResultV2 : public QVector<SqlRowV2> {
 	SqlResultV2();
 	SqlResultV2(const sqlResult& old);
 	// Friend declaration for serialization
-	friend QDataStream& operator<<(QDataStream& out, const SqlResultV2& result) {
-		// Serialize QVector<SqlRowV2> (inherited part)
-		out << static_cast<const QVector<SqlRowV2>&>(result);
-		out << *result.columns;
-		return out;
-	}
+	friend QDataStream& operator<<(QDataStream& out, const SqlResultV2& result);
 
 	// Friend declaration for deserialization
-	friend QDataStream& operator>>(QDataStream& in, SqlResultV2& result) {
-		// Deserialize QVector<SqlRowV2> (inherited part)
-		in >> static_cast<QVector<SqlRowV2>&>(result);
-
-		// Deserialize additional members
-		in >> *result.columns;
-		result.fromCache = true;
-		for (auto& row : result) {
-			row.columns = result.columns;
-		}
-		return in;
-	}
+	friend QDataStream& operator>>(QDataStream& in, SqlResultV2& result);
 
 	bool    fromCache = false;
 	QString toString();
 
 	std::shared_ptr<SqlResV2::TypeMap> columns;
 };
-
 #endif // SQLROWV2_H
