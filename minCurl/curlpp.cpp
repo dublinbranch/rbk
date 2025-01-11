@@ -16,7 +16,7 @@ std::mutex                                      CURLpp::error_mutex;
  * performs the curl code with the parameters given from the builder
  * @return a string containing "error:" if something went wrong, the curl response otherwise
  */
-std::string CURLpp::perform() {
+std::expected<std::string, std::string> CURLpp::perform() {
 	lastError.clear();
 	CURLcode     res;
 	std::string  response;
@@ -55,6 +55,7 @@ std::string CURLpp::perform() {
 		log("curl errorcode", res);
 		log("curl error", curl_easy_strerror(res));
 		lastError = "error: curl error: "s + curl_easy_strerror(res) + ", url:" + copia->url + ", timeout:" + std::to_string(copia->timeout);
+		return std::unexpected(lastError);
 	}
 #endif
 

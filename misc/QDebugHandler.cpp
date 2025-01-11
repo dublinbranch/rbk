@@ -8,6 +8,7 @@
 #include <QDateTime>
 #include <QFile>
 #include <QLoggingCategory>
+#include <iostream>
 #include <sys/stat.h>
 #include <thread>
 
@@ -69,7 +70,10 @@ void sendMail(QString subject, QString message) {
 			                  .set_email_details(message.toUtf8().constData(), subject.toUtf8().constData(), recipient.data())
 			                  .set_smtp_details("spammer@seisho.us", "mjsydiTODNmDLTUqRIZY", "spammer@seisho.us", "smtp://seisho.us:25")
 			                  .build();
-			marx.perform();
+			auto res = marx.perform();
+			if (!res.has_value()) {
+				std::cerr << res.error();
+			}
 		};
 		std::thread Carlo(CurlPPisBroken);
 		//The only real problem of this approach, is that if the program immediately exit, nothing will be sent
@@ -227,7 +231,7 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 		funkz = "NOT VALID FUNCTION";
 	}
 
-	QFile* diskLog;
+	QFile* diskLog = nullptr;
 
 	switch (type) {
 	case QtDebugMsg:
@@ -277,8 +281,9 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 	                  context.line,
 	                  funkz,
 	                  localMsg);
-
-	diskLog->write(QByteArray::fromStdString(msgFinal));
+	if (diskLog) {
+		diskLog->write(QByteArray::fromStdString(msgFinal));
+	}
 
 	fmt::print(stream, "{}", msgFinal);
 }
