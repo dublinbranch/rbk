@@ -94,6 +94,7 @@ SOURCES += \
     $$PWD/minMysql/rowswap.cpp \
     $$PWD/minMysql/sqlbuffering.cpp \
     $$PWD/misc/base32.cpp \
+    $$PWD/misc/csv.cpp \
     $$PWD/misc/qelapsedtimerv2.cpp \
     $$PWD/misc/sleep.cpp \
     $$PWD/string/qstringview.cpp \
@@ -129,6 +130,7 @@ HEADERS += \
 	$$PWD/misc/NanoSpammerConfigDescribe.h \
     $$PWD/misc/base32.h \
     $$PWD/misc/controlFlowMacro.h \
+	$$PWD/misc/csv.h \
     $$PWD/misc/decimate.h \
     $$PWD/misc/qelapsedtimerv2.h \
     $$PWD/misc/sleep.h \
