@@ -55,7 +55,7 @@ bool QSaveV2::open(QIODevice::OpenMode flags, bool quiet) {
 	return true;
 }
 
-FPCRes filePutContents(const QByteArray& pay, const QString& fileName, bool verbose) {
+FPCRes filePutContents(const QByteAdt& pay, const QStringAdt& fileName, bool verbose) {
 	QSaveFile file;
 	file.setFileName(fileName);
 	// TODO nel caso il file non sia scribile (di un altro utente) ritorna un vaghissimo WriteError, indicare se possibile meglio!
@@ -112,7 +112,7 @@ QByteArray fileGetContents(const QString& fileName, bool quiet, bool& success) {
 	return x;
 }
 
-bool fileAppendContents(const QByteArray& pay, const QString& fileName) {
+bool fileAppendContents(const QByteAdt& pay, const QStringAdt& fileName) {
 	static std::mutex           mutex;
 	std::lock_guard<std::mutex> lock(mutex);
 	QFileXT                     file;
@@ -189,38 +189,13 @@ void checkFileLock(QString path, uint minDelay) {
 		QByteArray x;
 		auto       f = fileUnSerialize(pathTs, x, minDelay);
 		if (f.fileExists && f.valid) {
-			auto msg = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss ")
-                       + QSL(" file %1 is NOT locked, but is too recent, last application start was less than %2 second ago (so we will wait a bit to avoid spamming)").arg(path).arg(minDelay);
+			auto msg = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss ") + QSL(" file %1 is NOT locked, but is too recent, last application start was less than %2 second ago (so we will wait a bit to avoid spamming)").arg(path).arg(minDelay);
 			qWarning() << msg;
 			sleep(minDelay);
 			exit(1);
 		}
 	}
 	filePutContents(pathTs, pathTs);
-}
-
-FPCRes filePutContents(const QString& pay, const QString& fileName, bool verbose) {
-	return filePutContents(pay.toUtf8(), fileName, verbose);
-}
-
-FPCRes filePutContents(const std::string& pay, const QString& fileName, bool verbose) {
-	return filePutContents(QByteArray::fromStdString(pay), fileName, verbose);
-}
-
-FPCRes filePutContents(const std::string& pay, const std::string& fileName, bool verbose) {
-	return filePutContents(QByteArray::fromStdString(pay), QString::fromStdString(fileName), verbose);
-}
-
-FPCRes filePutContents(const QByteArray& pay, const std::string& fileName, bool verbose) {
-	return filePutContents(pay, QString::fromStdString(fileName), verbose);
-}
-
-FPCRes filePutContents(const QByteArray& pay, const char* fileName, bool verbose) {
-	return filePutContents(pay, QString(fileName), verbose);
-}
-
-bool fileAppendContents(const std::string& pay, const QString& fileName) {
-	return fileAppendContents(QByteArray::fromStdString(pay), fileName);
 }
 
 // Much slower but more flexible, is that ever used ?
@@ -481,14 +456,6 @@ void logWithTime(const QString& logFile, const std::string& msg) {
 
 void logWithTime(const QString& logFile, const QByteArray& msg) {
 	logWithTime(logFile, msg.toStdString());
-}
-
-bool fileAppendContents(const QString& pay, const QString& fileName) {
-	return fileAppendContents(pay.toUtf8(), fileName);
-}
-
-bool fileAppendContents(const std::string& pay, const std::string& fileName) {
-	return fileAppendContents(QByteArray::fromStdString(pay), QString::fromStdString(fileName));
 }
 
 QString RotableFile(const QString& name_, QString suffix) {

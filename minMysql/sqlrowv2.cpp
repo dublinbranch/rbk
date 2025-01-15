@@ -38,7 +38,7 @@ SqlResultV2::SqlResultV2(const sqlResult& old) {
 
 QDataStream& operator<<(QDataStream& out, const SqlResultV2& result) {
 	// Serialize QVector<SqlRowV2> (inherited part)
-	const QList<SqlRowV2>& baseRef = result; // Get reference to base class
+	const QVector<SqlRowV2>& baseRef = result; // Get reference to base class
 	out << baseRef;
 	out << *result.columns;
 	return out;
@@ -46,7 +46,7 @@ QDataStream& operator<<(QDataStream& out, const SqlResultV2& result) {
 
 QDataStream& operator>>(QDataStream& in, SqlResultV2& result) {
 	// Deserialize QVector<SqlRowV2> (inherited part)
-	QList<SqlRowV2>& baseRef = result; // Get reference to base class
+	QVector<SqlRowV2>& baseRef = result; // Get reference to base class
 	in >> baseRef;                     // Deserialize directly into base class reference
 
 	// Deserialize additional members
