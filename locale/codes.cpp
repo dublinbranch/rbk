@@ -666,6 +666,7 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	    {"kiribati", "KI"},
 	    {"comoros", "KM"},
 	    {"saint kitts and nevis", "KN"},
+	    {"st. kitts & nevis", "KN"},
 	    {"north korea", "KP"},
 	    {"south korea", "KR"},
 	    {"republic of korea", "KR"},
