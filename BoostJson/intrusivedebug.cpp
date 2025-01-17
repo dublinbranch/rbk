@@ -13,6 +13,7 @@ std::string BJIntrusive::composePath() {
 	return fmt::format("/{}", fmt::join(path, "/"));
 }
 
+//TODO add a struct for options, one of those is if to add the original JSON in the error message
 std::string BJIntrusive::composeMessage(bj::value* original_, bj::value target) {
 	original  = original_;
 	auto path = composePath();
