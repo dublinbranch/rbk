@@ -2,6 +2,7 @@
 #include "unistd.h"
 
 #include <cstdlib>
+#include <fmt/color.h>
 #include <mutex>
 #include <thread>
 
@@ -22,6 +23,7 @@ using namespace std;
 
 struct ByExpire {};
 struct ByKey {};
+struct ByTypeHashCode {};
 
 using boost::multi_index_container;
 using namespace boost::multi_index;
@@ -29,6 +31,8 @@ using namespace boost::multi_index;
 struct ApcuCache_index : indexed_by<
                              hashed_unique<
                                  tag<ByKey>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, std::string, key)>,
+                             hashed_non_unique<
+                                 tag<ByTypeHashCode>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, size_t, typeHashCode)>,
                              ordered_non_unique<
                                  tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, i64, expireAt)>> {};
 
@@ -39,6 +43,8 @@ static ApcuCache* cache = nullptr;
 //Orrible, as will trigger immediately the GC thread creation ecc, those must be delayed, and most important enabled AFTER main if needed in the project...
 static APCU theAPCU;
 using DiskMapType = QMapV2<std::string, APCU::DiskValue>;
+
+static const int version = 4;
 
 void diskSync() {
 	if (APCU::disableAPCU) {
@@ -158,14 +164,14 @@ void APCU::diskSyncP2() {
 		{
 			auto el = any_cast<QByteArray>(&iter.value);
 			if (el) {
-				toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), *el});
+				toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), iter.typeHashCode, *el});
 				continue;
 			}
 		}
 		{
 			auto el = any_cast<std::shared_ptr<Cachable>>(&iter.value);
 			if (el) {
-				toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), el->get()->serialize()});
+				toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), iter.typeHashCode, el->get()->serialize()});
 			}
 		}
 	}
@@ -177,8 +183,8 @@ void APCU::diskSyncP2() {
 		qCritical("impossible to save apcu cache!");
 	}
 	QDataStream out(&file);
-	//how to write in qt6 a map into the stream ?
 
+	out << version;
 	out << toBeWritten;
 	file.commit();
 	//fmt::print("{} byte wrote\n", file.size());
@@ -202,6 +208,13 @@ void APCU::diskLoad() {
 		return;
 	}
 	QDataStream in(&file);
+	int         versionDisk = 0;
+	in >> versionDisk;
+	if (version != versionDisk) {
+		auto str = fmt::format(fg(fmt::color::red), "APCU version outdated! Remove the apcu.dat file to continue on disk {} expected {}\n", versionDisk, version);
+		fmt::print(stderr, "{}", str);
+		exit(1);
+	}
 	DiskMapType toBeWritten;
 
 	std::shared_lock lock(innerLock);
@@ -211,9 +224,10 @@ void APCU::diskLoad() {
 
 	for (auto&& [key, line] : toBeWritten) {
 		APCU::Row row;
-		row.key      = key;
-		row.value    = line.value;
-		row.expireAt = line.expireAt;
+		row.key          = key;
+		row.typeHashCode = line.typeHashCode;
+		row.value        = line.value;
+		row.expireAt     = line.expireAt;
 		//ofc if you reload something from disk it was born persistent!
 		row.persistent = true;
 		//fmt::print("reloaded {} expire @ {} \n", key, line.expireAt);
@@ -273,6 +287,19 @@ void APCU::garbageCollector_F2() {
 	}
 	garbageCollectorRunning.clear();
 	garbageCollectorRunning.notify_one();
+}
+
+std::vector<std::any*> APCU::getAllByTypeInner(size_t hashCode) {
+	auto&            key = cache->get<ByTypeHashCode>();
+	std::shared_lock lock(innerLock);
+
+	std::vector<std::any*> result;
+	auto                   range = key.equal_range(hashCode);
+	for (auto it = range.first; it != range.second; ++it) {
+		auto el = const_cast<std::any*>(&it->value);
+		result.push_back(el);
+	}
+	return result;
 }
 
 void apcuStore(const APCU::Row& row) {

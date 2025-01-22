@@ -8,9 +8,9 @@
 #include <QDateTime>
 #include <QString>
 #include <any>
+#include <concepts>
 #include <memory>
 #include <shared_mutex>
-#include <concepts>
 
 #define QSL(str) QStringLiteral(str)
 void throwTypeError(const std::type_info* found, const std::type_info* expected);
@@ -55,6 +55,7 @@ class APCU : private NoCopy {
 
 		//Member
 		std::string key;
+		size_t      typeHashCode = 0;
 
 		//0 will disable flushing
 		i64 expireAt = 1;
@@ -80,9 +81,12 @@ class APCU : private NoCopy {
 		template <class T>
 		void setValue(T& obj) {
 			if constexpr (is_shared_ptr<std::decay_t<T>>::value) {
+				// Get the hash code of the type that the shared_ptr points to
+				typeHashCode = typeid(typename T::element_type).hash_code();
 				// If T is a std::shared_ptr
 				setValueInner(obj);
 			} else {
+				typeHashCode = typeid(obj).hash_code();
 				// If T is not a std::shared_ptr, create one and use it
 				auto sharedPtr = std::make_shared<std::decay_t<T>>(std::forward<T>(obj));
 				setValueInner(sharedPtr);
@@ -175,8 +179,26 @@ class APCU : private NoCopy {
 
 	void clear();
 
+	//This is normally used to get all the sessions
+	template <class T>
+	std::vector<std::shared_ptr<T>> getAllByType() {
+		auto                            hashCode = typeid(T).hash_code();
+		auto                            vec      = getAllByTypeInner(hashCode);
+		std::vector<std::shared_ptr<T>> final;
+
+		for (size_t i = 0; i < vec.size(); i++) {
+			auto& el          = vec[i];
+			auto  cachablePtr = any_cast<std::shared_ptr<Cachable>>(*el);
+			auto  dyn         = std::dynamic_pointer_cast<T>(cachablePtr);
+			final.push_back(std::move(dyn));
+		}
+
+		return final;
+	}
+
 	struct DiskValue {
-		quint32    expireAt = 1;
+		quint32    expireAt     = 1;
+		size_t     typeHashCode = 0;
 		QByteArray value;
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -213,6 +235,8 @@ class APCU : private NoCopy {
 	qint64            startedAt = 0;
 	std::atomic_flag  garbageCollectorRunning;
 	std::atomic_flag  requestGarbageCollectorStop = false;
+
+	std::vector<std::any*> getAllByTypeInner(size_t hashCode);
 
 	//	/**
 	//	 * @brief apcuTryStore
