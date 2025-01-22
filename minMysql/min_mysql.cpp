@@ -1121,7 +1121,12 @@ void SQLLogger::flush() {
 	if (flushed) {
 		return;
 	}
-	if (!(logError || logSql)) {
+	//If no error, and no logSql
+	if (error.empty() && !logSql) {
+		return;
+	}
+	//If there is an error but logError is off
+	if (!error.empty() && !logError) {
 		return;
 	}
 	flushed = true;
