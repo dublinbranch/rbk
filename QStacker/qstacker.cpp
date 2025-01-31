@@ -234,7 +234,10 @@ void messanger(const QString& msg, CxaLevel level) {
 	}
 }
 
-std::string stackerRDX(uint skip)
-{
-    return stacker(skip);
+std::string stackerRDX(uint skip) {
+	return stacker(skip);
+}
+
+void stacker_CERR() {
+	std::cerr << stacker(6);
 }

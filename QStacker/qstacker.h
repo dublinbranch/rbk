@@ -21,6 +21,8 @@ Q_REQUIRED_RESULT QString     QStacker16(uint skip = 4, QStackerOpt opt = QStack
 Q_REQUIRED_RESULT QString     QStacker16Light(uint skip = 5, QStackerOpt opt = QStackerOptLight);
 
 std::string stackerRDX(uint skip = 5);
+//This one we use normally as an inline def to avoid include any in non cooperative header file that just suicide the program
+void stacker_CERR();
 /**
  * @brief StackerMinLevel is used to cut away the initial part of the stack trace
  * execially when running a thread there is a lot of stuff
