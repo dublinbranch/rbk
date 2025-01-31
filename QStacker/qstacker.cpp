@@ -233,3 +233,8 @@ void messanger(const QString& msg, CxaLevel level) {
 		return;
 	}
 }
+
+std::string stackerRDX(uint skip)
+{
+    return stacker(skip);
+}
