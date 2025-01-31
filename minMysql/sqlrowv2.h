@@ -69,7 +69,7 @@ class SqlRowV2 {
 	template <class Key, class Value>
 	bool get(const Key& k, Value& v) const {
 		if (auto pos = fpOpt(k); pos > -1) {
-			if constexpr (std::is_same_v<Value, QByteArray>) {
+			if constexpr (std::is_same_v<Value, std::string>) {
 				v = data[pos];
 			} else {
 				swapType(data[pos], v);

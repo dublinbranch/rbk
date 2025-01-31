@@ -105,7 +105,7 @@ void swapType(const std::string& source, D& dest) {
 		dest = QString::fromStdString(source);
 		return;
 	} else if constexpr (std::is_same<D, QByteArray>::value) {
-		dest = source;
+		dest = QByteArray::fromStdString(source);
 		return;
 	} else if constexpr (std::is_same<D, std::string>::value) {
 		dest = source;
