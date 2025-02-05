@@ -214,6 +214,7 @@ void handle_request(
 		res.prepare_payload();
 		send(stream, res);
 		registerFlushTime();
+		return;
 	}
 
 	try {
@@ -336,8 +337,6 @@ void handle_request(
 		auto msg = status.serializeMsg("unkown exception", true);
 		fileAppendContents("\n------\n " + msg, conf->logFolder + "/unkException.log");
 	}
-
-	return;
 }
 
 //------------------------------------------------------------------------------
