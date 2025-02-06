@@ -302,7 +302,6 @@ QDebug& operator<<(QDebug& out, const CheckSchema::Key& key) {
 
 CheckSchema::CheckSchema(DB* db_, QStringList database_)
     : db(db_), databases(database_) {
-	mkdir(basePath + "/db");
 }
 
 QDataStream& operator<<(QDataStream& out, const CheckSchema::Key& key) {
