@@ -4,11 +4,11 @@
 #include <rbk/defines/stringDefine.h>
 
 void loadBuffer() {
-    COMPILATION_TIME_buffer = QDateTime::currentDateTimeUtc().toString(mysqlDateTimeFormat).toUtf8();
+	COMPILATION_TIME_buffer = __DATE__ " " __TIME__;
 #ifdef GIT_STATUS
-	GIT_STATUS_buffer       = GIT_STATUS;
+	GIT_STATUS_buffer = GIT_STATUS;
 #else
-    GIT_STATUS_buffer    = "Not Available";
+	GIT_STATUS_buffer = "Not Available";
 #endif
 	//GIT_SUBMODULES_buffer   = GIT_SUBMODULES;
 }

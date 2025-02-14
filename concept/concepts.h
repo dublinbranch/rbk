@@ -2,6 +2,7 @@
 #define HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_CONCEPT_ISRVALUE_H
 
 #include <concepts>
+#include <string>
 class QByteArray;
 
 //This do not work!! to constrain a template! no idea why, do not use
@@ -19,7 +20,11 @@ concept TagInvokable = requires(const RBK::swapTypeToTag<T> tag, const QByteArra
 };
 
 template <typename T>
-concept isEnum = std::is_enum_v<T>;
+concept TagInvokable_SS = requires(const RBK::swapTypeToTag<T> tag, const std::string& source) {
+	{ tag_invoke(tag, source) };
+};
 
+template <typename T>
+concept isEnum = std::is_enum_v<T>;
 
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_CONCEPT_ISRVALUE_H

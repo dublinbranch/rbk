@@ -94,6 +94,7 @@ SOURCES += \
     $$PWD/minMysql/rowswap.cpp \
     $$PWD/minMysql/sqlbuffering.cpp \
     $$PWD/misc/base32.cpp \
+    $$PWD/misc/csv.cpp \
     $$PWD/misc/qelapsedtimerv2.cpp \
     $$PWD/misc/sleep.cpp \
     $$PWD/string/qstringview.cpp \
@@ -124,12 +125,12 @@ HEADERS += \
     $$PWD/mapExtensor/missingkeyex.h \
     $$PWD/minMysql/checkSchema/CheckSchemaConf.h \
     $$PWD/minMysql/checkSchema/CheckSchemaDescribe.h \
-    $$PWD/minMysql/rowSwappable.h \
     $$PWD/minMysql/rowswap.h \
     $$PWD/minMysql/sqlbuffering.h \
 	$$PWD/misc/NanoSpammerConfigDescribe.h \
     $$PWD/misc/base32.h \
     $$PWD/misc/controlFlowMacro.h \
+	$$PWD/misc/csv.h \
     $$PWD/misc/decimate.h \
     $$PWD/misc/qelapsedtimerv2.h \
     $$PWD/misc/sleep.h \
@@ -306,6 +307,7 @@ HEADERS += \
     $$PWD/minMysql/sqlRow.h \
     $$PWD/minMysql/sqlcomposer.h \
     $$PWD/minMysql/sqlresult.h \
+    $$PWD/minMysql/sqlrowv2swap.h \
     $$PWD/misc/checkoptionalareset.h \
     $$PWD/misc/ParallelForeach.h \
     $$PWD/misc/echo.h \
@@ -369,6 +371,7 @@ SOURCES += \
     $$PWD/minMysql/runnable.cpp \
     $$PWD/minMysql/sqlcomposer.cpp \
     $$PWD/minMysql/sqlresult.cpp \
+    $$PWD/minMysql/sqlrowv2swap.cpp \
     $$PWD/misc/checkoptionalareset.cpp \
     $$PWD/misc/echo.cpp \
     $$PWD/misc/typeinfo.cpp \

@@ -1,9 +1,11 @@
 #include "folder.h"
 #include "filefunction.h"
 #include "rbk/QStacker/qstacker.h"
+#include "rbk/fmtExtra/includeMe.h"
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
+#include <iostream>
 #include <mutex>
 
 bool mkdir(const QString& dirName) {
@@ -11,10 +13,14 @@ bool mkdir(const QString& dirName) {
 	std::scoped_lock<std::mutex> scoped(lock);
 	QDir                         dir = QDir(dirName);
 	if (!dir.mkpath(".")) {
-		qWarning().noquote() << "impossible to create working dir" << dirName << "\n"
-                             << "maybe" << QCoreApplication::applicationName() << "is running without the necessary privileges"
-                             << QStacker16Light();
+		auto msg = F16(R"(
+Impossible to create working dir: >>> {} <<<
+Maybe {} is running without the necessary privileges ?
+	)",
+		               dirName, QCoreApplication::applicationName()) +
+		           QStacker16Light();
 
+		std::cerr << msg.toStdString();
 		return false;
 	}
 	return true;
@@ -95,4 +101,3 @@ bool rmdirV2(const QStringAdt& path) {
 	}
 	return false;
 }
-

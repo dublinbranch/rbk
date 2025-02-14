@@ -19,6 +19,10 @@ namespace fs = std::filesystem;
 using namespace std;
 
 //This is a macro passed during compilation, so we can save the schema in the right place
+//So when the program run it will save the data INSIDE THE SOURCE folder
+//TODO the problem is than when it run somewhere else... bad news
+//So I have to pass this dynamically or in some other way when I am on the develop machine
+//Or maybe just simlink there.... so data remain in the program folder
 const QString basePath = BasePath;
 
 void removeAutoInc(QString& sql) {
@@ -46,7 +50,29 @@ CheckSchema::Schemas CheckSchema::getDbSchema() {
 			{
 				//get all tables in the db at once o.O
 				auto sqlInfo = F(R"(
-SELECT * 
+SELECT
+	TABLE_CATALOG
+	,TABLE_SCHEMA
+	,TABLE_NAME
+	,COLUMN_NAME
+	,ORDINAL_POSITION
+	,COLUMN_DEFAULT
+	,IS_NULLABLE
+	,DATA_TYPE
+	,CHARACTER_MAXIMUM_LENGTH
+	,CHARACTER_OCTET_LENGTH
+	,NUMERIC_PRECISION
+	,NUMERIC_SCALE
+	,DATETIME_PRECISION
+	,CHARACTER_SET_NAME
+	,COLLATION_NAME
+	,COLUMN_TYPE
+	,COLUMN_KEY
+	,EXTRA
+	,PRIVILEGES
+	,COLUMN_COMMENT
+	,IS_GENERATED
+	,GENERATION_EXPRESSION
 FROM information_schema.columns 
 WHERE table_schema='{}'
 ORDER BY `ORDINAL_POSITION` ASC)",
@@ -77,6 +103,7 @@ WHERE table_schema='{}')",
 }
 
 void CheckSchema::saveSchema() {
+	mkdir(basePath + "/db");
 	auto      path = basePath + QSL("/db/schema");
 	QSaveFile file(path);
 	if (file.open(QFile::WriteOnly | QFile::Truncate)) {
@@ -91,6 +118,7 @@ void CheckSchema::saveSchema() {
 }
 
 void CheckSchema::saveTableData(const TableDatas& td) {
+	mkdir(basePath + "/db");
 	for (auto& row : td) {
 		auto      path = basePath + QSL("/db/") + row.name;
 		QSaveFile file(path);
@@ -115,7 +143,11 @@ CheckSchema::Schemas CheckSchema::loadSchema() {
 	auto                 inner(":/db/schema");
 	auto                 dynamic = basePath + "/db/schema";
 	auto                 file    = innerOrDynamic(inner, dynamic, false);
+	if (file.type == FileResV2::missing) {
+		qCritical() << F16("impossible to load schema, tryed {} and {}", inner, dynamic);
+	}
 
+	echo("DB schema loaded from {}", file.path);
 	QDataStream in(file.content);
 	in >> map;
 	if (auto s = in.status(); s != QDataStream::Ok) {
@@ -215,11 +247,16 @@ bool CheckSchema::checkDbSchema() {
 bool CheckSchema::checkTableData(const TableDatas& td) {
 	bool ok = true;
 	for (auto& table : td) {
-		auto        inner   = QSL(":/db/") + table.name;
-		auto        dynamic = basePath + QSL("/db/") + table.name;
-		auto        file    = innerOrDynamic(inner, dynamic, false);
+		auto inner   = QSL(":/db/") + table.name;
+		auto dynamic = basePath + QSL("/db/") + table.name;
+		auto file    = innerOrDynamic(inner, dynamic, false);
+		if (file.type == FileResV2::missing) {
+			qCritical() << F16("impossible to load schema, tryed {} and {}", inner, dynamic);
+		}
+		echo("Table {} loaded from {}", table.name, file.path);
 		QDataStream in(file.content);
-		sqlResult   diskData;
+
+		sqlResult diskData;
 		in >> diskData;
 		auto res = db->query(table.sql);
 		int  i   = 0;
@@ -265,7 +302,6 @@ QDebug& operator<<(QDebug& out, const CheckSchema::Key& key) {
 
 CheckSchema::CheckSchema(DB* db_, QStringList database_)
     : db(db_), databases(database_) {
-	mkdir(basePath + "/db");
 }
 
 QDataStream& operator<<(QDataStream& out, const CheckSchema::Key& key) {

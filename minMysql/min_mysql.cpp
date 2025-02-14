@@ -192,10 +192,14 @@ Connection Info: {})",
 
 			sqlLogger.error = err;
 			// this line is needed for proper email error reporting
-			qWarning().noquote() << QString::fromStdString(err) << QStacker16();
-			cxaNoStack     = true;
-			auto exception = DBException(err, DBException::Error::NA);
-			throw exception;
+			{
+				//many times this call is very nested, so we bump the default stack trace lenght
+				ResetOnExit r(stackerMaxFrame, (uint)25);
+				qWarning().noquote() << QString::fromStdString(err) << QStacker16();
+				cxaNoStack     = true;
+				auto exception = DBException(err, DBException::Error::NA);
+				throw exception;
+			}
 		}
 	}
 	return sqlLogger;
@@ -331,11 +335,11 @@ SqlResultV2 DB::queryCacheV2(const StringAdt& sql, uint ttl) {
 	SetOnExit noCache(state.get().noCacheOnEmpty, false);
 	if (ttl) {
 		// small trick to avoid calling over and over the function
-		static bool fraud = mkdir(QSL("cachedSQL_%1/").arg(conf.cacheId));
+		static bool fraud = mkdir(QSL("cachedSQL_V2_%1/").arg(conf.cacheId));
 		(void)fraud;
 
 		//We have a lock to prevent concurrent write in this process, but nothing to protect against other, just use another folder
-		QString name = QSL("cachedSQL_%1/").arg(conf.cacheId) + sha1(sql);
+		QString name = QSL("cachedSQL_V2_%1/").arg(conf.cacheId) + sha1(sql);
 
 		//We do not really care about cache stampede here... and we write the file in an atomic way so we avoid torn read. So no need for mutex,
 		//if multiple thread will write the same file is not a problem they will just overwrite the final version and not mangle each other
@@ -1021,31 +1025,29 @@ Query: {:.3f}	Fetch: {:.3f} )",
 #if __has_include(<poll.h>)
 #include <poll.h>
 
-
 bool DB::completedQuery() const {
-    auto conn = getConn();
+	auto conn = getConn();
 
-    auto error = mysql_errno(conn);
-    if (error != 0) {
-        qWarning().noquote() << F16("Mysql error for {} error was {} code: {}\n{}", state->lastSQL, mysql_error(conn), error, stacker(3));
-        throw 1025;
-    }
-    int err;
+	auto error = mysql_errno(conn);
+	if (error != 0) {
+		qWarning().noquote() << F16("Mysql error for {} error was {} code: {}\n{}", state->lastSQL, mysql_error(conn), error, stacker(3));
+		throw 1025;
+	}
+	int err;
 
-    auto event = somethingHappened(conn, signalMask);
-    if (event) {
-        event = mysql_real_query_cont(&err, conn, event);
-        if (err) {
-            throw QSL("Error executing ASYNC query (cont):") + mysql_error(conn);
-        }
-        // if we are still listening to an event, return false
-        // else if we have no more event to wait return true
-        return !event;
-    } else {
-        return false;
-    }
+	auto event = somethingHappened(conn, signalMask);
+	if (event) {
+		event = mysql_real_query_cont(&err, conn, event);
+		if (err) {
+			throw QSL("Error executing ASYNC query (cont):") + mysql_error(conn);
+		}
+		// if we are still listening to an event, return false
+		// else if we have no more event to wait return true
+		return !event;
+	} else {
+		return false;
+	}
 }
-
 
 u64 DB::fetchAdvanced(FetchVisitor* visitor) const {
 	auto conn = getConn();
@@ -1119,7 +1121,12 @@ void SQLLogger::flush() {
 	if (flushed) {
 		return;
 	}
-	if (!(logError || logSql)) {
+	//If no error, and no logSql
+	if (error.empty() && !logSql) {
+		return;
+	}
+	//If there is an error but logError is off
+	if (!error.empty() && !logError) {
 		return;
 	}
 	flushed = true;

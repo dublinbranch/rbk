@@ -105,7 +105,7 @@ void swapType(const std::string& source, D& dest) {
 		dest = QString::fromStdString(source);
 		return;
 	} else if constexpr (std::is_same<D, QByteArray>::value) {
-		dest = source;
+		dest = QByteArray::fromStdString(source);
 		return;
 	} else if constexpr (std::is_same<D, std::string>::value) {
 		dest = source;
@@ -145,7 +145,7 @@ void swapType(const std::string& source, D& dest) {
 #if QT_VERSION_MAJOR >= 6
 		auto qb = QByteArrayView(source.data(), source.length());
 #else
-		auto qb = QByteArray(source.data(), source.length());
+		auto qb = QByteArray(source.data(), (int)source.length());
 #endif
 		if constexpr (std::is_floating_point_v<D>) {
 			dest = qb.toDouble(&ok);
@@ -187,7 +187,7 @@ void swapType(const std::string& source, D& dest) {
 		}
 		swapType(source, t);
 		dest = t;
-	} else if constexpr (TagInvokable<D>) {
+	} else if constexpr (TagInvokable_SS<D>) {
 		RBK::swapTypeToTag<D> tag;
 		dest = tag_invoke(tag, source);
 	} else {

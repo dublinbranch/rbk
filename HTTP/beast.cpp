@@ -202,6 +202,21 @@ void handle_request(
 	PMFCGI  status;
 	payload.status = &status;
 
+	//just more http protocol nonsense for CORS
+	if (req.method() == http::verb::options) {
+		http::response<http::string_body> res{http::status::ok, req.version()};
+		res.set(http::field::access_control_allow_origin, "*");
+		res.set(http::field::access_control_allow_methods, "GET, POST, OPTIONS");
+		res.set(http::field::access_control_allow_headers, "Content-Type, X-Requested-With, Authorization");
+		res.set(http::field::access_control_max_age, "86400");
+		res.insert("Connection", "keep-alive");
+		res.keep_alive(true);
+		res.prepare_payload();
+		send(stream, res);
+		registerFlushTime();
+		return;
+	}
+
 	try {
 		try { //Yes exception can throw exceptions!
 			status.conf = conf;
@@ -322,8 +337,6 @@ void handle_request(
 		auto msg = status.serializeMsg("unkown exception", true);
 		fileAppendContents("\n------\n " + msg, conf->logFolder + "/unkException.log");
 	}
-
-	return;
 }
 
 //------------------------------------------------------------------------------

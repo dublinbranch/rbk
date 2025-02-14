@@ -36,6 +36,32 @@ SqlResultV2::SqlResultV2(const sqlResult& old) {
 	}
 }
 
+QDataStream& operator<<(QDataStream& out, const SqlResultV2& result) {
+	// Serialize QVector<SqlRowV2> (inherited part)
+	const QVector<SqlRowV2>& baseRef = result; // Get reference to base class
+	out << baseRef;
+	out << *result.columns;
+	return out;
+}
+
+QDataStream& operator>>(QDataStream& in, SqlResultV2& result) {
+	// Deserialize QVector<SqlRowV2> (inherited part)
+	QVector<SqlRowV2>& baseRef = result; // Get reference to base class
+	in >> baseRef;                     // Deserialize directly into base class reference
+
+	// Deserialize additional members
+	in >> *result.columns;
+
+	//inject in all row the columns
+	for (auto& row : baseRef) {
+		row.columns = result.columns;
+	}
+
+	result.fromCache = true;
+
+	return in;
+}
+
 SqlRowV2::SqlRowV2(const sqlRow& old) {
 	columns  = std::make_shared<SqlResV2::TypeMap>();
 	uint   i = 0;
@@ -50,4 +76,30 @@ SqlRowV2::SqlRowV2(const sqlRow& old) {
 
 bool SqlRowV2::empty() const {
 	return data.empty();
+}
+
+QDataStream& operator<<(QDataStream& out, const SqlRowV2& row) {
+	out << row.data;
+	return out;
+}
+
+QDataStream& operator>>(QDataStream& in, SqlRowV2& row) {
+	// Clear the map first to prepare for deserialization
+	row.data.clear();
+	in >> row.data;
+	return in;
+}
+
+QDataStream& operator<<(QDataStream& out, const SqlResV2::Field& field) {
+	// Serialize each member
+	out << field.type;
+	out << field.pos;
+	return out;
+}
+
+QDataStream& operator>>(QDataStream& in, SqlResV2::Field& field) {
+	// Deserialize each member
+	in >> field.type;
+	in >> field.pos;
+	return in;
 }

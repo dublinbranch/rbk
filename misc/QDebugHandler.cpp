@@ -2,12 +2,13 @@
 #include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/gitTrick/buffer.h"
-#include "slacksender.h"
-#include "twilio.h"
+//#include "slacksender.h"
+//#include "twilio.h"
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QFile>
 #include <QLoggingCategory>
+#include <iostream>
 #include <sys/stat.h>
 #include <thread>
 
@@ -69,7 +70,10 @@ void sendMail(QString subject, QString message) {
 			                  .set_email_details(message.toUtf8().constData(), subject.toUtf8().constData(), recipient.data())
 			                  .set_smtp_details("spammer@seisho.us", "mjsydiTODNmDLTUqRIZY", "spammer@seisho.us", "smtp://seisho.us:25")
 			                  .build();
-			marx.perform();
+			auto res = marx.perform();
+			if (!res.has_value()) {
+				std::cerr << res.error();
+			}
 		};
 		std::thread Carlo(CurlPPisBroken);
 		//The only real problem of this approach, is that if the program immediately exit, nothing will be sent
@@ -281,6 +285,7 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 	if (diskLog) {
 		diskLog->write(QByteArray::fromStdString(msgFinal));
 	}
+
 	fmt::print(stream, "{}", msgFinal);
 }
 
@@ -323,16 +328,7 @@ void initLocaleTZ() {
 	loadBuffer();
 
 	//We are server side we do not care about human broken standard
-	std::setlocale(LC_ALL, "C");
-	std::locale::global(std::locale("C"));
-
-	// qDebug()
-	// 	<< "Applicationlocale setting is "
-	// 	<< std::locale().name().c_str() << '\n';
-
-	//Also for Qt for translation ecc
-	QLocale l(QLocale::C, QLocale::UnitedStates);
-	QLocale::setDefault(l);
+	std::setlocale(LC_NUMERIC, "C");
 
 	//If EaRTh iS FLAAAT why timezone ?!11!!?
 #ifdef _WIN32

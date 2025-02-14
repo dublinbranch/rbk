@@ -2,10 +2,12 @@
 #define CURLPP_H
 
 #include <curl/curl.h>
+#include <expected>
 #include <map>
 #include <mutex>
 #include <string>
 #include <vector>
+
 #define NUM_OF_CURL_ERR 1000
 //#define DONT_CURL
 //#define VERBOSE_ALL
@@ -58,7 +60,7 @@ class CURLpp {
 
       public:
 	class Builder;
-	std::string perform();
+	[[nodiscard]] std::expected<std::string, std::string> perform();
 
 	~CURLpp();
 

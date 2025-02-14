@@ -70,5 +70,10 @@ UnserializeResult fileUnSerialize(const QString& fileName, T& t, uint maxAge = 0
 	in.setVersion(QDataStream::Qt_5_15);
 
 	in >> t;
+
+	if (in.status() != QDataStream::Ok) {
+		qCritical() << "Failed to deserialize data from file:" + fileName;
+		return {0, true, lastEdit, false};
+	}
 	return {file.size(), true, lastEdit, true};
 }

@@ -40,23 +40,13 @@ struct FPCRes {
  */
 QString resourceTryDisk(const QString& fileName);
 
-//I do really need to find a solution to this nonsense!
-FPCRes filePutContents(const QString& pay, const QString& fileName, bool verbose = false);
-FPCRes filePutContents(const QByteArray& pay, const QString& fileName, bool verbose = false);
-FPCRes filePutContents(const std::string& pay, const QString& fileName, bool verbose = false);
-FPCRes filePutContents(const std::string& pay, const std::string& fileName, bool verbose = false);
-FPCRes filePutContents(const QByteArray& pay, const std::string& fileName, bool verbose = false);
-FPCRes filePutContents(const QByteArray& pay, const char* fileName, bool verbose = false);
+FPCRes filePutContents(const QByteAdt& pay, const QStringAdt& fileName, bool verbose = false);
+bool   fileAppendContents(const QByteAdt& pay, const QStringAdt& fileName);
 
 [[nodiscard]] QByteArray fileGetContents(const QString& fileName, bool quiet = true);
 [[nodiscard]] QByteArray fileGetContents(const QString& fileName, bool quiet, bool& success);
 
 [[nodiscard]] FileGetRes fileGetContents2(const QByteAdt& fileName, bool quiet = true, uint maxAge = 0);
-
-bool fileAppendContents(const QString& pay, const QString& fileName);
-bool fileAppendContents(const QByteArray& pay, const QString& fileName);
-bool fileAppendContents(const std::string& pay, const QString& fileName);
-bool fileAppendContents(const std::string& pay, const std::string& fileName);
 
 [[nodiscard]] QByteArray unzip1(QByteArray zipped);
 
@@ -125,3 +115,40 @@ std::filesystem::path GetCurExecutablePath();
 
 std::filesystem::path getTempFile();
 QString               getTempFile(const QString&);
+
+static const QString prettyTable = R"EOD(
+<!DOCTYPE html><html role='document'><head><meta charset='utf-8'><meta content='en' name='language'>
+<style>
+ .chameleon-table {
+font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+border-collapse: collapse;
+width: 100%;
+}
+
+ .chameleon-table td, .chameleon-table th  {
+border: 1px solid #ddd;
+padding: 8px;
+}
+
+ .chameleon-table td:not(:first-child){
+text-align:right;
+}
+
+ .chameleon-table tr:nth-child(even){background-color: #f2f2f2;}
+
+ .chameleon-table tr:hover {background-color: #ddd;}
+
+ .chameleon-table th , .chameleon-table th {
+padding-top: 12px;
+padding-bottom: 12px;z
+text-align: left;
+background-color: #4CAF50;
+color: white;
+}
+
+</style>
+</head>
+<body>
+<table class="chameleon-table">
+<thead>
+)EOD";

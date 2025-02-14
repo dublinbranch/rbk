@@ -141,6 +141,8 @@ T rqNumber(const boost::json::value& v, std::string_view key) {
 class DB;
 void sqlEscape(boost::json::object& value, DB* db);
 
+//bj::value rq(bj::object)
+
 // template <typename T>
 // T rq(boost::json::object& obj, std::string_view key) {
 // }
