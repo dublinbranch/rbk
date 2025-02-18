@@ -48,6 +48,7 @@ CheckSchema::Schemas CheckSchema::getDbSchema() {
 				}
 			}
 			{
+				//	,PRIVILEGES https://github.com/dublinbranch/rbk/issues/7
 				//get all tables in the db at once o.O
 				auto sqlInfo = F(R"(
 SELECT
@@ -69,7 +70,6 @@ SELECT
 	,COLUMN_TYPE
 	,COLUMN_KEY
 	,EXTRA
-	,PRIVILEGES
 	,COLUMN_COMMENT
 	,IS_GENERATED
 	,GENERATION_EXPRESSION
