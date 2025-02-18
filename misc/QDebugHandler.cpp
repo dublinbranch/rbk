@@ -2,8 +2,8 @@
 #include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/gitTrick/buffer.h"
-#include "slacksender.h"
-#include "twilio.h"
+//#include "slacksender.h"
+//#include "twilio.h"
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QFile>
@@ -281,6 +281,7 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 	                  context.line,
 	                  funkz,
 	                  localMsg);
+
 	if (diskLog) {
 		diskLog->write(QByteArray::fromStdString(msgFinal));
 	}

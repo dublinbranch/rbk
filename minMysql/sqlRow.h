@@ -31,10 +31,14 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 
 	template <typename T>
-        [[nodiscard]] T rq(const QByteAdt& key) const {
+
+	[[nodiscard]] T rq(const QByteAdt& key) const {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 		T temp{};
 		rq(key, temp);
 		return temp;
+#pragma GCC diagnostic pop
 	}
 
 	/**
