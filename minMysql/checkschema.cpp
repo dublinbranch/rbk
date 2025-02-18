@@ -271,7 +271,7 @@ bool CheckSchema::checkTableData(const TableDatas& td) {
 						auto msg = F16(
 						    R"(
 
-table {} {} data mismatch at row {}={}:
+table {} {} data mismatch at row {} = {}:
 Disk is ({} char):
 ---***---
 {}
