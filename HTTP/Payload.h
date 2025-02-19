@@ -42,7 +42,8 @@ class Headers : public std::multimap<std::string, std::string> {
 
 class PMFCGI;
 
-struct Payload {
+class Payload {
+      public:
 	bool     alreadySent = false;
 	unsigned statusCode  = 200;
 	//a response can not exists without a request no ?

@@ -2,7 +2,6 @@
 #define SWAPTYPE_H
 #include "rbk/concept/concepts.h"
 #include "rbk/defines/stringDefine.h"
-#include "rbk/magicEnum/BetterEnum.hpp"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/misc/typeinfo.h"
 #include "rbk/types/isOptional.h"
@@ -121,7 +120,7 @@ void swapType(const std::string& source, D& dest) {
 #if QT_VERSION_MAJOR >= 6
 		auto val = QByteArrayView(source.data(), source.length()).toUInt(&convertible);
 #else
-		auto val = QByteArray(source.data(), source.length()).toUInt(&convertible);
+		auto val = (D)QByteArray(source.data(), source.length()).toULongLong(&convertible);
 #endif
 		if (val && convertible) {
 			dest.setSecsSinceEpoch(val);

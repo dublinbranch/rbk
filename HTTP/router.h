@@ -3,8 +3,8 @@
 #include <memory>
 #include <rbk/mapExtensor/mapV2.h>
 
-struct PMFCGI;
-struct Payload;
+class PMFCGI;
+class Payload;
 class RequestBase {
       public:
 	//factory
@@ -24,7 +24,7 @@ class RequestBase {
 
 using SimpleRoutedType = void (*)(PMFCGI& status, Payload& payload);
 
-struct BeastConf;
+class BeastConf;
 class Router {
       public:
 	//Il principio è meno cose da fare meno errori possono esserci

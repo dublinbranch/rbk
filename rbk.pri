@@ -36,7 +36,7 @@ QMAKE_CXXFLAGS += -Wunused -Wunused-function
 #CONFIG += c++2b
 QMAKE_CXXFLAGS += -std=gnu++2b
 #-Werror -Wconversion
-QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wshadow-local -Wshadow-compatible-local -Wconversion -fno-permissive -Werror=return-type
+QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wconversion -fno-permissive -Werror=return-type
 
 CONFIG += object_parallel_to_source
 linux {
@@ -468,8 +468,6 @@ SOURCES += \
 
     
 HEADERS += \
-    $$PWD/magicEnum/BetterEnum.hpp \
-    $$PWD/magicEnum/enum.h \
     $$PWD/magicEnum/magic_enum.hpp \
     $$PWD/magicEnum/templateEnum.h \
     $$PWD/magicEnum/magic_from_string.hpp

@@ -31,7 +31,7 @@ class Post : public multiMapV2<QString, QString> {
 	void checkIfUnused(bool) const;
 };
 
-struct PMFCGI {
+class PMFCGI {
       public:
 	const BeastConf*        conf = nullptr;
 	std::string             remoteIp;

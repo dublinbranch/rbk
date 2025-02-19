@@ -352,7 +352,7 @@ void generateQrcFile(const QString& qrcFilePath, const std::vector<std::string>&
 	buffer += "	</qresource>\n";
 	buffer += "</RCC>\n";
 
-	file.write(buffer.c_str(), buffer.size());
+	file.write(buffer.c_str(), (qint64)buffer.size());
 }
 
 void updateQRCFile() {

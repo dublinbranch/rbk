@@ -115,9 +115,9 @@ class APCU : private NoCopy {
 	template <class T>
 	void storeInner(const std::string& _key, const T& _value, bool overwrite_ = false, u64 ttl = 60, bool persistent = false) {
 
-		u64 expireAt = 0;
+		qint64 expireAt = 0;
 		if (ttl) {
-			expireAt = QDateTime::currentSecsSinceEpoch() + ttl;
+			expireAt = QDateTime::currentSecsSinceEpoch() + (qint64)ttl;
 		}
 		Row row;
 		row.key = _key;

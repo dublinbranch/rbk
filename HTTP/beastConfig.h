@@ -8,7 +8,7 @@ class RequestBase;
 class PMFCGI;
 class Payload;
 
-struct BeastConf {
+class BeastConf {
       public:
 	friend class PMFCGI;
 
