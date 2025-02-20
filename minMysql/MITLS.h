@@ -2,9 +2,10 @@
 
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <unordered_map>
-#include <vector>
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wundefined-var-template"
 
 template <typename T>
 class mi_tls_repository {
@@ -19,8 +20,9 @@ class mi_tls_repository {
 	 * The general per thread map that contain all resources (of this type)
 	 * It must be a ptr as it can goes out of scope before the other element, so cleaning will be a disaster
 	 */
-    static thread_local mapS repository;
-	mapS                            local      = nullptr;
+
+	static thread_local mapS repository;
+	mapS                     local = nullptr;
 
 	void getRepo() {
 		return;
@@ -48,8 +50,9 @@ class mi_tls_repository {
 	}
 
 	// This will be called for all constructor
-	mi_tls_repository() {
-		local = repository;
+	mi_tls_repository()
+	    : local(repository) {
+
 		// but only the first in this thread will create the map
 		getRepo();
 	}
@@ -65,10 +68,11 @@ class mi_tls_repository {
 		//		}
 	}
 };
+#pragma GCC diagnostic pop
 
 template <typename T>
 class mi_tls : protected mi_tls_repository<T> {
-	  public:
+      public:
 	mi_tls() = default;
 
 	mi_tls(const T& value) {
@@ -99,3 +103,4 @@ class mi_tls : protected mi_tls_repository<T> {
 		this->remove(reinterpret_cast<uintptr_t>(this));
 	}
 };
+

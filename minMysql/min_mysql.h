@@ -174,7 +174,7 @@ class DB {
 	// JUST For the next query the WARNING spam will be suppressed, use if you understand what you are doing
 	// Reset itself in any case after 1 query
 	mutable mi_tls<bool> skipWarning = false;
-
+	
 	const DBConf getConf() const;
 	void         setConf(const DBConf& value);
 	void         setConfIfNotSet(const DBConf& value);

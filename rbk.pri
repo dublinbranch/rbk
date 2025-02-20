@@ -469,7 +469,6 @@ SOURCES += \
     
 HEADERS += \
     $$PWD/magicEnum/magic_enum.hpp \
-    $$PWD/magicEnum/templateEnum.h \
     $$PWD/magicEnum/magic_from_string.hpp
     
     

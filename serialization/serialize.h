@@ -5,6 +5,7 @@
 #include <QFileInfo>
 #include <QSaveFile>
 #include <mutex>
+#include <QDebug>
 
 template <typename T>
 qint64 fileSerialize(const QString& fileName, const T& t) {

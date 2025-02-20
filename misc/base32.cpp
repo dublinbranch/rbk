@@ -1,5 +1,4 @@
 #include "base32.h"
-#include "rbk/QStacker/exceptionv2.h"
 #include <cstdint>
 #include <map>
 #include <string>
@@ -12,7 +11,7 @@ std::string encodeBase32(const std::string& data) {
 	std::string encoded;
 	int         value = 0;
 	int         bits  = 0;
-	for (uint8_t byte : data) {
+	for (auto byte : data) {
 		value = (value << 8) | byte;
 		bits += 8;
 
@@ -67,7 +66,7 @@ std::string decodeBase32(const std::vector<uint8_t>& data) {
 	uint32_t    buffer = 0;
 	size_t      bits   = 0;
 	for (auto datum : data) {
-		const auto entry = DecodingTable.find(datum);
+		const auto entry = DecodingTable.find((char)datum);
 		uint32_t   group = 0;
 		if (entry != DecodingTable.end()) {
 			group = entry->second;
@@ -79,7 +78,7 @@ std::string decodeBase32(const std::vector<uint8_t>& data) {
 			if (datum != '=') {
 				output.push_back((char)(buffer >> (bits - 8)));
 			}
-			buffer &= ~(0xff << (bits - 8));
+			buffer &= ~(0xffu << (bits - 8u));
 			bits -= 8;
 		}
 	}

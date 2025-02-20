@@ -44,7 +44,7 @@ class SqlRowV2 {
 	template <class Key>
 	int fpOpt(const Key& key) const {
 		if (auto iter = columns->find(key); iter != columns->end()) {
-			return iter->second.pos;
+			return (int)iter->second.pos;
 		}
 		return -1;
 	}

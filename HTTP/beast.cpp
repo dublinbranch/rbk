@@ -545,7 +545,7 @@ void Beast::listen() {
 	okToRun();
 	pthread_setname_np(pthread_self(), "BeastHandler");
 	// The io_context is required for all I/O
-	auto IOC = net::io_context{conf.worker};
+	auto IOC = net::io_context{static_cast<int>(conf.worker)};
 
 	// Create and launch a listening port
 	auto listener_p = std::make_shared<listener>(

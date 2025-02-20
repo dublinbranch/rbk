@@ -10,6 +10,9 @@
 #include <sstream>
 #include <stdexcept>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+
 // empty decoration
 //
 const QR_decoration QR_code::default_decoration = {R"DECO(<?xml version="1.0" encoding="UTF-8"?>
@@ -91,7 +94,7 @@ void QR_code::clear_decoration() {
 }
 
 std::string QR_code::get_svg() const {
-	size_t qr_size             = (m_qr != nullptr) ? m_qr->getSize() : 0;
+	size_t qr_size             = (m_qr != nullptr) ? (size_t)m_qr->getSize() : 0;
 	size_t qr_size_with_border = qr_size + 2 * m_border;
 
 	double scale = (double)qr_size_with_border / 1000.0;

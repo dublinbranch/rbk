@@ -30,22 +30,22 @@ KEY `lastRun` (`lastRun`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 					  )";
 
-        std::cerr << e.what() << msg;
+		std::cerr << e.what() << msg;
 		exit(1);
 	}
 }
 
-bool Runnable::runnable_64(const QString& key, qint64 second, double multiplier) {
+bool Runnable::runnable_64(const QString& key, i64 second, double multiplier) {
 	return runnable(key, second, multiplier);
 }
 
-bool Runnable::runnable(const QString& key, u64 second, double multiplier) {
+bool Runnable::runnable(const QString& key, i64 second, double multiplier) {
 	if (forceRunnable) {
 		return true;
 	}
 
 	static const QString skel = "SELECT id, lastRun, coolDown FROM runnable.runnable WHERE operationCode = %1 ORDER BY lastRun DESC LIMIT 1";
-	u64                  now  = QDateTime::currentSecsSinceEpoch();
+	auto                 now  = QDateTime::currentSecsSinceEpoch();
 	auto                 sql  = skel.arg(base64this(key));
 	auto                 row  = db->queryLine(sql);
 
@@ -56,13 +56,13 @@ bool Runnable::runnable(const QString& key, u64 second, double multiplier) {
 		db->query(insertSql);
 		return true;
 	}
-	auto lastRun  = row.rq<u64>("lastRun");
+	auto lastRun  = row.rq<i64>("lastRun");
 	auto coolDown = second;
 
 	//if we are using the cooldown scaling take into account the last one
 	if (multiplier != 1) {
 		row.rq("coolDown", coolDown);
-		coolDown = static_cast<u64>(static_cast<double>(coolDown) * multiplier);
+		coolDown = static_cast<i64>(static_cast<double>(coolDown) * multiplier);
 	}
 
 	if (lastRun + coolDown > now) {
@@ -73,6 +73,6 @@ bool Runnable::runnable(const QString& key, u64 second, double multiplier) {
 	return true;
 }
 
-bool Runnable::operator()(const QString& key, qint64 second, double multiplier) {
+bool Runnable::operator()(const QString& key, i64 second, double multiplier) {
 	return runnable(key, second, multiplier);
 }

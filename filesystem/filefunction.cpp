@@ -518,8 +518,9 @@ std::filesystem::path GetCurExecutablePath() {
 	static std::filesystem::path path;
 	if (path.string().empty()) {
 		char                   result[PATH_MAX];
-		ssize_t                count = readlink("/proc/self/exe", result, PATH_MAX);
-		std::string            temp  = std::string(result, (count > 0) ? count : 0);
+		auto                   count = readlink("/proc/self/exe", result, PATH_MAX);
+		auto                   size  = (count > 0) ? count : 0;
+		std::string            temp  = std::string(result, (size_t)size);
 		std::string::size_type pos   = temp.find_last_of('/');
 		path                         = temp.substr(0, pos);
 	}
