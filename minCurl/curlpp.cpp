@@ -6,10 +6,6 @@
 #include <ctime>
 using namespace std;
 
-std::vector<std::map<std::string, std::string>> CURLpp::listOfErrors(NUM_OF_CURL_ERR);
-int                                             CURLpp::error_counter = 0;
-std::mutex                                      CURLpp::error_mutex;
-
 /**
  * @brief CURLpp::perform
  *
@@ -235,8 +231,8 @@ std::vector<std::map<std::string, std::string>> CURLpp::getListOfErrors() {
 		return first_part;
 
 	} else {
-		vector_of_errors first_part(listOfErrors.begin() + error_counter, listOfErrors.end());
-		vector_of_errors second_part(listOfErrors.begin(), listOfErrors.begin() + error_counter - 1);
+		vector_of_errors first_part(listOfErrors.begin() + (int)error_counter, listOfErrors.end());
+		vector_of_errors second_part(listOfErrors.begin(), listOfErrors.begin() + (int)error_counter - 1);
 
 		first_part.insert(first_part.end(), second_part.begin(), second_part.end());
 		reverse(first_part.begin(), first_part.end());

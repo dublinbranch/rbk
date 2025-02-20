@@ -31,7 +31,7 @@ size_t QBReader(char* ptr, size_t size, size_t nmemb, void* userdata) {
 	auto cur    = readMe->pos;
 	readMe->pos = size * nmemb;
 
-	size_t remnant = readMe->data.size() - cur;
+	size_t remnant = (size_t)readMe->data.size() - cur;
 
 	auto sent = std::min(remnant, size * nmemb);
 

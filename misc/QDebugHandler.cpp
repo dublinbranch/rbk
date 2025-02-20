@@ -88,8 +88,8 @@ void sendMail(QString subject, QString message) {
 }
 
 //In loving memory of 80 / 72 char punch card
-static uint lineLenght   = 80;
-static uint initialSpace = 5;
+static int lineLenght   = 80;
+static int initialSpace = 5;
 
 std::string submoduleInfo() {
 	//is just easier to read the text output that try to use git api to have a clean message

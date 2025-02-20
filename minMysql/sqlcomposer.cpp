@@ -140,13 +140,13 @@ QString SqlComposer::composeUpdateQS() const {
 	return QString::fromStdString(composeUpdate());
 }
 
-string SqlComposer::composeInsert(bool ignore) const {
+string SqlComposer::composeInsert(bool ignora) const {
 	getTable();
 	if (!where->empty()) {
 		throw ExceptionV2("Refusing an insert with where condition");
 	}
 	string ignoreS;
-	if (ignore) {
+	if (ignora) {
 		ignoreS = " IGNORE ";
 	}
 	auto sql = F("INSERT {} INTO {} SET {} ;", ignoreS, table, compose());

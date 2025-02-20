@@ -4,8 +4,11 @@
 #include <memory>
 #include <unordered_map>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wundefined-var-template"
+//because GCC do not know clang exists yet
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundefined-var-template"
+#endif
 
 template <typename T>
 class mi_tls_repository {
@@ -68,7 +71,9 @@ class mi_tls_repository {
 		//		}
 	}
 };
-#pragma GCC diagnostic pop
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 template <typename T>
 class mi_tls : protected mi_tls_repository<T> {

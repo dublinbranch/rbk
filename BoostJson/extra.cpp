@@ -113,7 +113,7 @@ json::value asNull(const sqlRow& row, std::string_view key) {
 
 QString QS(const json::string_view& cry) {
 #if QT_VERSION_MAJOR == 5
-	return QString::fromUtf8(cry.data(), (uint)cry.size());
+	return QString::fromUtf8(cry.data(), (int)cry.size());
 #elif QT_VERSION_MAJOR == 6
 	return QString::fromUtf8(cry.data(), cry.size());
 #endif
@@ -121,7 +121,7 @@ QString QS(const json::string_view& cry) {
 
 QString QS(const boost::json::string& cry) {
 #if QT_VERSION_MAJOR == 5
-	return QString::fromUtf8(cry.data(), (uint)cry.size());
+	return QString::fromUtf8(cry.data(), (int)cry.size());
 #elif QT_VERSION_MAJOR == 6
 	return QString::fromUtf8(cry.data(), cry.size());
 #endif
@@ -129,7 +129,7 @@ QString QS(const boost::json::string& cry) {
 
 QByteArray QB(const boost::json::string& cry) {
 #if QT_VERSION_MAJOR == 5
-	auto q = QByteArray::fromRawData(cry.data(), (uint)cry.size());
+	auto q = QByteArray::fromRawData(cry.data(), (int)cry.size());
 	q.detach();
 	return q;
 #elif QT_VERSION_MAJOR == 6
@@ -141,7 +141,7 @@ QByteArray QB(const boost::json::string& cry) {
 
 QByteArray QB(const boost::json::string_view& cry) {
 #if QT_VERSION_MAJOR == 5
-	auto q = QByteArray::fromRawData(cry.data(), (uint)cry.size());
+	auto q = QByteArray::fromRawData(cry.data(), (int)cry.size());
 	q.detach();
 	return q;
 #elif QT_VERSION_MAJOR == 6
@@ -295,9 +295,9 @@ string JsonRes::composeErrorMsg() const {
 		}
 
 		//show a part of the json to understand the problem, do not go over end of line or before!
-        size_t zero = 0;
-        auto start = max(zero, position - 45);
-		auto end   = min(Pt(start + 80), raw.size());
+		size_t zero  = 0;
+		auto   start = max(zero, position - 45);
+		auto   end   = min(Pt(start + 80), raw.size());
 
 		auto len = end - start;
 

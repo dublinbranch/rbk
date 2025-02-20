@@ -99,9 +99,9 @@ class CURLpp {
 	char*       effectiveUrl = nullptr;
 	long        http_code    = 0;
 
-	static std::mutex       error_mutex;
-	static vector_of_errors listOfErrors;
-	static int              error_counter;
+	inline static std::mutex       error_mutex;
+	inline static vector_of_errors listOfErrors;
+	inline static size_t           error_counter;
 };
 
 class CURLpp::Builder {

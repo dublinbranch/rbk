@@ -31,7 +31,7 @@ QByteArray tag_invoke(const boost::json::value_to_tag<QByteArray>&, const boost:
 QString tag_invoke(const boost::json::value_to_tag<QString>&, const boost::json::value& jv) {
 	auto& string = jv.as_string();
 #if QT_VERSION_MAJOR == 5
-	return QString::fromUtf8(string.data(), (uint)string.size());
+	return QString::fromUtf8(string.data(), (int)string.size());
 #elif QT_VERSION_MAJOR == 6
 	return QString::fromUtf8(string.data(), string.size());
 #endif

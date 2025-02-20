@@ -469,7 +469,7 @@ QString DB::escape(const QString& what) const {
 	auto plain = what.toUtf8();
 	// Ma esiste una lib in C++ per mysql ?
 	char* tStr = new char[plain.size() * 2 + 1];
-	mysql_real_escape_string(getConn(), tStr, plain.constData(), plain.size());
+	mysql_real_escape_string(getConn(), tStr, plain.constData(), (u64)plain.size());
 	auto escaped = QString::fromUtf8(tStr);
 	delete[] tStr;
 	return escaped;

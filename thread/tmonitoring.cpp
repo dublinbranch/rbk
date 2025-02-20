@@ -3,7 +3,6 @@
 #include "rbk/minMysql/min_mysql.h"
 #include "threadstatush.h"
 #include <atomic>
-#include <cstdint>
 
 using namespace std;
 
@@ -13,16 +12,16 @@ extern thread_local ThreadStatus::Status* localThreadStatus;
 extern DB s7DB;
 
 struct ATiming {
-	atomic<uint64_t> total = 0;
-	atomic<uint64_t> flush = 0;
+	atomic<i64> total = 0;
+	atomic<i64> flush = 0;
 	//Almost all our query are buffered and small so fetch is basically istant
-	atomic<uint64_t> sqlFetch = 0;
+	atomic<i64> sqlFetch = 0;
 	//time spent doing the sql (network latency + execution)
-	atomic<uint64_t> sqlServer = 0;
+	atomic<i64> sqlServer = 0;
 	//how many sql we did (all servicing thread + cache)
-	atomic<uint64_t> sqlDone = 0;
+	atomic<i64> sqlDone = 0;
 	// (all servicing thread + cache)
-	atomic<uint64_t> sqlReconnect = 0;
+	atomic<i64> sqlReconnect = 0;
 
 	void syncFromDk_S7Db() {
 
@@ -48,11 +47,11 @@ struct Averager {
 	Averager(uint bs) {
 		blockSize = bs;
 	}
-	u64 blockSize = 0;
+	i64 blockSize = 0;
 
-	u64         restartedOn = 0;
+	i64         restartedOn = 0;
 	i64         resetAfter  = 0;
-	atomic<u64> request{0};
+	atomic<i64> request{0};
 	ATiming     timing;
 
 	void clear() {
@@ -99,7 +98,7 @@ size_t getThreadCount() {
 }
 
 static atomic<uint> request{0};
-static uint64_t     startedAt = QDateTime::currentMSecsSinceEpoch();
+static auto         startedAt = QDateTime::currentMSecsSinceEpoch();
 static Averager     m1(60);
 static Averager     m5(300);
 static Averager     m30(60 * 30);

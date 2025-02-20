@@ -2,6 +2,7 @@
 
 #include "DBConf.h"
 #include "MITLS.h"
+#include "mymaria.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/mapExtensor/mapV2.h"
 #include "rbk/string/stringoso.h"
@@ -12,7 +13,6 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QStringList>
-#include "mymaria.h"
 
 class DBException : public ExceptionV2 {
       public:
@@ -174,7 +174,7 @@ class DB {
 	// JUST For the next query the WARNING spam will be suppressed, use if you understand what you are doing
 	// Reset itself in any case after 1 query
 	mutable mi_tls<bool> skipWarning = false;
-	
+
 	const DBConf getConf() const;
 	void         setConf(const DBConf& value);
 	void         setConfIfNotSet(const DBConf& value);
@@ -188,8 +188,8 @@ class DB {
 	struct InternalState {
 		std::string lastSQL;
 		QString     lastError;
-		quint64     totServerTime = 0;
-		quint64     totFetchTime  = 0;
+		qint64      totServerTime = 0;
+		qint64      totFetchTime  = 0;
 		qint64      serverTime    = 0;
 		qint64      fetchTime     = 0;
 

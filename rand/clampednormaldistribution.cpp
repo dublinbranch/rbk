@@ -27,13 +27,13 @@ void ClampedNormalDistribution::setParam(double _min, double _max, double _mean,
 
 void ClampedNormalDistribution::initSeed() const {
 	seeded    = true;
-	auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+	auto seed = (ulong)std::chrono::system_clock::now().time_since_epoch().count();
 	generator = new (std::mt19937);
 	generator->seed(seed);
 }
 
 void ClampedNormalDistribution::operator=(const ClampedNormalDistribution& from) {
-	if (from.fixed) {
+	if (from.fixed != 0.0) {
 		setFixed(from.fixed);
 		return;
 	}
@@ -52,7 +52,7 @@ double ClampedNormalDistribution::gen() const {
 	if (!seeded) {
 		initSeed();
 	}
-	if (fixed) {
+	if (fixed != 0.0) {
 		return fixed;
 	}
 	double rand = 0;

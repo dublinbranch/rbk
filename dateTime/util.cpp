@@ -78,7 +78,7 @@ QDateTime hourlyFloor(QDateTime time) {
 
 //--------------------------------------------------------------------------------------
 int TimespecV2::sec() const {
-	return static_cast<uint>(floor(time));
+	return static_cast<int>(floor(time));
 }
 
 double TimespecV2::fractional() const {
