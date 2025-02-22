@@ -244,6 +244,14 @@ bool CheckSchema::checkDbSchema() {
 	return true;
 }
 
+CheckSchema::ReMap CheckSchema::reMap(const sqlResult& raw, const QByteArray& pk) {
+	ReMap reMap;
+	for (auto& row : raw) {
+		reMap[row.rq(pk)] = row;
+	}
+	return reMap;
+}
+
 bool CheckSchema::checkTableData(const TableDatas& td) {
 	bool ok = true;
 	for (auto& table : td) {
@@ -256,20 +264,42 @@ bool CheckSchema::checkTableData(const TableDatas& td) {
 		echo("Table {} loaded from {}", table.name, file.path);
 		QDataStream in(file.content);
 
-		sqlResult diskData;
-		in >> diskData;
-		auto res = db->query(table.sql);
-		int  i   = 0;
-		for (auto& dbRow : res) {
-			auto diskRow = diskData[i++];
-			if (diskRow != dbRow) {
-				QByteArray valuePrimaryKey = diskRow.rq(table.primaryKey);
-				//check the actual column
-				for (auto [kDisk, vDisk] : diskRow) {
-					auto vRow = dbRow.rq(kDisk);
-					if (vRow != vDisk) {
-						auto msg = F16(
-						    R"(
+		auto      dbRawData = db->query(table.sql);
+		sqlResult diskRawData;
+		in >> diskRawData;
+
+		auto dbData   = reMap(dbRawData, table.primaryKey);
+		auto diskData = reMap(diskRawData, table.primaryKey);
+
+		//The reference, the target is of COURSE the data on disk!
+
+		for (auto& [pk, diskRow] : diskData) {
+			auto v = dbData.get(pk);
+			//check if the dbRow even exists
+			if (!v) {
+				auto msg = F(R"(
+table {} impossible to find the row {} = {}
+				)",
+				             table.name, table.primaryKey, pk);
+				echo(msg);
+				ok = false;
+				continue;
+			}
+			auto& dbRow = *v.val;
+			//now check the column if matches
+			for (auto [kDisk, vDisk] : diskRow) {
+				auto vRow = dbRow.rq(kDisk);
+				if (vRow != vDisk) {
+					auto fix = F(R"(
+UPDATE {}
+SET {} = "{}"
+WHERE {} = "{}"
+;
+)",
+					             table.name, db->escape(kDisk), db->escape(vDisk), db->escape(table.primaryKey), db->escape(pk));
+
+					auto msg = F16(
+					    R"(
 
 table {} : {} data mismatch at row {} = {} :
 Disk is ({} char):
@@ -280,13 +310,17 @@ DB is ({} char):
 ---***---
 {}
 ---***---
+To update this should be ok
+{}
+
+---***------***------***------***---
 )",
-						    table.name, kDisk, table.primaryKey, valuePrimaryKey,
-						    vDisk.size(), vDisk,
-						    vRow.size(), vRow);
-						echo(msg);
-						ok = false;
-					}
+					    table.name, kDisk, table.primaryKey, pk,
+					    vDisk.size(), vDisk,
+					    vRow.size(), vRow,
+					    fix);
+					echo(msg);
+					ok = false;
 				}
 			}
 		}

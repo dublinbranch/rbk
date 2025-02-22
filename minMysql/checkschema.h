@@ -11,6 +11,8 @@ class DB;
 
 class CheckSchema {
       public:
+	using ReMap = mapV2<QByteArray, sqlRow>;
+
 	struct Key {
 		QString database;
 		QString table;
@@ -27,8 +29,9 @@ class CheckSchema {
 	using Schemas    = QMapV2<Key, sqlResult>;
 
 	explicit CheckSchema(DB* db_, QStringList database_);
-	bool checkDbSchema();
-	bool checkTableData(const TableDatas& td);
+	bool         checkDbSchema();
+	bool         checkTableData(const TableDatas& td);
+	static ReMap reMap(const sqlResult& raw, const QByteArray& pk);
 
 	//This MUST be intentionally called when schema is updated
 	//Remember to also add into the QRC file
