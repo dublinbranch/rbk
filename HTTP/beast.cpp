@@ -304,7 +304,7 @@ void handle_request(
 			}
 
 			if (conf->htmlAllException) {
-				payload.html = msg;
+				payload.html = "<pre>\n" + msg + "\n</pre>";
 			} else {
 				auto HE = dynamic_cast<const HttpException*>(&e);
 				if (HE) {
