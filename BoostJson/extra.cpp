@@ -425,6 +425,9 @@ std::string_view asString(const boost::json::object& value, std::string_view key
 }
 
 string asStdString(const boost::json::value& value) {
+	if (!value.is_string()) {
+		return {};
+	}
 	auto& r = value.as_string();
 	return std::string(r.data(), r.size());
 }
