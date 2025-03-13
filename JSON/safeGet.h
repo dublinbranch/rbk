@@ -44,7 +44,7 @@ class JSafe : public jsonValue {
 			case rapidjson::Type::kStringType: {
 				bool ok;
 				V    res;
-				auto qb = QByteArray::fromRawData(value.GetString(), value.GetStringLength());
+				auto qb = QByteArray::fromRawData(value.GetString(), (int)value.GetStringLength());
 				if constexpr (std::is_floating_point<V>::value) {
 					res = qb.toDouble(&ok);
 				} else if constexpr (std::is_signed<V>::value) {

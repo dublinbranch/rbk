@@ -79,7 +79,7 @@ struct JsonRes {
 	boost::json::value json;
 	//if position is set, it means there was an error and this is the position
 	size_t                    position = 0;
-    boost::system::error_code   ec;
+	boost::system::error_code ec;
 	boost::json::storage_ptr  storage;
 	[[nodiscard]] std::string composeErrorMsg() const;
 };
@@ -141,6 +141,7 @@ T rqNumber(const boost::json::value& v, std::string_view key) {
 class DB;
 void sqlEscape(boost::json::object& value, DB* db);
 
+std::string join(const boost::json::array& array);
 //bj::value rq(bj::object)
 
 // template <typename T>

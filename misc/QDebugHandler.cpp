@@ -135,6 +135,12 @@ std::string submoduleInfo() {
  */
 void commonInitialization(const NanoSpammerConfig* _config) {
 	initLocaleTZ();
+
+	// enable the printing
+	QLoggingCategory::setFilterRules("*.debug=true");
+
+	qInstallMessageHandler(generalMsgHandler);
+
 	config = _config;
 
 	std::string header;
@@ -340,9 +346,4 @@ void initLocaleTZ() {
 #endif
 
 	tzset();
-
-	// enable the printing
-	QLoggingCategory::setFilterRules("*.debug=true");
-
-	qInstallMessageHandler(generalMsgHandler);
 }

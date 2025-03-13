@@ -425,6 +425,9 @@ std::string_view asString(const boost::json::object& value, std::string_view key
 }
 
 string asStdString(const boost::json::value& value) {
+	if(!value.is_string()){
+		return {};
+	}
 	auto& r = value.as_string();
 	return std::string(r.data(), r.size());
 }
@@ -478,4 +481,8 @@ std::expected<std::string_view, string> asStringVerbose(const boost::json::objec
 		return asString(*el);
 	}
 	return std::unexpected(F("Impossible to find {} in json", key));
+}
+
+string join(const boost::json::array& array) {
+	return bj::serialize(array);
 }

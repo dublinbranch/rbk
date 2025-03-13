@@ -647,7 +647,7 @@ StMysqlPtr DB::connect() const {
 
 		uint timeout = 10;
 		mysql_options(conn, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
-		mysql_options(conn, MYSQL_OPT_WRITE_TIMEOUT, &timeout);
+		mysql_options(conn, MYSQL_OPT_WRITE_TIMEOUT, &conf.writeTimeout);
 		/**
 		 * This is a double edged sword
 		 * during long query you will have error 2013

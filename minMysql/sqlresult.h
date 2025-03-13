@@ -1,9 +1,9 @@
 #ifndef SQLRESULT_H
 #define SQLRESULT_H
 
+#include "mymaria.h"
 #include "rbk/mapExtensor/mapV2.h"
 #include "sqlRow.h"
-#include "mymaria.h"
 
 class MyType {
       public:

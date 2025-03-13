@@ -11,7 +11,7 @@ class QRegularExpression;
 struct DBConf {
 	DBConf();
 	QByteArray                host = "127.0.0.1";
-    QByteArray                user;
+	QByteArray                user;
 	QByteArray                pass;
 	std::optional<QByteArray> sock;
 	int64_t                   cacheId = 0;
@@ -24,6 +24,8 @@ struct DBConf {
 	// This header is quite big, better avoid the inclusion
 	std::vector<std::shared_ptr<QRegularExpression>> warningSuppression;
 
+	//How much time we can wait when sending data ? If you do very large insert you might want to increase
+	std::optional<uint> writeTimeout = 10;
 	//This is dangerous water, a short timeout will trigger error on long sql, but also will not be responsive on short one
 	//yes is a fault in mysql protocol that should have some kind of heartbeat mechanism while the sql is ongoing
 	//the default of 0 means never timeout, which... is not the best
