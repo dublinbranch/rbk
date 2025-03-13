@@ -22,6 +22,10 @@ thread_local mi_tls_repository<long>::mapS mi_tls_repository<long>::repository =
     std::make_shared<mi_tls_repository<long>::mapT>();
 
 template <>
+thread_local mi_tls_repository<u64>::mapS mi_tls_repository<u64>::repository =
+	std::make_shared<mi_tls_repository<u64>::mapT>();
+
+template <>
 thread_local mi_tls_repository<std::shared_ptr<St_mysqlW>>::mapS mi_tls_repository<std::shared_ptr<St_mysqlW>>::repository =
     std::make_shared<mi_tls_repository<std::shared_ptr<St_mysqlW>>::mapT>();
 

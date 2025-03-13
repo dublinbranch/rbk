@@ -1,17 +1,20 @@
 #include "stringoso.h"
 
 QByteAdt::QByteAdt(const QByteArray& input)
-	: QByteArray(input)  // calls the base class copy constructor
+    : QByteArray(input) // calls the base class copy constructor
 {
 	// No detach() call needed. The underlying copy-on-write mechanism remains intact.
 }
 
 QByteAdt::QByteAdt(const QString& input)
-	: QByteArray(input.toUtf8())
-{
+    : QByteArray(input.toUtf8()) {
 	// This directly calls the QByteArray copy constructor.
 	// The QByteArray conversion from QString already provides a QByteArray
 	// that supports copy-on-write, so no further action is required.
+}
+
+QByteAdt::QByteAdt(const QStringRef& input)
+    : QByteArray(input.toUtf8()) {
 }
 
 QByteAdt::QByteAdt(const std::string& input) {
@@ -81,7 +84,9 @@ QStringAdt::QStringAdt(const QByteArray& input) {
 	*this = fromUtf8(input);
 }
 
-QStringAdt::QStringAdt(const QString& input) : QString(input) {}
+QStringAdt::QStringAdt(const QString& input)
+    : QString(input) {
+}
 
 QStringAdt::QStringAdt(const std::string& input) {
 	*this = fromStdString(input);

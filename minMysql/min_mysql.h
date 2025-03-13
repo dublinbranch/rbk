@@ -216,7 +216,7 @@ class DB {
 	bool   confSet = false;
 	DBConf conf;
 	// Mutable is needed for all of them
-	mutable mi_tls<long> affectedRows;
+	mutable mi_tls<u64> affectedRows;
 	// this allow to spam the DB handler around, and do not worry of thread, each thread will create it's own connection!
 	mutable mi_tls<StMysqlPtr> connPool;
 	// used for asyncs

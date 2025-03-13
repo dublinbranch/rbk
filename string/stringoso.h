@@ -11,6 +11,7 @@ class QByteAdt : public QByteArray {
 	QByteAdt() = default;
 	QByteAdt(const QByteArray& input);
 	QByteAdt(const QString& input);
+	QByteAdt(const QStringRef& input);
 	QByteAdt(const std::string& input);
 	QByteAdt(const std::string_view& input);
 	QByteAdt(const char* input);

@@ -107,6 +107,7 @@ SOURCES += \
 HEADERS += \
     $$PWD/QR/qr_code.h \
     $$PWD/QR/qrcodegen.hpp \
+    $$PWD/mapExtensor/OptionalV2.h \
     $$PWD/minMysql/sqlrowv2.h \
 	$$PWD/BoostJson/tagInvokeCrono.h \
     $$PWD/BoostJson/taginvoke.h \
