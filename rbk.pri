@@ -40,16 +40,18 @@ QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wconversion -fno-permissive
 
 CONFIG += object_parallel_to_source
 linux {
-    DEFINES += GIT_STATUS='\\"$(shell git -C '$$_PRO_FILE_PWD_' describe  --always --dirty --abbrev=99)\\"'
-
     #except slows down everything immensely -.- so when needed I will just bump before putting live
     #usually only Roy leaves this one as is only relevant for live code
-    #DEFINES += SmolHack1=0'$(shell touch '$$PWD'/gitTrick/buffer.cpp)'
+    defined(WITH_GIT_TRICK,var){
+        DEFINES += SmolHack1=0'$(shell touch '$$PWD'/gitTrick/buffer.cpp)'
 
-    #this one need to be stored in a file as contain newline and other complex char, same stuff as above cache all!
-    #sometime, for some reason is not able to auto create the file, just touch rbk/gitTrick/submoduleInfo
-    system(git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)
-    #DEFINES += SmolHack2=0'$(shell git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)'
+        DEFINES += GIT_STATUS='\\"$(shell git -C '$$_PRO_FILE_PWD_' describe  --always --dirty --abbrev=99)\\"'
+
+        #this one need to be stored in a file as contain newline and other complex char, same stuff as above cache all!
+        #sometime, for some reason is not able to auto create the file, just touch rbk/gitTrick/submoduleInfo
+        system(git -C '$$_PRO_FILE_PWD_' submodule foreach git describe --always --abbrev=99 --dirty > '$$_PRO_FILE_PWD_'/rbk/gitTrick/submoduleInfo)
+    
+    }
 
     #QT is amazing, it can easily embedd and later read such file, there is not noticeable penalty in linking time for this operation
     RESOURCES     += $$PWD/gitTrick/resources.qrc
