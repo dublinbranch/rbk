@@ -43,7 +43,9 @@ linux {
     #except slows down everything immensely -.- so when needed I will just bump before putting live
     #usually only Roy leaves this one as is only relevant for live code
     defined(WITH_GIT_TRICK,var){
-        DEFINES += SmolHack1=0'$(shell touch '$$PWD'/gitTrick/buffer.cpp)'
+        
+        #this will force it to relink each time, to have fresh data
+        QMAKE_PRE_LINK += touch $$PWD/gitTrick/buffer.cpp
 
         DEFINES += GIT_STATUS='\\"$(shell git -C '$$_PRO_FILE_PWD_' describe  --always --dirty --abbrev=99)\\"'
 
@@ -403,14 +405,6 @@ SOURCES += \
     $$PWD/thread/tmonitoring.cpp \
     $$PWD/gitTrick/buffer.cpp \
     $$PWD/versioncheck.cpp
-
-#this will force it to recompile each time, to have fresh data
-linux {
-    QMAKE_PRE_LINK += touch $$PWD/gitTrick/buffer.cpp
-}
-#ofc win is laking the most basic command, so we skip for now
-
-
 
 SOURCES += $$PWD/HTTP/url.cpp
 	
