@@ -64,6 +64,11 @@ class SScol {
 	 * @brief verbatim
 	 * usage:
 	{
+
+	        composer.pushRaw
+
+	        OR
+
 	        SScol col;
 	        col.verbatim = true;
 	        col.key = F("name LIKE '%{}%'", search);
@@ -108,13 +113,15 @@ class SqlComposer : public std::vector<SScol> {
 		return *this;
 	}
 
-/*NO! never use this, else the value if is a bool is lost!
-	template <typename K>
-	SqlComposer& push(const K& key_, bool replaceIf = false) {
-		push(SScol{key_, key_}, replaceIf);
-		return *this;
-	}
-*/
+	SqlComposer& pushRaw(std::string_view raw_);
+
+	/*NO! never use this, else the value if is a bool is lost!
+	        template <typename K>
+	        SqlComposer& push(const K& key_, bool replaceIf = false) {
+	                push(SScol{key_, key_}, replaceIf);
+	                return *this;
+	        }
+	*/
 
 	template <typename K, typename V>
 	SqlComposer& pushIfMissing(const K& key_, const V& val_) {

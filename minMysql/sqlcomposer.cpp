@@ -34,6 +34,14 @@ void SqlComposer::pushNoCheck(const SScol& col) {
 	longestVal = std::max(longestVal, col.val.val.size());
 }
 
+SqlComposer &SqlComposer::pushRaw(std::string_view raw_) {
+	SScol col;
+	col.verbatim = true;
+	col.key      = raw_;
+	push(col);
+	return *this;
+}
+
 std::string SqlComposer::compose() const {
 	//In padding we trust
 

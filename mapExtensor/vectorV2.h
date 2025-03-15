@@ -20,13 +20,13 @@ class vectorV2 : public std::vector<T> {
 	}
 
 	template <typename N>
-	bool contain(const N& n) const {
+	bool contains(const N& n) const {
 		return std::find(this->begin(), this->end(), n) != this->end();
 	}
 
 	template <typename N>
 	bool try_insert(const N& n) {
-		if (!contain(n)) {
+		if (!contains(n)) {
 			this->push_back(n);
 			return true;
 		}
