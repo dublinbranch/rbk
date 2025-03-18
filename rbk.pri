@@ -37,8 +37,12 @@ QMAKE_CXXFLAGS += -Wunused -Wunused-function
 QMAKE_CXXFLAGS += -std=gnu++2b
 #-Werror -Wconversion
 QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wconversion -fno-permissive -Werror=return-type
+#https://www.youtube.com/watch?v=vtz8S10hGuc https://gcc.gnu.org/wiki/Visibility
+QMAKE_CXXFLAGS += -fvisibility=hidden
 
+#do not make a mega folder, but keep the source folder structure
 CONFIG += object_parallel_to_source
+
 linux {
     #except slows down everything immensely -.- so when needed I will just bump before putting live
     #usually only Roy leaves this one as is only relevant for live code
