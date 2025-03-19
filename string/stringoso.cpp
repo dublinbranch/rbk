@@ -1,4 +1,5 @@
 #include "stringoso.h"
+#include "rbk/misc/intTypes.h"
 
 QByteAdt::QByteAdt(const QByteArray& input)
     : QByteArray(input) // calls the base class copy constructor
@@ -23,7 +24,7 @@ QByteAdt::QByteAdt(const std::string& input) {
 #if QT_VERSION_MAJOR == 5
 	setRawData(input.data(), static_cast<uint>(input.size()));
 #elif QT_VERSION_MAJOR == 6
-	setRawData(input.data(), input.size());
+	setRawData(input.data(), (i64)input.size());
 #endif
 	detach();
 }
@@ -33,7 +34,7 @@ QByteAdt::QByteAdt(const std::string_view& input) {
 #if QT_VERSION_MAJOR == 5
 	setRawData(input.data(), (uint)input.size());
 #elif QT_VERSION_MAJOR == 6
-	setRawData(input.data(), input.size());
+	setRawData(input.data(), (i64)input.size());
 #endif
 	detach();
 }
@@ -43,7 +44,7 @@ QByteAdt::QByteAdt(const char* input) {
 #if QT_VERSION_MAJOR == 5
 	setRawData(input, (uint)strlen(input));
 #elif QT_VERSION_MAJOR == 6
-	setRawData(input, strlen(input));
+	setRawData(input, (i64)strlen(input));
 #endif
 	detach();
 }
@@ -53,7 +54,7 @@ QByteAdt::QByteAdt(const std::filesystem::__cxx11::path& input) {
 	setRawData(input.c_str(), (uint)input.string().size());
 #elif QT_VERSION_MAJOR == 6
 	std::string inputStr = input.string();
-	setRawData(inputStr.c_str(), inputStr.size());
+	setRawData(inputStr.c_str(), (i64)inputStr.size());
 #endif
 	detach();
 }
@@ -98,7 +99,7 @@ QStringAdt::QStringAdt(const std::string_view& input) {
 #if QT_VERSION_MAJOR == 5
 	append(fromLocal8Bit(input.data(), (int)input.size()));
 #elif QT_VERSION_MAJOR == 6
-	append(fromLocal8Bit(input.data(), input.size()));
+	append(fromLocal8Bit(input.data(), (i64)input.size()));
 #endif
 }
 
@@ -106,7 +107,7 @@ QStringAdt::QStringAdt(const char* input) {
 #if QT_VERSION_MAJOR == 5
 	append(fromLocal8Bit(input, (int)strlen(input)));
 #elif QT_VERSION_MAJOR == 6
-	append(fromLocal8Bit(input, strlen(input)));
+	append(fromLocal8Bit(input, (i64)strlen(input)));
 #endif
 }
 
