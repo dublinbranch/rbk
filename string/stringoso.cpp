@@ -13,9 +13,11 @@ QByteAdt::QByteAdt(const QString& input)
 	// that supports copy-on-write, so no further action is required.
 }
 
+#if (QT_VERSION_MAJOR == 5)
 QByteAdt::QByteAdt(const QStringRef& input)
     : QByteArray(input.toUtf8()) {
 }
+#endif
 
 QByteAdt::QByteAdt(const std::string& input) {
 #if QT_VERSION_MAJOR == 5

@@ -11,11 +11,13 @@ class QByteAdt : public QByteArray {
 	QByteAdt() = default;
 	QByteAdt(const QByteArray& input);
 	QByteAdt(const QString& input);
-	QByteAdt(const QStringRef& input);
 	QByteAdt(const std::string& input);
 	QByteAdt(const std::string_view& input);
 	QByteAdt(const char* input);
 	QByteAdt(const std::filesystem::__cxx11::path& input);
+#if (QT_VERSION_MAJOR == 5)
+	QByteAdt(const QStringRef& input);
+#endif
 };
 
 //in many places a std::string is requried. so we can not use string_view as the base entity
