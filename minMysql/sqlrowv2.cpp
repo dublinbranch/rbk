@@ -5,6 +5,9 @@ SqlResultV2::SqlResultV2() {
 }
 
 SqlResultV2::SqlResultV2(const sqlResult& old) {
+	if (old.empty()) {
+		return;
+	}
 	// Copy columns
 	columns              = std::make_shared<SqlResV2::TypeMap>();
 	const auto& firstRow = old.begin();
@@ -47,7 +50,7 @@ QDataStream& operator<<(QDataStream& out, const SqlResultV2& result) {
 QDataStream& operator>>(QDataStream& in, SqlResultV2& result) {
 	// Deserialize QVector<SqlRowV2> (inherited part)
 	QVector<SqlRowV2>& baseRef = result; // Get reference to base class
-	in >> baseRef;                     // Deserialize directly into base class reference
+	in >> baseRef;                       // Deserialize directly into base class reference
 
 	// Deserialize additional members
 	in >> *result.columns;
