@@ -3,11 +3,14 @@
 //This file is a disciple of the light shown in https://www.boost.org/doc/libs/1_80_0/libs/json/doc/html/json/dom/conversion.html
 #include "rbk/BoostJson/taginvoke.h"
 #include "rbk/BoostJson/to_string.h"
+#include "rbk/fmtExtra/dynamic.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/string/stringoso.h"
 #include <boost/json.hpp>
+#include <concepts>
 #include <expected>
 #include <optional>
+#include <type_traits>
 
 //there is no arm in doing this
 namespace bj = boost::json;
@@ -142,6 +145,38 @@ class DB;
 void sqlEscape(boost::json::object& value, DB* db);
 
 std::string join(const boost::json::array& array);
+
+void                     swap(const bj::value& v, std::vector<std::string>& target);
+std::vector<std::string> toVecString(const bj::value& v);
+
+template <arithmetic T>
+void swap(const bj::value& v, T& target) {
+	target = v.to_number<T>();
+}
+
+template <arithmetic T>
+void swap(const boost::json::object& v, std::string_view key, T& target) {
+	swap(v.at(key), target);
+}
+
+template <arithmetic T>
+void swap(const boost::json::object& v, std::string_view key, std::vector<T>& target) {
+	target.clear();
+	auto& arr = v.at(key).as_array();
+	target.reserve(arr.size());
+
+	for (const auto& item : arr) {
+		if (item.is_number()) {
+			target.push_back(item.to_number<T>());
+		} else if (item.is_string()) {
+			item.as_string();
+		} else {
+			auto msg = F("impossible to convert into number {} is a {} : {}", key, item.kind(), pretty_print(item));
+			throw ExceptionV2(msg);
+		}
+	}
+}
+
 //bj::value rq(bj::object)
 
 // template <typename T>

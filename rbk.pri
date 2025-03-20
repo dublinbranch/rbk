@@ -143,6 +143,7 @@ HEADERS += \
     $$PWD/misc/decimate.h \
     $$PWD/misc/qelapsedtimerv2.h \
     $$PWD/misc/sleep.h \
+    $$PWD/number/converter.h \
     $$PWD/number/intTypes.h \
     $$PWD/string/qstringview.h \
     $$PWD/string/stringoso.h \

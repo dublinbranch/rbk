@@ -486,3 +486,23 @@ std::expected<std::string_view, string> asStringVerbose(const boost::json::objec
 string join(const boost::json::array& array) {
 	return bj::serialize(array);
 }
+
+void swap(const boost::json::value& v, std::vector<string>& target) {
+	target.clear();
+	auto& arr = v.as_array();
+	target.reserve(arr.size());
+
+	for (const auto& item : arr) {
+		if (item.is_string()) {
+			target.push_back(asStdString(item.as_string()));
+		} else {
+			throw ExceptionV2(F("something is not a string but a {} = {}", v.kind(), pretty_print(v)));
+		}
+	}
+};
+
+std::vector<string> toVecString(const boost::json::value& v) {
+	std::vector<string> res;
+	swap(v, res);
+	return res;
+}

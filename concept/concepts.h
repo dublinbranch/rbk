@@ -27,4 +27,7 @@ concept TagInvokable_SS = requires(const RBK::swapTypeToTag<T> tag, const std::s
 template <typename T>
 concept isEnum = std::is_enum_v<T>;
 
+template <class T>
+concept arithmetic = std::integral<T> || std::floating_point<T>;
+
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_CONCEPT_ISRVALUE_H

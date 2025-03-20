@@ -12,4 +12,6 @@ class array;
 } // namespace json
 } // namespace boost
 
+namespace bj = boost::json;
+
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_BOOSTJSON_FD_H
