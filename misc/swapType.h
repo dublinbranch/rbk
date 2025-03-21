@@ -199,6 +199,11 @@ void swapType(const std::string& source, D& dest) {
 }
 
 template <typename D>
+void swapType(const std::string_view& source, D& dest) {
+	swapType(std::string(source), dest);
+}
+
+template <typename D>
 void swapType(const QString& source, D& dest) {
 	if constexpr (std::is_same<D, QString>::value) {
 		dest = source;

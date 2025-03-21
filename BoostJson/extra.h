@@ -5,12 +5,10 @@
 #include "rbk/BoostJson/to_string.h"
 #include "rbk/fmtExtra/dynamic.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
+#include "rbk/number/converter.h"
 #include "rbk/string/stringoso.h"
 #include <boost/json.hpp>
-#include <concepts>
 #include <expected>
-#include <optional>
-#include <type_traits>
 
 //there is no arm in doing this
 namespace bj = boost::json;
@@ -150,31 +148,43 @@ void                     swap(const bj::value& v, std::vector<std::string>& targ
 std::vector<std::string> toVecString(const bj::value& v);
 
 template <arithmetic T>
-void swap(const bj::value& v, T& target) {
-	target = v.to_number<T>();
+T swap(const boost::json::value& v) {
+	if (v.is_number()) {
+		return v.to_number<T>();
+	} else if (v.is_string()) {
+		return string_to_number<T>(v.as_string());
+	} else {
+		//auto msg = F("impossible to convert into number {} is a {} : {}", key, item.kind(), pretty_print(item));
+		auto msg = F("impossible to convert into number {} is a {} : {}", pretty_print(v), v.kind());
+		throw ExceptionV2(msg);
+	}
 }
 
 template <arithmetic T>
 void swap(const boost::json::object& v, std::string_view key, T& target) {
-	swap(v.at(key), target);
+	target = swap<T>(v.at(key));
 }
 
 template <arithmetic T>
 void swap(const boost::json::object& v, std::string_view key, std::vector<T>& target) {
 	target.clear();
-	auto& arr = v.at(key).as_array();
-	target.reserve(arr.size());
-
-	for (const auto& item : arr) {
-		if (item.is_number()) {
-			target.push_back(item.to_number<T>());
-		} else if (item.is_string()) {
-			item.as_string();
-		} else {
-			auto msg = F("impossible to convert into number {} is a {} : {}", key, item.kind(), pretty_print(item));
-			throw ExceptionV2(msg);
+	auto& el = v.at(key);
+	if (el.is_array()) {
+		auto& arr = el.as_array();
+		target.reserve(arr.size());
+		for (const auto& item : arr) {
+			target.push_back(swap<T>(item));
 		}
+	} else {
+		target.push_back(swap<T>(el));
 	}
+}
+
+template <arithmetic T>
+T to_number(const boost::json::object& v, std::string_view key) {
+	T t;
+	swap(v, key, t);
+	return t;
 }
 
 //bj::value rq(bj::object)
