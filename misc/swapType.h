@@ -118,7 +118,7 @@ void swapType(const std::string& source, D& dest) {
 	} else if constexpr (std::is_same<D, QDateTime>::value) {
 		bool convertible;
 #if QT_VERSION_MAJOR >= 6
-		auto val = QByteArrayView(source.data(), source.length()).toUInt(&convertible);
+		auto val = QByteArrayView(source.data(), (i64)source.length()).toUInt(&convertible);
 #else
 		auto val = (D)QByteArray(source.data(), source.length()).toULongLong(&convertible);
 #endif
@@ -142,7 +142,7 @@ void swapType(const std::string& source, D& dest) {
 	} else if constexpr (std::is_arithmetic_v<D>) {
 		bool ok = false;
 #if QT_VERSION_MAJOR >= 6
-		auto qb = QByteArrayView(source.data(), source.length());
+		auto qb = QByteArrayView(source.data(), (i64)source.length());
 #else
 		auto qb = QByteArray(source.data(), (int)source.length());
 #endif
