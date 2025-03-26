@@ -145,6 +145,7 @@ HEADERS += \
     $$PWD/misc/sleep.h \
     $$PWD/number/converter.h \
     $$PWD/number/intTypes.h \
+    $$PWD/string/concept.h \
     $$PWD/string/qstringview.h \
     $$PWD/string/stringoso.h \
     $$PWD/types/isOptional.h \

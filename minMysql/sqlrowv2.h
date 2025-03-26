@@ -4,6 +4,7 @@
 #include "rbk/minMysql/sqlresult.h"
 #include "rbk/serialization/QDataStreamer.h"
 #include "rbk/string/comparator.h"
+#include "rbk/string/concept.h"
 
 namespace SqlResV2 {
 struct Field {
@@ -16,10 +17,10 @@ using TypeMap = mapV2<std::string, Field, std::less<>>;
 
 //using for key std string has many advantage at the moment compared to qbarray, which is still better for type conversion
 class SqlRowV2 {
+
       public:
 	SqlRowV2() = default;
 	SqlRowV2(const sqlRow& old);
-	using Key = const std::string&;
 
 	//std:string has the massive advantage of SSO... and is quite easy to create on the fly a no copy QByteArray if we need conversion
 	QVector<std::string> data;
@@ -42,6 +43,7 @@ class SqlRowV2 {
 		}
 	};
 
+	template <StdStringLike Key>
 	int fpOpt(Key key) const {
 		if (auto iter = columns->find(key); iter != columns->end()) {
 			return (int)iter->second.pos;
@@ -54,6 +56,7 @@ class SqlRowV2 {
 	        val = *v.value;
 	}
 	*/
+	template <StdStringLike Key>
 	[[nodiscard]] auto get(Key k) const {
 		if (auto pos = fpOpt(k); pos > -1) {
 			return Founded{&data[pos], true};
@@ -65,7 +68,7 @@ class SqlRowV2 {
 	Type value;
 	bool found = map.get("key",value);
 	*/
-	template <class Value>
+	template <StdStringLike Key, class Value>
 	bool get(Key k, Value& v) const {
 		if (auto pos = fpOpt(k); pos > -1) {
 			if constexpr (std::is_same_v<Value, std::string>) {
@@ -74,7 +77,7 @@ class SqlRowV2 {
 				try {
 					swapType(data[pos], v);
 				} catch (ExceptionV2& e) {
-					e.msg += "\n For key " + k;
+					e.msg += fmt::format("\n For key {}", k);
 				}
 			}
 			return true;
@@ -82,26 +85,46 @@ class SqlRowV2 {
 		return false;
 	}
 
-	template <class Value>
+	template <StdStringable Key, class Value>
 	void rq(Key k, Value& v) const {
-		if (!get(k, v)) {
-			throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
+		if constexpr (std::same_as<Key, const char*>) {
+			if (!get(std::string_view(k), v)) {
+				throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
+			}
+		} else {
+			if (!get(k, v)) {
+				throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
+			}
 		}
 	}
 
-	template <class Value>
+	template <class Value, StdStringable Key>
 	Value rq(Key k) const {
 		Value v;
-		if (!get(k, v)) {
-			throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
+		// Convert const char* to string_view if needed
+		if constexpr (std::same_as<Key, const char*>) {
+			if (!get(std::string_view(k), v)) {
+				throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
+			}
+		} else {
+			if (!get(k, v)) {
+				throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
+			}
 		}
 		return v;
 	}
 
+	template <StdStringable Key>
 	std::string rq(Key k) const {
 		std::string v;
-		if (!get(k, v)) {
-			throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
+		if constexpr (std::same_as<Key, const char*>) {
+			if (!get(std::string_view(k), v)) {
+				throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
+			}
+		} else {
+			if (!get(k, v)) {
+				throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
+			}
 		}
 		return v;
 	}
