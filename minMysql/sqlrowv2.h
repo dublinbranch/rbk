@@ -19,6 +19,7 @@ class SqlRowV2 {
       public:
 	SqlRowV2() = default;
 	SqlRowV2(const sqlRow& old);
+	using Key = const std::string&;
 
 	//std:string has the massive advantage of SSO... and is quite easy to create on the fly a no copy QByteArray if we need conversion
 	QVector<std::string> data;
@@ -33,16 +34,15 @@ class SqlRowV2 {
 	friend QDataStream& operator>>(QDataStream& in, SqlRowV2& row);
 
 	struct Founded {
-		const QByteArray* val   = nullptr;
-		bool              found = false;
+		const std::string* val   = nullptr;
+		bool               found = false;
 
 		explicit operator bool() const {
 			return found;
 		}
 	};
 
-	template <class Key>
-	int fpOpt(const Key& key) const {
+	int fpOpt(Key key) const {
 		if (auto iter = columns->find(key); iter != columns->end()) {
 			return (int)iter->second.pos;
 		}
@@ -54,8 +54,7 @@ class SqlRowV2 {
 	        val = *v.value;
 	}
 	*/
-	template <class Key>
-	[[nodiscard]] auto get(const Key& k) const {
+	[[nodiscard]] auto get(Key k) const {
 		if (auto pos = fpOpt(k); pos > -1) {
 			return Founded{&data[pos], true};
 		}
@@ -66,28 +65,32 @@ class SqlRowV2 {
 	Type value;
 	bool found = map.get("key",value);
 	*/
-	template <class Key, class Value>
-	bool get(const Key& k, Value& v) const {
+	template <class Value>
+	bool get(Key k, Value& v) const {
 		if (auto pos = fpOpt(k); pos > -1) {
 			if constexpr (std::is_same_v<Value, std::string>) {
 				v = data[pos];
 			} else {
-				swapType(data[pos], v);
+				try {
+					swapType(data[pos], v);
+				} catch (ExceptionV2& e) {
+					e.msg += "\n For key " + k;
+				}
 			}
 			return true;
 		}
 		return false;
 	}
 
-	template <class Key, class Value>
-	void rq(const Key& k, Value& v) const {
+	template <class Value>
+	void rq(Key k, Value& v) const {
 		if (!get(k, v)) {
 			throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
 		}
 	}
 
-	template <class Value, class Key>
-	Value rq(const Key& k) const {
+	template <class Value>
+	Value rq(Key k) const {
 		Value v;
 		if (!get(k, v)) {
 			throw MissingKeyEX(fmt::format("Key not found in row: {}", k));
@@ -95,8 +98,7 @@ class SqlRowV2 {
 		return v;
 	}
 
-	template <class Key>
-	std::string rq(const Key& k) const {
+	std::string rq(Key k) const {
 		std::string v;
 		if (!get(k, v)) {
 			throw MissingKeyEX(fmt::format("Key not found in row: {}", k));

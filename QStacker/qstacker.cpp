@@ -161,11 +161,7 @@ void __attribute__((__noreturn__)) __cxa_throw(
 		original_cxa_throw(thrown_exception, (std::type_info*)pvtinfo, dest);
 	}
 	if (cxaLevel != CxaLevel::none) {
-		static const QString x;
-		static const auto    qstringCode          = typeid(x).hash_code();
-		static const auto    stdExceptionTypeCode = typeid(std::exception).hash_code();
-
-		auto exceptionTypeCode = ((std::type_info*)pvtinfo)->hash_code();
+		//Normal exception are soft retarded -.- as you simply do not know where they started!
 
 		QString msg;
 
@@ -175,13 +171,6 @@ void __attribute__((__noreturn__)) __cxa_throw(
 			msg = QStacker16Light(5);
 		}
 
-		if (exceptionTypeCode == qstringCode) { //IF QString has been thrown is by us, and usually handled too
-			auto th = static_cast<QString*>(thrown_exception);
-			msg.prepend(*th);
-		} else if (exceptionTypeCode == stdExceptionTypeCode) {
-			auto th = static_cast<std::exception*>(thrown_exception);
-			msg.prepend(th->what());
-		}
 		switch (cxaLevel) {
 		case CxaLevel::warn:
 			qWarning().noquote() << msg;
@@ -210,9 +199,8 @@ void __attribute__((__noreturn__)) __cxa_throw(
 
 #endif
 
-#if WIN32
+//This is to handle signals, nothing to do with the exception
 backward::SignalHandling sh;
-#endif
 
 QString QStacker16Light(uint skip, QStackerOpt opt) {
 	return QStacker16(skip, opt);
