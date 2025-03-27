@@ -67,7 +67,6 @@ class CurlForm : private NoCopy {
 
 	/**
 	 * in some case we want to keep track of what is beeing sent
-	if you want to skip for something
 {
 	ResetAfterUse s(mime->saveJson, nullptr);
 	mime->add("access_token", campaign->account->kit);
