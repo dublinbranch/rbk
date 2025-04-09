@@ -3,7 +3,7 @@
 #include <string>
 
 struct HRef {
-	enum Target {
+	enum Target : int {
 		_blank = 0,
 		_self = 1,
 		_parent = 2,
