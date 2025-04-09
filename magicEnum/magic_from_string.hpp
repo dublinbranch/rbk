@@ -2,8 +2,9 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
+//This is needed as when compiling for arm64 on gcc13 we have plenty of error of enum with value out of bound, but is not true.
+//The other fix is to : int them and then give to element a specified value, but is not always possible, so we just suppress
 #include "magic_enum.hpp"
-// include any other affected headers here
 #pragma GCC diagnostic pop
 
 #include "fmt/format.h"
