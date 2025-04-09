@@ -4,9 +4,9 @@
 
 struct HRef {
 	enum Target {
-		_blank,
-		_self,
-		_parent,
+		_blank = 0,
+		_self = 1,
+		_parent = 2,
 	} target = Target::_blank;
 
 	std::string url;
