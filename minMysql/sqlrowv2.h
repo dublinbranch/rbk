@@ -43,7 +43,7 @@ class SqlRowV2 {
 		}
 	};
 
-	template <StdStringLike Key>
+	template <StdStringable Key>
 	int fpOpt(Key key) const {
 		if (auto iter = columns->find(key); iter != columns->end()) {
 			return (int)iter->second.pos;
@@ -68,7 +68,7 @@ class SqlRowV2 {
 	Type value;
 	bool found = map.get("key",value);
 	*/
-	template <StdStringLike Key, class Value>
+	template <StdStringable Key, class Value>
 	bool get(Key k, Value& v) const {
 		if (auto pos = fpOpt(k); pos > -1) {
 			if constexpr (std::is_same_v<Value, std::string>) {
