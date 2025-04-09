@@ -1,8 +1,13 @@
 #pragma once
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#include "magic_enum.hpp"
+// include any other affected headers here
+#pragma GCC diagnostic pop
+
 #include "fmt/format.h"
 #include "fmt/ranges.h"
-#include "magic_enum.hpp"
 #include "rbk/QStacker/httpexception.h"
 #include "rbk/concept/concepts.h"
 #include <QByteArray>
