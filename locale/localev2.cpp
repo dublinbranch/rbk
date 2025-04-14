@@ -164,7 +164,7 @@ const mapV2<Nation, QVector<Locale>>& localeDB(DB* db, string sql) {
 			Locale l(nat, lang);
 			row.rq("isMain", l.main);
 
-			final[nat].push_back(std::move(l));
+			final[l.nation].push_back(std::move(l));
 		}
 	}
 	return final;
