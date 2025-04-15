@@ -29,9 +29,6 @@ class mi_tls_repository {
 
 	void getRepo() {
 		return;
-		if (!repository) {
-			//repository = new mapT();
-		}
 	}
 
       protected:

@@ -87,11 +87,12 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 			dest = def;
 			return false;
 		}
-		if (iter.value().toUpper() == "NULL") {
+		auto v = iter.value();
+		if (v.toUpper() == "NULL") {
 			dest = def;
 			return false;
 		}
-		swapType(iter.value(), dest);
+		swapType(v, dest);
 		return true;
 	}
 

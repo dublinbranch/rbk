@@ -63,6 +63,7 @@ sqlResult DB::query(const StringAdt& sql) const {
 	if (sql.empty()) {
 		return {};
 	}
+	
 	auto logger = queryInner(sql);
 
 	if (noFetch) {
@@ -736,8 +737,6 @@ mariadb_tzinfo_to_sql /usr/share/zoneinfo | mariadb -u root mysql
 		query("SET collation_server = 'utf8mb4_general_ci';");
 	}
 
-	//this function is normally called when a new instance is created in a MT program, so we have to set again the local state
-	state.get().NULL_as_EMPTY = conf.NULL_as_EMPTY;
 	return sptr;
 }
 
@@ -868,7 +867,8 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 					// this is how sql NULL is signaled, instead of having a wrapper and check ALWAYS before access, we normally just ceck on result swap if a NULL has any sense here or not.
 					// Plus if you have the string NULL in a DB you are really looking for trouble
 					if (row[i] == nullptr && lengths[i] == 0) {
-						if (state.get().NULL_as_EMPTY) {
+						auto& v = state.get();
+						if (v.NULL_as_EMPTY) {
 							thisItem.insert(field.name, QByteArray());
 						} else {
 							thisItem.insert(field.name, BSQL_NULL);
