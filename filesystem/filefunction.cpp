@@ -5,7 +5,6 @@
 #include "rbk/defines/stringDefine.h"
 #include "rbk/fmtExtra/customformatter.h"
 #include "rbk/fmtExtra/dynamic.h"
-#include "rbk/magicEnum/magic_enum.hpp"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/misc/sleep.h"
 #include "rbk/serialization/serialize.h"
