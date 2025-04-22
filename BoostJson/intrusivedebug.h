@@ -1,6 +1,8 @@
 #ifndef HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_BOOSTJSON_INTRUSIVEDEBUG_H
 #define HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_BOOSTJSON_INTRUSIVEDEBUG_H
 
+#include <boost/preprocessor/stringize.hpp>
+
 //IF THIS file is included. well we want to use it... and to work we need to override the default one!
 //so if the default one is already included we must block compilation and report the error
 #ifdef BOOST_JSON_DETAIL_VALUE_TO_HPP
@@ -51,7 +53,7 @@ struct BJIntrusive {
 #elif BOOST_VERSION == 108600
 #include "rbk/BoostJson/override/value_to_108600.hpp"
 #else
-#pragma message "Unsupported Boost version for the intrusive HTTP Json customize one from json/detail/value_to.hpp"
+#pragma message "Unsupported Boost version " BOOST_PP_STRINGIZE(BOOST_VERSION) " for the intrusive HTTP Json customize one from json/detail/value_to.hpp"
 #include <boost/json/detail/value_to.hpp>
 #endif
 
