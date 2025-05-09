@@ -26,6 +26,8 @@ class SScol {
 		key = key_.val;
 	}
 
+	SScol(const std::string& key_);
+
 	template <typename K>
 	SScol(const K& key_, const Value& val_)
 	    : val(val_) {

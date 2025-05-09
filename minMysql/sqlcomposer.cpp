@@ -34,7 +34,7 @@ void SqlComposer::pushNoCheck(const SScol& col) {
 	longestVal = std::max(longestVal, col.val.val.size());
 }
 
-SqlComposer &SqlComposer::pushRaw(std::string_view raw_) {
+SqlComposer& SqlComposer::pushRaw(std::string_view raw_) {
 	SScol col;
 	col.verbatim = true;
 	col.key      = raw_;
@@ -191,4 +191,9 @@ SScol::Value::Value(const std::string& s, bool noQuote_, bool noEscape_) {
 	val      = s;
 	noQuote  = noQuote_;
 	noEscape = noEscape_;
+}
+
+SScol::SScol(const std::string& key_) {
+	key = key_;
+	setVal(key_);
 }
