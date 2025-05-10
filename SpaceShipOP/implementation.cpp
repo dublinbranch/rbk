@@ -1,7 +1,7 @@
 #include "qdateship.h"
 #include "qstringship.h"
 
-#if (QT_VERSION <= QT_VERSION_CHECK(6, 7, 0))
+#if (QT_VERSION < QT_VERSION_CHECK(6, 7, 0))
 
 #include "qdateship.h"
 #include <QDate>

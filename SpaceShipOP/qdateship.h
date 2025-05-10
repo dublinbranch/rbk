@@ -2,7 +2,7 @@
 
 #include<QDate>
 
-#if (QT_VERSION <= QT_VERSION_CHECK(6, 7, 0))
+#if (QT_VERSION < QT_VERSION_CHECK(6, 7, 0))
 
 #include <compare>
 class QDate;

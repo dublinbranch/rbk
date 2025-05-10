@@ -43,11 +43,15 @@ QMAKE_CXXFLAGS += -fvisibility=hidden
 #do not make a mega folder, but keep the source folder structure
 CONFIG += object_parallel_to_source
 
+!exists($$PWD/gitTrick/submoduleInfo) {
+    system(touch $$PWD/gitTrick/submoduleInfo)
+}
+
 linux {
     #except slows down everything immensely -.- so when needed I will just bump before putting live
     #usually only Roy leaves this one as is only relevant for live code
     defined(WITH_GIT_TRICK,var){
-        
+
         #this will force it to relink each time, to have fresh data
         QMAKE_PRE_LINK += touch $$PWD/gitTrick/buffer.cpp
 
