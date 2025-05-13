@@ -1,6 +1,8 @@
 #include "util.h"
+#include "rbk/string/stringoso.h"
 #include <QByteArray>
 #include <QDataStream>
+#include <QUrl>
 #include <boost/algorithm/string/replace.hpp>
 #include <charconv>
 #include <string>
@@ -77,4 +79,8 @@ std::vector<string> split(const std::string& str, const std::string& delimiter) 
 
 	tokens.push_back(str.substr(start)); // Add the last token
 	return tokens;
+}
+
+std::string percentEncoding(QByteAdt adt) {
+	return QUrl::toPercentEncoding(adt).toStdString();
 }

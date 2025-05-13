@@ -1,3 +1,8 @@
+/**
+ * To use this system read 
+ * https://github.com/dublinbranch/rbk/wiki/Check-SChema
+ */ 
+
 #include "checkschema.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/filesystem/folder.h"

@@ -12,6 +12,13 @@ Locale::Locale(const QString& string, QString* ip) {
 	*this = decodeLocale(string, ip);
 }
 
+void Locale::setLanguage(const QString& newLanguage) {
+	if (newLanguage == "all") {
+		language = "en";
+	}
+	language = newLanguage;
+}
+
 Locale::Locale(const QString& nat, const QString& lang) {
 	nation   = nat.toUpper();
 	language = lang.toLower();

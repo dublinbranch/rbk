@@ -10,6 +10,8 @@
 class Locale {
       public:
 	QString nation;
+
+	//TODO Language need to became a class
 	QString language;
 	// weak chekc when constructing the this obj (no exception if mkt and HAL both empty)
 	bool weakCheck = false;
@@ -24,6 +26,7 @@ class Locale {
 	bool    isNull();
 	QString getString(const QString& style = QSL("xx-XX")) const;
 	auto    operator<=>(const Locale& lhs) const = default;
+	void    setLanguage(const QString& newLanguage);
 };
 
 /**
