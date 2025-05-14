@@ -167,16 +167,10 @@ std::vector<QByteArray> csvExploder(QByteArray line, const char separator) {
 
 using namespace std::literals;
 void checkFileLock(QString path, uint minDelay) {
-	{
-		QFileXT file(path);
-		file.open(QIODevice::WriteOnly);
-		file.close();
-	}
-	// check if there is another instance running...
-	QLockFile file(path);
+	// check if there is another instance running... force manual allocation to avoid the file is freed
+	auto file = new QLockFile(path);
     
-
-	if (!file.lock()) {
+	if (!file->tryLock(1)) {
 		//qWarning() << "Failed to lock file:" << file.errorString();
 		auto msg = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss ") + path + " is already locked, I refuse to start.\n (The application is already running.) ";
 		qDebug().noquote() << msg;
