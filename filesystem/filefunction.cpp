@@ -174,8 +174,9 @@ void checkFileLock(QString path, uint minDelay) {
 	}
 	// check if there is another instance running...
 	QLockFile file(path);
+    
 
-	if (file.isLocked()) {
+	if (!file.lock()) {
 		//qWarning() << "Failed to lock file:" << file.errorString();
 		auto msg = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss ") + path + " is already locked, I refuse to start.\n (The application is already running.) ";
 		qDebug().noquote() << msg;
