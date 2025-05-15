@@ -19,6 +19,8 @@
 #include <mutex>
 #include <sys/file.h>
 
+using namespace std::literals;
+
 #define QBL(str) QByteArrayLiteral(str)
 #define QSL(str) QStringLiteral(str)
 
@@ -165,15 +167,17 @@ std::vector<QByteArray> csvExploder(QByteArray line, const char separator) {
 	return final;
 }
 
-using namespace std::literals;
-void checkFileLock(QString path, uint minDelay) {
+void checkFileLock(QString path, uint minDelay, bool critical) {
 	// check if there is another instance running... force manual allocation to avoid the file is freed
 	auto file = new QLockFile(path);
-    
+
 	if (!file->tryLock(1)) {
-		//qWarning() << "Failed to lock file:" << file.errorString();
 		auto msg = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss ") + path + " is already locked, I refuse to start.\n (The application is already running.) ";
-		qDebug().noquote() << msg;
+		if (critical) {
+			qCritical().noquote() << msg;
+		} else {
+			qDebug().noquote() << msg;
+		}
 		sleep(minDelay);
 		exit(1);
 	}

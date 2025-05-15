@@ -63,7 +63,7 @@ sqlResult DB::query(const StringAdt& sql) const {
 	if (sql.empty()) {
 		return {};
 	}
-	
+
 	auto logger = queryInner(sql);
 
 	if (noFetch) {
@@ -197,7 +197,7 @@ Connection Info: {})",
 				//many times this call is very nested, so we bump the default stack trace lenght
 				ResetOnExit r(stackerMaxFrame, (uint)25);
 				qWarning().noquote() << QString::fromStdString(err) << QStacker16();
-				cxaNoStack     = true;
+				cxaNoStack     = false;
 				auto exception = DBException(err, DBException::Error::NA);
 				throw exception;
 			}
