@@ -15,6 +15,7 @@ Locale::Locale(const QString& string, QString* ip) {
 void Locale::setLanguage(const QString& newLanguage) {
 	if (newLanguage == "all") {
 		language = "en";
+		return;
 	}
 	language = newLanguage;
 }
