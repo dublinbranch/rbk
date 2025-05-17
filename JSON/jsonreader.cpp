@@ -5,7 +5,7 @@
 
 using namespace rapidjson;
 
-QByteArray JSONReader::subJsonRender(rapidjson::Value* el, bool pretty) {
+QByteArray JSONReader::subJsonRender(const rapidjson::Value* el, bool pretty) {
 	// https://github.com/Tencent/rapidjson/issues/1035
 
 	StringBuffer buffer;

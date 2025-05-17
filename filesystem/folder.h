@@ -11,7 +11,7 @@ bool mkdir(const std::string& dirName);
 bool mkdir(const char* dirName);
 } // namespace RBK
 
-bool mkdir(const QString& dirName);
+bool mkdir(const QStringAdt& dirName);
 
 void        cleanFolder(const QString& folder);
 QString     getMostRecent(const QString pathDir, const QString& filter);

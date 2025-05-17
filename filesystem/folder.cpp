@@ -8,7 +8,7 @@
 #include <iostream>
 #include <mutex>
 
-bool mkdir(const QString& dirName) {
+bool mkdir(const QStringAdt& dirName) {
 	static std::mutex            lock;
 	std::scoped_lock<std::mutex> scoped(lock);
 	QDir                         dir = QDir(dirName);
