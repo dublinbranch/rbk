@@ -22,7 +22,7 @@ class QSaveV2 : public QFile {
 };
 
 struct FileGetRes {
-	           operator bool();
+	operator bool();
 	QByteArray content;
 	bool       exist = false;
 };
@@ -30,7 +30,7 @@ struct FileGetRes {
 struct FPCRes {
 	bool                   ok;
 	QFileDevice::FileError error = QFileDevice::FileError::NoError;
-	                       operator bool();
+	operator bool();
 };
 
 /**
@@ -71,7 +71,8 @@ std::vector<QByteArray> csvExploder(QByteArray line, const char separator = 0);
  * @param minDelay, used to avoid to restart too soon (usefull in case of continuous crash restart loop), if 0 disable the delay
  * @param critical, use qCritical and will try to send a mail with the error
  */
-void checkFileLock(QString path, uint minDelay = 5, bool critical = true);
+class QLockFile;
+[[nodiscard]] std::unique_ptr<QLockFile> checkFileLock(QString path, uint minDelay = 5, bool critical = true);
 
 bool softlink(const QString& source, const QString& dest, bool quiet = false);
 

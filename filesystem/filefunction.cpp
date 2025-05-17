@@ -167,9 +167,9 @@ std::vector<QByteArray> csvExploder(QByteArray line, const char separator) {
 	return final;
 }
 
-void checkFileLock(QString path, uint minDelay, bool critical) {
+std::unique_ptr<QLockFile> checkFileLock(QString path, uint minDelay, bool critical) {
 	// check if there is another instance running... force manual allocation to avoid the file is freed
-	auto file = new QLockFile(path);
+	auto file = std::make_unique<QLockFile>(path);
 
 	if (!file->tryLock(1)) {
 		auto msg = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss ") + path + " is already locked, I refuse to start.\n (The application is already running.) ";
@@ -194,6 +194,7 @@ void checkFileLock(QString path, uint minDelay, bool critical) {
 		}
 	}
 	filePutContents(pathTs, pathTs);
+	return file;
 }
 
 // Much slower but more flexible, is that ever used ?
