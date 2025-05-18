@@ -170,7 +170,7 @@ CURL* CurlKeeper::get() const {
  * @param headers
  * @return
  */
-[[nodiscard]] Header parseHeader(const QStringView headers) {
+[[nodiscard]] Header parseHeader(const QString& headers) {
 	Header header;
 	auto   lines = QStringTokenizer{headers, u"\r\n"};
 	//auto   c     = lines.toContainer();
@@ -183,7 +183,7 @@ CURL* CurlKeeper::get() const {
 				auto value = line.mid(found + 2);
 				auto key   = line.left(found);
 				// auto k      = key.toString();
-				header.insert({key, value});
+				header.insert({key.toString(), value.toString()});
 			}
 		}
 	}

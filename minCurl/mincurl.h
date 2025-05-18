@@ -119,12 +119,14 @@ struct CaseInsensitiveCompare {
 	bool operator()(QStringView a, QStringView b) const noexcept;
 };
 
-class Header : public mapV2<QStringView, QStringView, CaseInsensitiveCompare> {
+//we are having intermittent crash for the QstringView going out of scope, and I can not find a long enought free stack trace -.-
+//So I switch to QString
+class Header : public mapV2<QString, QString, CaseInsensitiveCompare> {
       public:
 	QString serialize() const;
 };
 
-[[nodiscard]] Header parseHeader(const QStringView headers);
+[[nodiscard]] Header parseHeader(const QString &headers);
 
 struct CurlCallResult {
 	CurlCallResult();
