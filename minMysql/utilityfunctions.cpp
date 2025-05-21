@@ -3,6 +3,8 @@
 #include "rbk/fmtExtra/includeMe.h"
 #include <boost/json/object.hpp>
 
+using namespace std;
+
 sqlResult filterRunningQueries(const sqlResult& sqlProcessList) {
 	sqlResult res;
 	for (auto& sql : sqlProcessList) {
@@ -76,8 +78,6 @@ ORDER BY CREATE_TIME DESC)",
 	return f;
 }
 
-namespace bj = boost::json;
-
 boost::json::object row2json(const sqlRow& row) {
 	boost::json::object obj;
 	for (auto&& [k, v] : row) {
@@ -96,4 +96,28 @@ bj::object res2json(const sqlResult& res) {
 	}
 	final["rows"] = arr;
 	return final;
+}
+
+bool tableExists(string_view db, string_view table, DB* conn) {
+	//Check the target table do not exists
+	string sql = F(R"(
+SELECT COUNT(*) AS tbl_exists
+FROM information_schema.tables
+WHERE table_schema = ''
+  AND table_name   = '';
+)",
+	               db, table);
+
+	return conn->queryCacheLineV2(sql, 0, true).rq<int>("tbl_exists");
+}
+
+bool swapTable(string_view sourceDb, string_view sourceTable,
+               string_view targetDb, string_view targetTable, DB* conn) {
+	auto tmp = F("{}_{}", targetTable, QDateTime::currentDateTime().toString(fileDateTimeFormat));
+	auto sql = F("RENAME TABLE {}.{} TO {}.{}, {}.{} To {}.{};",
+	             targetDb, targetTable,
+	             targetDb, tmp,
+	             sourceDb, sourceTable,
+	             targetDb, targetTable);
+	return true;
 }

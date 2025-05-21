@@ -22,4 +22,8 @@ std::vector<std::string> getTablesInDB(DB* db, std::string_view schema);
 
 boost::json::object row2json(const sqlRow& row);
 boost::json::object res2json(const sqlResult& row);
+
+bool tableExists(std::string_view db, std::string_view table, DB* conn);
+bool swapTable(std::string_view sourceDb, std::string_view sourceTable,
+               std::string_view targetDb, std::string_view targetTable, DB* conn);
 #endif // UTILITYFUNCTIONS_H

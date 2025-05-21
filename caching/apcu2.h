@@ -24,9 +24,11 @@ class APCU : private NoCopy {
 
 	//to disable
 	/* Apply the constructor attribute to startupfun() so that it is executed before main()
+	 * thos must be two separated entity
+	 
 	   void startupfun (void) __attribute__ ((constructor));
-
-	   void startupfun (void)
+    
+	   void startupfun (void) 
 	   {   APCU::disableAPCU = true;    }
 */
 
