@@ -22,4 +22,6 @@ QString base64Nullable4Where(const QString& param, bool emptyAsNull = false);
 
 QByteArray shortMd5(const QByteArray& string, bool hex);
 QByteArray shortMd5(const QString& string, bool hex);
+
+bool isValidBase64(QString coded, QString* message = nullptr);
 #endif // B64_H

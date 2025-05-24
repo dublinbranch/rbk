@@ -184,7 +184,7 @@ thread: {}, queryDone: {}, reconnection: {}, busyConn: {}, totConn: {}, queryTim
 			throw exception;
 		} break;
 		default:
-			auto err = F(R"(Mysql error for sql:
+			string err = F(R"(Mysql error for sql:
 {}
 Error: {} 
 Code: {}

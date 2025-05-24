@@ -1,3 +1,10 @@
+/**
+ * Remember to enable this lib!
+ * Add in .pro file 
+ * WITH_REPROC = true
+ * And install the dependencies (search in rbk.pri)
+ */ 
+
 #ifndef RBK_EXECUTOR_H
 #define RBK_EXECUTOR_H
 

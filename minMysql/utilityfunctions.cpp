@@ -111,13 +111,13 @@ WHERE table_schema = ''
 	return conn->queryCacheLineV2(sql, 0, true).rq<int>("tbl_exists");
 }
 
-bool swapTable(string_view sourceDb, string_view sourceTable,
-               string_view targetDb, string_view targetTable, DB* conn) {
-	auto tmp = F("{}_{}", targetTable, QDateTime::currentDateTime().toString(fileDateTimeFormat));
-	auto sql = F("RENAME TABLE {}.{} TO {}.{}, {}.{} To {}.{};",
-	             targetDb, targetTable,
-	             targetDb, tmp,
-	             sourceDb, sourceTable,
-	             targetDb, targetTable);
-	return true;
-}
+// bool swapTable(string_view sourceDb, string_view sourceTable,
+//                string_view targetDb, string_view targetTable, DB* conn) {
+// 	auto tmp = F("{}_{}", targetTable, QDateTime::currentDateTime().toString(fileDateTimeFormat));
+// 	auto sql = F("RENAME TABLE {}.{} TO {}.{}, {}.{} To {}.{};",
+// 	             targetDb, targetTable,
+// 	             targetDb, tmp,
+// 	             sourceDb, sourceTable,
+// 	             targetDb, targetTable);
+// 	return true;
+// }
