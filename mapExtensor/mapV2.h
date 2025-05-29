@@ -292,7 +292,7 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		return this->begin()->second;
 	}
 
-	bool copyIfFound(const K& k, map_parent& source) {
+	bool copyIfFound(const K& k, const map_parent& source) {
 		auto iter = source.find(k);
 		auto end  = source.end();
 
