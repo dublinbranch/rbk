@@ -6,7 +6,7 @@
 #include <QStringList>
 #include <curl/curl.h>
 
-struct curlCall {
+struct CurlCall {
 	CURL*      curl = nullptr;
 	CURLcode   curlCode;
 	QByteArray response;
@@ -17,12 +17,18 @@ struct curlCall {
 	CURLTiming timing;
 };
 
+class DB;
+
 class ErrorLog {
       public:
-	QString     logQuery(const curlCall* call);
+	ErrorLog(DB* db_, CurlCall* call_);
+	~ErrorLog();
+
 	QStringList logList{};
-	QString     db    = "set me";
-	QString     table = "set me";
+	QString     db        = "set me";
+	QString     table     = "set me";
+	int         attempt   = 0;
+	u64         accountId = 0;
 	Header      header;
 	int         truncatedResponseLength = 100;
 	enum Format {
@@ -30,6 +36,11 @@ class ErrorLog {
 		csv
 	};
 	Format format = Format::sql;
+
+      private:
+	std::string logQuery();
+	DB*         conn = nullptr;
+	CurlCall*   call;
 };
 
 #endif // ERRORLOG_H

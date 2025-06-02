@@ -1,9 +1,16 @@
 #include "errorlog.h"
+#include "rbk/minMysql/min_mysql.h"
+#include "rbk/minMysql/sqlcomposer.h"
 #include "rbk/misc/b64.h"
 #include <QDateTime>
 #include <QDebug>
 
-QString ErrorLog::logQuery(const curlCall* call) {
+ErrorLog::ErrorLog(DB* db_, CurlCall* call_) {
+	conn = db_;
+	call = call_;
+}
+
+std::string ErrorLog::logQuery() {
 	auto curl     = call->curl;
 	auto response = call->response;
 	auto get      = call->get;
@@ -39,55 +46,21 @@ QString ErrorLog::logQuery(const curlCall* call) {
 		sErrBuf = call->errbuf;
 	}
 
-	switch (format) {
-	case Format::sql: {
-		static const QString skel = R"EOD(
-		INSERT INTO %1.%2 SET
-		ts = %3,
-		totalTime = %4,
-		preTransfer = %5,
-		curlCode = %6,
-		httpCode = %7,
-		get = %8,
-		post = %9,
-		response = %10,
-		errBuf = %11,
-		category = %12,
-		headers = %13;
-	)EOD";
-		auto                 log  = skel.arg(db)
-		               .arg(table)
-		               .arg(now)
-		               .arg(totalTime)
-		               .arg(preTransfer)
-		               .arg(call->curlCode)
-		               .arg(httpCode)
-					   .arg(base64this(get))
-					   .arg(base64this(post))
-					   .arg(base64this(truncatedResp))
-					   .arg(base64this(sErrBuf))
-					   .arg(call->category)
-					   .arg(base64this(header.serialize()));
-		logList.append(log);
-		return log;
-	} break;
-	case Format::csv: {
-		QStringList robe;
-		robe << QString::number(now);
-		robe << QString::number(totalTime);
-		robe << QString::number(preTransfer);
-		robe << QString::number(call->curlCode);
-		robe << QString::number(httpCode);
-		robe << header.serialize();
-		robe << sErrBuf;
-		robe << get;
-		robe << post;
-		robe << truncatedResp;
+	SqlComposer c(conn);
+	c.setTable(db, table);
+	c.push("ts", now);
+	c.push("accountId", accountId);
+	c.push("retry", attempt);
+	c.push("totalTime", totalTime);
+	c.push("preTransfer", preTransfer);
+	c.push("curlCode", call->curlCode);
+	c.push("httpCode", httpCode);
+	c.push("get", get);
+	c.push("post", post);
+	c.push("response", truncatedResp);
+	c.push("errBuf", sErrBuf);
+	c.push("category", call->category);
+	c.push("headers", header.serialize());
 
-		auto log = robe.join("\t,\t");
-		logList.append(log);
-		return log;
-	} break;
-	}
-	return QString();
+	return c.composeInsert();
 }

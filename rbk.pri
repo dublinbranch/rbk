@@ -264,14 +264,14 @@ defined(withMinCurl,var){
         $$PWD/minCurl/mailfetcher.h \
         $$PWD/minCurl/mincurl.h \
         $$PWD/minCurl/qstringtokenizer.h \
-        $$PWD/minCurl/urlgetcontent.h
+        #$$PWD/minCurl/urlgetcontent.h
 
     SOURCES += \
         $$PWD/minCurl/curlpp.cpp \
         $$PWD/minCurl/errorlog.cpp \
         $$PWD/minCurl/mailfetcher.cpp \
         $$PWD/minCurl/mincurl.cpp \
-        $$PWD/minCurl/urlgetcontent.cpp
+        #$$PWD/minCurl/urlgetcontent.cpp
 
 }
 

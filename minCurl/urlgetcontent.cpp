@@ -39,7 +39,7 @@ QByteArray UrlGetContent::execute(ErrorLog* eLog) {
 		}
 
 		if (eLog) {
-			curlCall call;
+			CurlCall call;
 			call.response = response;
 			call.curl     = useMe;
 			call.get      = url;
