@@ -10,7 +10,11 @@ ErrorLog::ErrorLog(DB* db_, CurlCall* call_) {
 	call = call_;
 }
 
-std::string ErrorLog::logQuery() {
+ErrorLog::~ErrorLog() {
+	conn->query(composeLogQuery());
+}
+
+std::string ErrorLog::composeLogQuery() {
 	auto curl     = call->curl;
 	auto response = call->response;
 	auto get      = call->get;
@@ -53,7 +57,7 @@ std::string ErrorLog::logQuery() {
 	c.push("retry", attempt);
 	c.push("totalTime", totalTime);
 	c.push("preTransfer", preTransfer);
-	c.push("curlCode", call->curlCode);
+	c.push("curlCode", std::to_underlying(call->curlCode));
 	c.push("httpCode", httpCode);
 	c.push("get", get);
 	c.push("post", post);
