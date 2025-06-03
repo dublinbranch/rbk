@@ -24,21 +24,15 @@ class ErrorLog {
 	ErrorLog(DB* db_, CurlCall* call_);
 	~ErrorLog();
 
-	QStringList logList{};
-	QString     db        = "set me";
-	QString     table     = "set me";
+	std::string db        = "set me";
+	std::string table     = "set me";
 	int         attempt   = 0;
 	u64         accountId = 0;
 	Header      header;
 	int         truncatedResponseLength = 100;
-	enum Format {
-		sql,
-		csv
-	};
-	Format format = Format::sql;
 
       private:
-	std::string logQuery();
+	std::string composeLogQuery();
 	DB*         conn = nullptr;
 	CurlCall*   call;
 };

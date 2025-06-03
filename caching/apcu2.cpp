@@ -79,8 +79,9 @@ any* APCU::fetchInner(const std::string& key) {
 	if (auto iter = byKey.find(key); iter != cache->end()) {
 
 		hits++;
-		//no idea why is const...
-		return const_cast<std::any*>(&iter->value);
+		auto* value = const_cast<std::any*>(&iter->value);
+		//fmt::print("Debug - has_value: {}, type: {}\n", value->has_value(), value->type().name());
+		return value;
 	}
 	miss++;
 	static std::any empty;
@@ -220,7 +221,7 @@ void APCU::diskLoad() {
 	std::shared_lock lock(innerLock);
 	in >> toBeWritten;
 
-	//fmt::print("APCU found {} element to reload\n", toBeWritten.size());
+	fmt::print("APCU found {} element to reload\n", toBeWritten.size());
 
 	for (auto&& [key, line] : toBeWritten) {
 		APCU::Row row;
@@ -256,17 +257,10 @@ void APCU::garbageCollector_F2() {
 		{
 			std::unique_lock lock(innerLock);
 
-			auto upper = byExpire.upper_bound(now);
 			//so we skip expire = 0
 			auto iter = byExpire.lower_bound(1);
 
-			while (true) {
-				//You can not have an OR condition in the for ?
-				auto b = iter == byExpire.end();
-				auto c = iter == upper;
-				if (b || c) {
-					break;
-				}
+			while (iter != byExpire.end()) {
 				auto& row = *iter;
 				(void)row;
 				if (iter->expired(now)) {
@@ -310,6 +304,10 @@ void apcuStore(const APCU::Row& row) {
 FetchPodResult fetchPOD(const std::string& key) {
 	auto a   = APCU::getInstance();
 	auto res = a->fetchInner(key);
+
+	// fmt::print("Debug fetchPOD - res: {}, has_value: {}, type: {}\n",
+	//            (void*)res, res->has_value(), res->type().name());
+
 	if (res->has_value()) {
 		return {any_cast<QByteArray>(*res), true};
 	}

@@ -15,6 +15,8 @@ std::string mustache(const std::string& raw, const boost::json::object& json);
 void        mustache(std::string_view raw, std::string& buffer, const boost::json::object& json);
 void        mustache(const QByteArray& raw, std::string& buffer, const boost::json::object& json);
 std::string mustache(const QByteArray& raw, const boost::json::object& json);
+
+//to force the resolution when using a string add the suffix _p
 std::string mustache(const std::filesystem::path& source, const boost::json::object& json);
 
 Log mustacheSudo(const std::filesystem::path& source, const std::filesystem::path& dest, const boost::json::object& json);

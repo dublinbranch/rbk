@@ -33,7 +33,7 @@ class APCU : private NoCopy {
 */
 
 	static inline bool disableAPCU = false;
-	//if 0 disabled, else every how many second to save on disk
+	//if 0 disabled, else every how many second to save on disk, this can be set at any time
 	static inline uint diskSaveTime = 0;
 
 	struct Row {
