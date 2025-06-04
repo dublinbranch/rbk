@@ -257,18 +257,16 @@ void APCU::garbageCollector_F2() {
 		{
 			std::unique_lock lock(innerLock);
 
-			//so we skip expire = 0
+			//so we skip expire = 0 (disable)
 			auto iter = byExpire.lower_bound(1);
+			//we limit the search to thing in the past
+			auto max = byExpire.upper_bound(now);
 
-			while (iter != byExpire.end()) {
+			while (iter != max) {
 				auto& row = *iter;
 				(void)row;
-				if (iter->expired(now)) {
-					iter = byExpire.erase(iter);
-					deleted++;
-					continue;
-				}
-				iter++;
+				iter = byExpire.erase(iter);
+				deleted++;
 			}
 		}
 		if (diskSaveTime) {
