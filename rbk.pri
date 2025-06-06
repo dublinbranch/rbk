@@ -47,15 +47,17 @@ CONFIG += object_parallel_to_source
     system(touch $$PWD/gitTrick/submoduleInfo)
 }
 
+        
 linux {
+    #always inject
+    DEFINES += GIT_STATUS='\\"$(shell git -C '$$_PRO_FILE_PWD_' describe  --always --dirty --abbrev=99)\\"'
+
     #except slows down everything immensely -.- so when needed I will just bump before putting live
     #usually only Roy leaves this one as is only relevant for live code
     defined(WITH_GIT_TRICK,var){
 
         #this will force it to relink each time, to have fresh data
         QMAKE_PRE_LINK += touch $$PWD/gitTrick/buffer.cpp
-
-        DEFINES += GIT_STATUS='\\"$(shell git -C '$$_PRO_FILE_PWD_' describe  --always --dirty --abbrev=99)\\"'
 
         #this one need to be stored in a file as contain newline and other complex char, same stuff as above cache all!
         #sometime, for some reason is not able to auto create the file, just touch rbk/gitTrick/submoduleInfo
@@ -153,8 +155,8 @@ HEADERS += \
     $$PWD/string/qstringview.h \
     $$PWD/string/stringoso.h \
     $$PWD/types/isOptional.h \
+    $$PWD/HTTP/util.h \
     $$PWD/HTTP/mime.h \
-	 $$PWD/HTTP/util.h \
     $$PWD/number/doubleoperator.h \
     $$PWD/string/comparator.h 
 
