@@ -307,7 +307,8 @@ FetchPodResult fetchPOD(const std::string& key) {
 	//            (void*)res, res->has_value(), res->type().name());
 
 	if (res->has_value()) {
-		return {any_cast<QByteArray>(*res), true};
+		auto q = any_cast<QByteArray>(*res);
+		return {q, true};
 	}
 	return {{}, false};
 }
