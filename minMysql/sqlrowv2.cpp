@@ -1,4 +1,6 @@
 #include "sqlrowv2.h"
+#include "min_mysql.h"
+#include "sqlcomposer.h"
 
 SqlResultV2::SqlResultV2() {
 	columns = std::make_shared<SqlResV2::TypeMap>();
@@ -79,6 +81,14 @@ SqlRowV2::SqlRowV2(const sqlRow& old) {
 
 bool SqlRowV2::empty() const {
 	return data.empty();
+}
+
+std::string SqlRowV2::prettyPrint(DB* db) const {
+	SqlComposer s(db);
+	for (auto& [key, info] : *columns) {
+		s.push(key, data[info.pos]);
+	}
+	return s.compose();
 }
 
 QDataStream& operator<<(QDataStream& out, const SqlRowV2& row) {

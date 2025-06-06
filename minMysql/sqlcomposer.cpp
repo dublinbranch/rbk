@@ -148,6 +148,16 @@ QString SqlComposer::composeUpdateQS() const {
 	return QString::fromStdString(composeUpdate());
 }
 
+string SqlComposer::composeUpsert() const {
+	getTable();
+	if (!where->empty()) {
+		throw ExceptionV2("Refusing an Upsert with where condition");
+	}
+	auto c   = compose();
+	auto sql = F("INSERT INTO {} SET {} ON DUPLICATE KEY UPDATE {};", table, c, c);
+	return sql;
+}
+
 string SqlComposer::composeInsert(bool ignora) const {
 	getTable();
 	if (!where->empty()) {

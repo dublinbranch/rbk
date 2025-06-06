@@ -94,7 +94,7 @@ class SqlComposer : public std::vector<SScol> {
 	std::string table;
 
       public:
-	explicit SqlComposer(PrivateTag) {};
+	explicit SqlComposer(PrivateTag){};
 	explicit SqlComposer(DB* db_, const std::string& separator_ = ",");
 
 	void push(const SScol& col, bool replaceIf = false);
@@ -176,6 +176,7 @@ class SqlComposer : public std::vector<SScol> {
 	[[nodiscard]] std::string composeUpdate() const;
 	[[nodiscard]] QString     composeUpdateQS() const;
 	[[nodiscard]] std::string composeInsert(bool ignora = false) const;
+	[[nodiscard]] std::string composeUpsert() const;
 	[[nodiscard]] std::string composeDelete() const;
 
 	[[nodiscard]] std::string composeSelect_V2();

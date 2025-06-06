@@ -6,6 +6,8 @@
 #include "rbk/string/comparator.h"
 #include "rbk/string/concept.h"
 
+class DB;
+
 namespace SqlResV2 {
 struct Field {
 	MyType type;
@@ -33,6 +35,8 @@ class SqlRowV2 {
 
 	// Friend declaration for deserialization
 	friend QDataStream& operator>>(QDataStream& in, SqlRowV2& row);
+    
+    std::string prettyPrint(DB* db) const;
 
 	struct Founded {
 		const std::string* val   = nullptr;
