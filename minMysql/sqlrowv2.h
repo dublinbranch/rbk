@@ -1,12 +1,19 @@
 #ifndef SQLROWV2_H
 #define SQLROWV2_H
 
-#include "rbk/minMysql/sqlresult.h"
+#include "mytype.h"
+#include "rbk/mapExtensor/mapV2.h"
+#include "rbk/mapExtensor/missingkeyex.h"
 #include "rbk/serialization/QDataStreamer.h"
 #include "rbk/string/comparator.h"
 #include "rbk/string/concept.h"
+#include <QVector>
+#include <fmt/core.h>
+#include <rbk/QStacker/exceptionv2.h>
 
 class DB;
+class sqlResult;
+class sqlRow;
 
 namespace SqlResV2 {
 struct Field {
@@ -35,8 +42,8 @@ class SqlRowV2 {
 
 	// Friend declaration for deserialization
 	friend QDataStream& operator>>(QDataStream& in, SqlRowV2& row);
-    
-    std::string prettyPrint(DB* db) const;
+
+	std::string prettyPrint(DB* db) const;
 
 	struct Founded {
 		const std::string* val   = nullptr;
