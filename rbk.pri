@@ -94,11 +94,8 @@ CONFIG += resources_big
 
 
 SOURCES += \
-    $$PWD/QR/qr_code.cpp \
-    $$PWD/QR/qrcodegen.cpp \
     $$PWD/minMysql/sqlrowv2.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
-    $$PWD/caching/cachable.cpp \
     $$PWD/dateTime/timerange.cpp \
     $$PWD/filesystem/suffix.cpp \
     $$PWD/hash/string.cpp \
@@ -119,8 +116,6 @@ SOURCES += \
     $$PWD/string/stringoso.cpp
 
 HEADERS += \
-    $$PWD/QR/qr_code.h \
-    $$PWD/QR/qrcodegen.hpp \
     $$PWD/mapExtensor/OptionalV2.h \
     $$PWD/minMysql/sqlrowv2.h \
 	$$PWD/BoostJson/tagInvokeCrono.h \
@@ -129,7 +124,6 @@ HEADERS += \
 	$$PWD/concept/concepts.h \
 	$$PWD/concept/isSharedPtr.h \
     $$PWD/HTTP/PMFCGI.h \
-    $$PWD/caching/cachable.h \
     $$PWD/filesystem/suffix.h \
     $$PWD/hash/rapidhash.h \
     $$PWD/hash/string.h \
@@ -337,7 +331,6 @@ HEADERS += \
     $$PWD/JSON/jsonreader.h \
     $$PWD/SpaceShipOP/qdateship.h \
     $$PWD/SpaceShipOP/qstringship.h \
-    $$PWD/caching/apcu2.h \
     $$PWD/dateTime/qdatetimev2.h \
     $$PWD/dateTime/timespecV2.h \
     $$PWD/RAII/resetAfterUse.h \
@@ -396,8 +389,6 @@ SOURCES += \
     $$PWD/rand/clampednormaldistribution.cpp \
     $$PWD/JSON/jsonreader.cpp \
     $$PWD/SpaceShipOP/implementation.cpp \
-    $$PWD/caching/apcu2.cpp \
-    $$PWD/caching/apcuTest.cpp \
     $$PWD/filesystem/filefunction.cpp \
     $$PWD/filesystem/folder.cpp \
     $$PWD/fmtExtra/customformatter.cpp \
@@ -517,6 +508,32 @@ SOURCES += \
 HEADERS += $$PWD/mustache/boost/mustache.hpp \
     $$PWD/mustache/extra.h
 
+
+defined(withQrCode,var){
+    HEADERS += \
+        $$PWD/QR/qr_code.h \
+        $$PWD/QR/qrcodegen.hpp \
+
+    SOURCES += \
+        $$PWD/QR/qr_code.cpp \
+        $$PWD/QR/qrcodegen.cpp \
+}
+
+defined(withAPCU,var){
+    HEADERS += \
+        $$PWD/caching/cachable.h \
+        $$PWD/caching/apcu2.h \
+
+    SOURCES += \
+        $$PWD/caching/cachable.cpp \
+        $$PWD/caching/apcu2.cpp \
+        $$PWD/caching/apcuTest.cpp \
+}
+
+
+
+
+
 #Stuff no longer used
     #$$PWD/misc/UaDecoder.h \
     #$$PWD/misc/UaDecoder.cpp \
@@ -524,4 +541,5 @@ HEADERS += $$PWD/mustache/boost/mustache.hpp \
     #$$PWD/misc/slacksender.h \
     #$$PWD/misc/twilio.h \
     #$$PWD/misc/twilio.cpp \
+
 
