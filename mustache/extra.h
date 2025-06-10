@@ -9,6 +9,8 @@
 class QByteArray;
 class Log;
 
+std::string mustache(std::string_view raw, const boost::json::value& json);
+
 std::string mustache(std::string_view raw, const boost::json::object& json);
 std::string mustache(const std::string& raw, const boost::json::object& json);
 

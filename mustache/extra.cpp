@@ -46,3 +46,9 @@ string mustache(const std::filesystem::__cxx11::path& source, const boost::json:
 	auto res = fileGetContents2(source, false);
 	return mustache(res.content, json);
 }
+
+string mustache(std::string_view raw, const boost::json::value& json) {
+	string buffer;
+	boost::mustache::render(raw, buffer, json, {});
+	return buffer;
+}
