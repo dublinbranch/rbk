@@ -139,6 +139,13 @@ class SqlRowV2 {
 		}
 		return v;
 	}
+	void replace(std::string key, std::string newValue) {
+		if (auto pos = fpOpt(key); pos > -1) {
+			data[pos] = newValue;
+		} else {
+			throw MissingKeyEX(fmt::format("Key not found : {}", key));
+		}
+	}
 };
 
 class SqlResultV2 : public QVector<SqlRowV2> {

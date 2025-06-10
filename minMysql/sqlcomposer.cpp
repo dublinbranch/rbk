@@ -100,7 +100,7 @@ string SqlComposer::composeSelect(const std::string& fields) {
 	getTable();
 	setIsASelect();
 
-	auto sql = "SELECT " + fields + composeFrom() + composeWhere();
+	auto sql = "SELECT " + fields + composeFrom() + composeWhere() + join;
 
 	return sql;
 }
@@ -109,7 +109,7 @@ string SqlComposer::composeSelect_V2() {
 	getTable();
 	setIsASelect();
 
-	auto sql = "SELECT " + compose() + composeFrom() + composeWhere();
+	auto sql = "SELECT " + compose() + composeFrom() + join + composeWhere();
 
 	return sql;
 }
@@ -134,7 +134,7 @@ string SqlComposer::composeFrom() const {
 
 string SqlComposer::composeSelectAll() {
 	getTable();
-	string sql = "SELECT * " + composeFrom() + composeWhere();
+	string sql = "SELECT * " + composeFrom() + composeWhere() + join;
 	return sql;
 }
 

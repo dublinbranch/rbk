@@ -66,8 +66,8 @@ string Select2::limits(PMFCGI& status) {
 	if (auto page = status.get.get("page"); !page) {
 		return " LIMIT 50";
 	} else {
-        //Looks like some version are ignorant and start to count from 1 and not 0 -.- so we have to compensate for they ignorance!
-        auto p = page.val->toUInt() - 1;
+		//Looks like some version are ignorant and start to count from 1 and not 0 -.- so we have to compensate for they ignorance!
+		auto p = page.val->toUInt() - 1;
 		if (p == 0) {
 			return " LIMIT 50";
 		}
@@ -92,6 +92,15 @@ void Select2::packer2(const sqlResult& rows, Payload& payload, PkConf* pkConf) {
 	}
 	if (pkConf && pkConf->NONE) {
 		res.rows.emplace_back("NULL"s, "NONE"s);
+	}
+	payload.html = res.toResultJSON();
+}
+
+void Select2::packer2(const SqlResultV2& rows, Payload& payload) {
+	Select2::Result res;
+	res.pagination = false;
+	for (auto&& row : rows) {
+		res.rows.emplace_back(row.rq<string>("id"), row.rq<string>("name"));
 	}
 	payload.html = res.toResultJSON();
 }

@@ -10,6 +10,7 @@ class PMFCGI;
 class sqlResult;
 class Payload;
 class sqlRow;
+class SqlResultV2;
 class QStringAdt;
 class DB;
 
@@ -82,6 +83,7 @@ enum class SearchPattern {
 std::string search(DB* db, const QStringAdt& http, std::string_view sql, PMFCGI& status, SearchPattern pattern = SearchPattern::START);
 std::string limits(PMFCGI& status);
 void        packer2(const sqlResult& rows, Payload& payload, PkConf* pkConf = nullptr);
+void        packer2(const SqlResultV2& rows, Payload& payload);
 
 } // namespace Select2
 

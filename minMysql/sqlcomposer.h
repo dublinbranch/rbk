@@ -141,21 +141,24 @@ class SqlComposer : public std::vector<SScol> {
 		std::tuple<T...> tuple(strings...);
 		std::string_view first = std::get<0>(tuple);
 
-		switch (size) {
-		case 1:
+		if constexpr (size == 1) {
 			table = F("{}", first);
-			break;
-		case 2: {
+		} else if constexpr (size == 2) {
 			if (first.ends_with(".")) {
-				table = F("{}{}", strings...);
+				table = F("`{}``{}`", strings...);
 			} else {
-				table = F("{}.{}", strings...);
+				table = F("`{}`.`{}`", strings...);
 			}
-			break;
-		}
-		default:
-			static_assert(size < 3, "invalid number of parameter, 2 or 1");
-			break;
+		} else if constexpr (size == 3) {
+			if (first.ends_with(".")) {
+				table = F("`{}``{}`", strings...);
+			} else {
+				table = F("`{}`.`{}`", strings...);
+			}
+			std::string_view third = std::get<2>(tuple);
+			table += F(" as {}", third);
+		} else {
+			static_assert(size < 4, "invalid number of parameter, 2 or 1");
 		}
 		return *this;
 	}
@@ -188,6 +191,8 @@ class SqlComposer : public std::vector<SScol> {
 	std::string separator = ",";
 	//change into " AS " for INSERT INTO / SELECT
 	std::string joiner = " = ";
+	//This is normal inserted manually
+	std::string join;
 
 	std::unique_ptr<SqlComposer> where = nullptr;
 
