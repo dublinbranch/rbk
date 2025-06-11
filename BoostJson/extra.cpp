@@ -191,6 +191,13 @@ void pushCreate(boost::json::object& json, std::string_view key, const boost::js
 JsonRes parseJson(std::string_view json, bool throwOnError) {
 	JsonRes res;
 
+	if (json.empty()) {
+		if (throwOnError) {
+			throw ExceptionV2("Empty JSON");
+		}
+		return res;
+	}
+
 	bj::parse_options opt;            // all extensions default to off
 	opt.allow_comments        = true; // permit C and C++ style comments to appear in whitespace
 	opt.allow_trailing_commas = true; // allow an additional trailing comma in object and array element lists
@@ -228,6 +235,9 @@ void sqlEscape(boost::json::object& r, DB* db) {
 }
 
 string JsonRes::composeErrorMsg() const {
+	if (raw.empty()) {
+		return "Empty JSON";
+	}
 	if (!position) {
 		return "Invalid JSON";
 	}
