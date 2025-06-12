@@ -152,10 +152,11 @@ T swap(const boost::json::value& v) {
 	if (v.is_number()) {
 		return v.to_number<T>();
 	} else if (v.is_string()) {
+        auto s = v.as_string();
 		return string_to_number<T>(v.as_string());
 	} else {
 		//auto msg = F("impossible to convert into number {} is a {} : {}", key, item.kind(), pretty_print(item));
-		auto msg = F("impossible to convert into number {} is a {} : {}", pretty_print(v), v.kind());
+		auto msg = F("impossible to convert into number {} is a {} : {}", pretty_print(v), asSWString(v.kind()));
 		throw ExceptionV2(msg);
 	}
 }

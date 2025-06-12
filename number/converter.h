@@ -11,7 +11,9 @@
 template <arithmetic T>
 T string_to_number(std::string_view str) {
 	T result{};
-
+	if (str.empty()) {
+		return 0;
+	}
 	if constexpr (std::is_same_v<T, bool>) {
 		// Handle boolean conversion
 		if (str == "true" || str == "1")
