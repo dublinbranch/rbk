@@ -152,7 +152,7 @@ T swap(const boost::json::value& v) {
 	if (v.is_number()) {
 		return v.to_number<T>();
 	} else if (v.is_string()) {
-        auto s = v.as_string();
+		auto s = v.as_string();
 		return string_to_number<T>(v.as_string());
 	} else {
 		//auto msg = F("impossible to convert into number {} is a {} : {}", key, item.kind(), pretty_print(item));
@@ -186,6 +186,22 @@ T to_number(const boost::json::object& v, std::string_view key) {
 	T t;
 	swap(v, key, t);
 	return t;
+}
+
+template <typename T>
+void rq(const boost::json::object& v, std::string_view key, T& target) {
+	if constexpr (std::is_same_v<T, bool>) {
+		target = v.at(key).as_bool();
+		return;
+	} else if constexpr (std::is_arithmetic_v<T>) {
+		target = v.at(key).to_number<T>();
+		return;
+	} else {
+		// poor man static assert that will also print for which type it failed
+		using X = typename T::something_made_up;
+		X y;     // To avoid complain that X is defined but not used
+		(void)y; // TO avoid complain that y is unused
+	}
 }
 
 //bj::value rq(bj::object)
