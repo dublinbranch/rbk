@@ -54,9 +54,10 @@ struct BJIntrusive {
 #include "rbk/BoostJson/override/value_to_108600.hpp"
 #elif BOOST_VERSION == 108700
 #include "rbk/BoostJson/override/value_to_108700.hpp"
+#elif BOOST_VERSION == 108800
+#include "rbk/BoostJson/override/value_to_108800.hpp"
 #else
 #pragma message "Unsupported Boost version " BOOST_PP_STRINGIZE(BOOST_VERSION) " for the intrusive HTTP Json customize one from json/detail/value_to.hpp"
 #include <boost/json/detail/value_to.hpp>
 #endif
-
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_BOOSTJSON_INTRUSIVEDEBUG_H

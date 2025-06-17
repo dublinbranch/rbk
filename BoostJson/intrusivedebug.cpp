@@ -15,7 +15,7 @@ std::string BJIntrusive::composePath() {
 
 //TODO add a struct for options, one of those is if to add the original JSON in the error message
 std::string BJIntrusive::composeMessage(bj::value* original_, bj::value target) {
-	original  = original_;
+	original     = original_;
 	auto pathStr = composePath();
 	if (error == bj::error::size_mismatch) {
 		//Extra element is
@@ -39,6 +39,7 @@ BJIntrusive::BJIntrusive() {
 }
 
 void BJIntrusive::push(const char* str) {
+	//fmt::println("{}", composePath());
 	BJIntrusive::path.push_back(str);
 }
 
