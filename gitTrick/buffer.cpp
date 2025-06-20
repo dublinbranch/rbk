@@ -1,7 +1,5 @@
 //absolute instant compilation time to provide fresh info
 #include "buffer.h"
-#include <QDateTime>
-#include <rbk/defines/stringDefine.h>
 
 void loadBuffer() {
 	COMPILATION_TIME_buffer = __DATE__ " " __TIME__;
