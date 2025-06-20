@@ -79,8 +79,8 @@ class indexedVector {
 		using iterator_category = std::forward_iterator_tag;
 		using difference_type   = size_t;
 		using value_type        = T;
-		using pointer           = typename innerMap::iterator; // or also value_type*
-		using reference         = T&;                          // or also value_type&
+		using pointer           = typename innerMap::const_iterator;
+		using reference         = const T&;
 
 		Iterator() = default;
 
@@ -97,8 +97,7 @@ class indexedVector {
 		reference operator*() const {
 			return m_ptr->second;
 		}
-		//we hide the indexing part, also this is very nice to be used for shared ptr a single -> dereferences both!
-		T* operator->() const {
+		const T* operator->() const {
 			return &m_ptr->second;
 		}
 
@@ -176,13 +175,10 @@ class indexedVector {
 	}
 
 	const Iterator cbegin() const {
-		//not sure what is going on here
-		auto c = content.cbegin();
-		return Iterator(c._M_const_cast());
+		return Iterator(content.cbegin());
 	}
 	const Iterator cend() const {
-		//not sure what is going on here
-		return Iterator(content.cend()._M_const_cast());
+		return Iterator(content.cend());
 	}
 };
 
