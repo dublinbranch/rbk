@@ -145,7 +145,7 @@ class SqlComposer : public std::vector<SScol> {
 			table = F("{}", first);
 		} else if constexpr (size == 2) {
 			if (first.ends_with(".")) {
-				table = F("`{}``{}`", strings...);
+				table = F("{}`{}`", strings...);
 			} else {
 				table = F("`{}`.`{}`", strings...);
 			}
