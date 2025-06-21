@@ -148,13 +148,17 @@ QString SqlComposer::composeUpdateQS() const {
 	return QString::fromStdString(composeUpdate());
 }
 
-string SqlComposer::composeUpsert() const {
+string SqlComposer::composeUpsert(bool autoInc) const {
 	getTable();
 	if (!where->empty()) {
 		throw ExceptionV2("Refusing an Upsert with where condition");
 	}
-	auto c   = compose();
-	auto sql = F("INSERT INTO {} SET {} ON DUPLICATE KEY UPDATE {};", table, c, c);
+	auto   c = compose();
+	string inc;
+	if (autoInc) {
+		inc = " id = LAST_INSERT_ID(id) ";
+	}
+	auto sql = F("INSERT INTO {} SET {} ON DUPLICATE KEY UPDATE {} {};", table, c, c, inc);
 	return sql;
 }
 
