@@ -148,7 +148,7 @@ void                     swap(const bj::value& v, std::vector<std::string>& targ
 std::vector<std::string> toVecString(const bj::value& v);
 
 template <arithmetic T>
-T swap(const boost::json::value& v) {
+T to_number(const boost::json::value& v) {
 	if (v.is_number()) {
 		return v.to_number<T>();
 	} else if (v.is_string()) {
@@ -162,29 +162,29 @@ T swap(const boost::json::value& v) {
 }
 
 template <arithmetic T>
-void swap(const boost::json::object& v, std::string_view key, T& target) {
-	target = swap<T>(v.at(key));
+void to_number(const boost::json::object& v, std::string_view key, T& target) {
+	target = to_number<T>(v.at(key));
 }
 
 template <arithmetic T>
-void swap(const boost::json::object& v, std::string_view key, std::vector<T>& target) {
+void to_number(const boost::json::object& v, std::string_view key, std::vector<T>& target) {
 	target.clear();
 	auto& el = v.at(key);
 	if (el.is_array()) {
 		auto& arr = el.as_array();
 		target.reserve(arr.size());
 		for (const auto& item : arr) {
-			target.push_back(swap<T>(item));
+			target.push_back(to_number<T>(item));
 		}
 	} else {
-		target.push_back(swap<T>(el));
+		target.push_back(to_number<T>(el));
 	}
 }
 
 template <arithmetic T>
 T to_number(const boost::json::object& v, std::string_view key) {
 	T t;
-	swap(v, key, t);
+	to_number(v, key, t);
 	return t;
 }
 

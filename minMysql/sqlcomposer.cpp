@@ -156,7 +156,7 @@ string SqlComposer::composeUpsert(bool autoInc) const {
 	auto   c = compose();
 	string inc;
 	if (autoInc) {
-		inc = " id = LAST_INSERT_ID(id) ";
+		inc = " ,id = LAST_INSERT_ID(id) ";
 	}
 	auto sql = F("INSERT INTO {} SET {} ON DUPLICATE KEY UPDATE {} {};", table, c, c, inc);
 	return sql;
