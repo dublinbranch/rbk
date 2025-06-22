@@ -189,12 +189,17 @@ T to_number(const boost::json::object& v, std::string_view key) {
 }
 
 template <typename T>
-void rq(const boost::json::object& v, std::string_view key, T& target) {
+void rq(const boost::json::value& v, T& target) {
 	if constexpr (std::is_same_v<T, bool>) {
-		target = v.at(key).as_bool();
+		target = v.as_bool();
 		return;
 	} else if constexpr (std::is_arithmetic_v<T>) {
-		target = v.at(key).to_number<T>();
+		if (v.is_string()) {
+			target = string_to_number<T>(v.as_string());
+		} else {
+			target = v.to_number<T>();
+		}
+
 		return;
 	} else {
 		// poor man static assert that will also print for which type it failed
@@ -202,6 +207,11 @@ void rq(const boost::json::object& v, std::string_view key, T& target) {
 		X y;     // To avoid complain that X is defined but not used
 		(void)y; // TO avoid complain that y is unused
 	}
+}
+
+template <typename T>
+void rq(const boost::json::object& v, std::string_view key, T& target) {
+	rq(v.at(key), target);
 }
 
 //bj::value rq(bj::object)

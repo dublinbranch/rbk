@@ -50,14 +50,17 @@ class CurlKeeper;
 class CurlHeader : public NoCopy {
       public:
 	~CurlHeader();
-	void              add(const QByteAdt& header);
-	void              clear();
-	const curl_slist* get() const;
-	void              set(CurlKeeper& curl) const;
-
+	void                                        add(const QByteAdt& header);
+	void                                        clear();
+	const curl_slist*                           get() const;
+	void                                        set(CurlKeeper& curl);
+	void                                        set();
 	[[deprecated("use get")]] const curl_slist* getChunk() const;
 
+	CurlKeeper* curl = nullptr;
+
       private:
+	bool               used  = false;
 	struct curl_slist* chunk = nullptr;
 };
 
@@ -111,7 +114,6 @@ class CurlKeeper : private NoCopy {
 
       private:
 	CURL* curl = nullptr;
-	
 };
 
 // inspired from https://github.com/whoshuu/cpr/blob/master/include/cpr/cprtypes.h
@@ -126,7 +128,7 @@ class Header : public mapV2<QString, QString, CaseInsensitiveCompare> {
 	QString serialize() const;
 };
 
-[[nodiscard]] Header parseHeader(const QString &headers);
+[[nodiscard]] Header parseHeader(const QString& headers);
 
 struct CurlCallResult {
 	CurlCallResult();

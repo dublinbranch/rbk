@@ -9,7 +9,7 @@
 
 // Helper function to convert string to any arithmetic type
 template <arithmetic T>
-T string_to_number(std::string_view str) {
+[[nodiscard]] T string_to_number(std::string_view str) {
 	T result{};
 	if (str.empty()) {
 		return 0;

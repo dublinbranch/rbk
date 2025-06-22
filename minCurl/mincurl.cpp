@@ -119,11 +119,15 @@ QByteArray urlGetContent(const QString& url, bool quiet, CURL* curl) {
 }
 
 CurlHeader::~CurlHeader() {
+	if (chunk && !used) {
+		qCritical() << "you set header, but never connected! To avoid this error use the CurlHeader INSIDE the CurlKeeper! or manually set" << QStacker16Light();
+	}
 	clear();
 }
 
 void CurlHeader::add(const QByteAdt& header) {
 	chunk = curl_slist_append(chunk, header);
+	set();
 }
 
 void CurlHeader::clear() {
@@ -131,6 +135,7 @@ void CurlHeader::clear() {
 		curl_slist_free_all(chunk);
 		chunk = nullptr;
 	}
+	set();
 }
 
 const curl_slist* CurlHeader::getChunk() const {
@@ -141,13 +146,22 @@ const curl_slist* CurlHeader::get() const {
 	return chunk;
 }
 
-void CurlHeader::set(CurlKeeper& marx) const {
-	curl_easy_setopt(marx, CURLOPT_HTTPHEADER, get());
+void CurlHeader::set(CurlKeeper& marx) {
+	curl = &marx;
+	set();
+}
+
+void CurlHeader::set() {
+	if (curl) {
+        curl_easy_setopt(curl->get(), CURLOPT_HTTPHEADER, get());
+		used = true;
+	}
 }
 
 CurlKeeper::CurlKeeper() {
 	curl = curl_easy_init();
 	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60); // default is 0 which is unlimited, not a good default
+	header.curl = this;
 }
 
 CurlKeeper::~CurlKeeper() {
@@ -199,6 +213,7 @@ CurlCallResult urlPostContent(const QByteAdt& url, const QByteAdt& post, bool qu
 	if (!useMe) {
 		useMe = curl_easy_init();
 		curl_easy_setopt(useMe, CURLOPT_TIMEOUT, 60); // 1 minute, if you do not like use you own curl
+	} else {
 	}
 
 	if (post.isEmpty()) {
