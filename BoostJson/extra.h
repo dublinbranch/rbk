@@ -44,6 +44,7 @@ std::string_view asString(const boost::json::value& value, std::string_view key)
 std::string_view asString(const boost::json::value& value);
 
 std::string asStdString(const boost::json::value& value);
+std::string asStdString(const boost::json::value* value);
 /***********************/
 void        pretty_print(std::string& res, boost::json::value const& jv, std::string* indent = nullptr);
 std::string pretty_print(boost::json::value const& jv);
@@ -148,17 +149,22 @@ void                     swap(const bj::value& v, std::vector<std::string>& targ
 std::vector<std::string> toVecString(const bj::value& v);
 
 template <arithmetic T>
-T to_number(const boost::json::value& v) {
-	if (v.is_number()) {
-		return v.to_number<T>();
-	} else if (v.is_string()) {
-		auto s = v.as_string();
-		return string_to_number<T>(v.as_string());
+T to_number(const boost::json::value* v) {
+	if (v->is_number()) {
+		return v->to_number<T>();
+	} else if (v->is_string()) {
+		auto s = v->as_string();
+		return string_to_number<T>(v->as_string());
 	} else {
 		//auto msg = F("impossible to convert into number {} is a {} : {}", key, item.kind(), pretty_print(item));
-		auto msg = F("impossible to convert into number {} is a {} : {}", pretty_print(v), asSWString(v.kind()));
+		auto msg = F("impossible to convert into number {} is a {} : {}", pretty_print(*v), asSWString(v->kind()));
 		throw ExceptionV2(msg);
 	}
+}
+
+template <arithmetic T>
+T to_number(const boost::json::value& v) {
+	return to_number<T>(&v);
 }
 
 template <arithmetic T>
