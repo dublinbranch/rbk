@@ -145,18 +145,18 @@ class SqlComposer : public std::vector<SScol> {
 			table = F("{}", first);
 		} else if constexpr (size == 2) {
 			if (first.ends_with(".")) {
-				table = F("{}`{}`", strings...);
+				table = F( "{}`{}` ", strings...);
 			} else {
-				table = F("`{}`.`{}`", strings...);
+				table = F(" `{}`.`{}` ", strings...);
 			}
 		} else if constexpr (size == 3) {
 			if (first.ends_with(".")) {
-				table = F("`{}``{}`", strings...);
+				table = F(" `{}``{}` ", strings...);
 			} else {
-				table = F("`{}`.`{}`", strings...);
+				table = F(" `{}`.`{}` ", strings...);
 			}
 			std::string_view third = std::get<2>(tuple);
-			table += F(" as {}", third);
+			table += F("as {} ", third);
 		} else {
 			static_assert(size < 4, "invalid number of parameter, 2 or 1");
 		}
