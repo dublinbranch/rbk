@@ -522,8 +522,94 @@ void swap(const boost::json::value& el, std::vector<string>& target) {
 	}
 };
 
-std::vector<string> toVecString(const boost::json::value& v) {
+std::vector<string> toVecString(const bj::value& v) {
 	std::vector<string> res;
 	swap(v, res);
 	return res;
+}
+
+std::pair<bool, std::string_view> delete_at_pointer(std::string_view sv, bj::value* value) {
+	system::error_code ec;
+
+	string_view     previous_segment;
+	bj::string_view sv_copy = sv;
+	string_view     err_position;
+	string_view     segment = bj::detail::next_segment(sv_copy, ec);
+	size_t          shift   = 0;
+
+	auto result          = value;
+	auto previous_result = value;
+
+	while (true) {
+		if (ec.failed())
+			return {false, err_position};
+
+		if (!result) {
+			return {false, err_position};
+		}
+
+		if (segment.empty())
+			break;
+
+		shift += segment.size();
+		err_position = sv_copy.substr(0, shift);
+
+		previous_segment = segment;
+		previous_result  = result;
+
+		switch (result->kind()) {
+		case bj::kind::object: {
+			auto& obj = result->get_object();
+
+			bj::detail::pointer_token const token(segment);
+			segment = bj::detail::next_segment(sv_copy, ec);
+
+			result = bj::detail::if_contains_token(obj, token);
+			if (!result) {
+				return {false, err_position};
+			}
+			break;
+		}
+		case bj::kind::array: {
+			auto const index = bj::detail::parse_number_token(segment, ec);
+			segment          = bj::detail::next_segment(sv_copy, ec);
+
+			auto& arr = result->get_array();
+			result    = arr.if_contains(index);
+			if (!result) {
+				return {false, err_position};
+			}
+			break;
+		}
+		default: {
+			return {false, err_position};
+		}
+		}
+	}
+
+	err_position = {};
+
+	switch (previous_result->kind()) {
+	case bj::kind::object: {
+		auto&                           obj = previous_result->get_object();
+		bj::detail::pointer_token const token(previous_segment);
+		bj::key_value_pair*             kv = bj::detail::find_in_object(obj, token).first;
+		if (kv) {
+			obj.erase(kv);
+			return {true, err_position};
+		}
+	}
+	case bj::kind::array: {
+		auto const index = bj::detail::parse_number_token(previous_segment, ec);
+		auto&      arr   = previous_result->get_array();
+		if (arr.if_contains(index)) {
+			arr.erase(arr.begin() + index);
+			return {true, err_position};
+		}
+	}
+	default: {
+		return {false, err_position};
+	}
+	}
+	return {false, err_position};
 }

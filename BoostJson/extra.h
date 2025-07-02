@@ -220,6 +220,8 @@ void rq(const boost::json::object& v, std::string_view key, T& target) {
 	rq(v.at(key), target);
 }
 
+std::pair<bool,std::string_view> delete_at_pointer(std::string_view sv, boost::json::value *value);
+
 //bj::value rq(bj::object)
 
 // template <typename T>
