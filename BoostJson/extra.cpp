@@ -598,6 +598,7 @@ std::pair<bool, std::string_view> delete_at_pointer(std::string_view sv, bj::val
 			obj.erase(kv);
 			return {true, err_position};
 		}
+		break;
 	}
 	case bj::kind::array: {
 		auto const index = bj::detail::parse_number_token(previous_segment, ec);
@@ -606,6 +607,7 @@ std::pair<bool, std::string_view> delete_at_pointer(std::string_view sv, bj::val
 			arr.erase(arr.begin() + index);
 			return {true, err_position};
 		}
+		break;
 	}
 	default: {
 		return {false, err_position};

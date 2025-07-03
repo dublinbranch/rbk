@@ -207,6 +207,18 @@ void rq(const boost::json::value& v, T& target) {
 		}
 
 		return;
+	} else if constexpr (std::is_same_v<T, std::string>) {
+		if (v.is_string()) {
+			target = v.as_string();
+		} else if (v.is_double()) {
+			target = F("{}", v.as_double());
+		} else if (v.is_int64()) {
+			target = F("{}", v.as_int64());
+		} else if (v.is_uint64()) {
+			target = F("{}", v.as_uint64());
+		} else {
+			throw ExceptionV2(F("type {} not handled", v.kind()));
+		}
 	} else {
 		// poor man static assert that will also print for which type it failed
 		using X = typename T::something_made_up;
@@ -220,7 +232,7 @@ void rq(const boost::json::object& v, std::string_view key, T& target) {
 	rq(v.at(key), target);
 }
 
-std::pair<bool,std::string_view> delete_at_pointer(std::string_view sv, boost::json::value *value);
+std::pair<bool, std::string_view> delete_at_pointer(std::string_view sv, boost::json::value* value);
 
 //bj::value rq(bj::object)
 
