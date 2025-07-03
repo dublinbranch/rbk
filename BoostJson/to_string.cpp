@@ -3,7 +3,11 @@
 
 namespace json = boost::json;
 
-std::string to_string(const boost::json::value& jv) {
+std::string to_string(const boost::json::value* jv) {
+	return to_string(*jv);
+}
+
+std::string to_string(const json::value& jv) {
 	std::string val;
 	switch (jv.kind()) {
 	case json::kind::string: {

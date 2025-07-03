@@ -434,18 +434,6 @@ std::string_view asString(const boost::json::object& value, std::string_view key
 	return def;
 }
 
-string asStdString(const boost::json::value& value) {
-	return asStdString(&value);
-}
-
-string asStdString(const boost::json::value* value) {
-	if (!value->is_string()) {
-		return {};
-	}
-	auto& r = value->as_string();
-	return std::string(r.data(), r.size());
-}
-
 std::string_view asString(const boost::json::object& value, StringAdt key) {
 	return asString(value, string_view(key));
 }
@@ -509,14 +497,14 @@ void swap(const boost::json::value& el, std::vector<string>& target) {
 		target.reserve(arr.size());
 		for (const auto& item : arr) {
 			if (item.is_string()) {
-				target.push_back(asStdString(item.as_string()));
+				target.push_back(to_string(item.as_string()));
 			} else {
 				throw ExceptionV2(F("something is not a string but a {} = {}", el.kind(), pretty_print(el)));
 			}
-			target.push_back(asStdString(item.as_string()));
+			target.push_back(to_string(item.as_string()));
 		}
 	} else if (el.is_string()) {
-		target.push_back(asStdString(el.as_string()));
+		target.push_back(to_string(el.as_string()));
 	} else {
 		throw ExceptionV2(F("something is not a string but a {} = {}", el.kind(), pretty_print(el)));
 	}

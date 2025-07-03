@@ -43,8 +43,6 @@ std::string_view asString(const boost::json::value& value, std::string_view key)
 
 std::string_view asString(const boost::json::value& value);
 
-std::string asStdString(const boost::json::value& value);
-std::string asStdString(const boost::json::value* value);
 /***********************/
 void        pretty_print(std::string& res, boost::json::value const& jv, std::string* indent = nullptr);
 std::string pretty_print(boost::json::value const& jv);

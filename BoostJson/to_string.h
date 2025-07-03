@@ -4,6 +4,7 @@
 #include "fmt/format.h"
 #include <boost/json/string.hpp>
 
+std::string to_string(boost::json::value const* jv);
 std::string to_string(boost::json::value const& jv);
 
 template <>
