@@ -85,7 +85,7 @@ class SScol {
 class DB;
 //is a vector to keep the order of the pushed stuff intact
 class SqlComposer : public std::vector<SScol> {
-      private:
+	  private:
 	struct PrivateTag {};
 
 	u64         longestKey = 0;
@@ -93,8 +93,9 @@ class SqlComposer : public std::vector<SScol> {
 	DB*         db         = nullptr;
 	std::string table;
 
-      public:
-	explicit SqlComposer(PrivateTag){};
+	  public:
+	//for some reason it can not actually be private so we pass this tag
+	explicit SqlComposer(PrivateTag) {};
 	explicit SqlComposer(DB* db_, const std::string& separator_ = ",");
 
 	void push(const SScol& col, bool replaceIf = false);
@@ -145,7 +146,7 @@ class SqlComposer : public std::vector<SScol> {
 			table = F("{}", first);
 		} else if constexpr (size == 2) {
 			if (first.ends_with(".")) {
-				table = F( "{}`{}` ", strings...);
+				table = F("{}`{}` ", strings...);
 			} else {
 				table = F(" `{}`.`{}` ", strings...);
 			}
