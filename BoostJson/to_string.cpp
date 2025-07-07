@@ -1,4 +1,5 @@
 #include "to_string.h"
+#include "rbk/fmtExtra/dynamic.h"
 #include <boost/json.hpp>
 
 namespace json = boost::json;
@@ -11,20 +12,20 @@ std::string to_string(const json::value& jv) {
 	std::string val;
 	switch (jv.kind()) {
 	case json::kind::string: {
-		val = json::serialize(jv.get_string());
+		val = jv.get_string();
 		break;
 	}
 
 	case json::kind::uint64:
-		val = std::to_string(jv.get_uint64());
+		val = F("{}", jv.get_uint64());
 		break;
 
 	case json::kind::int64:
-		val = std::to_string(jv.get_int64());
+		val = F("{}", jv.get_uint64());
 		break;
 
 	case json::kind::double_:
-		val = std::to_string(jv.get_double());
+		val = F("{}", jv.get_uint64());
 		break;
 
 	case json::kind::bool_:
@@ -39,7 +40,7 @@ std::string to_string(const json::value& jv) {
 		val = "null";
 		break;
 	default:
-		throw std::runtime_error("this can not be used on array of object");
+		throw std::runtime_error("this can not be used on array or object");
 	}
 	return val;
 }
