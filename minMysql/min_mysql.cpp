@@ -189,7 +189,7 @@ thread: {}, queryDone: {}, reconnection: {}, busyConn: {}, totConn: {}, queryTim
 Error: {} 
 Code: {}
 Connection Info: {})",
-			             sql, mysql_error(conn), error, getConf().getInfo());
+			               sql, mysql_error(conn), error, getConf().getInfo());
 
 			sqlLogger.error = err;
 			// this line is needed for proper email error reporting
@@ -712,6 +712,8 @@ StMysqlPtr DB::connect() const {
 	}
 
 	if (!conf.isMariaDB8.value()) {
+		//if you are here you can use MIN instead of ANY_VALUE in mariadb
+
 		query("SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY';");
 	}
 
