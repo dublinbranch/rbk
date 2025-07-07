@@ -21,6 +21,14 @@ std::string Url::prettyPrint() const {
 	return buffer;
 }
 
+QString Url::getHostNoWWW() const {
+	auto h = url.host();
+	if (h.startsWith("www.")) {
+		h = h.mid(4); // = remove first 4 chars
+	}
+	return h;
+}
+
 QString Url::get3lvl() const {
 	return getNlvl(3);
 }

@@ -35,14 +35,15 @@ class Url {
 	QUrl        url;   //usato per il path e alcune funzioni per la query
 	QueryParams query; //più comodo per sapere cosa contiene la query
 	QString     full;  //per comodità nel debug
-	
-	QString     path;
-	
+
+	QString path;
+
 	Url() = default;
 	Url(const QStringAdt& _url, bool fix = true);
-	
+
 	void        set(const QStringAdt& _url, bool fix = true);
 	std::string prettyPrint() const;
+	QString     getHostNoWWW() const;
 
 	/**
 	 * @brief get3lvl
