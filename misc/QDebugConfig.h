@@ -1,6 +1,6 @@
 #pragma once
+#include <QDateTime>
 #include <QString>
-#include <optional>
 #include <vector>
 
 struct SlackOpt {
@@ -16,4 +16,5 @@ struct NanoSpammerConfig {
 	bool                     warningToMail            = true;
 	std::vector<std::string> warningMailRecipients    = {"admin@seisho.us"};
 	QString                  instanceName             = "REPLACE ME";
+	QDateTime                startedAt;
 };

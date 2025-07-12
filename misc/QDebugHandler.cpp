@@ -162,7 +162,7 @@ void commonInitialization(const NanoSpammerConfig* _config) {
 	header += "\x1B[0;32m"; //end of bash color delimiter;
 	header += fmt::format("{0:{3}}GIT_STATUS:{0:{2}}{1}\n", "", GIT_STATUS_buffer, lineLenght - initialSpace - 11 - 40, initialSpace);
 	header += fmt::format("{0:{3}}COMPILATION_TIME:{1: >{2}} UTC\n", "", COMPILATION_TIME_buffer, lineLenght - initialSpace - 21, initialSpace);
-	header += fmt::format("{0:{2}}STARTED:{0:{3}}{1} UTC\n", "", QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss"), initialSpace, lineLenght - initialSpace - 31);
+	header += fmt::format("{0:{2}}STARTED:{0:{3}}{1} UTC\n", "", config->startedAt.toString("yyyy-MM-dd HH:mm:ss"), initialSpace, lineLenght - initialSpace - 31);
 	header += fmt::format("{0:{3}}PID:{1: >{2}}\n", "", QCoreApplication::applicationPid(), lineLenght - initialSpace - 4, initialSpace);
 	header += "\n";
 	header += fmt::format("{0:{1}}GIT_MODULES:\n", "", initialSpace);
@@ -348,7 +348,5 @@ void initLocaleTZ() {
 	tzset();
 }
 
-void callViaTwilio()
-{
-    
+void callViaTwilio() {
 }

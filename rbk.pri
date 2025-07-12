@@ -96,7 +96,6 @@ CONFIG += resources_big
 SOURCES += \
     $$PWD/minMysql/sqlrowv2.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
-    $$PWD/dateTime/timerange.cpp \
     $$PWD/filesystem/suffix.cpp \
     $$PWD/hash/string.cpp \
     $$PWD/log/log.cpp \
