@@ -1,4 +1,5 @@
 #include "extra.h"
+#include "rbk/QStacker/qstacker.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/fmtExtra/dynamic.h"
 #include "rbk/misc/executor.h"
@@ -46,7 +47,9 @@ Log mustacheSudo(const std::filesystem::__cxx11::path& source, const std::filesy
 string mustache(const std::filesystem::__cxx11::path& source, const boost::json::object& json) {
 	auto res = fileGetContents2(source, true);
 	if (!res) {
-		return "impossible to find " + source.string();
+		auto msg = F16("impossible to find {} in {}", source.string(), QStacker16Light());
+		qCritical().noquote() << msg;
+		return msg.toStdString();
 	}
 	return mustache(res.content, json);
 }
