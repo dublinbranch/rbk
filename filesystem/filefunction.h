@@ -22,7 +22,7 @@ class QSaveV2 : public QFile {
 };
 
 struct FileGetRes {
-	operator bool();
+	explicit   operator bool() const;
 	QByteArray content;
 	bool       exist = false;
 };

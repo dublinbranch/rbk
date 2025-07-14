@@ -1,5 +1,6 @@
 #include "extra.h"
 #include "rbk/filesystem/filefunction.h"
+#include "rbk/fmtExtra/dynamic.h"
 #include "rbk/misc/executor.h"
 #include <QByteArray>
 #include <boost/mustache.hpp>
@@ -43,7 +44,10 @@ Log mustacheSudo(const std::filesystem::__cxx11::path& source, const std::filesy
 #endif
 
 string mustache(const std::filesystem::__cxx11::path& source, const boost::json::object& json) {
-	auto res = fileGetContents2(source, false);
+	auto res = fileGetContents2(source, true);
+	if (!res) {
+		return "impossible to find " + source.string();
+	}
 	return mustache(res.content, json);
 }
 

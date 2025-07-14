@@ -504,7 +504,7 @@ FileResV2 innerOrDynamic(const QString& innerPath, const QString& dynamicPath, b
 	return final;
 }
 
-FileGetRes::operator bool() {
+FileGetRes::operator bool() const {
 	return exist;
 }
 
