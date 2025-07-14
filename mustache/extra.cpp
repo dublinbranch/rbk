@@ -1,7 +1,7 @@
 #include "extra.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/filesystem/filefunction.h"
-#include "rbk/fmtExtra/dynamic.h"
+#include "rbk/fmtExtra/includeMe.h"
 #include "rbk/misc/executor.h"
 #include <QByteArray>
 #include <boost/mustache.hpp>
