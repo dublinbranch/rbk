@@ -35,7 +35,7 @@ bool QFileXT::open(QIODevice::OpenMode flags) {
 bool QFileXT::open(QIODevice::OpenMode flags, bool quiet) {
 	if (!QFile::open(flags)) {
 		if (!quiet) {
-			qCritical().noquote() << errorString() << "opening" << fileName() + QStacker16Light();
+			qCritical().noquote() << errorString() << "opening" << fileName() << "cwd:" << std::filesystem::current_path() << QStacker16Light();
 		}
 		return false;
 	}
