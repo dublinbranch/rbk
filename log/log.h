@@ -17,11 +17,13 @@ using Logs = std::list<Log>;
 class Log {
       public:
 	enum Category {
+		notSet,
+		Ok,
 		Info,
 		Warning,
 		Error,
 		Exception
-	} category;
+	} category = notSet;
 	QDateTime tsStart;
 	qint64    elapsed = 0;
 

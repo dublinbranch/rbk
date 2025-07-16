@@ -28,20 +28,44 @@ QString Log::serialize(QString) {
 
 boost::json::object Log::toJson() {
 	bj::object obj;
-	obj["category"]   = category;
-	obj["section"]    = section.toStdString();
-	obj["options"]    = options;
-	obj["tsStart"]    = tsStart.toString(mysqlDateMicroTimeFormat).toStdString();
-	obj["elapsed"]    = elapsed;
-	obj["stdOut"]     = stdOut.toStdString();
-	obj["stdErr"]     = stdErr.toStdString();
-	obj["stackTrace"] = stackTrace.toStdString();
-	bj::array arr;
-	for (auto& log : subLogs) {
-		arr.push_back(log.toJson());
+	if (category == notSet) {
+		throw ExceptionV2(F("processing a log with unset category, is that a good or bad one ?!? Section is {}", section));
 	}
-	obj["subLogs"] = arr;
-	used           = true;
+	obj["category"] = category;
+
+	if (section.isEmpty()) {
+		throw ExceptionV2("processing a log with not section, this is useless, fix the logic!");
+	}
+	obj["section"] = section.toStdString();
+	if (!options.empty()) {
+		obj["options"] = options;
+	}
+
+	obj["tsStart"] = tsStart.toString(mysqlDateMicroTimeFormat).toStdString();
+	obj["elapsed"] = elapsed;
+
+	if (!stdOut.isEmpty()) {
+		obj["stdOut"] = stdOut.toStdString();
+	}
+
+	if (!stdErr.isEmpty()) {
+		obj["stdErr"] = stdErr.toStdString();
+	}
+
+	if (stackTrace.isEmpty()) {
+		throw ExceptionV2(F("processing a log with no stacktrace, put here something! section is {}", section));
+	}
+	obj["stackTrace"] = stackTrace.toStdString();
+
+	if (subLogs.empty()) {
+		bj::array arr;
+		for (auto& log : subLogs) {
+			arr.push_back(log.toJson());
+		}
+		obj["subLogs"] = arr;
+	}
+
+	used = true;
 	return obj;
 }
 
@@ -53,7 +77,8 @@ boost::json::object Log::toJson4panel() const {
 }
 
 Log::Log() {
-	tsStart = QDateTime::currentDateTime();
+	stackTrace = QStacker16Light(6).toUtf8();
+	tsStart    = QDateTime::currentDateTime();
 	timer.start();
 }
 
