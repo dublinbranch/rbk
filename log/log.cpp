@@ -45,6 +45,13 @@ boost::json::object Log::toJson() {
 	return obj;
 }
 
+boost::json::object Log::toJson4panel() const {
+	bj::object json;
+	json["status"]  = "error";
+	json["message"] = stdErr;
+	return json;
+}
+
 Log::Log() {
 	tsStart = QDateTime::currentDateTime();
 	timer.start();

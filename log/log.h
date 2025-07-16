@@ -42,6 +42,7 @@ class Log {
 	[[nodiscard]] std::string serialize();
 	[[nodiscard]] QString     serialize(QString);
 	boost::json::object       toJson();
+	bj::object                toJson4panel() const;
 
 	SQLBuffering toSqlRow() const;
 
