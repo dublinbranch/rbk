@@ -232,6 +232,15 @@ void rq(const boost::json::object& v, std::string_view key, T& target) {
 
 std::pair<bool, std::string_view> delete_at_pointer(std::string_view sv, boost::json::value* value);
 
+template <typename T>
+bool getAtPointer(const bj::value& value, std::string_view ptr, T& t) {
+	boost::system::error_code ec;
+	if (auto v = value.find_pointer(ptr, ec); v) {
+		rq(*v, t);
+		return true;
+	}
+	return false;
+}
 //bj::value rq(bj::object)
 
 // template <typename T>
