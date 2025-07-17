@@ -52,9 +52,12 @@ Log execute(const QStringAdt& args, const ExecuteOpt& opt) {
 	process.close(reproc::stream::in);
 
 	if (ec == std::errc::no_such_file_or_directory) {
+		log.category = Log::Error;
 		throw ExceptionV2(F("Program >>>{}<<< not found. Make sure it's available from the PATH.", args));
-	} else if (ec) {
-		log.stdErr = F8("{} {}", ec.message(), ec.value());
+	}
+	if (ec) {
+		log.category = Log::Error;
+		log.stdErr   = F8("{} {}", ec.message(), ec.value());
 		return log;
 	}
 	std::string          output;
@@ -94,6 +97,8 @@ Log execute(const QStringAdt& args, const ExecuteOpt& opt) {
 				                             args, log.stdOut, log.stdErr, log.stackTrace);
 			}
 		}
+	} else {
+		log.category = Log::Info;
 	}
 
 	return log;
@@ -119,7 +124,7 @@ Log saveInto(const QStringAdt& path, const QByteAdt& content, QString chown, QSt
 
 Log moveInto(const QString& old, const QString& neu, QString chown, QString chmod) {
 	Log log;
-	log.section = __FUNCTION__;
+	log.section = __PRETTY_FUNCTION__;
 
 	log.push(sudo(F16("mv {} {}", old, neu)));
 	log.push(sudo(F16("chown {} {}", chown, neu)));
@@ -130,7 +135,7 @@ Log moveInto(const QString& old, const QString& neu, QString chown, QString chmo
 
 Log copyInto(const QStringAdt& old, const QStringAdt& neu, QString chown, QString chmod) {
 	Log log;
-	log.section = __FUNCTION__;
+	log.section = __PRETTY_FUNCTION__;
 
 	log.push(sudo(F16("cp {} {}", old, neu)));
 	log.push(sudo(F16("chown {} {}", chown, neu)));

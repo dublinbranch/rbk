@@ -2,7 +2,11 @@
 #include "fmt/format.h"
 
 std::string QElapsedTimerV2::format() {
-	auto   elapsed_time    = this->nsecsElapsed();
+	auto elapsed_time = this->nsecsElapsed();
+	return QElapsedTimerV2::format(elapsed_time);
+}
+
+std::string QElapsedTimerV2::format(qint64 elapsed_time) {
 	double elapsed_seconds = static_cast<double>(elapsed_time) / 1e9;
 
 	// Split the number into integer and fractional parts

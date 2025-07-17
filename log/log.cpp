@@ -2,6 +2,7 @@
 #include "rbk/BoostJson/extra.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/fmtExtra/includeMe.h"
+#include "rbk/misc/QElapsedTimerV2.h"
 #include <QDebug>
 
 namespace bj = boost::json;
@@ -28,12 +29,12 @@ QString Log::serialize(QString) {
 
 boost::json::object Log::toJson() {
 	bj::object obj;
-	if (category == notSet) {
+	if (developMode && category == notSet) {
 		throw ExceptionV2(F("processing a log with unset category, is that a good or bad one ?!? Section is {}", section));
 	}
-	obj["category"] = category;
+	obj["category"] = asSWString(category);
 
-	if (section.isEmpty()) {
+	if (developMode && section.isEmpty()) {
 		throw ExceptionV2("processing a log with not section, this is useless, fix the logic!");
 	}
 	obj["section"] = section.toStdString();
@@ -42,7 +43,7 @@ boost::json::object Log::toJson() {
 	}
 
 	obj["tsStart"] = tsStart.toString(mysqlDateMicroTimeFormat).toStdString();
-	obj["elapsed"] = elapsed;
+	obj["elapsed"] = QElapsedTimerV2::format(elapsed);
 
 	if (!stdOut.isEmpty()) {
 		obj["stdOut"] = stdOut.toStdString();
@@ -52,12 +53,12 @@ boost::json::object Log::toJson() {
 		obj["stdErr"] = stdErr.toStdString();
 	}
 
-	if (stackTrace.isEmpty()) {
+	if (developMode && stackTrace.isEmpty()) {
 		throw ExceptionV2(F("processing a log with no stacktrace, put here something! section is {}", section));
 	}
 	obj["stackTrace"] = stackTrace.toStdString();
 
-	if (subLogs.empty()) {
+	if (!subLogs.empty()) {
 		bj::array arr;
 		for (auto& log : subLogs) {
 			arr.push_back(log.toJson());
@@ -112,20 +113,20 @@ Log::~Log() {
 
 void Log::push(Log&& log) {
 	log.used = true;
-	if (log.elapsed == 0) {
-		log.setEnd();
-	}
+	log.setEnd();
+
 	subLogs.emplace_back(std::move(log));
 }
 
 void Log::push(Log& log) {
 	log.used = true;
-	if (log.elapsed == 0) {
-		log.setEnd();
-	}
+	log.setEnd();
+
 	subLogs.emplace_back(std::move(log));
 }
 
 void Log::setEnd() {
-	elapsed = timer.nsecsElapsed();
+	if (elapsed == 0) {
+		elapsed = timer.nsecsElapsed();
+	}
 }

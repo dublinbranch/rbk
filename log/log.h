@@ -16,12 +16,16 @@ using Logs = std::list<Log>;
 
 class Log {
       public:
+	//An EXTREMELY invasive check that all usefull paramer are set
+	static inline bool developMode = false;
+
 	enum Category {
 		notSet,
-		Ok,
+		//A log that is not an Error is considered Ok
 		Info,
 		Warning,
 		Error,
+		//We use this level at the entrance of function that might have exception, so we know if one happened
 		Exception
 	} category = notSet;
 	QDateTime tsStart;
