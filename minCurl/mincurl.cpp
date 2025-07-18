@@ -153,7 +153,7 @@ void CurlHeader::set(CurlKeeper& marx) {
 
 void CurlHeader::set() {
 	if (curl) {
-        curl_easy_setopt(curl->get(), CURLOPT_HTTPHEADER, get());
+		curl_easy_setopt(curl->get(), CURLOPT_HTTPHEADER, get());
 		used = true;
 	}
 }
@@ -287,14 +287,6 @@ CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& put, CurlKeepe
 	}
 
 	return result;
-}
-
-CurlCallResult urlGetContent2(const QString& url, bool quiet, CURL* curl) {
-	return urlGetContent2(url.toUtf8(), quiet, curl);
-}
-
-CurlCallResult urlGetContent2(const char* url, bool quiet, CURL* curl) {
-	return urlGetContent2(QByteArray(url), quiet, curl);
 }
 
 CurlCallResult urlGetContent2(const QByteArray& url, bool quiet, CURL* curl, bool LTS) {
@@ -460,10 +452,6 @@ QString Header::serialize() const {
 		list.append(term);
 	}
 	return list.join("\n");
-}
-
-CurlCallResult urlGetContent2(const std::string& url, bool quiet, CURL* curl) {
-	return urlGetContent2(QByteArray::fromStdString(url), quiet, curl);
 }
 
 CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& post, bool quiet) {

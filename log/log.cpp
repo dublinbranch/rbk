@@ -15,7 +15,7 @@ bool Log::hasError(bool recursive) const {
 			}
 		}
 	}
-	return !stdErr.isEmpty();
+	return !stdErr.isEmpty() || category == Log::Error;
 }
 
 std::string Log::serialize() {
@@ -129,4 +129,8 @@ void Log::setEnd() {
 	if (elapsed == 0) {
 		elapsed = timer.nsecsElapsed();
 	}
+}
+
+void Log::setStdErr(const QByteAdt v) {
+	stdErr = v;
 }

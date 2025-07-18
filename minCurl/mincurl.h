@@ -159,9 +159,8 @@ struct CurlCallResult {
  * @param curl let use an already bootstrapped curl instance (header / cookie)
  * @return
  */
-QByteArray     urlGetContent(const QByteArray& url, bool quiet = false, CURL* curl = nullptr);
-QByteArray     urlGetContent(const QString& url, bool quiet = false, CURL* curl = nullptr);
-CurlCallResult urlGetContent2(const std::string& url, bool quiet = false, CURL* curl = nullptr);
+QByteArray urlGetContent(const QByteArray& url, bool quiet = false, CURL* curl = nullptr);
+QByteArray urlGetContent(const QString& url, bool quiet = false, CURL* curl = nullptr);
 
 /**
  * @brief urlGetContent2
@@ -171,10 +170,9 @@ CurlCallResult urlGetContent2(const std::string& url, bool quiet = false, CURL* 
  * @param LTS sometime we have a special name for this curl operation (like in clickhouse) so do not manage the local thread status
  * @return
  */
-CurlCallResult urlGetContent2(const QByteArray& url, bool quiet = false, CURL* curl = nullptr, bool LTS = true);
-CurlCallResult urlGetContent2(const QString& url, bool quiet = false, CURL* curl = nullptr);
-CurlCallResult urlGetContent2(const char* url, bool quiet = false, CURL* curl = nullptr);
+CurlCallResult urlGetContent2(const QByteAdt& url, bool quiet = false, CURL* curl = nullptr, bool LTS = true);
 
+//Post
 CurlCallResult urlPostContent(const QByteAdt& url, const QByteAdt& post, bool quiet = false, CURL* curl = nullptr);
 
 //LXC vuole fare il prezzemolino e usa PUT...

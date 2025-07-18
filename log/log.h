@@ -62,6 +62,7 @@ class Log {
 	void push(Log& log);
 
 	void setEnd();
+	void setStdErr(const QByteAdt v);
 
       private:
 	QElapsedTimer timer;
