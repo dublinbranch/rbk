@@ -112,7 +112,8 @@ Log sudo(const QStringAdt& cmd, const ExecuteOpt& opt) {
 
 Log saveInto(const QStringAdt& path, const QByteAdt& content, QString chown, QString chmod) {
 	Log log;
-	log.section = "saveInto";
+	log.section  = "saveInto";
+	log.category = Log::Exception;
 
 	auto temp = getTempFile(QString{});
 
@@ -121,27 +122,32 @@ Log saveInto(const QStringAdt& path, const QByteAdt& content, QString chown, QSt
 	log.push(sudo(F16("chown {} {}", chown, path)));
 	log.push(sudo(F16("chmod {} {}", chmod, path)));
 
+	log.category = Log::Info;
 	return log;
 }
 
 Log moveInto(const QString& old, const QString& neu, QString chown, QString chmod) {
 	Log log;
-	log.section = __PRETTY_FUNCTION__;
+	log.section  = __PRETTY_FUNCTION__;
+	log.category = Log::Exception;
 
 	log.push(sudo(F16("mv {} {}", old, neu)));
 	log.push(sudo(F16("chown {} {}", chown, neu)));
 	log.push(sudo(F16("chmod {} {}", chmod, neu)));
 
+	log.category = Log::Info;
 	return log;
 }
 
 Log copyInto(const QStringAdt& old, const QStringAdt& neu, QString chown, QString chmod) {
 	Log log;
-	log.section = __PRETTY_FUNCTION__;
+	log.section  = __PRETTY_FUNCTION__;
+	log.category = Log::Exception;
 
 	log.push(sudo(F16("cp {} {}", old, neu)));
 	log.push(sudo(F16("chown {} {}", chown, neu)));
 	log.push(sudo(F16("chmod {} {}", chmod, neu)));
 
+	log.category = Log::Info;
 	return log;
 }
