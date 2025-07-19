@@ -289,7 +289,7 @@ CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& put, CurlKeepe
 	return result;
 }
 
-CurlCallResult urlGetContent2(const QByteArray& url, bool quiet, CURL* curl, bool LTS) {
+CurlCallResult urlGetContent2(const QByteAdt& url, bool quiet, CURL* curl, bool LTS) {
 	QElapsedTimer timer;
 	if (LTS) {
 		ResetOnExit reset1(localThreadStatus->state, ThreadState::cURL);

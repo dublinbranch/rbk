@@ -14,7 +14,7 @@
 class Log;
 using Logs = std::list<Log>;
 
-class Log {
+class Log : public std::exception {
       public:
 	//An EXTREMELY invasive check that all usefull paramer are set
 	static inline bool developMode = false;

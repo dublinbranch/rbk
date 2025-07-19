@@ -31,8 +31,10 @@ ExecuteOpt ExecuteOpt::retarded() {
 
 Log execute(const QStringAdt& args, const ExecuteOpt& opt) {
 	Log log;
-	log.section = "execute: " + args;
-	log.options = F("maxTime: {} env: {} ", opt.maxTimeInS, opt.custom_env);
+	log.section  = "execute: " + args;
+	log.options  = F("maxTime: {} env: {} ", opt.maxTimeInS, opt.custom_env);
+	log.category = Log::Exception;
+
 	reproc::process process;
 	reproc::options options;
 	options.env.behavior      = reproc::env::empty;

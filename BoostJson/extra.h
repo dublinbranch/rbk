@@ -5,6 +5,7 @@
 #include "rbk/BoostJson/to_string.h"
 #include "rbk/fmtExtra/dynamic.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
+#include "rbk/misc/swapType.h"
 #include "rbk/number/converter.h"
 #include "rbk/string/stringoso.h"
 #include <boost/json.hpp>
@@ -218,10 +219,11 @@ void rq(const boost::json::value& v, T& target) {
 			throw ExceptionV2(F("type {} not handled", v.kind()));
 		}
 	} else {
-		// poor man static assert that will also print for which type it failed
-		using X = typename T::something_made_up;
-		X y;     // To avoid complain that X is defined but not used
-		(void)y; // TO avoid complain that y is unused
+		if (v.is_string()) {
+			swapType(v.as_string(), target);
+		} else {
+			throw ExceptionV2(F("type {} not handled", v.kind()));
+		}
 	}
 }
 

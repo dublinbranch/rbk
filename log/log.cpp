@@ -30,7 +30,7 @@ QString Log::serialize(QString) {
 boost::json::object Log::toJson() {
 	bj::object obj;
 	if (developMode && category == notSet) {
-		throw ExceptionV2(F("processing a log with unset category, is that a good or bad one ?!? Section is {}", section));
+		qDebug().noquote() << F16("processing a log with unset category, is that a good or bad one ?!? Section is {}", section);
 	}
 	obj["category"] = asSWString(category);
 
