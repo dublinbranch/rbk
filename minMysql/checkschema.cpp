@@ -131,6 +131,7 @@ void CheckSchema::saveTableData(const TableDatas& td) {
 			file.seek(0);
 			QByteArray  stream;
 			QDataStream out(&stream, QIODevice::WriteOnly);
+			out.setVersion(QDataStream::Qt_5_15);
 
 			auto res = db->query(row.sql);
 			out << res;
@@ -154,6 +155,7 @@ CheckSchema::Schemas CheckSchema::loadSchema() {
 
 	echo("DB schema loaded from {}", file.path);
 	QDataStream in(file.content);
+	in.setVersion(QDataStream::Qt_5_15);
 	in >> map;
 	if (auto s = in.status(); s != QDataStream::Ok) {
 		qCritical() << "error decoding stream: " << asString(s);
