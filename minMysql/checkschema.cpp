@@ -157,6 +157,7 @@ CheckSchema::Schemas CheckSchema::loadSchema() {
 	in >> map;
 	if (auto s = in.status(); s != QDataStream::Ok) {
 		qCritical() << "error decoding stream: " << asString(s);
+		abort();
 	}
 
 	return map;
