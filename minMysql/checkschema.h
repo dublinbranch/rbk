@@ -54,4 +54,5 @@ void                     updateQRCFile();
 void                     generateQrcFile(const QString& qrcFilePath, const std::vector<std::string>& filePaths, const std::string& resourcePrefix);
 std::vector<std::string> getFilesInDirectory(const std::string& directoryPath);
 
+void CKSOverrideBasePath(const QString& neu);
 #endif // TMP_QTCREATOR_HJDWZN_CLANGTOOLS_VFSO_OXXLMP_CHECKSCHEMA_H_AUTO

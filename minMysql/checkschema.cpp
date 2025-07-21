@@ -28,7 +28,12 @@ using namespace std;
 //TODO the problem is than when it run somewhere else... bad news
 //So I have to pass this dynamically or in some other way when I am on the develop machine
 //Or maybe just simlink there.... so data remain in the program folder
-const QString basePath = BasePath;
+static QString basePath = BasePath;
+
+//The QRC somethimes is bugged and, well just do by hand
+void CKSOverrideBasePath(const QString& neu) {
+	basePath = neu;
+}
 
 void removeAutoInc(QString& sql) {
 	static QRegularExpression regex(R"RX(AUTO_INCREMENT=(\d*))RX");
