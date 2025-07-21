@@ -53,9 +53,9 @@ boost::json::object Log::toJson() {
 		obj["stdErr"] = stdErr.toStdString();
 	}
 
-	if (developMode && stackTrace.isEmpty()) {
-		throw ExceptionV2(F("processing a log with no stacktrace, put here something! section is {}", section));
-	}
+	// if (developMode && stackTrace.isEmpty()) {
+	// 	throw ExceptionV2(F("processing a log with no stacktrace, put here something! section is {}", section));
+	// }
 	obj["stackTrace"] = stackTrace.toStdString();
 
 	if (!subLogs.empty()) {
@@ -78,8 +78,8 @@ boost::json::object Log::toJson4panel() const {
 }
 
 Log::Log() {
-	stackTrace = QStacker16Light(6).toUtf8();
-	tsStart    = QDateTime::currentDateTime();
+	//stackTrace = QStacker16Light(6).toUtf8();
+	tsStart = QDateTime::currentDateTime();
 	timer.start();
 }
 
