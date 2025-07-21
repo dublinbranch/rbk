@@ -114,6 +114,7 @@ void CheckSchema::saveSchema() {
 	if (file.open(QFile::WriteOnly | QFile::Truncate)) {
 		QByteArray  stream;
 		QDataStream out(&stream, QIODevice::WriteOnly);
+		out.setVersion(QDataStream::Qt_5_15);
 		out << getDbSchema();
 		//auto sha = sha1(stream, false).toHex();
 		//auto sz  = stream.size();
