@@ -1,7 +1,7 @@
 /**
- * To use this system read 
+ * To use this system read
  * https://github.com/dublinbranch/rbk/wiki/Check-SChema
- */ 
+ */
 
 #include "checkschema.h"
 #include "rbk/filesystem/filefunction.h"
@@ -178,6 +178,8 @@ bool CheckSchema::checkDbSchema() {
 		}
 
 		if (diskSchema.size() != dbSchema.size()) { // different number of lines
+			dirty = true;
+
 			auto msg = F16("schema for {}.{} has different number of lines!\n", table.database, table.table);
 
 			auto rowCount = std::max(diskSchema.size(), dbSchema.size());
