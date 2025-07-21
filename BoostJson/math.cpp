@@ -1,4 +1,5 @@
 #include "math.h"
+#include "extra.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include <boost/json.hpp>
 #include <fmt/format.h>
@@ -72,8 +73,9 @@ boost::json::object subtractJson(const boost::json::object& first, const boost::
 					}
 				}
 				throw std::runtime_error(
-				    fmt::format("Types do not match for key: {} in path {}\nFound {} expected {}",
-				                std::string_view(key), path, asSWString(value.kind()), asSWString(second_value.kind())));
+				    fmt::format("Types do not match for key: {} in path {}\nFound {} expected {}\nValues are: {} and: {}",
+				                std::string_view(key), path, asSWString(value.kind()), asSWString(second_value.kind()),
+				                pretty_print(value), pretty_print(second_value)));
 			}
 		} else {
 			// If the key is not in the second object, keep it in the result

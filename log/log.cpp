@@ -91,6 +91,7 @@ Log::Log(const QByteArray& _info, Category _category) {
 }
 
 Log::Log(const std::exception& e, const char* func) {
+	timer.start();
 	tsStart  = QDateTime::currentDateTime();
 	stdErr   = e.what();
 	category = Exception;
