@@ -164,7 +164,16 @@ CheckSchema::Schemas CheckSchema::loadSchema() {
 	in.setVersion(QDataStream::Qt_5_15);
 	in >> map;
 	if (auto s = in.status(); s != QDataStream::Ok) {
-		qCritical().noquote() << "error decoding stream: " << asString(s) << "dim:" << file.content.size() << "sha512" << sha512(file.content);
+		string extraInfo;
+		auto   msg = F16(R"(
+error decoding stream: {}
+dim:	{}
+sha512:	{}
+{} 
+	)",
+		                 asSWString(s), file.content.size(), sha512(file.content));
+
+		qCritical().noquote() << msg;
 		abort();
 	}
 

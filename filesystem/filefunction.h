@@ -108,7 +108,7 @@ struct FileResV2 {
 		Inner,
 		missing
 	} type;
-	operator bool();
+	explicit operator bool();
 };
 
 FileResV2 innerOrDynamic(const QString& innerPath, const QString& dynamicPath, bool quiet = true);

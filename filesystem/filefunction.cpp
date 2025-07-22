@@ -493,6 +493,9 @@ FileResV2 innerOrDynamic(const QString& innerPath, const QString& dynamicPath, b
 			final.path    = innerPath;
 			final.content = res.content;
 			final.type    = FileResV2::Inner;
+			if (final.content.size() == 0) {
+				throw ExceptionV2(F("The linkedin file {} is present by empty! Is probably a bug in the linker -.- provide it manually", innerPath));
+			}
 			return final;
 		}
 	}
