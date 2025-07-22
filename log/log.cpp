@@ -135,3 +135,7 @@ void Log::setEnd() {
 void Log::setStdErr(const QByteAdt v) {
 	stdErr = v;
 }
+
+const char* Log::what() const noexcept {
+	return stdErr.data();
+}

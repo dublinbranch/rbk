@@ -2,6 +2,7 @@
 #define HOME_ROY_PUBLIC_DITER_CLASS_LOG_H
 
 #include "rbk/BoostJson/fwd.h"
+#include "rbk/QStacker/exceptionv2.h"
 #include "rbk/minMysql/sqlbuffering.h"
 #include "rbk/string/stringoso.h"
 #include <QElapsedTimer>
@@ -14,7 +15,7 @@
 class Log;
 using Logs = std::list<Log>;
 
-class Log : public std::exception {
+class Log : public ExceptionV2 {
       public:
 	//An EXTREMELY invasive check that all usefull paramer are set
 	static inline bool developMode = false;
@@ -63,6 +64,8 @@ class Log : public std::exception {
 
 	void setEnd();
 	void setStdErr(const QByteAdt v);
+
+	[[nodiscard]] const char* what() const noexcept override;
 
       private:
 	QElapsedTimer timer;
