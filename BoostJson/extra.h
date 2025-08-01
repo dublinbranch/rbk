@@ -201,6 +201,8 @@ void rq(const boost::json::value& v, T& target) {
 	} else if constexpr (std::is_arithmetic_v<T>) {
 		if (v.is_string()) {
 			target = string_to_number<T>(v.as_string());
+		} else if (v.is_null()) {
+			target = 0;
 		} else {
 			target = v.to_number<T>();
 		}
