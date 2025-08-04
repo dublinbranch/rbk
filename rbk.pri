@@ -68,10 +68,11 @@ linux {
     #QT is amazing, it can easily embedd and later read such file, there is not noticeable penalty in linking time for this operation
     RESOURCES     += $$PWD/gitTrick/resources.qrc
 
-    #great control on memory and overall just better
-    #zypper in jemalloc-devel
-    LIBS += -ljemalloc
-
+    defined(WITH_Jemalloc,var){
+        #great control on memory and overall just better
+        #zypper in jemalloc-devel
+        LIBS += -ljemalloc
+    }
 
     #zypper in libdw-devel
     LIBS += -ldw
