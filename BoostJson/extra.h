@@ -239,6 +239,17 @@ void rq(const boost::json::value& v, std::string_view key, T& target) {
 	rq(v.at(key), target);
 }
 
+template <typename T>
+T rqAtPointer(const boost::json::value& value, std::string_view ptr) {
+	T                         target;
+	boost::system::error_code ec;
+	if (auto v = value.find_pointer(ptr, ec); v) {
+		rq(*v, target);
+		return target;
+	}
+	throw ExceptionV2(F("impossible to find {} in {}", ptr, pretty_print(value)));
+}
+
 std::pair<bool, std::string_view> delete_at_pointer(std::string_view sv, boost::json::value* value);
 
 template <typename T>
