@@ -83,8 +83,8 @@ void Select2::packer2(const sqlResult& rows, Payload& payload, PkConf* pkConf) {
 	Select2::Result res;
 	res.pagination = false;
 	for (auto&& row : rows) {
-		if (pkConf && pkConf->stringAssembly) {
-			res.rows.emplace_back(pkConf->stringAssembly(row));
+		if (pkConf && pkConf->rowAssembly) {
+			res.rows.emplace_back(pkConf->rowAssembly(row));
 		} else {
 			string name = row.rq<string>("name");
 			if (pkConf && pkConf->strReplace) {

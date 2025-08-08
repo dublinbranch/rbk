@@ -60,7 +60,7 @@ struct PkConf {
 	StrReplaceFuntor strReplace = nullptr;
 
 	//to assemble it based on the result (std::function use to pass lambda)
-	std::function<StringAssemblyFuntor> stringAssembly = nullptr;
+	std::function<StringAssemblyFuntor> rowAssembly = nullptr;
 
 	//add at the end a NONE row, with ID = NULL, used to unset the dropdown
 	bool NONE = false;
