@@ -23,6 +23,9 @@ Select2::Result::toResultJSON() const {
 		if (row.selected) {
 			r["selected"] = true;
 		}
+		if (row.disabled) {
+			r["disabled"] = true;
+		}
 		if (!row.formatMe.empty()) {
 			r["formatMe"] = row.formatMe;
 		}

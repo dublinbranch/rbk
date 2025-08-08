@@ -42,6 +42,7 @@ struct Row {
 	std::string         text;
 	boost::json::object formatMe;
 	bool                selected = false;
+	bool                disabled = false;
 };
 
 struct Result {
