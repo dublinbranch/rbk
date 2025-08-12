@@ -1,5 +1,6 @@
 #pragma once
 
+#include "rbk/misc/swapType.h"
 #include "rbk/rapidjson/includeMe.h"
 #include "various.h"
 #include <QByteArray>
@@ -33,38 +34,27 @@ class JSafe : public jsonValue {
 
 	template <typename V>
 	V getta(const char* key) const {
-		static_assert(std::is_arithmetic<V>::value, "This function can be used only for aritmetic types");
+		V    res;
 		auto iter = this->FindMember(key);
 		if (iter != this->MemberEnd()) {
 			const auto& value = iter->value;
 			auto        type  = value.GetType();
-			switch (type) {
-			case rapidjson::Type::kNumberType:
-				return value.Get<V>();
-			case rapidjson::Type::kStringType: {
-				bool ok;
-				V    res;
+			if constexpr (std::is_arithmetic_v<V>) {
+				if (type == rapidjson::Type::kNumberType) {
+					return value.Get<V>();
+				}
+			}
+			if (type == rapidjson::Type::kStringType) {
 				auto qb = QByteArray::fromRawData(value.GetString(), (int)value.GetStringLength());
-				if constexpr (std::is_floating_point<V>::value) {
-					res = qb.toDouble(&ok);
-				} else if constexpr (std::is_signed<V>::value) {
-					res = qb.toLongLong(&ok);
-				} else {
-					res = qb.toULongLong(&ok);
-				}
-
-				if (!ok) {
-					throw QString("%1 is not an int, or directly convertible in an aritmetic type, it is a string %2").arg(key, QString(qb));
-				}
+				swapType(qb, res);
 				return res;
 			}
-			default:
-				throw QString("%1 is not an int, or directly convertible in an aritmetic type,, it is a %2").arg(key, printType(type));
-			}
-		} else {
-			return 0;
+
+			throw QString("%1 is not an int, or directly convertible in an aritmetic type,, it is a %2").arg(key, printType(type));
 		}
+		return {};
 	}
+
 	template <typename V>
 	bool getta(const char* key, V& value) const {
 		auto iter = this->FindMember(key);
