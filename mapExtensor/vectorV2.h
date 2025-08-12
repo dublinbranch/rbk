@@ -41,4 +41,32 @@ class vectorV2 : public std::vector<T> {
 		}
 		return nullptr;
 	}
+
+	/**
+	 * @brief Find the first element that contains the given element
+	 * @param n The element to find
+	 * @return A pointer to the element if found, nullptr otherwise
+	 */
+	template <typename N>
+	T* findN(const N& n) {
+		auto it = std::find(this->begin(), this->end(), n);
+		if (it != this->end()) {
+			return &*it;
+		}
+		return nullptr;
+	}
+
+	/**
+	 * @brief Find the first element that contains the given element
+	 * @param n The element to find
+	 * @return A pointer to the element if found, nullptr otherwise
+	 */
+	template <typename N>
+	const T* findN(const N& n) const {
+		auto it = std::find(this->begin(), this->end(), n);
+		if (it != this->end()) {
+			return &*it;
+		}
+		return nullptr;
+	}
 };
