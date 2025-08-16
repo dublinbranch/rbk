@@ -603,3 +603,7 @@ std::pair<bool, std::string_view> delete_at_pointer(std::string_view sv, bj::val
 	}
 	return {false, err_position};
 }
+
+string asSTDtring(const boost::json::value& value) {
+	return string(asString(value));
+}

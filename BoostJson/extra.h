@@ -1,6 +1,7 @@
 #pragma once
 
 //This file is a disciple of the light shown in https://www.boost.org/doc/libs/1_80_0/libs/json/doc/html/json/dom/conversion.html
+#include "JsonRes.h"
 #include "rbk/BoostJson/taginvoke.h"
 #include "rbk/BoostJson/to_string.h"
 #include "rbk/fmtExtra/dynamic.h"
@@ -43,6 +44,7 @@ std::string_view asString(const boost::json::object& value, std::string_view key
 std::string_view asString(const boost::json::value& value, std::string_view key);
 
 std::string_view asString(const boost::json::value& value);
+std::string      asSTDtring(const boost::json::value& value);
 
 /***********************/
 void        pretty_print(std::string& res, boost::json::value const& jv, std::string* indent = nullptr);
@@ -74,16 +76,6 @@ template <class T>
 void pushCreate(boost::json::object& json, std::string_view key, const T& newValue) {
 	pushCreate(json, key, boost::json::value_from(newValue));
 }
-
-struct JsonRes {
-	std::string        raw;
-	boost::json::value json;
-	//if position is set, it means there was an error and this is the position
-	size_t                    position = 0;
-	boost::system::error_code ec;
-	boost::json::storage_ptr  storage;
-	[[nodiscard]] std::string composeErrorMsg() const;
-};
 
 JsonRes parseJson(const QByteAdt& json, bool throwOnError = false);
 JsonRes parseJson(std::string_view json, bool throwOnError = false);
@@ -240,6 +232,43 @@ void rq(const boost::json::value& v, std::string_view key, T& target) {
 }
 
 template <typename T>
+T rq(const boost::json::value& v, std::string_view key) {
+	T target;
+	rq(v.at(key), target);
+	return target;
+}
+
+template <typename T>
+bool get(const boost::json::object& v, std::string_view key, T& t) {
+	if (auto value = v.find(key); value != v.end()) {
+		rq(v, t);
+		return true;
+	}
+	return false;
+}
+
+template <typename T>
+T get(const boost::json::object& v, std::string_view key) {
+	T t{};
+	if (auto value = v.find(key); value != v.end()) {
+		rq(v, t);
+	}
+	return t;
+}
+
+template <typename T>
+T get(const boost::json::value& v, std::string_view key) {
+	T t{};
+	if (!v.is_object()) {
+		return t;
+	}
+
+	get(v.as_object(), key, t);
+
+	return t;
+}
+
+template <typename T>
 T rqAtPointer(const boost::json::value& value, std::string_view ptr) {
 	T                         target;
 	boost::system::error_code ec;
@@ -261,6 +290,17 @@ bool getAtPointer(const bj::value& value, std::string_view ptr, T& t) {
 	}
 	return false;
 }
+
+template <typename T>
+T getAtPointer(const bj::value& value, std::string_view ptr) {
+	T                         t{};
+	boost::system::error_code ec;
+	if (auto v = value.find_pointer(ptr, ec); v) {
+		rq(*v, t);
+	}
+	return t;
+}
+
 //bj::value rq(bj::object)
 
 // template <typename T>
