@@ -23,6 +23,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]/QtCore
 
+QMAKE_CXXFLAGS += -ftrivial-auto-var-init=pattern
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -118,7 +119,8 @@ SOURCES += \
 HEADERS += \
     $$PWD/mapExtensor/OptionalV2.h \
     $$PWD/minMysql/sqlrowv2.h \
-	$$PWD/BoostJson/tagInvokeCrono.h \
+    $$PWD/BoostJson/tagInvokeCrono.h \
+    $$PWD/BoostJson/JsonRes.h \
     $$PWD/BoostJson/taginvoke.h \
     $$PWD/BoostJson/array.h \
 	$$PWD/concept/concepts.h \
