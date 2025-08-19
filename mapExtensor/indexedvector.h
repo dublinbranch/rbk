@@ -1,10 +1,11 @@
 #ifndef INDEXEDVECTOR_H
 #define INDEXEDVECTOR_H
+#include "isIterable.h"
 #include "rbk/QStacker/exceptionv2.h"
+#include <QString>
 #include <cassert>
 #include <map>
-#include <stdint.h>
-#include "isIterable.h"
+
 //This is to keep the same interface of a vector, but behave internally more like a map for faster access
 
 template <class T>
@@ -13,8 +14,15 @@ concept isIndexedVector = requires(const T& t) {
 };
 
 template <class T>
-class indexedVector {
-	using innerMap = std::multimap<int64_t, T>;
+class IndexedVector {
+	struct Key {
+		u64     rty = 0;
+		QString nation;
+		auto    operator<=>(const Key&) const = default;
+		bool    operator==(const Key&) const  = default;
+	};
+
+	using innerMap = std::multimap<Key, T>;
 
       private:
 	innerMap content;
@@ -48,25 +56,26 @@ class indexedVector {
 
 		//Due to an orrible error that Roy did we now need this hack, well not entirely
 		if constexpr (hasRty) {
-			content.insert({r.rty, r});
+			content.insert({{r.rty, r->campaign->nation}, r});
 			return;
 		} else if constexpr (hasRty_ptr) {
-			content.insert({r->rty, r});
+			content.insert({{r->rty, r->campaign->nation}, r});
 			return;
 		} else if constexpr (hasHeader) {
-			content.insert({r.header.rty, r});
+			content.insert({{r.header.rty, r.header.campaign->nation}, r});
 			return;
 		} else if constexpr (hasHeader_ptr) {
-			content.insert({r->header.rty, r});
+			content.insert({{r->header.rty, r->header.campaign->nation}, r});
 			return;
 		} else if constexpr (hasCampaign) {
-			content.insert({r->campaign->rty, r});
+			content.insert({{r->campaign->rty, r->nation}, r});
 			return;
 		} else if constexpr (hasHeaderCampaign) {
-			content.insert({r->header.campaign->rty, r});
+			content.insert({{r->header.campaign->rty, r->header.campaign->nation}, r});
 			return;
+		} else {
+			static_assert([] { return false; }(), "indexedvector::push_back: No suitable member found for key extraction. Please check your type T.");
 		}
-		throw ExceptionV2("what is that now ?");
 	}
 
 	void push_back(isIterable auto& n) {
@@ -91,7 +100,7 @@ class indexedVector {
 		    : m_ptr(ptr) {
 		}
 
-		[[nodiscard]] int64_t key() const {
+		[[nodiscard]] const Key& key() const {
 			return m_ptr->first;
 		}
 		reference operator*() const {
