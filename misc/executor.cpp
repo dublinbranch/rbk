@@ -88,7 +88,12 @@ Log execute(const QStringAdt& args, const ExecuteOpt& opt) {
 		log.stackTrace = QStacker();
 	}
 
-	if (!opt.isRetarded) {
+	if (opt.isRetarded) {
+		//if they are retarded and put normal log into stderr we can not do much...
+		log.stdOut += log.stdErr;
+		log.stdErr.clear();
+		log.category = Log::Info;
+	} else {
 		if (log.stdErr.isEmpty()) {
 			//at this stage I do not know if a program output is info or warning here
 			log.category = Log::Info;
@@ -99,8 +104,6 @@ Log execute(const QStringAdt& args, const ExecuteOpt& opt) {
 				                             args, log.stdOut, log.stdErr, log.stackTrace);
 			}
 		}
-	} else {
-		log.category = Log::Info;
 	}
 
 	return log;
