@@ -466,12 +466,21 @@ void DB::pingCheck(st_mysql*& conn) const {
 	return;
 }
 
-QString DB::escape(const QString& what) const {
+QByteArray DB::escape(const QByteArrayView& plain) const {
+	char* tStr    = new char[(uint)plain.size() * 2 + 1];
+	auto  len     = mysql_real_escape_string(getConn(), tStr, plain.constData(), (u64)plain.size());
+	auto  escaped = QByteArray::fromRawData(tStr, len);
+	escaped.detach();
+	delete[] tStr;
+	return escaped;
+}
+
+QString DB::escape(const QStringView& what) const {
 	auto plain = what.toUtf8();
-	// Ma esiste una lib in C++ per mysql ?
-	char* tStr = new char[(uint)plain.size() * 2 + 1];
-	mysql_real_escape_string(getConn(), tStr, plain.constData(), (u64)plain.size());
-	auto escaped = QString::fromUtf8(tStr);
+
+	char* tStr    = new char[(uint)plain.size() * 2 + 1];
+	auto  len     = mysql_real_escape_string(getConn(), tStr, plain.constData(), (u64)plain.size());
+	auto  escaped = QString::fromUtf8(tStr, len);
 	delete[] tStr;
 	return escaped;
 }

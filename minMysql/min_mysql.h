@@ -125,7 +125,8 @@ class DB {
 	[[nodiscard]] SqlRowV2    queryCacheLineV2(const StringAdt& sql, uint ttl, bool required = false);
 
 	void        pingCheck(st_mysql*& conn) const;
-	QString     escape(const QString& what) const;
+	QByteArray  escape(const QByteArrayView& plain) const;
+	QString     escape(const QStringView& what) const;
 	std::string escape(const std::string& what) const;
 	std::string escape(const std::string_view what) const;
 	bool        isSSL() const;
