@@ -410,7 +410,7 @@ sqlResult DB::queryDeadlockRepeater(const QByteArray& sql, uint maxTry) const {
 				default:
 					throw;
 				}
-			} catch (...) {
+			} catch (std::exception& e) {
 				throw;
 			}
 		}
