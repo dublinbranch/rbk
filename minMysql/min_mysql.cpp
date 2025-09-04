@@ -114,7 +114,7 @@ SQLLogger DB::queryInner(const std::string& sql) const {
 				state->lastError = mysql_error(conn);
 				return sqlLogger;
 			} else {
-				cxaNoStack     = true;
+				ResetOnExit r(cxaNoStack, true);
 				cxaLevel       = CxaLevel::none;
 				auto msg       = F("After: {} \n {} \nFor:\n{}", sqlLogger.serverTime, mysql_error(conn), sql);
 				auto exception = DBException(msg, DBException::Error(error));
@@ -178,7 +178,7 @@ thread: {}, queryDone: {}, reconnection: {}, busyConn: {}, totConn: {}, queryTim
 
 			closeConn();
 
-			cxaNoStack     = true;
+			ResetOnExit r(cxaNoStack, true);
 			cxaLevel       = CxaLevel::none;
 			auto exception = DBException(err, DBException::Error(error));
 			throw exception;
@@ -197,7 +197,6 @@ Connection Info: {})",
 				//many times this call is very nested, so we bump the default stack trace lenght
 				ResetOnExit r(stackerMaxFrame, (uint)25);
 				qWarning().noquote() << QString::fromStdString(err) << QStacker16();
-				cxaNoStack     = false;
 				auto exception = DBException(err, DBException::Error::NA);
 				throw exception;
 			}
@@ -415,7 +414,7 @@ sqlResult DB::queryDeadlockRepeater(const QByteArray& sql, uint maxTry) const {
 			}
 		}
 		qWarning().noquote() << "too many trial to resolve deadlock, fix your code!" + QStacker16();
-		cxaNoStack = true;
+		ResetOnExit r(cxaNoStack, true);
 		throw DBException("Deadlock for " + sql, DBException::DeadLock);
 	}
 	return result;
@@ -457,7 +456,7 @@ void DB::pingCheck(st_mysql*& conn) const {
 		sqlLogger.error = err;
 		// this line is needed for proper email error reporting
 		qWarning().noquote() << QString::fromStdString(err);
-		cxaNoStack = true;
+		ResetOnExit r(cxaNoStack, true);
 		throw err;
 	}
 
@@ -527,7 +526,7 @@ u64 DB::lastIdNoEx() const {
 
 const DBConf DB::getConf() const {
 	if (!confSet) {
-		cxaNoStack = true;
+		ResetOnExit r(cxaNoStack, true);
 		throw ExceptionV2("you have not set the configuration!");
 	}
 	return conf;
@@ -570,7 +569,7 @@ stack: {}
 )",
 		               user, host, QStacker16Light());
 		qWarning().noquote() << msg;
-		cxaNoStack = true;
+		ResetOnExit r(cxaNoStack, true);
 		throw ExceptionV2(msg);
 	}
 	return defaultDB;
@@ -929,7 +928,7 @@ Error was:
 Code:{}
 Query: {:.3f}	Fetch: {:.3f} )",
 		                       state->lastSQL, mysql_error(conn), error, (double)sqlLogger->serverTime / 1E9, (double)sqlLogger->fetchTime / 1E9);
-		throw ExceptionV2(msg);
+		throw DBException(msg, DBException::Error::InvalidState);
 	}
 
 	return res;
@@ -1068,7 +1067,7 @@ u64 DB::fetchAdvanced(FetchVisitor* visitor) const {
 		auto error = mysql_errno(conn);
 		if (error != 0) {
 			qWarning().noquote() << F16("Mysql error for {} error was {} code: {}\n{}", state->lastSQL, mysql_error(conn), error, stacker(3));
-			cxaNoStack = true;
+			ResetOnExit r(cxaNoStack, true);
 			throw 1025;
 		}
 	}
