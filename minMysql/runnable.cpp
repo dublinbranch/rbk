@@ -39,7 +39,7 @@ bool Runnable::runnable_64(const QString& key, i64 second, double multiplier) {
 	return runnable(key, second, multiplier);
 }
 
-bool Runnable::runnable(const QString& key, i64 second, double multiplier) {
+bool Runnable::runnable(const QStringAdt& key, i64 second, double multiplier) {
 	if (forceRunnable) {
 		return true;
 	}
@@ -73,6 +73,6 @@ bool Runnable::runnable(const QString& key, i64 second, double multiplier) {
 	return true;
 }
 
-bool Runnable::operator()(const QString& key, i64 second, double multiplier) {
+bool Runnable::operator()(const QStringAdt &key, i64 second, double multiplier) {
 	return runnable(key, second, multiplier);
 }
