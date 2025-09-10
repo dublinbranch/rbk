@@ -14,9 +14,12 @@ SqlResultV2::SqlResultV2(const sqlResult& old) {
 	columns              = std::make_shared<SqlResV2::TypeMap>();
 	const auto& firstRow = old.begin();
 	uint        i        = 0;
-	MyType      mt(enum_field_types::MAX_NO_FIELD_TYPES);
 
 	for (auto&& [key, value] : *firstRow) {
+		MyType mt(enum_field_types::MAX_NO_FIELD_TYPES);
+
+		old.types.get(key, mt);
+
 		columns->insert({key.toStdString(), SqlResV2::Field{mt, i}});
 		i++;
 	}
