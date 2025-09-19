@@ -98,13 +98,24 @@ void swapType(const QByteArray& source, D& dest) {
 	}
 }
 
+/**
+ * This overload will be used when the type can be constructed from a std:string_view
+ */
+template <class D>
+std::enable_if_t<std::is_constructible_v<D, std::string_view>>
+swapType(const std::string_view& s, D& out) {
+	out = D{s};
+}
+
 template <typename D>
-void swapType(const std::string& source, D& dest) {
+std::enable_if_t<!std::is_constructible_v<D, std::string_view>>
+swapType(const std::string_view& source, D& dest) {
 	if constexpr (std::is_same<D, QString>::value) {
-		dest = QString::fromStdString(source);
+		dest = QString::fromUtf8(source.data(), source.size());
 		return;
 	} else if constexpr (std::is_same<D, QByteArray>::value) {
-		dest = QByteArray::fromStdString(source);
+		dest = QByteArray::fromRawData(source.data(), source.size());
+		dest.detach();
 		return;
 	} else if constexpr (std::is_same<D, std::string>::value) {
 		dest = source;
@@ -113,7 +124,7 @@ void swapType(const std::string& source, D& dest) {
 		dest = std::string_view(source);
 		return;
 	} else if constexpr (std::is_same<D, QDate>::value) {
-		dest = QDate::fromString(QString::fromStdString(source), mysqlDateFormat);
+		dest = QDate::fromString(QString::fromUtf8(source.data(), source.size()), mysqlDateFormat);
 		return;
 	} else if constexpr (std::is_same<D, QDateTime>::value) {
 		bool convertible;
@@ -125,7 +136,7 @@ void swapType(const std::string& source, D& dest) {
 		if (val && convertible) {
 			dest.setSecsSinceEpoch(val);
 		} else {
-			dest = QDateTime::fromString(QString::fromStdString(source), mysqlDateTimeFormat);
+			dest = QDateTime::fromString(QString::fromUtf8(source.data(), source.size()), mysqlDateTimeFormat);
 		}
 		return;
 	} else if constexpr (std::is_enum_v<D>) {
@@ -199,8 +210,8 @@ void swapType(const std::string& source, D& dest) {
 }
 
 template <typename D>
-void swapType(const std::string_view& source, D& dest) {
-	swapType(std::string(source), dest);
+void swapType(const std::string& source, D& dest) {
+	swapType(std::string_view(source), dest);
 }
 
 template <typename D>
