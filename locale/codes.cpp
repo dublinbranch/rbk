@@ -1371,6 +1371,7 @@ const mapV2<QByteArray, QByteArray>& getNationISO2_V2() {
 	        {"ZA", "ZA"},
 	        {"ZM", "ZM"},
 	        {"ZW", "ZW"},
+			{"WW", "WW"},
 	    };
 
 	return nations;
