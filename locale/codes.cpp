@@ -1278,6 +1278,7 @@ const mapV2<QByteArray, QByteArray>& ISO2_Remap() {
 	        {"MV", "MV"},
 	        {"MW", "MW"},
 	        {"MX", "MX"},
+			{"MEX", "MX"},
 	        {"MY", "MY"},
 	        {"MZ", "MZ"},
 	        {"NA", "NA"},
