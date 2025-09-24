@@ -1115,7 +1115,7 @@ const mapV2<QByteArray, QByteArray>& getNationISO3() {
 	return nations;
 }
 
-const mapV2<QByteArray, QByteArray>& getNationISO2_V2() {
+const mapV2<QByteArray, QByteArray>& ISO2_Remap() {
 	const static mapV2<QByteArray, QByteArray> nations =
 	    {
 	        {"AD", "AD"},
@@ -1197,7 +1197,7 @@ const mapV2<QByteArray, QByteArray>& getNationISO2_V2() {
 	        {"FR", "FR"},
 	        {"GA", "GA"},
 	        {"GB", "GB"}, //this is the geographic toponim of the main island
-	        {"UK", "UK"}, //UK this is the actual politic entity (which comprise GB and many more island ecc)
+			{"UK", "GB"}, //UK this is the actual politic entity (which comprise GB and many more island ecc), as a convention we map back to GB
 	        {"GD", "GD"},
 	        {"GE", "GE"},
 	        {"GF", "GF"},
