@@ -757,6 +757,7 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	    {"saint-barthélemy", "BL"},
 	    {"st. barthélemy", "BL"},
 	    {"saint helena", "SH"},
+	    {"saint helena, ascension and tristan da cunha", "SH"},
 	    {"saint kitts and nevis", "KN"},
 	    {"saint lucia", "LC"},
 	    {"saint martin", "MF"},
