@@ -837,7 +837,9 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	    {"western sahara", "EH"},
 	    {"yemen", "YE"},
 	    {"zambia", "ZM"},
-	    {"zimbabwe", "ZW"}};
+	    {"zimbabwe", "ZW"},
+	    //A form of unknown
+	    {"ZZ", "XX"}};
 
 	return mappa;
 }
@@ -1381,6 +1383,7 @@ const mapV2<QByteArray, QByteArray>& ISO2_Remap() {
 	        {"ZA", "ZA"},
 	        {"ZM", "ZM"},
 	        {"ZW", "ZW"},
+	        {"ZZ", "XX"}, //Unknown nation
 	        {"WW", "WW"},
 	    };
 
