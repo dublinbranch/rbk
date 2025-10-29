@@ -187,24 +187,7 @@ CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& post, bool qui
  * @param curl
  * @return
  */
-template <typename T1, typename T2>
-CurlCallResult urlGetCached(const T1& url, const T2 fileName, uint ttl, CURL* curl = nullptr) {
-	CurlCallResult res;
-	//max age of 0 means do not use cache, (but in the context of fileGetContents means ignore expired)
-	if (ttl) {
-		//Quiet is of course true as we do not even expect to have this file
-		if (auto file = fileGetContents2(fileName, true, ttl); file) {
-			res.result    = file.content;
-			res.fromCache = true;
-			res.ok        = true;
-			return res;
-		}
-	}
-	res = urlGetContent2(url, true, curl);
-	filePutContents(res.result, fileName);
-	res.fromCache = false;
-	return res;
-}
+CurlCallResult urlGetCached(const QByteAdt& url, const QByteAdt fileName, uint ttl, CURL* curl = nullptr);
 
 enum class Severity {
 	none,

@@ -459,3 +459,21 @@ CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& post, bool qui
 	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60); // 1 minute, if you do not like use you own curl
 	return urlPutContent(url, post, curl, quiet);
 }
+
+CurlCallResult urlGetCached(const QByteAdt& url, const QByteAdt fileName, uint ttl, CURL* curl) {
+	CurlCallResult res;
+	//max age of 0 means do not use cache, (but in the context of fileGetContents means ignore expired)
+	if (ttl) {
+		//Quiet is of course true as we do not even expect to have this file
+		if (auto file = fileGetContents2(fileName, true, ttl); file) {
+			res.result    = file.content;
+			res.fromCache = true;
+			res.ok        = true;
+			return res;
+		}
+	}
+	res = urlGetContent2(url, true, curl);
+	filePutContents(res.result, fileName);
+	res.fromCache = false;
+	return res;
+}
