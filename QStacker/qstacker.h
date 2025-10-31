@@ -15,10 +15,10 @@ struct QStackerOpt {
 	bool prependReturn = true;
 };
 constexpr QStackerOpt QStackerOptLight = {false, false, false};
-Q_REQUIRED_RESULT std::string stacker(uint skip = 3, QStackerOpt opt = QStackerOptLight);
-Q_REQUIRED_RESULT QByteArray  QStacker(uint skip = 4, QStackerOpt opt = QStackerOptLight);
-Q_REQUIRED_RESULT QString     QStacker16(uint skip = 4, QStackerOpt opt = QStackerOptLight);
-Q_REQUIRED_RESULT QString     QStacker16Light(uint skip = 5, QStackerOpt opt = QStackerOptLight);
+Q_REQUIRED_RESULT std::string stacker(uint skip = 2, QStackerOpt opt = QStackerOptLight);
+Q_REQUIRED_RESULT QByteArray  QStacker(uint skip = 3, QStackerOpt opt = QStackerOptLight);
+Q_REQUIRED_RESULT QString     QStacker16(uint skip = 3, QStackerOpt opt = QStackerOptLight);
+Q_REQUIRED_RESULT QString     QStacker16Light(uint skip = 4, QStackerOpt opt = QStackerOptLight);
 
 std::string stackerRDX(uint skip = 5);
 //This one we use normally as an inline def to avoid include any in non cooperative header file that just suicide the program
