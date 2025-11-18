@@ -159,8 +159,7 @@ struct CurlCallResult {
  * @param curl let use an already bootstrapped curl instance (header / cookie)
  * @return
  */
-QByteArray urlGetContent(const QByteArray& url, bool quiet = false, CURL* curl = nullptr);
-QByteArray urlGetContent(const QString& url, bool quiet = false, CURL* curl = nullptr);
+[[deprecated("Use urlGetContent2")]] QByteArray urlGetContent(const QByteAdt& url, bool quiet = false, CURL* curl = nullptr);
 
 /**
  * @brief urlGetContent2

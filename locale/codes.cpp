@@ -766,6 +766,7 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	    {"samoa", "WS"},
 	    {"san marino", "SM"},
 	    {"são tomé and príncipe", "ST"},
+	    {"sao tome and principe", "ST"},
 	    {"são tomé & príncipe", "ST"},
 	    {"saudi arabia", "SA"},
 	    {"senegal", "SN"},

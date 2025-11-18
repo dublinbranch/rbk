@@ -1,8 +1,6 @@
 #pragma once
 #include "rbk/defines/stringDefine.h"
-#include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/mapExtensor/qmapV2.h"
-#include "rbk/misc/intTypes.h"
 #include "rbk/misc/swapType.h"
 
 //TODO move to mapV2 as most of the stuff here is now duplicated
@@ -58,7 +56,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 		t = T(temp);
 	}
 
-	QDateTime asDateTime(const QByteArray& key) const;
+	[[nodiscard]] QDateTime asDateTime(const QByteArray& key) const;
 
 	template <typename D>
 	bool get2(const QByteArray& key, D& dest) const {
@@ -125,12 +123,12 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 
 	// Sooo many time we need a QString back
-	QString g16(const QByteArray& key) const {
+	[[nodiscard]] QString g16(const QByteArray& key) const {
 		return get2<QString>(key);
 	}
 
 	// Sooo many time we need a QString back
-	QString g16(const QByteArray& key, const QString& def) const {
+	[[nodiscard]] QString g16(const QByteArray& key, const QString& def) const {
 		QString val;
 		get2(key, val, def);
 		return val;

@@ -120,7 +120,7 @@ QByteArray urlGetContent(const QString& url, bool quiet, CURL* curl) {
 
 CurlHeader::~CurlHeader() {
 	if (chunk && !used) {
-		qCritical() << "you set header, but never connected! To avoid this error use the CurlHeader INSIDE the CurlKeeper! or manually set" << QStacker16Light();
+		qCritical().noquote() << "you set header, but never connected! To avoid this error use the CurlHeader INSIDE the CurlKeeper! or manually set" << QStacker16Light();
 	}
 	clear();
 }
