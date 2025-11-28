@@ -39,8 +39,9 @@ class CheckSchema {
 
 	void saveTableData(const TableDatas& td);
 
-	Schemas getDbSchema();
-	Schemas loadSchema();
+	Schemas    getDbSchema();
+	Schemas    loadSchema();
+	QByteArray loadSchemaInner();
 
       private:
 	DB*         db = nullptr;

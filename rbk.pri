@@ -35,11 +35,23 @@ QMAKE_CXXFLAGS += -ftrivial-auto-var-init=pattern
 #-ggdb3
 QMAKE_CXXFLAGS += -Wunused -Wunused-function 
 #CONFIG += c++2b
-QMAKE_CXXFLAGS += -std=gnu++2b
+QMAKE_CXXFLAGS += -std=gnu++26
 #-Werror -Wconversion
 QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wconversion -fno-permissive -Werror=return-type
 #https://www.youtube.com/watch?v=vtz8S10hGuc https://gcc.gnu.org/wiki/Visibility
 QMAKE_CXXFLAGS += -fvisibility=hidden
+
+#add to embed the compilation folder 
+QMAKE_CXXFLAGS += --embed-dir=$$OUT_PWD
+
+#add to ebed the source solder
+QMAKE_CXXFLAGS += --embed-dir=$$_PRO_FILE_PWD_
+
+#From which folder are we compiling ?
+DEFINES += BuildDir='\\"$$OUT_PWD\\"'
+
+#needed for dynamic creation of file into the main source directory
+DEFINES += BasePath='\\"$$_PRO_FILE_PWD_\\"'
 
 #do not make a mega folder, but keep the source folder structure
 CONFIG += object_parallel_to_source
@@ -87,9 +99,6 @@ win32{
 #win equivalent of ldw
     LIBS += -ldbghelp
 }
-
-#needed for dynamic creation of file into the main source directory
-DEFINES += BasePath='\\"$$_PRO_FILE_PWD_\\"'
 
 #this should speed up the update of the submodule info
 CONFIG += resources_big

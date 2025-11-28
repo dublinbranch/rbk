@@ -113,7 +113,9 @@ WHERE table_schema='{}')",
 }
 
 void CheckSchema::saveSchema() {
-	mkdir(basePath + "/db");
+	if (!mkdir(basePath + "/db")) {
+		throw ExceptionV2("impossible creare la cartella!" + basePath + "/db");
+	}
 	auto      path = basePath + QSL("/db/schema");
 	QSaveFile file(path);
 	if (file.open(QFile::WriteOnly | QFile::Truncate)) {
@@ -150,28 +152,50 @@ void CheckSchema::saveTableData(const TableDatas& td) {
 	}
 }
 
-CheckSchema::Schemas CheckSchema::loadSchema() {
-	CheckSchema::Schemas map;
-	auto                 inner(":/db/schema");
-	auto                 dynamic = basePath + "/db/schema";
-	auto                 file    = innerOrDynamic(inner, dynamic, false);
-	if (file.type == FileResV2::missing) {
-		qCritical() << F16("impossible to load schema, tryed {} and {}", inner, dynamic);
+QByteArray CheckSchema::loadSchemaInner() {
+	auto res = fileGetContents2("db/schema", true, 0);
+	if (res.exist) {
+		echo("Db Schema loaded from file (db/schema)");
+		return res.content;
 	}
 
-	echo("DB schema loaded from {}", file.path);
-	QDataStream in(file.content);
+#if __has_include("db/schema")
+	echo("Db Schema loaded from embedded");
+	static const unsigned char data[] = {
+#embed "db/schema"
+	};
+	QByteArray schema(
+	    reinterpret_cast<const char*>(data),
+	    static_cast<qsizetype>(sizeof(data)));
+	return schema;
+#else
+#pragma message("missing db/schema, remember to run with --refreshDBSchema and recompile")
+	return {};
+#endif
+}
+
+CheckSchema::Schemas CheckSchema::loadSchema() {
+	CheckSchema::Schemas map;
+
+	auto schema = loadSchemaInner();
+	if (schema.isEmpty()) {
+		qCritical() << "no valid db/schema found, upload the file to perform the check!";
+		abort();
+	}
+
+	QDataStream in(schema);
 	in.setVersion(QDataStream::Qt_5_15);
 	in >> map;
 	if (auto s = in.status(); s != QDataStream::Ok) {
 		string extraInfo;
 		auto   msg = F16(R"(
-error decoding stream: {}
+error decoding stream:
 dim:	{}
 sha512:	{}
+content:
 {} 
 	)",
-		                 asSWString(s), file.content.size(), sha512(file.content));
+		                 schema.size(), sha512(schema), schema);
 
 		qCritical().noquote() << msg;
 		abort();
