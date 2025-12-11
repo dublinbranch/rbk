@@ -607,3 +607,13 @@ std::pair<bool, std::string_view> delete_at_pointer(std::string_view sv, bj::val
 string asSTDtring(const boost::json::value& value) {
 	return string(asString(value));
 }
+
+bool checkStringAtPointer(const boost::json::value& value, std::string_view ptr, std::string_view string) {
+
+	boost::system::error_code ec;
+	if (auto v = value.find_pointer(ptr, ec); v) {
+		return v->as_string() == string;
+	}
+	//if is missing
+	return false;
+}

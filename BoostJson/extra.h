@@ -310,6 +310,8 @@ T getAtPointer(const bj::value& value, std::string_view ptr) {
 	return t;
 }
 
+bool checkStringAtPointer(const bj::value& value, std::string_view ptr, std::string_view string);
+
 //bj::value rq(bj::object)
 
 // template <typename T>
