@@ -30,4 +30,9 @@ concept isEnum = std::is_enum_v<T>;
 template <class T>
 concept arithmetic = std::integral<T> || std::floating_point<T>;
 
+template<typename T>
+concept IntegerNotBool =
+    std::is_integral_v<T> &&
+    !std::is_same_v<std::remove_cv_t<T>, bool>;
+
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_CONCEPT_ISRVALUE_H

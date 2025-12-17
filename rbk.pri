@@ -41,6 +41,9 @@ QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wconversion -fno-permissive
 #https://www.youtube.com/watch?v=vtz8S10hGuc https://gcc.gnu.org/wiki/Visibility
 QMAKE_CXXFLAGS += -fvisibility=hidden
 
+#in case of error selecting the correct overload, is nice to see the option
+QMAKE_CXXFLAGS += -fdiagnostics-all-candidates
+
 #add to embed the compilation folder 
 QMAKE_CXXFLAGS += --embed-dir=$$OUT_PWD
 
