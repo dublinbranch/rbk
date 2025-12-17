@@ -206,6 +206,8 @@ defined(WITH_REPROC,var) {
 #THE ORDER IS IMPORTANT!!!
 LIBS +=  -lreproc++ -lreproc
 
+DEFINES += WITH_REPROC
+
 SOURCES += \
    $$PWD/misc/executor.cpp
    
