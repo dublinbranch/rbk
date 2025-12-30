@@ -575,7 +575,7 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	    {"canada", "CA"},
 	    {"cape verde", "CV"},
 	    {"cabo verde", "CV"},
-	    {"caribbean netherlands", "bq"},
+	    {"caribbean netherlands", "BQ"},
 	    {"cayman islands", "KY"},
 	    {"central african republic", "CF"},
 	    {"chad", "TD"},
