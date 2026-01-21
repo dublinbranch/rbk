@@ -484,7 +484,12 @@ QByteArray DB::escape(const QByteArray& plain) const {
 		delete[] tStr;
 		return plain;
 	}
+#if QT_VERSION_MAJOR >= 6
 	auto escaped = QByteArray::fromRawData(tStr, len);
+#endif
+#if QT_VERSION_MAJOR == 5
+	auto escaped = QByteArray::fromRawData(tStr, (int)len);
+#endif
 	escaped.detach();
 	delete[] tStr;
 	return escaped;
@@ -493,9 +498,14 @@ QByteArray DB::escape(const QByteArray& plain) const {
 QString DB::escape(const QStringView& what) const {
 	auto plain = what.toUtf8();
 
-	char* tStr    = new char[(uint)plain.size() * 2 + 1];
-	auto  len     = mysql_real_escape_string(getConn(), tStr, plain.constData(), (u64)plain.size());
-	auto  escaped = QString::fromUtf8(tStr, len);
+	char* tStr = new char[(uint)plain.size() * 2 + 1];
+	auto  len  = mysql_real_escape_string(getConn(), tStr, plain.constData(), (u64)plain.size());
+#if QT_VERSION_MAJOR >= 6
+	auto escaped = QString::fromUtf8(tStr, len);
+#endif
+#if QT_VERSION_MAJOR == 5
+	auto escaped = QString::fromUtf8(tStr, (int)len);
+#endif
 	delete[] tStr;
 	return escaped;
 }
@@ -835,7 +845,7 @@ sqlResult DB::getWarning(bool useSuppressionList) const {
 	if (!useSuppressionList || conf.warningSuppression.empty()) {
 		return res;
 	}
-	for (const auto& row : res) {
+	for (const auto& row : std::as_const(res)) {
 		auto msg = row.value(QBL("Message"), BSQL_NULL);
 		for (auto& rx : conf.warningSuppression) {
 			//auto p = rx->pattern();
