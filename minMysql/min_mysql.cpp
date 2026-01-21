@@ -6,7 +6,6 @@
 #include "rbk/fmtExtra/dynamic.h"
 #include "rbk/hash/sha.h"
 #include "rbk/misc/b64.h"
-#include "rbk/serialization/QDataStreamer.h"
 #include "rbk/serialization/serialize.h"
 #include "rbk/thread/threadstatush.h"
 #include "utilityfunctions.h"
@@ -475,6 +474,21 @@ QByteArray DB::escape(const QByteArrayView& plain) const {
 	return escaped;
 }
 #endif
+
+QByteArray DB::escape(const QByteArray& plain) const {
+
+	char* tStr = new char[(uint)plain.size() * 2 + 1];
+	auto  len  = mysql_real_escape_string(getConn(), tStr, plain.constData(), (u64)plain.size());
+	//if the escaped string is the same, just return the original
+	if (len == (ulong)plain.size()) {
+		delete[] tStr;
+		return plain;
+	}
+	auto escaped = QByteArray::fromRawData(tStr, len);
+	escaped.detach();
+	delete[] tStr;
+	return escaped;
+}
 
 QString DB::escape(const QStringView& what) const {
 	auto plain = what.toUtf8();

@@ -343,7 +343,11 @@ SET {} = "{}"
 WHERE {} = "{}"
 ;
 )",
-					             table.name, db->escape(kDisk), db->escape(vDisk), db->escape(table.primaryKey), db->escape(pk));
+					             table.name,
+					             db->escape(kDisk),
+					             db->escape(vDisk),
+					             db->escape(table.primaryKey),
+					             db->escape(pk));
 
 					auto msg = F16(
 					    R"(

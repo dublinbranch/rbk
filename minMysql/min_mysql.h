@@ -128,6 +128,8 @@ class DB {
 #if QT_VERSION_MAJOR >= 6
 	QByteArray escape(const QByteArrayView& plain) const;
 #endif
+
+	QByteArray  escape(const QByteArray& plain) const;
 	QString     escape(const QStringView& what) const;
 	std::string escape(const std::string& what) const;
 	std::string escape(const std::string_view what) const;
