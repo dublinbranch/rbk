@@ -73,7 +73,7 @@ boost::json::object Log::toJson() {
 boost::json::object Log::toJson4panel() const {
 	bj::object json;
 	json["status"]  = "error";
-	json["message"] = stdErr;
+	json["message"] = stdErr.toStdString();
 	return json;
 }
 

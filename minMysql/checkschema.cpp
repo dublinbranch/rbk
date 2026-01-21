@@ -15,8 +15,6 @@
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <filesystem>
-#include <fstream>
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -336,7 +334,7 @@ table {} impossible to find the row {} = {}
 			}
 			auto& dbRow = *v.val;
 			//now check the column if matches
-			for (auto [kDisk, vDisk] : diskRow) {
+			for (auto [kDisk, vDisk] : std::as_const(diskRow)) {
 				auto vRow = dbRow.rq(kDisk);
 				if (vRow != vDisk) {
 					auto fix = F(R"(

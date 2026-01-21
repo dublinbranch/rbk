@@ -465,6 +465,7 @@ void DB::pingCheck(st_mysql*& conn) const {
 	return;
 }
 
+#if QT_VERSION_MAJOR >= 6
 QByteArray DB::escape(const QByteArrayView& plain) const {
 	char* tStr    = new char[(uint)plain.size() * 2 + 1];
 	auto  len     = mysql_real_escape_string(getConn(), tStr, plain.constData(), (u64)plain.size());
@@ -473,6 +474,7 @@ QByteArray DB::escape(const QByteArrayView& plain) const {
 	delete[] tStr;
 	return escaped;
 }
+#endif
 
 QString DB::escape(const QStringView& what) const {
 	auto plain = what.toUtf8();

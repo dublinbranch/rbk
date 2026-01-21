@@ -124,8 +124,10 @@ class DB {
 	[[nodiscard]] SqlResultV2 queryCacheV2(const StringAdt& sql, uint ttl);
 	[[nodiscard]] SqlRowV2    queryCacheLineV2(const StringAdt& sql, uint ttl, bool required = false);
 
-	void        pingCheck(st_mysql*& conn) const;
-	QByteArray  escape(const QByteArrayView& plain) const;
+	void pingCheck(st_mysql*& conn) const;
+#if QT_VERSION_MAJOR >= 6
+	QByteArray escape(const QByteArrayView& plain) const;
+#endif
 	QString     escape(const QStringView& what) const;
 	std::string escape(const std::string& what) const;
 	std::string escape(const std::string_view what) const;
