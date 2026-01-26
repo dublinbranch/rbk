@@ -84,12 +84,6 @@ linux {
     #QT is amazing, it can easily embedd and later read such file, there is not noticeable penalty in linking time for this operation
     RESOURCES     += $$PWD/gitTrick/resources.qrc
 
-    defined(WITH_Jemalloc,var){
-        #great control on memory and overall just better
-        #zypper in jemalloc-devel
-        LIBS += -ljemalloc
-    }
-
     #zypper in libdw-devel
     LIBS += -ldw
     LIBS += -ldl
@@ -176,6 +170,29 @@ HEADERS += \
     $$PWD/BoostMysql/includeme.h
 }
 
+equals(WITH_ASAN,true){
+    QMAKE_CXXFLAGS+= -fsanitize=address -fno-omit-frame-pointer
+    QMAKE_CFLAGS+= -fsanitize=address -fno-omit-frame-pointer
+    QMAKE_LFLAGS+= -fsanitize=address -fno-omit-frame-pointer
+}
+
+equals(WITH_Jemalloc,true){
+    equals(WITH_ASAN, true) {
+        error("WITH_Jemalloc and WITH_ASAN cannot be used together - ASan replaces malloc")
+    }
+    #great control on memory and overall just better
+    #zypper in jemalloc-devel
+
+    LIBS = -ljemalloc $$LIBS  # Prepend, jemalloc MUST be the first
+    
+SOURCES += \
+    $$PWD/jemalloc/jemutil.cpp
+    
+HEADERS += \
+    $$PWD/jemalloc/jemutil.h
+    
+}
+    
 defined(WITH_SODIUM,var){
 #zypper in sodium-devel
 LIBS += -lsodium
