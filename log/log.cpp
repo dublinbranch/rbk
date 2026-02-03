@@ -41,6 +41,9 @@ boost::json::object Log::toJson() {
 	if (!options.empty()) {
 		obj["options"] = options;
 	}
+	if (!msg.empty()) {
+		obj["msg"] = msg;
+	}
 
 	obj["tsStart"] = tsStart.toString(mysqlDateMicroTimeFormat).toStdString();
 	obj["elapsed"] = QElapsedTimerV2::format(elapsed);

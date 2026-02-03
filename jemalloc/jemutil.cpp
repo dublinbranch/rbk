@@ -29,7 +29,7 @@ std::string JEMUtil::memStatsRow(std::string_view stage, std::string_view row) {
 	auto mapped    = readU64("stats.mapped");    // bytes mapped by jemalloc
 
 	return fmt::format("{:>20}{:>9.2f} {:>9.2f} {:>9.2f} {:>9.2f} {}",
-	                   stage, allocated / 1048576.0, active / 1048576.0, resident / 1048576.0, mapped / 1048576.0, row);
+	                   stage, (double)allocated / 1048576.0, (double)active / 1048576.0, (double)resident / 1048576.0, (double)mapped / 1048576.0, row);
 }
 
 std::string JEMUtil::memStatsRow(std::string_view stage, const std::source_location& loc) {
