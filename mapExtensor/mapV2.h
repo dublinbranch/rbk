@@ -68,6 +68,9 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		explicit operator bool() const {
 			return found;
 		}
+		const V& operator ->() const {
+			return *val;
+		}
 	};
 
 	//Non Constant version
