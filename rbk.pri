@@ -183,6 +183,8 @@ equals(WITH_Jemalloc,true){
     #great control on memory and overall just better
     #zypper in jemalloc-devel
 
+    DEFINES += WITH_Jemalloc
+    
     LIBS = -ljemalloc $$LIBS  # Prepend, jemalloc MUST be the first
     
 SOURCES += \
