@@ -33,6 +33,6 @@ std::string JEMUtil::memStatsRow(std::string_view stage, std::string_view row) {
 }
 
 std::string JEMUtil::memStatsRow(std::string_view stage, const std::source_location& loc) {
-	auto row = fmt::format("init ({}:{})", loc.file_name(), loc.line());
+	auto row = fmt::format("@ ({}:{})", loc.file_name(), loc.line());
 	return memStatsRow(stage, row);
 }
