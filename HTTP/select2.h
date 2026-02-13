@@ -76,12 +76,12 @@ enum class SearchPattern {
  * @brief search
  * @param db
  * @param the name of the parameter in the form
- * @param the name that will be used inside the sql
+ * @param the name that will be used inside the sqlColumn
  * @param fcgi status
  * @param search pattern
  * @return
  */
-std::string search(DB* db, const QStringAdt& http, std::string_view sql, PMFCGI& status, SearchPattern pattern = SearchPattern::START);
+std::string search(DB* db, const QStringAdt& httpKey, std::string_view sqlColumn, PMFCGI& status, SearchPattern pattern = SearchPattern::START);
 std::string limits(PMFCGI& status);
 void        packer2(const sqlResult& rows, Payload& payload, PkConf* pkConf = nullptr);
 void        packer2(const SqlResultV2& rows, Payload& payload);
