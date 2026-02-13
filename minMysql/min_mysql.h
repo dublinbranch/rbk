@@ -183,7 +183,7 @@ class DB {
 	void         setConf(const DBConf& value);
 	void         setConfIfNotSet(const DBConf& value);
 
-	long getAffectedRows() const;
+	u64 getAffectedRows() const;
 	//usually set / reset via
 	//	#include "rbk/RAII/resetAfterUse.h"
 	//	ResetOnExit resetMe(mainDB->state.get()

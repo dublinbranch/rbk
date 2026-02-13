@@ -102,6 +102,9 @@ SQLLogger DB::queryInner(const std::string& sql) const {
 		st.queryExecuted++;
 		st.serverTime = sqlLogger.serverTime;
 		st.totServerTime += sqlLogger.serverTime;
+
+		//This is a no op, basically a swap from the internal struct
+		affectedRows = mysql_affected_rows(conn);
 	}
 
 	auto error           = mysql_errno(conn);
@@ -576,7 +579,7 @@ void DB::setConf(const DBConf& value) {
 	state.get().NULL_as_EMPTY = conf.NULL_as_EMPTY;
 }
 
-long DB::getAffectedRows() const {
+u64 DB::getAffectedRows() const {
 	return affectedRows;
 }
 
@@ -925,8 +928,6 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 
 	localThreadStatus->time.addSqlTime(sqlLogger->fetchTime + sqlLogger->serverTime);
 
-	affectedRows = mysql_affected_rows(conn);
-
 	// auto affected  = mysql_affected_rows(conn);
 	if (skipWarning) {
 		// reset
@@ -1021,8 +1022,6 @@ SqlResultV2 DB::fetchResultV2(SQLLogger* sqlLogger) const {
 	st.totFetchTime += sqlLogger->fetchTime;
 
 	localThreadStatus->time.addSqlTime(sqlLogger->fetchTime + sqlLogger->serverTime);
-
-	affectedRows = mysql_affected_rows(conn);
 
 	// auto affected  = mysql_affected_rows(conn);
 	if (skipWarning) {
