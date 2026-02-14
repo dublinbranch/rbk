@@ -70,6 +70,13 @@ Log execute(const QStringAdt& args, const ExecuteOpt& opt) {
 
 	ec = reproc::drain(process, sink, sinkErr);
 
+	{
+		// Assicura che il processo sia terminato e recupera exit code
+		auto [exit_code, ec_wait] = process.wait(reproc::infinite);
+		log.exit_code             = exit_code;
+		log.ec_wait               = ec_wait;
+	}
+
 	if (!output.empty()) {
 		log.stdOut = QByteArray::fromStdString(output);
 	}
@@ -104,6 +111,15 @@ Log execute(const QStringAdt& args, const ExecuteOpt& opt) {
 				                             args, log.stdOut, log.stdErr, log.stackTrace);
 			}
 		}
+	}
+
+	if (log.ec_wait) {
+		log.stdErr.append(F8("\nwait: {} {}\n", log.ec_wait.message(), log.ec_wait.value()));
+	}
+
+	if (log.exit_code != 0) {
+		log.category = Log::Error;
+		log.stdErr.append(F8("\nexit_code: {}\n", log.exit_code));
 	}
 
 	return log;

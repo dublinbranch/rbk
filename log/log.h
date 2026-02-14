@@ -41,6 +41,11 @@ class Log : public ExceptionV2 {
 	QByteArray stdErr;
 	QByteArray stackTrace;
 
+	//this is the error code of the application
+	int exit_code = 0;
+	//This is the error in the library if is not able to wait for program end
+	std::error_code ec_wait;
+
 	//many times we want to aggregate log for a specific function or process execution
 	Logs subLogs;
 

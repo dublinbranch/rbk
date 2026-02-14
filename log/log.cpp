@@ -10,7 +10,11 @@ namespace bj = boost::json;
 bool Log::hasError(bool recursive) const {
 	if (recursive) {
 		for (auto& log : subLogs) {
+			//This is actually not good! many program write there for other reason -.- check the exit code
 			if (log.hasError(true)) {
+				return true;
+			}
+			if (log.exit_code) {
 				return true;
 			}
 		}
@@ -54,6 +58,10 @@ boost::json::object Log::toJson() {
 
 	if (!stdErr.isEmpty()) {
 		obj["stdErr"] = stdErr.toStdString();
+	}
+
+	if (exit_code) {
+		obj["exit_code"] = exit_code;
 	}
 
 	// if (developMode && stackTrace.isEmpty()) {
