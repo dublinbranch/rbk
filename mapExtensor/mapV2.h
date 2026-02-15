@@ -68,7 +68,7 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 		explicit operator bool() const {
 			return found;
 		}
-		const V& operator ->() const {
+		const V& operator->() const {
 			return *val;
 		}
 	};
@@ -116,6 +116,16 @@ class mapV2 : public std::map<K, V, Compare>, public NotFoundMixin<K> {
 			return Founded{&iter->second, true};
 		}
 		return Founded();
+	}
+
+	template <typename T>
+	[[nodiscard]] auto getF(const K& k) const {
+		if (auto iter = this->find(k); iter != this->end()) {
+			T v;
+			swapType(iter->second, v);
+			return FoundedV2{v, true};
+		}
+		return FoundedV2<T>();
 	}
 
 	[[nodiscard]] auto getRef(const K& k) {
