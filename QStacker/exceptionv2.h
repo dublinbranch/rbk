@@ -5,6 +5,7 @@
 #include "rbk/number/intTypes.h"
 #include <exception>
 #include <string>
+#include <vector>
 
 class QString;
 class QByteArray;
@@ -48,7 +49,14 @@ class ExceptionV2 : public std::exception {
 
 	std::string msg;
 
+	/**
+	 * @brief because sometimes we just want to keep adding stuff
+	 */
+	std::vector<std::string> info;
+
       private:
+	//local copy to keep what() ptr alive
+	mutable std::string infoComposed;
 };
 
 const char* currentExceptionTypeName();

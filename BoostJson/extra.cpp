@@ -211,7 +211,7 @@ JsonRes parseJson(std::string_view json, bool throwOnError) {
 		res.raw      = json;
 		res.position = consumed;
 		if (throwOnError) {
-			throw HttpException(res.composeErrorMsg());
+			throw ExceptionV2(res.composeErrorMsg());
 		}
 	} else {
 		res.json = p.release();

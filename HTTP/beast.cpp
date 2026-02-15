@@ -293,11 +293,7 @@ void handle_request(
 
 			string msg = status.serializeMsg(e.what());
 
-			string file = conf->logFolder + "/stdException.log";
-			auto   e2   = dynamic_cast<const ExceptionV2*>(&e);
-			if (e2) {
-				file = conf->logFolder + "/" + e2->getLogFile();
-			}
+			auto e2 = dynamic_cast<const ExceptionV2*>(&e);
 
 			if (!(e2 && e2->skipPrint)) {
 				fmt::print("\n------\n{}", msg);
@@ -317,7 +313,13 @@ void handle_request(
 				}
 			}
 
-			fileAppendContents("\n------\n " + msg, file);
+			{
+				string file = conf->logFolder + "/stdException.log";
+				if (e2) {
+					file = conf->logFolder + "/" + e2->getLogFile();
+				}
+				fileAppendContents("\n------\n " + msg, file);
+			}
 
 		} catch (...) {
 			auto msg = status.serializeMsg("unkown exception");

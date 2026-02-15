@@ -3,6 +3,8 @@
 #include "rbk/misc/sourcelocation.h"
 #include <QString>
 #include <cxxabi.h>
+#include <fmt/format.h>
+#include <fmt/ranges.h>
 
 ExceptionV2::ExceptionV2(const QString& _msg, uint skip) {
 	msg = _msg.toStdString() + stacker(skip, QStackerOptLight);
@@ -58,7 +60,12 @@ const std::string ExceptionV2::getLogFile() const noexcept {
 }
 
 const char* ExceptionV2::what() const noexcept {
-	return msg.data();
+	if (info.empty()) {
+		return msg.c_str();
+	}
+	infoComposed.clear();
+	infoComposed = fmt::format("{}\n{}", msg, fmt::join(info, "\n"));
+	return infoComposed.c_str();
 }
 
 void ExceptionV2::setMsg(const QByteArray& newMsg) {
