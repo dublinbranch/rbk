@@ -5,6 +5,7 @@
 #include "rbk/defines/stringDefine.h"
 #include "rbk/fmtExtra/customformatter.h"
 #include "rbk/fmtExtra/dynamic.h"
+#include "rbk/fmtExtra/includeMe.h"
 #include "rbk/magicEnum/magic_from_string.hpp"
 #include "rbk/misc/sleep.h"
 #include "rbk/serialization/serialize.h"
@@ -35,7 +36,7 @@ bool QFileXT::open(QIODevice::OpenMode flags) {
 bool QFileXT::open(QIODevice::OpenMode flags, bool quiet) {
 	if (!QFile::open(flags)) {
 		if (!quiet) {
-			qCritical().noquote() << errorString() << "opening" << fileName() << "cwd:" << std::filesystem::current_path() << QStacker16Light();
+			qCritical().noquote() << F16("{} opening {} cwd: {} @ {}", errorString(), fileName(), std::filesystem::current_path(), QStacker16Light());
 		}
 		return false;
 	}

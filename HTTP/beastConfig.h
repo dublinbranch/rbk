@@ -74,6 +74,9 @@ class BeastConf {
 	std::vector<std::string> logBlacklist;
 	void                     setBasePath(const std::string& newBasePath);
 
+	/**
+	 * @brief basePath is used to set the default path from where to read content, sometimes, in certain case we listen on multiple ip etc
+	 */
 	std::optional<std::string> basePath;
 
       private:

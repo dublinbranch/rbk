@@ -5,6 +5,7 @@
 #include "rbk/misc/executor.h"
 #include <QByteArray>
 #include <boost/mustache.hpp>
+#include <qdebug.h>
 
 using namespace std;
 

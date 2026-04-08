@@ -238,6 +238,11 @@ CurlCallResult urlPostContent(const QByteAdt& url, const QByteAdt& post, bool qu
 
 	result.errorCode = curl_easy_perform(useMe);
 	result.errorMsg  = errbuf;
+
+	//No idea how to suppress this warning
+	if (result.errorMsg.contains("SSL certificate OpenSSL verify result: self-signed certificate in certificate chain")) {
+		result.errorMsg.clear();
+	}
 	curlTimer(result.timing, useMe);
 	curl_easy_getinfo(useMe, CURLINFO_RESPONSE_CODE, &result.httpCode);
 	if (result.errorCode == CURLE_OK) {
@@ -278,6 +283,10 @@ CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& put, CurlKeepe
 
 	result.errorCode = curl_easy_perform(useMe);
 	result.errorMsg  = errbuf;
+	//No idea how to suppress this warning
+	if (result.errorMsg.contains("SSL certificate OpenSSL verify result: self-signed certificate in certificate chain")) {
+		result.errorMsg.clear();
+	}
 	curlTimer(result.timing, useMe);
 	if (result.errorCode == CURLE_OK) {
 		result.ok     = true;
@@ -323,6 +332,10 @@ CurlCallResult urlGetContent2(const QByteAdt& url, bool quiet, CURL* curl, bool 
 
 	result.errorCode = curl_easy_perform(useMe);
 	result.errorMsg  = errbuf;
+	//No idea how to suppress this warning
+	if (result.errorMsg.contains("SSL certificate OpenSSL verify result: self-signed certificate in certificate chain")) {
+		result.errorMsg.clear();
+	}
 	curlTimer(result.timing, useMe);
 	if (result.errorCode == CURLE_OK) {
 		{

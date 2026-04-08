@@ -5,6 +5,7 @@
 #include "rbk/number/intTypes.h"
 #include <exception>
 #include <string>
+#include <vector>
 
 class QString;
 class QByteArray;
@@ -21,14 +22,14 @@ class ExceptionV2 : public std::exception {
 	bool skipPrint = false;
 
 	ExceptionV2() = default;
-	ExceptionV2(const QString& _msg, uint skip = 4);
+	ExceptionV2(const QString& _msg, uint skip = 2);
 
 	explicit ExceptionV2(const char* _msg);
 
 	ExceptionV2(const char* _msg, uint skip);
 
-	ExceptionV2(const std::string& _msg, uint skip = 4);
-	ExceptionV2(const QByteArray& _msg, uint skip = 4);
+	ExceptionV2(const std::string& _msg, uint skip = 2);
+	ExceptionV2(const QByteArray& _msg, uint skip = 2);
 
 	static ExceptionV2 raw(const std::string& _msg);
 	static ExceptionV2 location(const std::string& _msg, const sourceLocation location =
@@ -48,7 +49,14 @@ class ExceptionV2 : public std::exception {
 
 	std::string msg;
 
+	/**
+	 * @brief because sometimes we just want to keep adding stuff
+	 */
+	std::vector<std::string> info;
+
       private:
+	//local copy to keep what() ptr alive
+	mutable std::string infoComposed;
 };
 
 const char* currentExceptionTypeName();

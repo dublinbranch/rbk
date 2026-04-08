@@ -38,7 +38,10 @@ QMAKE_CXXFLAGS += -Wunused -Wunused-function
 QMAKE_CXXFLAGS += -std=gnu++26
 #-Werror -Wconversion
 QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wconversion -fno-permissive -Werror=return-type
+
+
 #https://www.youtube.com/watch?v=vtz8S10hGuc https://gcc.gnu.org/wiki/Visibility
+#https://s23.seisho.us/dev_wiki/index.php?title=Fvisibility
 QMAKE_CXXFLAGS += -fvisibility=hidden
 
 #in case of error selecting the correct overload, is nice to see the option
@@ -84,12 +87,6 @@ linux {
     #QT is amazing, it can easily embedd and later read such file, there is not noticeable penalty in linking time for this operation
     RESOURCES     += $$PWD/gitTrick/resources.qrc
 
-    defined(WITH_Jemalloc,var){
-        #great control on memory and overall just better
-        #zypper in jemalloc-devel
-        LIBS += -ljemalloc
-    }
-
     #zypper in libdw-devel
     LIBS += -ldw
     LIBS += -ldl
@@ -108,11 +105,17 @@ CONFIG += resources_big
 
 
 SOURCES += \
+    $$PWD/log/log.cpp
+
+HEADERS += \
+    $$PWD/log/log.h
+
+
+SOURCES += \
     $$PWD/minMysql/sqlrowv2.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
     $$PWD/filesystem/suffix.cpp \
     $$PWD/hash/string.cpp \
-    $$PWD/log/log.cpp \
     $$PWD/mapExtensor/ankerv2.cpp \
     $$PWD/mapExtensor/missingkeyex.cpp \
     $$PWD/minMysql/rowswap.cpp \
@@ -141,7 +144,6 @@ HEADERS += \
     $$PWD/filesystem/suffix.h \
     $$PWD/hash/rapidhash.h \
     $$PWD/hash/string.h \
-    $$PWD/log/log.h \
     $$PWD/mapExtensor/ThreadSafeMultiIndex.hpp \
     $$PWD/mapExtensor/ankerl_unordered_dense.h \
     $$PWD/mapExtensor/ankerv2.h \
@@ -176,6 +178,31 @@ HEADERS += \
     $$PWD/BoostMysql/includeme.h
 }
 
+equals(WITH_ASAN,true){
+    QMAKE_CXXFLAGS+= -fsanitize=address -fno-omit-frame-pointer
+    QMAKE_CFLAGS+= -fsanitize=address -fno-omit-frame-pointer
+    QMAKE_LFLAGS+= -fsanitize=address -fno-omit-frame-pointer
+}
+
+equals(WITH_Jemalloc,true){
+    equals(WITH_ASAN, true) {
+        error("WITH_Jemalloc and WITH_ASAN cannot be used together - ASan replaces malloc")
+    }
+    #great control on memory and overall just better
+    #zypper in jemalloc-devel
+
+    DEFINES += WITH_Jemalloc
+    
+    LIBS = -ljemalloc $$LIBS  # Prepend, jemalloc MUST be the first
+    
+SOURCES += \
+    $$PWD/jemalloc/jemutil.cpp
+    
+HEADERS += \
+    $$PWD/jemalloc/jemutil.h
+    
+}
+    
 defined(WITH_SODIUM,var){
 #zypper in sodium-devel
 LIBS += -lsodium

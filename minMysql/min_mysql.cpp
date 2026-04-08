@@ -6,7 +6,6 @@
 #include "rbk/fmtExtra/dynamic.h"
 #include "rbk/hash/sha.h"
 #include "rbk/misc/b64.h"
-#include "rbk/serialization/QDataStreamer.h"
 #include "rbk/serialization/serialize.h"
 #include "rbk/thread/threadstatush.h"
 #include "utilityfunctions.h"
@@ -103,6 +102,9 @@ SQLLogger DB::queryInner(const std::string& sql) const {
 		st.queryExecuted++;
 		st.serverTime = sqlLogger.serverTime;
 		st.totServerTime += sqlLogger.serverTime;
+
+		//This is a no op, basically a swap from the internal struct
+		affectedRows = mysql_affected_rows(conn);
 	}
 
 	auto error           = mysql_errno(conn);
@@ -465,6 +467,7 @@ void DB::pingCheck(st_mysql*& conn) const {
 	return;
 }
 
+#if QT_VERSION_MAJOR >= 6
 QByteArray DB::escape(const QByteArrayView& plain) const {
 	char* tStr    = new char[(uint)plain.size() * 2 + 1];
 	auto  len     = mysql_real_escape_string(getConn(), tStr, plain.constData(), (u64)plain.size());
@@ -473,13 +476,39 @@ QByteArray DB::escape(const QByteArrayView& plain) const {
 	delete[] tStr;
 	return escaped;
 }
+#endif
+
+QByteArray DB::escape(const QByteArray& plain) const {
+
+	char* tStr = new char[(uint)plain.size() * 2 + 1];
+	auto  len  = mysql_real_escape_string(getConn(), tStr, plain.constData(), (u64)plain.size());
+	//if the escaped string is the same, just return the original
+	if (len == (ulong)plain.size()) {
+		delete[] tStr;
+		return plain;
+	}
+#if QT_VERSION_MAJOR >= 6
+	auto escaped = QByteArray::fromRawData(tStr, len);
+#endif
+#if QT_VERSION_MAJOR == 5
+	auto escaped = QByteArray::fromRawData(tStr, (int)len);
+#endif
+	escaped.detach();
+	delete[] tStr;
+	return escaped;
+}
 
 QString DB::escape(const QStringView& what) const {
 	auto plain = what.toUtf8();
 
-	char* tStr    = new char[(uint)plain.size() * 2 + 1];
-	auto  len     = mysql_real_escape_string(getConn(), tStr, plain.constData(), (u64)plain.size());
-	auto  escaped = QString::fromUtf8(tStr, len);
+	char* tStr = new char[(uint)plain.size() * 2 + 1];
+	auto  len  = mysql_real_escape_string(getConn(), tStr, plain.constData(), (u64)plain.size());
+#if QT_VERSION_MAJOR >= 6
+	auto escaped = QString::fromUtf8(tStr, len);
+#endif
+#if QT_VERSION_MAJOR == 5
+	auto escaped = QString::fromUtf8(tStr, (int)len);
+#endif
 	delete[] tStr;
 	return escaped;
 }
@@ -550,7 +579,7 @@ void DB::setConf(const DBConf& value) {
 	state.get().NULL_as_EMPTY = conf.NULL_as_EMPTY;
 }
 
-long DB::getAffectedRows() const {
+u64 DB::getAffectedRows() const {
 	return affectedRows;
 }
 
@@ -819,7 +848,7 @@ sqlResult DB::getWarning(bool useSuppressionList) const {
 	if (!useSuppressionList || conf.warningSuppression.empty()) {
 		return res;
 	}
-	for (const auto& row : res) {
+	for (const auto& row : std::as_const(res)) {
 		auto msg = row.value(QBL("Message"), BSQL_NULL);
 		for (auto& rx : conf.warningSuppression) {
 			//auto p = rx->pattern();
@@ -898,8 +927,6 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 	st.totFetchTime += sqlLogger->fetchTime;
 
 	localThreadStatus->time.addSqlTime(sqlLogger->fetchTime + sqlLogger->serverTime);
-
-	affectedRows = mysql_affected_rows(conn);
 
 	// auto affected  = mysql_affected_rows(conn);
 	if (skipWarning) {
@@ -995,8 +1022,6 @@ SqlResultV2 DB::fetchResultV2(SQLLogger* sqlLogger) const {
 	st.totFetchTime += sqlLogger->fetchTime;
 
 	localThreadStatus->time.addSqlTime(sqlLogger->fetchTime + sqlLogger->serverTime);
-
-	affectedRows = mysql_affected_rows(conn);
 
 	// auto affected  = mysql_affected_rows(conn);
 	if (skipWarning) {

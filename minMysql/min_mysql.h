@@ -124,8 +124,12 @@ class DB {
 	[[nodiscard]] SqlResultV2 queryCacheV2(const StringAdt& sql, uint ttl);
 	[[nodiscard]] SqlRowV2    queryCacheLineV2(const StringAdt& sql, uint ttl, bool required = false);
 
-	void        pingCheck(st_mysql*& conn) const;
-	QByteArray  escape(const QByteArrayView& plain) const;
+	void pingCheck(st_mysql*& conn) const;
+#if QT_VERSION_MAJOR >= 6
+	QByteArray escape(const QByteArrayView& plain) const;
+#endif
+
+	QByteArray  escape(const QByteArray& plain) const;
 	QString     escape(const QStringView& what) const;
 	std::string escape(const std::string& what) const;
 	std::string escape(const std::string_view what) const;
@@ -179,7 +183,7 @@ class DB {
 	void         setConf(const DBConf& value);
 	void         setConfIfNotSet(const DBConf& value);
 
-	long getAffectedRows() const;
+	u64 getAffectedRows() const;
 	//usually set / reset via
 	//	#include "rbk/RAII/resetAfterUse.h"
 	//	ResetOnExit resetMe(mainDB->state.get()

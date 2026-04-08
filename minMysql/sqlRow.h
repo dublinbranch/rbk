@@ -37,7 +37,10 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 
 	/**
-	 * @brief rqe is specific for int type enum IE the one NOT using ENUM but an actual INT inside mysql
+	 * @brief rqe is specific for int type ENUM OR SET(BITMASK)
+	 * the value MUST be passed as an INT 
+	 * in the sql use COALESCE(flag + 0) as flag if NULLABLE
+	 * OR flag + 0 as flag
 	 * @param key
 	 * @return
 	 */

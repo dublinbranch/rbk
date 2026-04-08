@@ -10,7 +10,11 @@ namespace bj = boost::json;
 bool Log::hasError(bool recursive) const {
 	if (recursive) {
 		for (auto& log : subLogs) {
+			//This is actually not good! many program write there for other reason -.- check the exit code
 			if (log.hasError(true)) {
+				return true;
+			}
+			if (log.exit_code) {
 				return true;
 			}
 		}
@@ -41,6 +45,9 @@ boost::json::object Log::toJson() {
 	if (!options.empty()) {
 		obj["options"] = options;
 	}
+	if (!msg.empty()) {
+		obj["msg"] = msg;
+	}
 
 	obj["tsStart"] = tsStart.toString(mysqlDateMicroTimeFormat).toStdString();
 	obj["elapsed"] = QElapsedTimerV2::format(elapsed);
@@ -51,6 +58,10 @@ boost::json::object Log::toJson() {
 
 	if (!stdErr.isEmpty()) {
 		obj["stdErr"] = stdErr.toStdString();
+	}
+
+	if (exit_code) {
+		obj["exit_code"] = exit_code;
 	}
 
 	// if (developMode && stackTrace.isEmpty()) {
@@ -73,7 +84,7 @@ boost::json::object Log::toJson() {
 boost::json::object Log::toJson4panel() const {
 	bj::object json;
 	json["status"]  = "error";
-	json["message"] = stdErr;
+	json["message"] = stdErr.toStdString();
 	return json;
 }
 
@@ -108,7 +119,7 @@ Log::~Log() {
 		if (a && b && c) {
 			return;
 		}
-		qCritical().noquote() << "Log got wasted, this is not what you want...! use me" << QStacker16Light();
+		qCritical().noquote() << "Log got wasted, this is not what you want...! use me" << serialize(QString()) << QStacker16Light();
 	}
 }
 
