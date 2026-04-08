@@ -22,14 +22,14 @@ class ExceptionV2 : public std::exception {
 	bool skipPrint = false;
 
 	ExceptionV2() = default;
-	ExceptionV2(const QString& _msg, uint skip = 4);
+	ExceptionV2(const QString& _msg, uint skip = 2);
 
 	explicit ExceptionV2(const char* _msg);
 
 	ExceptionV2(const char* _msg, uint skip);
 
-	ExceptionV2(const std::string& _msg, uint skip = 4);
-	ExceptionV2(const QByteArray& _msg, uint skip = 4);
+	ExceptionV2(const std::string& _msg, uint skip = 2);
+	ExceptionV2(const QByteArray& _msg, uint skip = 2);
 
 	static ExceptionV2 raw(const std::string& _msg);
 	static ExceptionV2 location(const std::string& _msg, const sourceLocation location =
