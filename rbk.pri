@@ -38,7 +38,10 @@ QMAKE_CXXFLAGS += -Wunused -Wunused-function
 QMAKE_CXXFLAGS += -std=gnu++26
 #-Werror -Wconversion
 QMAKE_CXXFLAGS += -Wall -Wextra -Wpedantic -Wshadow -Wconversion -fno-permissive -Werror=return-type
+
+
 #https://www.youtube.com/watch?v=vtz8S10hGuc https://gcc.gnu.org/wiki/Visibility
+#https://s23.seisho.us/dev_wiki/index.php?title=Fvisibility
 QMAKE_CXXFLAGS += -fvisibility=hidden
 
 #in case of error selecting the correct overload, is nice to see the option
