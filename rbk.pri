@@ -103,13 +103,13 @@ win32{
 #this should speed up the update of the submodule info
 CONFIG += resources_big
 
-greaterThan(QT_MAJOR_VERSION, 5) {
-    SOURCES += \
-        $$PWD/log/log.cpp
 
-    HEADERS += \
-        $$PWD/log/log.h
-}
+SOURCES += \
+    $$PWD/log/log.cpp
+
+HEADERS += \
+    $$PWD/log/log.h
+
 
 SOURCES += \
     $$PWD/minMysql/sqlrowv2.cpp \

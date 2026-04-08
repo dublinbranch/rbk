@@ -119,7 +119,7 @@ Log::~Log() {
 		if (a && b && c) {
 			return;
 		}
-		qCritical().noquote() << "Log got wasted, this is not what you want...! use me" << serialize() << QStacker16Light();
+		qCritical().noquote() << "Log got wasted, this is not what you want...! use me" << serialize(QString()) << QStacker16Light();
 	}
 }
 
