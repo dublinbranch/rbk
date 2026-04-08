@@ -103,13 +103,19 @@ win32{
 #this should speed up the update of the submodule info
 CONFIG += resources_big
 
+greaterThan(QT_MAJOR_VERSION, 5) {
+    SOURCES += \
+        $$PWD/log/log.cpp
+
+    HEADERS += \
+        $$PWD/log/log.h
+}
 
 SOURCES += \
     $$PWD/minMysql/sqlrowv2.cpp \
     $$PWD/HTTP/PMFCGI.cpp \
     $$PWD/filesystem/suffix.cpp \
     $$PWD/hash/string.cpp \
-    $$PWD/log/log.cpp \
     $$PWD/mapExtensor/ankerv2.cpp \
     $$PWD/mapExtensor/missingkeyex.cpp \
     $$PWD/minMysql/rowswap.cpp \
@@ -138,7 +144,6 @@ HEADERS += \
     $$PWD/filesystem/suffix.h \
     $$PWD/hash/rapidhash.h \
     $$PWD/hash/string.h \
-    $$PWD/log/log.h \
     $$PWD/mapExtensor/ThreadSafeMultiIndex.hpp \
     $$PWD/mapExtensor/ankerl_unordered_dense.h \
     $$PWD/mapExtensor/ankerv2.h \

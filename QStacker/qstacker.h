@@ -27,6 +27,7 @@ void stacker_CERR();
  * @brief StackerMinLevel is used to cut away the initial part of the stack trace
  * execially when running a thread there is a lot of stuff
  * It must be the name of the program, or the folder from which the code has been compiled
+ * Or in case of weird condition a generic "divider" where what is before is cut and what is after kept, like a specific function
  */
 inline std::string StackerMinLevel;
 inline uint        stackerMaxFrame = 15;
