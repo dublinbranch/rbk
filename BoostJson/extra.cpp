@@ -260,6 +260,11 @@ string JsonRes::composeErrorMsg() const {
 			rowNumber++;
 			lineEnd = raw.find("\n", lineStart);
 			if (lineEnd == string::npos) {
+				// Sentinel key raw.size() so the last line (incl. no trailing \n) is in the map
+				Payload p{string_view(raw).substr(lineStart, raw.size() - lineStart),
+				          lineStart,
+				          rowNumber};
+				newLines.insert({raw.size(), p});
 				break;
 			}
 			Payload p{string_view(raw).substr(lineStart, lineEnd - lineStart),
@@ -312,8 +317,8 @@ string JsonRes::composeErrorMsg() const {
 		auto len = end - start;
 
 		showMe = string_view(raw).substr(start, len);
-		if (rowNumber) { //if NOT on a single big line the json, take last line info
-			offset = position - newLines.rbegin()->first;
+		if (!newLines.empty()) {
+			offset = (position - newLines.rbegin()->second.start) + 1;
 		} else {
 			offset = position - start;
 		}
