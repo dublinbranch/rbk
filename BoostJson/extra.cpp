@@ -250,10 +250,6 @@ string JsonRes::composeErrorMsg() const {
 		uint        rowNumber;
 	};
 
-	// Print the JSON that caused the error, for debugging purposes.
-	std::cerr << "composeErrorMsg called with JSON:\n"
-	          << raw << std::endl;
-
 	std::map<Pt, Payload> newLines;
 
 	{
@@ -291,11 +287,23 @@ string JsonRes::composeErrorMsg() const {
 
 		auto start = r.start;
 		auto end   = i->first;
-		//do we have a line before ?
+		// Widen snippet upward to prior line(s); never decrement map iterator past begin().
+		auto it = i;
 		if (rowNumber > 2) {
-			start = (-- --i)->second.start;
+			if (it != newLines.begin()) {
+				--it;
+				if (it != newLines.begin()) {
+					--it;
+					start = it->second.start;
+				} else {
+					start = it->second.start;
+				}
+			}
 		} else if (rowNumber > 1) {
-			start = (--i)->second.start;
+			if (it != newLines.begin()) {
+				--it;
+				start = it->second.start;
+			}
 		}
 		//do we have a line after ?
 		//if (rowNumber < newLines.size()) {
