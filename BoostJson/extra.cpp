@@ -7,6 +7,7 @@
 #include "rbk/minMysql/sqlRow.h"
 #include <QByteArray>
 #include <QString>
+#include <iostream>
 
 #include "rbk/QStacker/httpexception.h"
 
@@ -248,6 +249,10 @@ string JsonRes::composeErrorMsg() const {
 		Pt          start;
 		uint        rowNumber;
 	};
+
+	// Print the JSON that caused the error, for debugging purposes.
+	std::cerr << "composeErrorMsg called with JSON:\n"
+	          << raw << std::endl;
 
 	std::map<Pt, Payload> newLines;
 
