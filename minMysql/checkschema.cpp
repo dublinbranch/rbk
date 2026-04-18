@@ -157,7 +157,8 @@ QByteArray CheckSchema::loadSchemaInner() {
 		return res.content;
 	}
 
-#if __has_include("db/schema")
+	// __has_include is not reliable for #embed; __has_embed matches #embed's resource lookup.
+#if __has_embed("db/schema") != __STDC_EMBED_NOT_FOUND__
 	echo("Db Schema loaded from embedded");
 	static const unsigned char data[] = {
 #embed "db/schema"
@@ -168,8 +169,8 @@ QByteArray CheckSchema::loadSchemaInner() {
 	return schema;
 #else
 #pragma message("missing db/schema, remember to run with --refreshDBSchema and recompile")
-	return {};
 #endif
+	return {};
 }
 
 CheckSchema::Schemas CheckSchema::loadSchema() {

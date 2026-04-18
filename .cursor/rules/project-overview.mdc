@@ -1,0 +1,33 @@
+---
+description: rbk project overview and architecture context
+alwaysApply: true
+---
+
+# rbk -- C++26/Qt Utility Library Collection
+
+This repo is a **modular utility library** included by downstream qmake projects via `include(rbk/rbk.pri)`. It is NOT a standalone executable.
+
+## Key Facts
+
+- **Language**: C++26 (`-std=gnu++26`), heavy Qt usage (Core + optional Network)
+- **Build system**: **CMake** (primary) and qmake `.pri` (legacy, kept for compat)
+- **CMake entry**: `CMakeLists.txt` -- consumers do `add_subdirectory(rbk)` + `target_link_libraries(... rbk::rbk)`; when developing rbk itself, configure out-of-tree into **`build/`** (see `CMakePresets.json`, preset `default`)
+- **qmake entry**: `rbk.pri` -- consumers do `include(rbk/rbk.pri)`
+- **Config (qmake only)**: local `config.pri` (gitignored) from `configTemplate.pri`
+- **License**: Unlicense (public domain)
+- **Min Boost**: 1.83 (enforced via `static_assert` in `versioncheck.cpp`)
+- **Platform**: primarily Linux (openSUSE); basic Windows support (`dbghelp`)
+
+## Module Layout
+
+Each subdirectory is a self-contained module (headers + sources). Optional modules are gated by qmake variables like `WITH_BOOST_BEAST`, `WITH_SODIUM`, `withMinCurl`, etc.
+
+Core always-included modules: `BoostJson`, `HTTP` (FCGI/URL), `minMysql`, `mapExtensor`, `QStacker`, `log`, `string`, `misc`, `fmtExtra`, `filesystem`, `hash`, `locale`, `dateTime`, `serialization`, `thread`, `rand`, `number`, `JSON`, `magicEnum`, `SpaceShipOP`, `mustache`, `rapidjson`, `gitTrick`.
+
+## When Modifying This Repo
+
+- Changes affect ALL downstream projects
+- Adding new source files requires updating BOTH `CMakeLists.txt` AND `rbk.pri`
+- New optional features: gate with `option(RBK_WITH_...)` in CMake and `defined(VAR,var)` in qmake
+- System library dependencies: add `find_package`/`pkg_check_modules` in CMake, `LIBS +=` in qmake
+- Keep both build systems in sync

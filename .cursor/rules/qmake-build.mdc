@@ -1,0 +1,45 @@
+---
+description: qmake build system rules for rbk.pri
+globs: "**/*.pri"
+alwaysApply: false
+---
+
+# qmake Build Rules
+
+## Structure
+
+- `rbk.pri` is the single entry point consumed by downstream `.pro` files
+- `configTemplate.pri` is the starting point for local `config.pri` (gitignored)
+- Some modules have standalone `.pri` files (`minMysql/minMysql.pri`, `minCurl/minCurl.pri`, `rapidjson/rapidjson.pri`, `SpaceShipOP/qspaceship.pri`)
+
+## Adding Sources
+
+Always add both HEADERS and SOURCES using `$$PWD/` prefix:
+
+```qmake
+HEADERS += \
+    $$PWD/mymodule/myfile.h
+
+SOURCES += \
+    $$PWD/mymodule/myfile.cpp
+```
+
+## Optional Feature Gates
+
+Use `defined(VAR,var)` for optional blocks (NOT `equals`):
+
+```qmake
+defined(WITH_FEATURE,var) {
+    LIBS += -lsomelib
+    HEADERS += $$PWD/module/file.h
+    SOURCES += $$PWD/module/file.cpp
+}
+```
+
+Exception: `WITH_ASAN` and `WITH_Jemalloc` use `equals(VAR,true)` because they are value-based, not just defined.
+
+## Platform Blocks
+
+- Linux-specific: wrap in `linux { ... }`
+- Windows-specific: wrap in `win32 { ... }`
+- Always add `zypper` install comments next to Linux LIBS lines

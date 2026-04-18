@@ -1,0 +1,25 @@
+{
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 2,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "build/",
+      "description": "Out-of-source build directory (preferred for rbk standalone configure)",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "RBK_QT_PREFIX": "/opt/Qt/6.8.3/gcc_64"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default"
+    }
+  ]
+}

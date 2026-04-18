@@ -1,0 +1,50 @@
+---
+description: CMake build system rules for rbk
+globs: "**/CMakeLists.txt"
+alwaysApply: false
+---
+
+# CMake Build Rules
+
+## Workflow
+
+- **CMake 4.2+** (`cmake_minimum_required(VERSION 4.2)`).
+- **Build directory**: all standalone configure/build output goes under **`build/`** at the repo root (`CMakePresets.json` preset `default` sets `binaryDir` to `${sourceDir}/build`; `.gitignore` includes `build/`). Do not configure in the source tree — in-source `cmake .` is rejected by `CMakeLists.txt`.
+- Typical: `cmake --preset default` then `cmake --build build`, or `cmake -B build` then `cmake --build build`.
+
+## Structure
+
+- `CMakeLists.txt` at repo root defines the `rbk` STATIC library and the `rbk::rbk` alias
+- Consumers: `add_subdirectory(rbk)` + `target_link_libraries(myapp PRIVATE rbk::rbk)`
+- All optional features are `option(RBK_WITH_... OFF)` -- enabled via `-DRBK_WITH_...=ON`
+
+## Adding Sources
+
+Add to the explicit `RBK_SOURCES` / `RBK_HEADERS` lists (no GLOBs):
+
+```cmake
+set(RBK_SOURCES
+    ...
+    mymodule/myfile.cpp
+)
+```
+
+For optional modules, use `list(APPEND ...)` inside an `if()` block:
+
+```cmake
+if(RBK_WITH_MYFEATURE)
+    list(APPEND RBK_SOURCES mymodule/myfile.cpp)
+    list(APPEND RBK_HEADERS mymodule/myfile.h)
+endif()
+```
+
+## Finding Dependencies
+
+- Qt: `find_package(Qt6 REQUIRED COMPONENTS Core)`
+- Boost: `find_package(Boost 1.83 REQUIRED)`
+- System libs: prefer `pkg_check_modules(... IMPORTED_TARGET ...)` for Linux packages
+- Standard CMake modules: `find_package(OpenSSL)`, `find_package(CURL)`, etc.
+
+## Keep In Sync
+
+When modifying `CMakeLists.txt`, also update `rbk.pri` to keep the legacy qmake build working. Both files must list the same source files and expose the same optional features.

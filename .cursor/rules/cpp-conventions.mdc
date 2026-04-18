@@ -1,0 +1,43 @@
+---
+description: C++ coding conventions for rbk modules
+globs: "**/*.{cpp,h,hpp}"
+alwaysApply: false
+---
+
+# C++ Conventions
+
+## Standard & Compiler
+
+- Target: **C++26** with GNU extensions (`-std=gnu++26`)
+- Warnings are strict: `-Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror=return-type`
+- Visibility is hidden by default (`-fvisibility=hidden`) -- export symbols explicitly
+
+## Style Patterns Found in Codebase
+
+- **Qt types preferred**: `QString`, `QByteArray`, `QDateTime`, `QMap`, `QVector` alongside STL
+- **Boost.JSON** for JSON work with custom `tag_invoke` overloads (see `BoostJson/`)
+- **{fmt}** for formatting, not `printf` or `std::format`
+- **C++20 concepts** used freely (see `concept/`)
+- **`magic_enum`** for enum reflection (vendored in `magicEnum/`)
+- **Spaceship operator** (`<=>`) extended to Qt types via `SpaceShipOP/`
+- Source files use **camelCase** for directories and mixed case for filenames
+
+## Adding New Modules
+
+1. Create a directory under `rbk/` with headers and sources
+2. Add SOURCES and HEADERS entries in `rbk.pri`
+3. If the module needs an external library, gate it with `defined(WITH_FEATURE,var)` in `rbk.pri`
+4. Include `zypper` install instructions as comments near the `LIBS +=` line
+5. Keep modules self-contained -- minimal cross-module coupling
+
+## Error Handling
+
+- Use `ExceptionV2` from `QStacker/` for exceptions with stack traces
+- `QStacker` provides automatic stack capture via backward-cpp
+- HTTP-specific errors use `HttpException` from `QStacker/httpexception.h`
+
+## Database Code (`minMysql/`)
+
+- All times must be UTC -- MariaDB timezone must be set to UTC (see `minMysql/README.md`)
+- Use `sqlComposer` for building queries, not raw string concatenation
+- Schema validation available via `checkschema.h`

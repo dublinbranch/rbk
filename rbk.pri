@@ -122,7 +122,7 @@ SOURCES += \
     $$PWD/minMysql/sqlbuffering.cpp \
     $$PWD/misc/base32.cpp \
     $$PWD/misc/csv.cpp \
-    $$PWD/misc/qelapsedtimerv2.cpp \
+    $$PWD/misc/QElapsedTimerV2.cpp \
     $$PWD/misc/sleep.cpp \
     $$PWD/string/qstringview.cpp \
     $$PWD/HTTP/mime.cpp \
@@ -157,7 +157,7 @@ HEADERS += \
     $$PWD/misc/controlFlowMacro.h \
 	$$PWD/misc/csv.h \
     $$PWD/misc/decimate.h \
-    $$PWD/misc/qelapsedtimerv2.h \
+    $$PWD/misc/QElapsedTimerV2.h \
     $$PWD/misc/sleep.h \
     $$PWD/number/converter.h \
     $$PWD/number/intTypes.h \

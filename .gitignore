@@ -1,2 +1,24 @@
 config.pri
 gitTrick/submoduleInfo
+build/
+CMakeUserPresets.json
+
+# CMake — in-tree configure (prefer `cmake -B build` so artifacts stay under build/)
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+CTestTestfile.cmake
+DartConfiguration.tcl
+install_manifest.txt
+compile_commands.json
+_deps/
+*.ninja
+
+# Qt CMake extras (generated next to the build dir when using Qt's deployment helpers)
+.qt/
+
+# qmake / Qt resource dependency stubs
+*.depends
