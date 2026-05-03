@@ -165,16 +165,6 @@ FileGetRes fileGetContents3(const QByteAdt& fileName, const FGCParam param) {
 	}
 
 	if (param.revision > 0) {
-		bool ok = false;
-		if (!ok) {
-			if (!param.quiet) {
-				qCritical().noquote() << F16("fileGetContents3: bad required revision bytes in param for {}\n", fileName);
-			}
-			res.exist   = false;
-			res.content = {};
-			res.err     = FileGetRes::Err::badRequiredRevisionParam;
-			return res;
-		}
 		if (!revisionOk(param.mr, fileRev, param.revision)) {
 			if (!param.quiet) {
 				qCritical().noquote() << F16("fileGetContents3: templateRevision {} does not satisfy {} (required {}) for {}\n",
