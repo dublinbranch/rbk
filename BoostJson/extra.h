@@ -99,9 +99,7 @@ bool getNumber(const boost::json::value& v, std::string_view key, T& val, const 
 			return false;
 		}
 		if (p->is_string()) {
-			//Cry -.-
-			//TODO do the actual correct conversion
-			val = QS(p).toDouble();
+			val = string_to_number<T>(p->as_string());
 			return true;
 		}
 
