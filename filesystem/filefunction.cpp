@@ -1,4 +1,5 @@
 #include "filefunction.h"
+#include "rbk/BoostJson/extra.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/RAII/resetAfterUse.h"
@@ -96,6 +97,102 @@ FileGetRes fileGetContents2(const QByteAdt& fileName, bool quiet, uint maxAge) {
 
 	res.content = fileGetContents(fileName, quiet, res.exist);
 
+	return res;
+}
+
+namespace {
+static const QByteArray kHeaderEndMarker = QByteArrayLiteral("__HEADER__END__");
+
+bool revisionOk(FGCParam::MR mr, int64_t fileRev, int64_t reqRev) {
+	if (mr == FGCParam::MR::exact) {
+		return fileRev == reqRev;
+	}
+	return fileRev >= reqRev;
+}
+} // namespace
+
+FileGetRes fileGetContents3(const QByteAdt& fileName, const FGCParam param) {
+	FileGetRes res;
+	if (param.maxAge) {
+		auto cTime = QFileInfo(fileName).lastModified().toSecsSinceEpoch();
+		auto age   = QDateTime::currentSecsSinceEpoch() - cTime;
+		if (age > param.maxAge) {
+			return res;
+		}
+	}
+
+	res.content = fileGetContents(fileName, param.quiet, res.exist);
+	if (!res.exist) {
+		return res;
+	}
+
+	const auto div = res.content.indexOf(kHeaderEndMarker);
+	if (div < 0) {
+		if (!param.quiet) {
+			qCritical().noquote() << F16("fileGetContents3: missing __HEADER__END__ marker in {}\n", fileName);
+		}
+		res.exist   = false;
+		res.content = {};
+		res.err     = FileGetRes::Err::missingHeaderEndMarker;
+		return res;
+	}
+
+	QByteArray header = res.content.left(div).trimmed();
+	QByteArray body   = res.content.mid(div + kHeaderEndMarker.size()).trimmed();
+
+	auto jr = parseJson(header, false);
+	if (jr.ec) {
+		if (!param.quiet) {
+			qCritical().noquote() << F16("fileGetContents3: invalid JSON header in {}: {}\n", fileName, jr.composeErrorMsg());
+		}
+		res.exist   = false;
+		res.content = {};
+		res.err     = FileGetRes::Err::invalidJsonHeader;
+		return res;
+	}
+
+	int64_t fileRev = 0;
+	if (!getNumber(jr.json, "templateRevision", fileRev, int64_t{0})) {
+		if (!param.revision.isEmpty()) {
+			if (!param.quiet) {
+				qCritical().noquote() << F16("fileGetContents3: missing templateRevision in header of {}\n", fileName);
+			}
+			res.exist   = false;
+			res.content = {};
+			res.err     = FileGetRes::Err::missingTemplateRevision;
+			return res;
+		}
+	}
+
+	if (!param.revision.isEmpty()) {
+		bool     ok    = false;
+		const auto req = QString::fromUtf8(param.revision).trimmed().toLongLong(&ok);
+		if (!ok) {
+			if (!param.quiet) {
+				qCritical().noquote() << F16("fileGetContents3: bad required revision bytes in param for {}\n", fileName);
+			}
+			res.exist   = false;
+			res.content = {};
+			res.err     = FileGetRes::Err::badRequiredRevisionParam;
+			return res;
+		}
+		if (!revisionOk(param.mr, fileRev, req)) {
+			if (!param.quiet) {
+				qCritical().noquote() << F16("fileGetContents3: templateRevision {} does not satisfy {} (required {}) for {}\n",
+				                            fileRev,
+				                            param.mr == FGCParam::MR::exact ? "exact" : "minimum",
+				                            req,
+				                            fileName);
+			}
+			res.exist   = false;
+			res.content = {};
+			res.err     = FileGetRes::Err::revisionMismatch;
+			return res;
+		}
+	}
+
+	res.content = body;
+	res.err     = FileGetRes::Err::none;
 	return res;
 }
 

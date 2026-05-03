@@ -47,4 +47,17 @@ Log saveInto(const QStringAdt& path, const QByteAdt& content, QString chown = "r
 Log moveInto(const QString& old, const QString& neu, QString chown = "root:root", QString chmod = "644");
 Log copyInto(const QStringAdt& old, const QStringAdt& neu, QString chown = "root:root", QString chmod = "644");
 
+struct FileExistsResult {
+	Log  log;
+	bool found = false;
+};
+
+/**
+ * @brief sudo-aware file existence check. Use std::filesystem::exists()
+ *        for paths the current process can already read.
+ *        exit_code 1 from `test -f` is treated as a valid "not found",
+ *        NOT as an error in the returned Log.
+ */
+FileExistsResult fileExists(const QStringAdt& path);
+
 #endif // RBK_EXECUTOR_H

@@ -170,3 +170,30 @@ Log copyInto(const QStringAdt& old, const QStringAdt& neu, QString chown, QStrin
 	log.category = Log::Info;
 	return log;
 }
+
+FileExistsResult fileExists(const QStringAdt& path) {
+	FileExistsResult r;
+	r.log         = sudo(F16("test -f {}", path));
+	r.log.section = F16("fileExists: {}", path);
+
+	switch (r.log.exit_code) {
+	case 0:
+		r.found        = true;
+		r.log.category = Log::Info;
+		break;
+	case 1:
+		r.found        = false;
+		r.log.category = Log::Info;
+		// execute() appends "exit_code: 1" to stdErr on non-zero exit.
+		// For `test -f`, exit code 1 is a valid answer, not an error.
+		r.log.stdErr.clear();
+		break;
+	default:
+		// real failure (sudo missing, permission denied on the dir, etc.)
+		// leave category=Error and stdErr as set by execute()
+		break;
+	}
+	return r;
+}
+
+
