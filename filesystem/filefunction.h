@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../misc/intTypes.h"
 #include "ffCommon.h"
 #include "rbk/string/stringoso.h"
 #include <QFile>
@@ -26,11 +27,11 @@ struct FileGetRes {
 		none,
 		missingHeaderEndMarker,
 		invalidJsonHeader,
-		missingTemplateRevision,
+		missingRevision,
 		badRequiredRevisionParam,
 		revisionMismatch,
 	};
-	explicit operator bool() const;
+	explicit   operator bool() const;
 	QByteArray content;
 	bool       exist = false;
 	Err        err   = Err::none;
@@ -64,9 +65,10 @@ bool   fileAppendContents(const QByteAdt& pay, const QStringAdt& fileName);
  * @param quiet when false, failures are also logged with qCritical.
  */
 struct FGCParam {
-	QByteAdt& revision;
-	bool      quiet  = true;
-	uint      maxAge = 0;
+	//i64 play nicer with json
+	i64  revision = 0;
+	bool quiet    = true;
+	uint maxAge   = 0;
 	enum MR {
 		minimum,
 		exact

@@ -152,21 +152,20 @@ FileGetRes fileGetContents3(const QByteAdt& fileName, const FGCParam param) {
 	}
 
 	int64_t fileRev = 0;
-	if (!getNumber(jr.json, "templateRevision", fileRev, int64_t{0})) {
-		if (!param.revision.isEmpty()) {
+	if (!getNumber(jr.json, "revision", fileRev, int64_t{0})) {
+		if (param.revision > 0) {
 			if (!param.quiet) {
-				qCritical().noquote() << F16("fileGetContents3: missing templateRevision in header of {}\n", fileName);
+				qCritical().noquote() << F16("fileGetContents3: missing revision in header of {}\n", fileName);
 			}
 			res.exist   = false;
 			res.content = {};
-			res.err     = FileGetRes::Err::missingTemplateRevision;
+			res.err     = FileGetRes::Err::missingRevision;
 			return res;
 		}
 	}
 
-	if (!param.revision.isEmpty()) {
-		bool     ok    = false;
-		const auto req = QString::fromUtf8(param.revision).trimmed().toLongLong(&ok);
+	if (param.revision > 0) {
+		bool ok = false;
 		if (!ok) {
 			if (!param.quiet) {
 				qCritical().noquote() << F16("fileGetContents3: bad required revision bytes in param for {}\n", fileName);
@@ -176,13 +175,13 @@ FileGetRes fileGetContents3(const QByteAdt& fileName, const FGCParam param) {
 			res.err     = FileGetRes::Err::badRequiredRevisionParam;
 			return res;
 		}
-		if (!revisionOk(param.mr, fileRev, req)) {
+		if (!revisionOk(param.mr, fileRev, param.revision)) {
 			if (!param.quiet) {
 				qCritical().noquote() << F16("fileGetContents3: templateRevision {} does not satisfy {} (required {}) for {}\n",
-				                            fileRev,
-				                            param.mr == FGCParam::MR::exact ? "exact" : "minimum",
-				                            req,
-				                            fileName);
+				                             fileRev,
+				                             param.mr == FGCParam::MR::exact ? "exact" : "minimum",
+				                             param.revision,
+				                             fileName);
 			}
 			res.exist   = false;
 			res.content = {};

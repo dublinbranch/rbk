@@ -1,5 +1,6 @@
 add_executable(rbk_tests
     boost_test_main.cpp
+    filefunction.cpp
     boostjson_parse.cpp
     boostjson_math.cpp
     boostjson_util.cpp
