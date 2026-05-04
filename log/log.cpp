@@ -7,6 +7,39 @@
 
 namespace bj = boost::json;
 
+namespace {
+
+struct FindErrorResult {
+	const Log*  ptr = nullptr;
+	QStringList trace;
+};
+
+FindErrorResult findErrorImpl(const Log& node, bool recursive, const QStringList& ancestorSections) {
+	if (recursive) {
+		for (const auto& child : node.subLogs) {
+			QStringList pathToChild = ancestorSections;
+			pathToChild.append(node.section);
+			auto nested = findErrorImpl(child, true, pathToChild);
+			if (nested.ptr) {
+				return nested;
+			}
+			if (child.exit_code) {
+				QStringList trace = pathToChild;
+				trace.append(child.section);
+				return {&child, std::move(trace)};
+			}
+		}
+	}
+	if (!node.stdErr.isEmpty() || node.category == Log::Error) {
+		QStringList trace = ancestorSections;
+		trace.append(node.section);
+		return {&node, std::move(trace)};
+	}
+	return {};
+}
+
+} // namespace
+
 bool Log::hasError(bool recursive) const {
 	if (recursive) {
 		for (auto& log : subLogs) {
@@ -22,8 +55,12 @@ bool Log::hasError(bool recursive) const {
 	return !stdErr.isEmpty() || category == Log::Error;
 }
 
-std::string Log::serialize() {
-	used = true;
+LogFindErrorResult Log::findError(bool recursive) const {
+	auto found = findErrorImpl(*this, recursive, {});
+	return {found.ptr, std::move(found.trace)};
+}
+
+std::string Log::serialize() const {
 	return pretty_print(toJson());
 }
 
@@ -31,7 +68,7 @@ QString Log::serialize(QString) {
 	return QString::fromStdString(serialize());
 }
 
-boost::json::object Log::toJson() {
+boost::json::object Log::toJson() const {
 	bj::object obj;
 	if (developMode && category == notSet) {
 		qDebug().noquote() << F16("processing a log with unset category, is that a good or bad one ?!? Section is {}", section) << QStacker16Light();
