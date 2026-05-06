@@ -627,8 +627,12 @@ DB::DB(const DBConf& _conf) {
 }
 
 DB::~DB() {
-	// will be later removed by the connPooler
-	closeConn();
+	// Do NOT call closeConn() here. It only closes the *current* thread's connection
+	// via mi_tls; during process shutdown (e.g. exit() from a Beast worker thread)
+	// that thread's thread_local repo may already be destroyed while global ~DB runs,
+	// which led to use-after-free and __cxa_pure_virtual in shared_ptr teardown.
+	// Per-thread St_mysqlW is held in connPool's map; when the thread exits, ~Repo
+	// destroys the map and ~St_mysqlW runs mysql_close().
 }
 
 /**
