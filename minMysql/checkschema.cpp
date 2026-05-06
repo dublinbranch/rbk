@@ -40,6 +40,9 @@ void removeAutoInc(QString& sql) {
 
 CheckSchema::Schemas CheckSchema::getDbSchema() {
 	CheckSchema::Schemas schemas;
+
+	QVector<QByteArray> views;
+
 	for (auto& dbName : databases) {
 		{
 			{
@@ -55,6 +58,7 @@ CheckSchema::Schemas CheckSchema::getDbSchema() {
 					}
 				}
 			}
+
 			{
 				//get all VIEW in the db at once o.O
 				auto sqlInfo = F(R"(
@@ -65,8 +69,7 @@ WHERE table_schema='{}')",
 				auto res     = db->query(sqlInfo);
 				for (auto& row : res) {
 					auto tableName = row.rq("TABLE_NAME");
-					row.insert("isView", "1");
-					schemas[{dbName, tableName}].push_back(row);
+					views.append(F8("{}.{}", dbName, tableName));
 				}
 			}
 
@@ -104,7 +107,14 @@ ORDER BY `ORDINAL_POSITION` ASC)",
 				auto res     = db->query(sqlInfo);
 				for (auto& row : res) {
 					auto tableName = row.rq("TABLE_NAME");
-					row.insert("isView", "0");
+					auto fullName  = F8("{}.{}", dbName, tableName);
+
+					if (views.contains(fullName)) {
+						row.insert("isView", "1");
+					} else {
+						row.insert("isView", "0");
+					}
+
 					schemas[{dbName, tableName}].push_back(row);
 				}
 			}
