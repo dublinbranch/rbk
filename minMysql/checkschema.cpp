@@ -124,8 +124,10 @@ void CheckSchema::saveSchema() {
 		//auto sha = sha1(stream, false).toHex();
 		//auto sz  = stream.size();
 		file.write(stream);
+		file.commit();
+	} else {
+		throw ExceptionV2(F("impossible to save schema: {} in {}", file.errorString(), path));
 	}
-	file.commit();
 }
 
 void CheckSchema::saveTableData(const TableDatas& td) {
