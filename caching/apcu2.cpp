@@ -28,13 +28,13 @@ struct ByTypeHashCode {};
 using boost::multi_index_container;
 using namespace boost::multi_index;
 
-struct ApcuCache_index : indexed_by<
-                             hashed_unique<
-                                 tag<ByKey>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, std::string, key)>,
-                             hashed_non_unique<
-                                 tag<ByTypeHashCode>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, size_t, typeHashCode)>,
-                             ordered_non_unique<
-                                 tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, i64, expireAt)>> {};
+using ApcuCache_index = indexed_by<
+    hashed_unique<
+        tag<ByKey>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, std::string, key)>,
+    hashed_non_unique<
+        tag<ByTypeHashCode>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, size_t, typeHashCode)>,
+    ordered_non_unique<
+        tag<ByExpire>, BOOST_MULTI_INDEX_MEMBER(APCU::Row, i64, expireAt)>>;
 
 using ApcuCache = multi_index_container<APCU::Row, ApcuCache_index>;
 //this is deallocated at exit before the function is called, so we just manually manage it, no idea how to do the "correct" way
