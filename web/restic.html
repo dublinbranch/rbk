@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Restic — HTTP NDJSON</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 1.5rem; max-width: 1100px; }
+    h1 { font-size: 1.25rem; }
+    #toolbar button { margin-right: 0.5rem; margin-bottom: 0.5rem; padding: 0.35rem 0.75rem; }
+    #toolbar button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #status { margin: 0.75rem 0; font-weight: 600; color: #333; }
+    #panel { background: #111; color: #e8e8e8; padding: 0.75rem; border-radius: 6px; min-height: 8rem; max-height: 75vh; overflow: auto; font-size: 0.85rem; }
+    #panel pre.raw { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 0.82rem; }
+    #panel .snap-meta { color: #9cf; margin-bottom: 0.5rem; font-size: 0.9rem; }
+    #panel table.snapshots { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    #panel table.snapshots th, #panel table.snapshots td { border-bottom: 1px solid #333; padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; }
+    #panel table.snapshots th { color: #bbb; font-weight: 600; position: sticky; top: 0; background: #1a1a1a; }
+    #panel table.snapshots code { font-size: 0.78rem; }
+    #panel table.snapshots td.paths { max-width: 22rem; word-break: break-word; }
+    #panel .exit-banner { margin-top: 0.75rem; padding: 0.35rem 0.5rem; background: #1a3320; border-radius: 4px; color: #b8f0c8; font-size: 0.85rem; }
+    #panel .exit-banner.err { background: #331a1a; color: #f0b8b8; }
+    #panel .bar-wrap { height: 12px; background: #2a2a2a; border-radius: 6px; overflow: hidden; margin: 0.5rem 0 0.75rem; }
+    #panel .bar-fill { height: 100%; background: linear-gradient(90deg, #1a5f3c, #3cb878); width: 0%; transition: width 0.12s ease-out; }
+    #panel table.backup-metrics-table { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; font-size: 0.82rem; }
+    #panel table.backup-metrics-table td { padding: 0.25rem 0.5rem; border-bottom: 1px solid #2a2a2a; }
+    #panel table.backup-metrics-table td.lab { color: #888; width: 5rem; }
+    #panel h3.recent-h { font-size: 0.95rem; margin: 0.75rem 0 0.35rem; color: #9cf; font-weight: 600; }
+    #panel .backup-now { font-size: 0.8rem; color: #9fdfb3; margin: 0.45rem 0 0.35rem; padding: 0.35rem 0.5rem; background: #1e2a22; border-radius: 4px; word-break: break-word; min-height: 2.4em; line-height: 1.35; }
+    #panel .backup-now.muted { color: #889; background: #1a1a1a; }
+    #panel ul.backup-recent { margin: 0; padding-left: 1.2rem; max-height: 14rem; overflow: auto; font-size: 0.78rem; color: #ccc; }
+    #panel ul.backup-recent li { margin: 0.15rem 0; word-break: break-all; }
+    #panel .backup-summary-wrap { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #333; }
+    #panel .backup-summary-wrap h3 { font-size: 1rem; margin: 0 0 0.5rem; color: #9cf; }
+    #panel table.backup-summary-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    #panel table.backup-summary-table td { padding: 0.3rem 0.45rem; border-bottom: 1px solid #2a2a2a; vertical-align: top; }
+    #panel table.backup-summary-table td.sk { color: #888; width: 40%; }
+    .hint { font-size: 0.85rem; color: #666; margin-top: 0.35rem; }
+    .nav { font-size: 0.9rem; margin-bottom: 0.75rem; }
+    .nav a { color: #06c; }
+  </style>
+</head>
+<body>
+  <p class="nav"><a href="/">← WebSocket UI (home)</a></p>
+  <h1>Restic — chunked NDJSON (HTTP POST /api/restic)</h1>
+  <p class="hint">Same <code>restic … --json</code> stream as <code>/ws</code>, consumed via <code>fetch</code> + streaming body. Request body: <code>{"op":"snapshots"}</code> or <code>{"op":"backup"}</code>.</p>
+  <div id="toolbar">
+    <button type="button" id="btnSnap">snapshots</button>
+    <button type="button" id="btnBackup">backup</button>
+  </div>
+  <div id="status">idle</div>
+  <div id="panel"></div>
+
+  <script>
+(function () {
+  const panel = document.getElementById('panel');
+  const statusEl = document.getElementById('status');
+  const btnSnap = document.getElementById('btnSnap');
+  const btnBackup = document.getElementById('btnBackup');
+
+  let abortCtl = null;
+  let jobBusy = false;
+  let currentOp = null;
+  let backupUi = null;
+  let recentPaths = [];
+  let snapshotBuffer = [];
+
+  function refreshButtons() {
+    btnSnap.disabled = jobBusy;
+    btnBackup.disabled = jobBusy;
+  }
+
+  function setBusy(b) {
+    jobBusy = b;
+    refreshButtons();
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function fmtBytes(n) {
+    if (n == null || n === '') return '';
+    var x = Number(n);
+    if (!Number.isFinite(x)) return '';
+    var u = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var i = 0;
+    while (x >= 1024 && i < u.length - 1) {
+      x /= 1024;
+      i++;
+    }
+    return (i === 0 ? String(Math.round(x)) : x.toFixed(2)) + ' ' + u[i];
+  }
+
+  function fmtDuration(startIso, endIso) {
+    if (!startIso || !endIso) return '';
+    var a = Date.parse(startIso);
+    var b = Date.parse(endIso);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return '';
+    var sec = Math.round((b - a) / 1000);
+    if (sec < 60) return sec + 's';
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return m + 'm ' + s + 's';
+  }
+
+  function fmtSeconds(sec) {
+    if (sec == null || sec === '') return '';
+    var x = Number(sec);
+    if (!Number.isFinite(x)) return '';
+    if (x < 60) return x.toFixed(2) + ' s';
+    var m = Math.floor(x / 60);
+    var s = x - m * 60;
+    return m + ' m ' + s.toFixed(1) + ' s';
+  }
+
+  function showText(msg) {
+    panel.innerHTML = '';
+    var pre = document.createElement('pre');
+    pre.className = 'raw';
+    pre.textContent = msg;
+    panel.appendChild(pre);
+  }
+
+  function renderSnapshotsTable(rows) {
+    panel.innerHTML = '';
+    var meta = document.createElement('div');
+    meta.className = 'snap-meta';
+    meta.textContent = rows.length + ' snapshot(s)';
+    panel.appendChild(meta);
+
+    var tbl = document.createElement('table');
+    tbl.className = 'snapshots';
+    tbl.innerHTML =
+      '<thead><tr>' +
+      '<th>short id</th><th>time</th><th>paths</th>' +
+      '<th>duration</th><th>files</th><th>processed</th>' +
+      '</tr></thead>';
+    var tb = document.createElement('tbody');
+    for (var i = 0; i < rows.length; i++) {
+      var s = rows[i];
+      var sum = s.summary || {};
+      var paths = Array.isArray(s.paths) ? s.paths.join(', ') : '';
+      var dur = fmtDuration(sum.backup_start, sum.backup_end);
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><code>' + escapeHtml(s.short_id || '') + '</code></td>' +
+        '<td>' + escapeHtml(String(s.time || '').replace('T', ' ').slice(0, 23)) + '</td>' +
+        '<td class="paths">' + escapeHtml(paths) + '</td>' +
+        '<td>' + escapeHtml(dur) + '</td>' +
+        '<td>' + escapeHtml(sum.total_files_processed != null ? String(sum.total_files_processed) : '') + '</td>' +
+        '<td>' + escapeHtml(fmtBytes(sum.total_bytes_processed)) + '</td>';
+      tb.appendChild(tr);
+    }
+    tbl.appendChild(tb);
+    panel.appendChild(tbl);
+  }
+
+  function renderExitBannerCode(code) {
+    var ok = Number(code) === 0;
+    var div = document.createElement('div');
+    div.className = 'exit-banner' + (ok ? '' : ' err');
+    div.textContent = 'restic finished with exit code ' + String(code);
+    panel.appendChild(div);
+  }
+
+  function initBackupPanel() {
+    panel.innerHTML = '';
+    var root = document.createElement('div');
+    root.id = 'backup-root';
+    var live = document.createElement('div');
+    live.className = 'backup-live';
+
+    var barWrap = document.createElement('div');
+    barWrap.className = 'bar-wrap';
+    var barFill = document.createElement('div');
+    barFill.className = 'bar-fill';
+    barFill.id = 'backup-bar-fill';
+    barWrap.appendChild(barFill);
+
+    var tbl = document.createElement('table');
+    tbl.className = 'backup-metrics-table';
+    var tr = document.createElement('tr');
+    var tbody = document.createElement('tbody');
+    tbody.appendChild(tr);
+    tbl.appendChild(tbody);
+    var cells = [
+      ['Percent', 'backup-pct'],
+      ['Files (done / total)', 'backup-files'],
+      ['Bytes (done / total)', 'backup-bytes']
+    ];
+    for (var c = 0; c < cells.length; c++) {
+      var tdL = document.createElement('td');
+      tdL.className = 'lab';
+      tdL.textContent = cells[c][0];
+      var tdV = document.createElement('td');
+      tdV.id = cells[c][1];
+      tdV.textContent = '—';
+      tr.appendChild(tdL);
+      tr.appendChild(tdV);
+    }
+
+    var nowDiv = document.createElement('div');
+    nowDiv.className = 'backup-now muted';
+    nowDiv.id = 'backup-now';
+    nowDiv.textContent =
+      'Waiting for paths… (repo scan can omit file paths briefly.)';
+
+    var h3 = document.createElement('h3');
+    h3.className = 'recent-h';
+    h3.textContent = 'Recent paths (last 50 updates)';
+    var ul = document.createElement('ul');
+    ul.className = 'backup-recent';
+    ul.id = 'backup-recent';
+
+    var sumWrap = document.createElement('div');
+    sumWrap.className = 'backup-summary-wrap';
+    sumWrap.id = 'backup-summary-wrap';
+    sumWrap.style.display = 'none';
+    var sumH = document.createElement('h3');
+    sumH.textContent = 'Backup summary';
+    var sumTable = document.createElement('table');
+    sumTable.className = 'backup-summary-table';
+    sumTable.id = 'backup-summary-table';
+    sumWrap.appendChild(sumH);
+    sumWrap.appendChild(sumTable);
+
+    live.appendChild(barWrap);
+    live.appendChild(tbl);
+    live.appendChild(nowDiv);
+    live.appendChild(h3);
+    live.appendChild(ul);
+    root.appendChild(live);
+    root.appendChild(sumWrap);
+    panel.appendChild(root);
+
+    return {
+      barFill: barFill,
+      pct: document.getElementById('backup-pct'),
+      files: document.getElementById('backup-files'),
+      bytes: document.getElementById('backup-bytes'),
+      nowEl: nowDiv,
+      recentUl: ul,
+      summaryWrap: sumWrap,
+      summaryTable: sumTable
+    };
+  }
+
+  function pathsFromStatus(msg) {
+    var cf = msg.current_files;
+    if (Array.isArray(cf)) {
+      var out = [];
+      for (var i = 0; i < cf.length; i++) {
+        var s = cf[i];
+        if (typeof s === 'string' && s.length > 0) out.push(s);
+      }
+      if (out.length > 0) return out;
+    }
+    if (typeof msg.current_file === 'string' && msg.current_file.length > 0)
+      return [msg.current_file];
+    return [];
+  }
+
+  function pushRecentPaths(paths) {
+    if (!Array.isArray(paths) || paths.length === 0) return;
+    for (var j = 0; j < paths.length; j++) {
+      var p = paths[j];
+      if (!p) continue;
+      recentPaths.push(p);
+      while (recentPaths.length > 50) recentPaths.shift();
+    }
+  }
+
+  function renderRecentList() {
+    if (!backupUi || !backupUi.recentUl) return;
+    var out = [];
+    for (var i = recentPaths.length - 1; i >= 0; i--) {
+      out.push('<li>' + escapeHtml(recentPaths[i]) + '</li>');
+    }
+    backupUi.recentUl.innerHTML = out.join('');
+  }
+
+  function updateBackupStatus(msg) {
+    if (!backupUi) return;
+    var pct = Math.min(100, (Number(msg.percent_done) || 0) * 100);
+    backupUi.barFill.style.width = pct + '%';
+    backupUi.pct.textContent = pct.toFixed(2) + '%';
+    var fd = msg.files_done;
+    var ft = msg.total_files;
+    backupUi.files.textContent =
+      (fd != null ? fd : '—') + ' / ' + (ft != null ? ft : '—');
+    backupUi.bytes.textContent =
+      fmtBytes(msg.bytes_done) + ' / ' + fmtBytes(msg.total_bytes);
+
+    var paths = pathsFromStatus(msg);
+    if (paths.length > 0) {
+      backupUi.nowEl.className = 'backup-now';
+      backupUi.nowEl.textContent =
+        paths.length === 1
+          ? paths[0]
+          : paths.length +
+            ' active: ' +
+            paths.slice(0, 3).join(' · ') +
+            (paths.length > 3 ? ' …' : '');
+    } else {
+      backupUi.nowEl.className = 'backup-now muted';
+      backupUi.nowEl.textContent =
+        'No path list in this tick — progress: ' +
+        pct.toFixed(1) +
+        '% · files ' +
+        (fd != null ? fd : '—') +
+        '/' +
+        (ft != null ? ft : '—') +
+        ' · bytes ' +
+        fmtBytes(msg.bytes_done) +
+        '/' +
+        fmtBytes(msg.total_bytes);
+    }
+
+    pushRecentPaths(paths);
+    if (paths.length === 0 && fd != null && fd > 0) {
+      recentPaths.push(
+        '[tick] file ' +
+          fd +
+          (ft != null ? ' / ' + ft : '') +
+          ' · ' +
+          pct.toFixed(1) +
+          '%'
+      );
+      while (recentPaths.length > 50) recentPaths.shift();
+    }
+    renderRecentList();
+  }
+
+  function showBackupSummary(msg) {
+    if (!backupUi) return;
+    backupUi.summaryWrap.style.display = 'block';
+    var rows = [
+      ['snapshot id', msg.snapshot_id || ''],
+      ['total duration', fmtSeconds(msg.total_duration)],
+      ['backup start', String(msg.backup_start || '')],
+      ['backup end', String(msg.backup_end || '')],
+      [
+        'files (new / changed / unmodified)',
+        [msg.files_new, msg.files_changed, msg.files_unmodified].join(' / ')
+      ],
+      [
+        'dirs (new / changed / unmodified)',
+        [msg.dirs_new, msg.dirs_changed, msg.dirs_unmodified].join(' / ')
+      ],
+      ['total files processed', msg.total_files_processed],
+      ['total bytes processed', fmtBytes(msg.total_bytes_processed)],
+      [
+        'data added (raw / packed)',
+        fmtBytes(msg.data_added) + ' / ' + fmtBytes(msg.data_added_packed)
+      ],
+      ['data blobs / tree blobs', (msg.data_blobs != null ? msg.data_blobs : '—') + ' / ' + (msg.tree_blobs != null ? msg.tree_blobs : '—')]
+    ];
+    var html = '<tbody>';
+    for (var r = 0; r < rows.length; r++) {
+      html +=
+        '<tr><td class="sk">' +
+        escapeHtml(rows[r][0]) +
+        '</td><td>' +
+        escapeHtml(String(rows[r][1])) +
+        '</td></tr>';
+    }
+    html += '</tbody>';
+    backupUi.summaryTable.innerHTML = html;
+  }
+
+  function handleBackupMessage(o) {
+    if (!o || typeof o !== 'object') return;
+    if (o.message_type === 'status') updateBackupStatus(o);
+    else if (o.message_type === 'summary') showBackupSummary(o);
+  }
+
+  function finalizeSnapshots(buffered, exitCode) {
+    var snapshotArray = null;
+    var snapRows = [];
+    for (var i = 0; i < buffered.length; i++) {
+      var j = buffered[i];
+      if (!j || typeof j !== 'object') continue;
+      if (Array.isArray(j) && j.length && j[0] && typeof j[0] === 'object' && j[0] !== null && ('short_id' in j[0])) {
+        snapshotArray = j;
+        break;
+      }
+      if (j.message_type === 'snapshot' && j.short_id) {
+        snapRows.push(j);
+      }
+    }
+    if (snapshotArray) {
+      renderSnapshotsTable(snapshotArray);
+    } else if (snapRows.length) {
+      renderSnapshotsTable(snapRows);
+    } else {
+      panel.innerHTML = '';
+      var pre = document.createElement('pre');
+      pre.className = 'raw';
+      pre.textContent = buffered.map(function (x) { return JSON.stringify(x); }).join('\n');
+      panel.appendChild(pre);
+    }
+    renderExitBannerCode(exitCode);
+  }
+
+  function resetJobUi() {
+    currentOp = null;
+    backupUi = null;
+    recentPaths = [];
+    snapshotBuffer = [];
+  }
+
+  function processNdjsonLine(line) {
+    var o;
+    try {
+      o = JSON.parse(line);
+    } catch (e) {
+      showText('Non-JSON line from stream:\n' + line);
+      return false;
+    }
+    if (o && o.message_type === 'server_exit') {
+      var code = o.exit_code;
+      if (currentOp === 'snapshots') {
+        finalizeSnapshots(snapshotBuffer, code);
+      } else if (currentOp === 'backup') {
+        renderExitBannerCode(code);
+      } else {
+        renderExitBannerCode(code);
+      }
+      resetJobUi();
+      setBusy(false);
+      statusEl.textContent = 'done (exit ' + code + ')';
+      return true;
+    }
+    if (currentOp === 'backup') {
+      if (!backupUi) backupUi = initBackupPanel();
+      handleBackupMessage(o);
+    } else if (currentOp === 'snapshots') {
+      snapshotBuffer.push(o);
+    }
+    return false;
+  }
+
+  async function runResticHttp(op) {
+    if (jobBusy) return;
+    if (abortCtl) {
+      try { abortCtl.abort(); } catch (e) {}
+    }
+    abortCtl = new AbortController();
+    setBusy(true);
+    currentOp = op;
+    snapshotBuffer = [];
+    recentPaths = [];
+
+    if (op === 'snapshots') {
+      backupUi = null;
+      panel.innerHTML = '';
+      var hint = document.createElement('div');
+      hint.className = 'snap-meta';
+      hint.textContent = 'Receiving snapshot stream…';
+      panel.appendChild(hint);
+      statusEl.textContent = 'running snapshots (HTTP)';
+    } else {
+      backupUi = initBackupPanel();
+      statusEl.textContent = 'running backup (HTTP)';
+    }
+
+    try {
+      var res = await fetch('/api/restic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ op: op }),
+        signal: abortCtl.signal
+      });
+
+      if (!res.ok) {
+        var errText = await res.text();
+        showText('HTTP ' + res.status + '\n\n' + errText);
+        resetJobUi();
+        setBusy(false);
+        statusEl.textContent = 'error';
+        return;
+      }
+
+      if (!res.body || !res.body.getReader) {
+        showText('Streaming response body not available in this browser.');
+        resetJobUi();
+        setBusy(false);
+        statusEl.textContent = 'error';
+        return;
+      }
+
+      var reader = res.body.getReader();
+      var decoder = new TextDecoder();
+      var partial = '';
+
+      while (true) {
+        var chunk = await reader.read();
+        if (chunk.done) {
+          if (partial.trim().length > 0) {
+            if (processNdjsonLine(partial)) return;
+          }
+          break;
+        }
+        partial += decoder.decode(chunk.value, { stream: true });
+        var pos;
+        while ((pos = partial.indexOf('\n')) >= 0) {
+          var line = partial.slice(0, pos);
+          partial = partial.slice(pos + 1);
+          if (line.length === 0) continue;
+          if (processNdjsonLine(line)) return;
+        }
+      }
+
+      resetJobUi();
+      setBusy(false);
+      statusEl.textContent = 'stream ended (no exit line)';
+    } catch (e) {
+      if (e && e.name === 'AbortError') {
+        statusEl.textContent = 'aborted';
+      } else {
+        showText(String(e && e.message ? e.message : e));
+        statusEl.textContent = 'error';
+      }
+      resetJobUi();
+      setBusy(false);
+    }
+  }
+
+  btnSnap.onclick = function () {
+    runResticHttp('snapshots');
+  };
+  btnBackup.onclick = function () {
+    runResticHttp('backup');
+  };
+})();
+  </script>
+</body>
+</html>
