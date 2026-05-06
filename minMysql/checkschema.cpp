@@ -29,7 +29,7 @@ using namespace std;
 static QString basePath = BasePath;
 
 //The QRC somethimes is bugged and, well just do by hand
-void CKSOverrideBasePath(const QString& neu) {
+void CheckSchema::setBasePath(const QString& neu) {
 	basePath = neu;
 }
 
