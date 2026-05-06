@@ -116,6 +116,7 @@ void CheckSchema::saveSchema() {
 	}
 	auto      path = basePath + QSL("/db/schema");
 	QSaveFile file(path);
+	echo("Saving schema in {} ", path);
 	if (file.open(QFile::WriteOnly | QFile::Truncate)) {
 		QByteArray  stream;
 		QDataStream out(&stream, QIODevice::WriteOnly);
@@ -135,6 +136,7 @@ void CheckSchema::saveTableData(const TableDatas& td) {
 	for (auto& row : td) {
 		auto      path = basePath + QSL("/db/") + row.name;
 		QSaveFile file(path);
+		echo("Saving table info in {} ", path);
 		if (file.open(QFile::WriteOnly | QFile::Truncate)) {
 			file.seek(0);
 			QByteArray  stream;
