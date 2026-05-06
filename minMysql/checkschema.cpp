@@ -56,8 +56,24 @@ CheckSchema::Schemas CheckSchema::getDbSchema() {
 				}
 			}
 			{
+				//get all VIEW in the db at once o.O
+				auto sqlInfo = F(R"(
+SELECT TABLE_NAME,VIEW_DEFINITION,ALGORITHM
+FROM information_schema.VIEWS
+WHERE table_schema='{}')",
+				                 dbName);
+				auto res     = db->query(sqlInfo);
+				for (auto& row : res) {
+					auto tableName = row.rq("TABLE_NAME");
+					row.insert("isView", "1");
+					schemas[{dbName, tableName}].push_back(row);
+				}
+			}
+
+			{
 				//	,PRIVILEGES https://github.com/dublinbranch/rbk/issues/7
 				//get all tables in the db at once o.O
+				//but skip the view, as in some cases they might have different structure or defaults
 				auto sqlInfo = F(R"(
 SELECT
 	TABLE_CATALOG
@@ -88,19 +104,7 @@ ORDER BY `ORDINAL_POSITION` ASC)",
 				auto res     = db->query(sqlInfo);
 				for (auto& row : res) {
 					auto tableName = row.rq("TABLE_NAME");
-					schemas[{dbName, tableName}].push_back(row);
-				}
-			}
-			{
-				//get all VIEW in the db at once o.O
-				auto sqlInfo = F(R"(
-SELECT TABLE_NAME,VIEW_DEFINITION,ALGORITHM 
-FROM information_schema.VIEWS 
-WHERE table_schema='{}')",
-				                 dbName);
-				auto res     = db->query(sqlInfo);
-				for (auto& row : res) {
-					auto tableName = row.rq("TABLE_NAME");
+					row.insert("isView", "0");
 					schemas[{dbName, tableName}].push_back(row);
 				}
 			}
@@ -155,9 +159,10 @@ void CheckSchema::saveTableData(const TableDatas& td) {
 }
 
 QByteArray CheckSchema::loadSchemaInner() {
-	auto res = fileGetContents2(basePath + "/db/schema", true, 0);
+	auto file = basePath + "/db/schema";
+	auto res  = fileGetContents2(file, true, 0);
 	if (res.exist) {
-		echo("Db Schema loaded from file (db/schema)");
+		echo("Db Schema loaded from file ({})", file);
 		return res.content;
 	}
 
@@ -263,7 +268,16 @@ bool CheckSchema::checkDbSchema() {
 			diskLines.getIfNotNull("TABLE_NAME", tableColumnName);  //when processing view
 			diskLines.getIfNotNull("COLUMN_NAME", tableColumnName); //when processing table
 
+			auto isView = dbLines.get2<u8>("isView");
+
 			for (const auto& [parameterName, diskValue] : diskLines) {
+				if (isView) {
+					static const QVector<QByteArray> skipMe = {"COLUMN_DEFAULT", "IS_NULLABLE"};
+					//certain column are unreliable between different db!
+					if (skipMe.contains(parameterName)) {
+						continue;
+					}
+				}
 				auto dbValue = dbLines[parameterName];
 				if (diskValue == dbValue) {
 					continue;
