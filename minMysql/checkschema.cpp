@@ -155,7 +155,7 @@ void CheckSchema::saveTableData(const TableDatas& td) {
 }
 
 QByteArray CheckSchema::loadSchemaInner() {
-	auto res = fileGetContents2("db/schema", true, 0);
+	auto res = fileGetContents2(basePath + "/db/schema", true, 0);
 	if (res.exist) {
 		echo("Db Schema loaded from file (db/schema)");
 		return res.content;
@@ -308,7 +308,7 @@ bool CheckSchema::checkTableData(const TableDatas& td) {
 	bool ok = true;
 	for (auto& table : td) {
 		auto inner   = QSL(":/db/") + table.name;
-		auto dynamic = basePath + QSL("/db/") + table.name;
+		auto dynamic = basePath + "/db/" + table.name;
 		auto file    = innerOrDynamic(inner, dynamic, false);
 		if (file.type == FileResV2::missing) {
 			qCritical() << F16("impossible to load schema, tryed {} and {}", inner, dynamic);

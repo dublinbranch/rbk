@@ -22,19 +22,14 @@ class APCU : private NoCopy {
 	APCU();
 	static APCU* getInstance();
 
-	//to disable
-	/* Apply the constructor attribute to startupfun() so that it is executed before main()
-	 * thos must be two separated entity
-	 
-	   void startupfun (void) __attribute__ ((constructor));
-    
-	   void startupfun (void) 
-	   {   APCU::disableAPCU = true;    }
-*/
-
+	// Tweak these before the first APCU use (e.g. first line of main(), before QCoreApplication if needed).
+	// APCU is constructed lazily on first getInstance() / apcu* call so this is not racing static init.
 	static inline bool disableAPCU = false;
 	//if 0 disabled, else every how many second to save on disk, this can be set at any time
 	static inline uint diskSaveTime = 0;
+
+	//in some case (Arm debian 11) the system hang when saving at exit — skips std::atexit disk flush
+	static inline bool doNotSaveAtExit = false;
 
 	struct Row {
 		friend class APCU;

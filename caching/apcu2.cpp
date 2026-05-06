@@ -40,8 +40,10 @@ using ApcuCache = multi_index_container<APCU::Row, ApcuCache_index>;
 //this is deallocated at exit before the function is called, so we just manually manage it, no idea how to do the "correct" way
 static ApcuCache* cache = nullptr;
 
-//Orrible, as will trigger immediately the GC thread creation ecc, those must be delayed, and most important enabled AFTER main if needed in the project...
-static APCU theAPCU;
+// APCU is built on first getInstance() so the program can set APCU::disableAPCU /
+// doNotSaveAtExit / diskSaveTime in main() (or another early hook) before any use.
+// (A file-scope static singleton would run before main() and made that impossible.)
+
 using DiskMapType = QMapV2<std::string, APCU::DiskValue>;
 
 static const int version = 4;
@@ -64,14 +66,21 @@ APCU::APCU()
 	diskLoad();
 	std::thread apt(&APCU::garbageCollector_F2, this);
 	apt.detach();
-	std::atexit(diskSync);
+	if (!doNotSaveAtExit) {
+		std::atexit(diskSync);
+	}
 }
 
 APCU* APCU::getInstance() {
-	return &theAPCU;
+	static APCU instance;
+	return &instance;
 }
 
 any* APCU::fetchInner(const std::string& key) {
+	if (!cache) {
+		static std::any empty;
+		return &empty;
+	}
 	auto& byKey = cache->get<ByKey>();
 
 	std::shared_lock lock(innerLock);
@@ -90,6 +99,9 @@ any* APCU::fetchInner(const std::string& key) {
 
 void APCU::storeInner(const Row& row, bool overwrite_) {
 	//TODO if is persistent, check if a qbytearray too else the write on disk will fail and is lost!
+	if (!cache) {
+		return;
+	}
 
 	auto& byKey = cache->get<ByKey>();
 
@@ -107,6 +119,9 @@ void APCU::storeInner(const Row& row, bool overwrite_) {
 }
 
 void APCU::remove(const std::string& key) {
+	if (!cache) {
+		return;
+	}
 	auto&            byKey = cache->get<ByKey>();
 	std::unique_lock lock(innerLock);
 	if (byKey.erase(key)) {
@@ -116,6 +131,9 @@ void APCU::remove(const std::string& key) {
 
 std::string APCU::info() const {
 	//Poor man APCU page -.-
+	if (!cache) {
+		return "<pre>APCU disabled</pre>";
+	}
 	double delta = (double)(QDateTime::currentSecsSinceEpoch() - startedAt);
 	auto   msg   = fmt::format(R"(
 <pre>
@@ -153,6 +171,9 @@ bool APCU::Row::expired(qint64 ts) const {
 }
 
 void APCU::diskSyncP2() {
+	if (!cache) {
+		return;
+	}
 	//fmt::print("Start collecting data to write on disk\n");
 	DiskMapType      toBeWritten;
 	std::shared_lock lock(innerLock);
@@ -282,6 +303,9 @@ void APCU::garbageCollector_F2() {
 }
 
 std::vector<std::any*> APCU::getAllByTypeInner(size_t hashCode) {
+	if (!cache) {
+		return {};
+	}
 	auto&            key = cache->get<ByTypeHashCode>();
 	std::shared_lock lock(innerLock);
 
