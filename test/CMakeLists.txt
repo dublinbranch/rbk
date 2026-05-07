@@ -1,11 +1,9 @@
+# Other rbk tests (`filefunction.cpp`, …); Boost.JSON suites live under BoostJson/test/.
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../BoostJson/test" rbk_boostjson_tests_build)
+
 add_executable(rbk_tests
-    boost_test_main.cpp
     filefunction.cpp
-    boostjson_parse.cpp
-    boostjson_math.cpp
-    boostjson_util.cpp
-    boostjson_extra.cpp
-    boostjson_pointer.cpp
+    $<TARGET_OBJECTS:rbk_boostjson_test_objs>
 )
 
 target_link_libraries(rbk_tests

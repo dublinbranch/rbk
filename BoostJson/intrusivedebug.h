@@ -30,16 +30,16 @@ struct BJIntrusive {
 	static inline boost::json::value*       original = nullptr;
 };
 
-#ifndef BOOST_PATH_PUSH
-#define BOOST_PATH_PUSH(x) (BJIntrusive::push(x));
+#ifndef BJIntrusive_PUSH
+#define BJIntrusive_PUSH(x) (BJIntrusive::push(x));
 #endif
 
-#ifndef BOOST_PATH_POP
-#define BOOST_PATH_POP (BJIntrusive::pop());
+#ifndef BJIntrusive_POP
+#define BJIntrusive_POP (BJIntrusive::pop());
 #endif
 
-#ifndef BOOST_MESSAGE
-#define BOOST_MESSAGE(x) (BJIntrusive::message = (x));
+#ifndef BJIntrusive_MESSAGE
+#define BJIntrusive_MESSAGE(x) (BJIntrusive::message = (x));
 #endif
 
 #define BOOST_JSON_INTRUSIVE
@@ -56,6 +56,8 @@ struct BJIntrusive {
 #include "rbk/BoostJson/override/value_to_108700.hpp"
 #elif BOOST_VERSION == 108800
 #include "rbk/BoostJson/override/value_to_108800.hpp"
+#elif BOOST_VERSION == 109100
+#include "rbk/BoostJson/override/value_to_109100.hpp"
 #else
 #pragma message "Unsupported Boost version " BOOST_PP_STRINGIZE(BOOST_VERSION) " for the intrusive HTTP Json customize one from json/detail/value_to.hpp"
 #include <boost/json/detail/value_to.hpp>
