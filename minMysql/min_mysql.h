@@ -30,6 +30,7 @@ class DBException : public ExceptionV2 {
 
 	} errorType = Error::NA;
 	DBException(const StringAdt& _msg, Error error);
+	static Error nr2Enum(unsigned int error);
 };
 
 QString nullOnZero(uint v);

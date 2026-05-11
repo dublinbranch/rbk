@@ -841,6 +841,7 @@ const QMap<QString, QString>& getNationsIsoCodes() {
 	    {"zambia", "ZM"},
 	    {"zimbabwe", "ZW"},
 	    //A form of unknown
+	    {"unknonw", "XX"},
 	    {"zz", "XX"}};
 
 	return mappa;

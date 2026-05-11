@@ -46,6 +46,31 @@ using namespace std;
 
 static int somethingHappened(MYSQL* mysql, int status);
 
+DBException::Error DBException::nr2Enum(unsigned int error) {
+	switch (error) {
+	case DBException::Error::DeadLock:
+		return DBException::Error::DeadLock;
+	case DBException::Error::NA:
+		return DBException::Error::NA;
+	case DBException::Error::Warning:
+		return DBException::Error::Warning;
+	case DBException::Error::SchemaError:
+		return DBException::Error::SchemaError;
+	case DBException::Error::NoResult:
+		return DBException::Error::NoResult;
+	case DBException::Error::InvalidDB:
+		return DBException::Error::InvalidDB;
+	case DBException::Error::Duplicate:
+		return DBException::Error::Duplicate;
+	case DBException::Error::Connection:
+		return DBException::Error::Connection;
+	case DBException::Error::InvalidState:
+		return DBException::Error::InvalidState;
+	default:
+		return DBException::Error::NA;
+	}
+}
+
 sqlRow DB::queryLine(const StringAdt& sql) const {
 	auto res = query(sql);
 	if (res.empty()) {
@@ -119,7 +144,7 @@ SQLLogger DB::queryInner(const std::string& sql) const {
 				ResetOnExit r(cxaNoStack, true);
 				cxaLevel       = CxaLevel::none;
 				auto msg       = F("After: {} \n {} \nFor:\n{}", sqlLogger.serverTime, mysql_error(conn), sql);
-				auto exception = DBException(msg, DBException::Error(error));
+				auto exception = DBException(msg, DBException::nr2Enum(error));
 				throw exception;
 			}
 		}
@@ -182,7 +207,7 @@ thread: {}, queryDone: {}, reconnection: {}, busyConn: {}, totConn: {}, queryTim
 
 			ResetOnExit r(cxaNoStack, true);
 			cxaLevel       = CxaLevel::none;
-			auto exception = DBException(err, DBException::Error(error));
+			auto exception = DBException(err, DBException::nr2Enum(error));
 			throw exception;
 		} break;
 		default:
@@ -451,10 +476,10 @@ void DB::pingCheck(st_mysql*& conn) const {
 	}
 	// last ping check
 	if (mysql_ping(conn)) { // 1 on error
-		auto error = mysql_errno(conn);
-		auto err   = F("Mysql error for {} \nerror was {} code: {}, connRetry for {}, connectionId: {}, conf: ", sqlLogger.sql, mysql_error(conn), error, connRetry, mysql_error(conn)) +
-		           conf.getInfo() +
-		           stacker();
+		auto error      = mysql_errno(conn);
+		auto err        = F("Mysql error for {} \nerror was {} code: {}, connRetry for {}, connectionId: {}, conf: ", sqlLogger.sql, mysql_error(conn), error, connRetry, mysql_error(conn)) +
+		                  conf.getInfo() +
+		                  stacker();
 		sqlLogger.error = err;
 		// this line is needed for proper email error reporting
 		qWarning().noquote() << QString::fromStdString(err);
@@ -951,6 +976,8 @@ sqlResult DB::fetchResult(SQLLogger* sqlLogger) const {
 	}
 
 	if (error) {
+		auto code = mysql_error(conn);
+
 		auto msg = fmt::format(R"(Mysql error for:
 {}
 ----------
@@ -958,7 +985,11 @@ Error was:
 {}
 Code:{}
 Query: {:.3f}	Fetch: {:.3f} )",
-		                       state->lastSQL, mysql_error(conn), error, (double)sqlLogger->serverTime / 1E9, (double)sqlLogger->fetchTime / 1E9);
+		                       state->lastSQL,
+		                       code,
+		                       error,
+		                       (double)sqlLogger->serverTime / 1E9,
+		                       (double)sqlLogger->fetchTime / 1E9);
 		throw DBException(msg, DBException::Error::InvalidState);
 	}
 
