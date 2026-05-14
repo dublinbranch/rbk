@@ -21,10 +21,11 @@ class DBException : public ExceptionV2 {
 		Warning,
 		SchemaError,
 		NoResult,
-		InvalidDB  = 1049,
-		DeadLock   = 1213,
-		Duplicate  = 1062,
-		Connection = 2013,
+		InvalidDB       = 1049,
+		Duplicate       = 1062,
+		LockWaitTimeout = 1205,
+		DeadLock        = 1213,
+		Connection      = 2013,
 		//custom error code
 		InvalidState = 9000
 

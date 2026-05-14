@@ -48,6 +48,8 @@ static int somethingHappened(MYSQL* mysql, int status);
 
 DBException::Error DBException::nr2Enum(unsigned int error) {
 	switch (error) {
+	case DBException::Error::LockWaitTimeout:
+		return DBException::Error::LockWaitTimeout;
 	case DBException::Error::DeadLock:
 		return DBException::Error::DeadLock;
 	case DBException::Error::NA:
@@ -68,6 +70,16 @@ DBException::Error DBException::nr2Enum(unsigned int error) {
 		return DBException::Error::InvalidState;
 	default:
 		return DBException::Error::NA;
+	}
+}
+
+static bool isRetryableLockError(DBException::Error error) {
+	switch (error) {
+	case DBException::Error::LockWaitTimeout:
+	case DBException::Error::DeadLock:
+		return true;
+	default:
+		return false;
 	}
 }
 
@@ -425,24 +437,23 @@ sqlResult DB::queryORcache(const StringAdt& sql, uint ttl, bool required) {
 sqlResult DB::queryDeadlockRepeater(const QByteArray& sql, uint maxTry) const {
 	sqlResult result;
 	if (!sql.isEmpty()) {
+		DBException::Error lastRetryableError = DBException::DeadLock;
 		for (uint tryNum = 0; tryNum < maxTry; ++tryNum) {
 			try {
 				return query(sql);
 			} catch (const DBException& error) {
-				switch (error.errorType) {
-				case DBException::Error::DeadLock:
+				if (isRetryableLockError(error.errorType)) {
+					lastRetryableError = error.errorType;
 					continue;
-					break;
-				default:
-					throw;
 				}
+				throw;
 			} catch (std::exception& e) {
 				throw;
 			}
 		}
-		qWarning().noquote() << "too many trial to resolve deadlock, fix your code!" + QStacker16();
+		qWarning().noquote() << "too many trials to resolve retryable lock error, fix your code!" + QStacker16();
 		ResetOnExit r(cxaNoStack, true);
-		throw DBException("Deadlock for " + sql, DBException::DeadLock);
+		throw DBException("Retryable lock error for " + sql, lastRetryableError);
 	}
 	return result;
 }
@@ -990,7 +1001,7 @@ Query: {:.3f}	Fetch: {:.3f} )",
 		                       error,
 		                       (double)sqlLogger->serverTime / 1E9,
 		                       (double)sqlLogger->fetchTime / 1E9);
-		throw DBException(msg, DBException::Error::InvalidState);
+		throw DBException(msg, DBException::nr2Enum(error));
 	}
 
 	return res;
@@ -1085,7 +1096,7 @@ Error was:
 Code:{}
 Query: {:.3f}	Fetch: {:.3f} )",
 		                       state->lastSQL, mysql_error(conn), error, (double)sqlLogger->serverTime / 1E9, (double)sqlLogger->fetchTime / 1E9);
-		throw ExceptionV2(msg);
+		throw DBException(msg, DBException::nr2Enum(error));
 	}
 
 	return res;
