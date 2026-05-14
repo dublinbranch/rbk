@@ -15,7 +15,11 @@
 
 class DBException : public ExceptionV2 {
       public:
-	//The mysql error code are, sight, a bunch of define -.- in mysqld_error.h
+	/**
+	 * The mysql error code are, sight, a bunch of define -.- in
+	        /usr/include/mysql/mysqld_error.h
+	        /usr/include/mysql/errmsg.h
+	        */
 	enum Error : int {
 		NA = 0,
 		Warning,
