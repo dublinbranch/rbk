@@ -257,6 +257,15 @@ bool get(const boost::json::value& v, std::string_view key, T& t) {
 }
 
 template <typename T>
+bool get(const boost::json::value* v, std::string_view key, T& t) {
+	if (!v->is_object()) {
+		return false;
+	}
+
+	return get(v->as_object(), key, t);
+}
+
+template <typename T>
 T get(const boost::json::object& v, std::string_view key) {
 	T t{};
 	if (auto value = v.find(key); value != v.end()) {
