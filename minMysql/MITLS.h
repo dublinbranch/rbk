@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <unordered_map>
 
 //because GCC do not know clang exists yet
@@ -12,61 +11,54 @@
 
 template <typename T>
 class mi_tls_repository {
-      private:
-	// Key = memory location of the INSTANCE
-	// Value = what you want to store
-
-	using mapT = std::unordered_map<uintptr_t, T>;
-	using mapS = std::shared_ptr<mapT>;
-
-	/*
-	 * The general per thread map that contain all resources (of this type)
-	 * It must be a ptr as it can goes out of scope before the other element, so cleaning will be a disaster
+      public:
+	/**
+	 * Per-thread storage for all mi_tls<T> instances on this thread.
+	 * alive is cleared at the start of ~Repo(); map is destroyed afterward, so
+	 * load/store/remove can treat !alive as "shutting down" and avoid touching map.
+	 * (If repo is fully destroyed before ~mi_tls, accessing repo is still UB in
+	 * theory; ~DB no longer calls closeConn() to avoid that shutdown path.)
 	 */
+	struct Repo {
+		std::unordered_map<uintptr_t, T> map;
+		bool                             alive = true;
+		~Repo() {
+			alive = false;
+		}
+	};
 
-	static thread_local mapS repository;
-	mapS                     local = nullptr;
-
-	void getRepo() {
-		return;
-	}
+      private:
+	static thread_local Repo repo;
 
       protected:
 	void store(uintptr_t instance, T value) {
-		getRepo();
-		repository->operator[](instance) = value;
+		if (!repo.alive) {
+			return;
+		}
+		repo.map[instance] = std::move(value);
 	}
 
 	T& load(uintptr_t instance) {
-		getRepo();
-		return repository->operator[](instance);
+		if (!repo.alive) {
+			thread_local T sink{};
+			return sink;
+		}
+		return repo.map[instance];
 	}
 
 	void remove(uintptr_t instance) {
-		getRepo();
-		if (repository->find(instance) != repository->cend()) {
-			repository->erase(instance);
+		if (!repo.alive) {
+			return;
+		}
+		auto it = repo.map.find(instance);
+		if (it != repo.map.cend()) {
+			repo.map.erase(it);
 		}
 	}
 
-	// This will be called for all constructor
-	mi_tls_repository()
-	    : local(repository) {
+	mi_tls_repository() = default;
 
-		// but only the first in this thread will create the map
-		getRepo();
-	}
-
-	~mi_tls_repository() {
-		//		if (repository) {
-		//			repository->clear();
-
-		//			delete (repository);
-
-		//			//mark the local instance as clear
-		//			repository = nullptr;
-		//		}
-	}
+	~mi_tls_repository() = default;
 };
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -105,4 +97,3 @@ class mi_tls : protected mi_tls_repository<T> {
 		this->remove(reinterpret_cast<uintptr_t>(this));
 	}
 };
-

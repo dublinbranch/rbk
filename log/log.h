@@ -7,6 +7,7 @@
 #include "rbk/string/stringoso.h"
 #include <QElapsedTimer>
 #include <QString>
+#include <QStringList>
 #include <qdatetime.h>
 #include <vector>
 
@@ -14,6 +15,8 @@
 
 class Log;
 using Logs = std::list<Log>;
+
+struct LogFindErrorResult;
 
 class Log : public ExceptionV2 {
       public:
@@ -49,11 +52,12 @@ class Log : public ExceptionV2 {
 	//many times we want to aggregate log for a specific function or process execution
 	Logs subLogs;
 
-	[[nodiscard]] bool hasError(bool recursive = false) const;
+	[[nodiscard]] bool               hasError(bool recursive = false) const;
+	[[nodiscard]] LogFindErrorResult findError(bool recursive = false) const;
 
-	[[nodiscard]] std::string serialize();
+	[[nodiscard]] std::string serialize() const;
 	[[nodiscard]] QString     serialize(QString);
-	boost::json::object       toJson();
+	boost::json::object       toJson() const;
 	bj::object                toJson4panel() const;
 
 	SQLBuffering toSqlRow() const;
@@ -63,9 +67,9 @@ class Log : public ExceptionV2 {
 	Log(const std::exception& e, const char* func);
 
 	~Log();
-	bool used = false;
-	void push(Log&& log);
-	void push(Log& log);
+	mutable bool used = false;
+	void         push(Log&& log);
+	void         push(Log& log);
 
 	void setEnd();
 	void setStdErr(const QByteAdt v);
@@ -74,6 +78,16 @@ class Log : public ExceptionV2 {
 
       private:
 	QElapsedTimer timer;
+};
+
+/** \p failed points into the tree searched by \ref Log::findError (valid while that tree is unchanged). */
+struct LogFindErrorResult {
+	const Log*  failed = nullptr;
+	QStringList sectionTrace;
+
+	explicit operator bool() const noexcept {
+		return failed != nullptr;
+	}
 };
 
 #endif // HOME_ROY_PUBLIC_DITER_CLASS_LOG_H

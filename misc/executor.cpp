@@ -170,3 +170,18 @@ Log copyInto(const QStringAdt& old, const QStringAdt& neu, QString chown, QStrin
 	log.category = Log::Info;
 	return log;
 }
+
+bool fileExists(const QStringAdt& path) {
+
+	auto log    = sudo(F16("test -f {}", path));
+	log.section = F16("fileExists: {}", path);
+
+	switch (log.exit_code) {
+	case 0:
+		return true;
+	case 1:
+		return false;
+	default:
+		throw log;
+	}
+}

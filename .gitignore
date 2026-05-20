@@ -3,7 +3,7 @@ gitTrick/submoduleInfo
 build/
 CMakeUserPresets.json
 
-# CMake — in-tree configure (prefer `cmake -B build` so artifacts stay under build/)
+# CMake — use a single out-of-tree dir (e.g. `cmake -B build` from the rbk root) for lib + tests.
 CMakeCache.txt
 CMakeFiles/
 CMakeScripts/

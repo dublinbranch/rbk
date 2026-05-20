@@ -15,21 +15,27 @@
 
 class DBException : public ExceptionV2 {
       public:
-	//The mysql error code are, sight, a bunch of define -.- in mysqld_error.h
+	/**
+	 * The mysql error code are, sight, a bunch of define -.- in
+	        /usr/include/mysql/mysqld_error.h
+	        /usr/include/mysql/errmsg.h
+	        */
 	enum Error : int {
 		NA = 0,
 		Warning,
 		SchemaError,
 		NoResult,
-		InvalidDB  = 1049,
-		DeadLock   = 1213,
-		Duplicate  = 1062,
-		Connection = 2013,
+		InvalidDB       = 1049,
+		Duplicate       = 1062,
+		LockWaitTimeout = 1205,
+		DeadLock        = 1213,
+		Connection      = 2013,
 		//custom error code
 		InvalidState = 9000
 
 	} errorType = Error::NA;
 	DBException(const StringAdt& _msg, Error error);
+	static Error nr2Enum(unsigned int error);
 };
 
 QString nullOnZero(uint v);

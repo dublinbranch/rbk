@@ -29,7 +29,7 @@ using namespace std;
 static QString basePath = BasePath;
 
 //The QRC somethimes is bugged and, well just do by hand
-void CKSOverrideBasePath(const QString& neu) {
+void CheckSchema::setBasePath(const QString& neu) {
 	basePath = neu;
 }
 
@@ -40,6 +40,9 @@ void removeAutoInc(QString& sql) {
 
 CheckSchema::Schemas CheckSchema::getDbSchema() {
 	CheckSchema::Schemas schemas;
+
+	QVector<QByteArray> views;
+
 	for (auto& dbName : databases) {
 		{
 			{
@@ -55,9 +58,25 @@ CheckSchema::Schemas CheckSchema::getDbSchema() {
 					}
 				}
 			}
+
+			{
+				//get all VIEW in the db at once o.O
+				auto sqlInfo = F(R"(
+SELECT TABLE_NAME,VIEW_DEFINITION,ALGORITHM
+FROM information_schema.VIEWS
+WHERE table_schema='{}')",
+				                 dbName);
+				auto res     = db->query(sqlInfo);
+				for (auto& row : res) {
+					auto tableName = row.rq("TABLE_NAME");
+					views.append(F8("{}.{}", dbName, tableName));
+				}
+			}
+
 			{
 				//	,PRIVILEGES https://github.com/dublinbranch/rbk/issues/7
 				//get all tables in the db at once o.O
+				//but skip the view, as in some cases they might have different structure or defaults
 				auto sqlInfo = F(R"(
 SELECT
 	TABLE_CATALOG
@@ -88,19 +107,14 @@ ORDER BY `ORDINAL_POSITION` ASC)",
 				auto res     = db->query(sqlInfo);
 				for (auto& row : res) {
 					auto tableName = row.rq("TABLE_NAME");
-					schemas[{dbName, tableName}].push_back(row);
-				}
-			}
-			{
-				//get all VIEW in the db at once o.O
-				auto sqlInfo = F(R"(
-SELECT TABLE_NAME,VIEW_DEFINITION,ALGORITHM 
-FROM information_schema.VIEWS 
-WHERE table_schema='{}')",
-				                 dbName);
-				auto res     = db->query(sqlInfo);
-				for (auto& row : res) {
-					auto tableName = row.rq("TABLE_NAME");
+					auto fullName  = F8("{}.{}", dbName, tableName);
+
+					if (views.contains(fullName)) {
+						row.insert("isView", "1");
+					} else {
+						row.insert("isView", "0");
+					}
+
 					schemas[{dbName, tableName}].push_back(row);
 				}
 			}
@@ -116,6 +130,7 @@ void CheckSchema::saveSchema() {
 	}
 	auto      path = basePath + QSL("/db/schema");
 	QSaveFile file(path);
+	echo("Saving schema in {} ", path);
 	if (file.open(QFile::WriteOnly | QFile::Truncate)) {
 		QByteArray  stream;
 		QDataStream out(&stream, QIODevice::WriteOnly);
@@ -124,8 +139,10 @@ void CheckSchema::saveSchema() {
 		//auto sha = sha1(stream, false).toHex();
 		//auto sz  = stream.size();
 		file.write(stream);
+		file.commit();
+	} else {
+		throw ExceptionV2(F("impossible to save schema: {} in {}", file.errorString(), path));
 	}
-	file.commit();
 }
 
 void CheckSchema::saveTableData(const TableDatas& td) {
@@ -133,6 +150,7 @@ void CheckSchema::saveTableData(const TableDatas& td) {
 	for (auto& row : td) {
 		auto      path = basePath + QSL("/db/") + row.name;
 		QSaveFile file(path);
+		echo("Saving table info in {} ", path);
 		if (file.open(QFile::WriteOnly | QFile::Truncate)) {
 			file.seek(0);
 			QByteArray  stream;
@@ -151,9 +169,10 @@ void CheckSchema::saveTableData(const TableDatas& td) {
 }
 
 QByteArray CheckSchema::loadSchemaInner() {
-	auto res = fileGetContents2("db/schema", true, 0);
+	auto file = basePath + "/db/schema";
+	auto res  = fileGetContents2(file, true, 0);
 	if (res.exist) {
-		echo("Db Schema loaded from file (db/schema)");
+		echo("Db Schema loaded from file ({})", file);
 		return res.content;
 	}
 
@@ -259,7 +278,16 @@ bool CheckSchema::checkDbSchema() {
 			diskLines.getIfNotNull("TABLE_NAME", tableColumnName);  //when processing view
 			diskLines.getIfNotNull("COLUMN_NAME", tableColumnName); //when processing table
 
+			auto isView = dbLines.get2<u8>("isView");
+
 			for (const auto& [parameterName, diskValue] : diskLines) {
+				if (isView) {
+					static const QVector<QByteArray> skipMe = {"COLUMN_DEFAULT", "IS_NULLABLE"};
+					//certain column are unreliable between different db!
+					if (skipMe.contains(parameterName)) {
+						continue;
+					}
+				}
 				auto dbValue = dbLines[parameterName];
 				if (diskValue == dbValue) {
 					continue;
@@ -304,7 +332,7 @@ bool CheckSchema::checkTableData(const TableDatas& td) {
 	bool ok = true;
 	for (auto& table : td) {
 		auto inner   = QSL(":/db/") + table.name;
-		auto dynamic = basePath + QSL("/db/") + table.name;
+		auto dynamic = basePath + "/db/" + table.name;
 		auto file    = innerOrDynamic(inner, dynamic, false);
 		if (file.type == FileResV2::missing) {
 			qCritical() << F16("impossible to load schema, tryed {} and {}", inner, dynamic);

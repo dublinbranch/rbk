@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../misc/intTypes.h"
 #include "ffCommon.h"
 #include "rbk/string/stringoso.h"
 #include <QFile>
@@ -22,15 +23,24 @@ class QSaveV2 : public QFile {
 };
 
 struct FileGetRes {
+	enum class Err : quint8 {
+		none,
+		missingHeaderEndMarker,
+		invalidJsonHeader,
+		missingRevision,
+		badRequiredRevisionParam,
+		revisionMismatch,
+	};
 	explicit   operator bool() const;
 	QByteArray content;
 	bool       exist = false;
+	Err        err   = Err::none;
 };
 
 struct FPCRes {
 	bool                   ok;
 	QFileDevice::FileError error = QFileDevice::FileError::NoError;
-	operator bool();
+	                       operator bool();
 };
 
 /**
@@ -47,6 +57,24 @@ bool   fileAppendContents(const QByteAdt& pay, const QStringAdt& fileName);
 [[nodiscard]] QByteArray fileGetContents(const QString& fileName, bool quiet, bool& success);
 
 [[nodiscard]] FileGetRes fileGetContents2(const QByteAdt& fileName, bool quiet = true, uint maxAge = 0);
+
+/**
+ * Header/body split files: UTF-8 JSON object (e.g. {"templateRevision":7}), optional blank lines,
+ * then the marker __HEADER__END__, then the payload. The marker is required; on failure res.err is set and exist is false.
+ * @param revision when non-empty, compared to JSON "templateRevision" (integer); when empty, revision is not checked.
+ * @param quiet when false, failures are also logged with qCritical.
+ */
+struct FGCParam {
+	//i64 play nicer with json
+	i64  revision = 0;
+	bool quiet    = true;
+	uint maxAge   = 0;
+	enum MR {
+		minimum,
+		exact
+	} mr = MR::exact;
+};
+[[nodiscard]] FileGetRes fileGetContents3(const QByteAdt& fileName, const FGCParam param);
 
 [[nodiscard]] QByteArray unzip1(QByteArray zipped);
 

@@ -12,16 +12,16 @@
 #ifndef BOOST_JSON_DETAIL_VALUE_TO_HPP
 #define BOOST_JSON_DETAIL_VALUE_TO_HPP
 
-#ifndef BOOST_PATH_PUSH
-#define BOOST_PATH_PUSH(x)
+#ifndef BJIntrusive_PUSH
+#define BJIntrusive_PUSH(x)
 #endif
 
-#ifndef BOOST_PATH_POP
-#define BOOST_PATH_POP
+#ifndef BJIntrusive_POP
+#define BJIntrusive_POP
 #endif
 
-#ifndef BOOST_MESSAGE
-#define BOOST_MESSAGE(x)
+#ifndef BJIntrusive_MESSAGE
+#define BJIntrusive_MESSAGE(x)
 #endif
 
 #include <boost/json/value.hpp>
@@ -378,7 +378,7 @@ struct to_described_member
         {
             BOOST_IF_CONSTEXPR( !is_optional_like<M>::value )
             {
-				BOOST_MESSAGE(fmt::format("{} is non optional and missing in path {}", D::name, BJIntrusive::composePath()))
+				BJIntrusive_MESSAGE(fmt::format("{} is non optional and missing in path {}", D::name, BJIntrusive::composePath()))
                 error_code ec;
                 BOOST_JSON_FAIL(ec, error::unknown_name);
                 res = {boost::system::in_place_error, ec};
@@ -386,7 +386,7 @@ struct to_described_member
             return;
         }
 
-		BOOST_PATH_PUSH(D::name)
+		BJIntrusive_PUSH(D::name)
 		
 #if defined(__GNUC__) && BOOST_GCC_VERSION >= 80000 && BOOST_GCC_VERSION < 11000
 # pragma GCC diagnostic push
@@ -401,7 +401,7 @@ struct to_described_member
         {
             (*res).* D::pointer = std::move(*member_res);
             ++count;
-            BOOST_PATH_POP
+            BJIntrusive_POP
         }
         else
             res = {boost::system::in_place_error, member_res.error()};
@@ -443,7 +443,7 @@ value_to_impl(
     {
         BOOST_JSON_FAIL(BJIntrusive::error, error::size_mismatch);
         res = {boost::system::in_place_error, BJIntrusive::error};
-		BOOST_MESSAGE(fmt::format("Converted {} element out of {} in the json, while processing obj {} in {}", member_converter.count,obj->size(), getTypeName<T>(), BJIntrusive::composePath()))
+		BJIntrusive_MESSAGE(fmt::format("Converted {} element out of {} in the json, while processing obj {} in {}", member_converter.count,obj->size(), getTypeName<T>(), BJIntrusive::composePath()))
         return res;
     }
 
