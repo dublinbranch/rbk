@@ -3,6 +3,10 @@
 
 #include <string>
 
+//for the heterogeneous container trick you need those 2
+//#include "rbk/hash/string.h"
+//#include "rbk/string/comparator.h"
+
 struct StringCompare {
 	using is_transparent = void; // Enable heterogeneous lookup
 

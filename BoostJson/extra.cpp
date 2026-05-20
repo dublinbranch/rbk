@@ -517,14 +517,14 @@ void swap(const boost::json::value& el, std::vector<string>& target) {
 			if (item.is_string()) {
 				target.push_back(to_string(item.as_string()));
 			} else {
-				throw ExceptionV2(F("something is not a string but a {} = {}", el.kind(), pretty_print(el)));
+				throw ExceptionV2(F("something is not a string but a {} = {}", asSWString(el.kind()), pretty_print(el)));
 			}
 			target.push_back(to_string(item.as_string()));
 		}
 	} else if (el.is_string()) {
 		target.push_back(to_string(el.as_string()));
 	} else {
-		throw ExceptionV2(F("something is not a string but a {} = {}", el.kind(), pretty_print(el)));
+		throw ExceptionV2(F("something is not a string but a {} = {}", asSWString(el.kind()), pretty_print(el)));
 	}
 };
 

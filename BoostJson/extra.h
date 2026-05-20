@@ -208,13 +208,13 @@ void rq(const boost::json::value& v, T& target) {
 		} else if (v.is_uint64()) {
 			target = F("{}", v.as_uint64());
 		} else {
-			throw ExceptionV2(F("type {} not handled", v.kind()));
+			throw ExceptionV2(F("type {} not handled", asSWString(v.kind())));
 		}
 	} else {
 		if (v.is_string()) {
 			swapType(v.as_string(), target);
 		} else {
-			throw ExceptionV2(F("type {} not handled", v.kind()));
+			throw ExceptionV2(F("type {} not handled", asSWString(v.kind())));
 		}
 	}
 }
@@ -256,11 +256,7 @@ bool get(const boost::json::value& v, std::string_view key, T& t) {
 
 template <typename T>
 bool get(const boost::json::value* v, std::string_view key, T& t) {
-	if (!v->is_object()) {
-		return false;
-	}
-
-	return get(v->as_object(), key, t);
+	return get(*v, key, t);
 }
 
 template <typename T>
@@ -282,6 +278,11 @@ T get(const boost::json::value& v, std::string_view key) {
 	get(v.as_object(), key, t);
 
 	return t;
+}
+
+template <typename T>
+T get(const boost::json::value* v, std::string_view key) {
+	return get<T>(*v, key);
 }
 
 template <typename T>
@@ -308,6 +309,11 @@ bool getAtPointer(const bj::value& value, std::string_view ptr, T& t) {
 }
 
 template <typename T>
+bool getAtPointer(const bj::value* value, std::string_view ptr, T& t) {
+	return getAtPointer(*value, ptr, t);
+}
+
+template <typename T>
 T getAtPointer(const bj::value& value, std::string_view ptr) {
 	T                         t{};
 	boost::system::error_code ec;
@@ -315,6 +321,11 @@ T getAtPointer(const bj::value& value, std::string_view ptr) {
 		rq(*v, t);
 	}
 	return t;
+}
+
+template <typename T>
+T getAtPointer(const bj::value* value, std::string_view ptr) {
+	return getAtPointer<T>(*value, ptr);
 }
 
 bool checkStringAtPointer(const bj::value& value, std::string_view ptr, std::string_view string);
