@@ -1,5 +1,6 @@
 #include "tmonitoring.h"
 #include "rbk/QStacker/qstacker.h"
+#include "rbk/gitTrick/buffer.h"
 #include "rbk/minMysql/min_mysql.h"
 #include "threadstatush.h"
 #include <atomic>
@@ -9,7 +10,7 @@ using namespace std;
 extern ThreadStatus                       threadStatus;
 extern thread_local ThreadStatus::Status* localThreadStatus;
 
-extern DB s7DB;
+extern DB* mainDB;
 
 struct ATiming {
 	atomic<i64> total = 0;
@@ -24,14 +25,14 @@ struct ATiming {
 	atomic<i64> sqlReconnect = 0;
 
 	void syncFromDk_S7Db() {
+		flush        = localThreadStatus->time.flush;
+		auto& st     = mainDB->state.get();
+		sqlFetch     = st.totFetchTime;
+		sqlServer    = st.totServerTime;
+		sqlDone      = st.queryExecuted;
+		sqlReconnect = st.reconnection;
 
-		total += localThreadStatus->time.total();
-		flush += localThreadStatus->time.flush;
-		//		auto& st = s7DB.state.get();
-		//		sqlFetch += st.totFetchTime;
-		//		sqlServer += st.totServerTime;
-		//		sqlDone += st.queryExecuted;
-		//		sqlReconnect += st.reconnection;
+		total = localThreadStatus->time.total();
 	}
 	void clear() {
 		total        = 0;
@@ -195,9 +196,17 @@ Request /s  : {:.1f}
 Free Thread : {}
 Used Thread : {}
 Exception   : {}
+Git revision: {}
+Compiled at : {} UTC
 </pre>
 )", // conf().workerLimit - threadFree
-	                             request.load(), rqs, threadStatus.free.load(), getThreadCount(), exceptionThrown.load());
+	                             request.load(),
+	                             rqs,
+	                             threadStatus.free.load(),
+	                             getThreadCount(),
+	                             exceptionThrown.load(),
+	                             GIT_STATUS_buffer,
+	                             COMPILATION_TIME_buffer);
 
 	generalStatus += R"(
 <hr>
