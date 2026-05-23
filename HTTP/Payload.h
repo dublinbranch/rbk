@@ -49,7 +49,7 @@ class Payload {
 	//a response can not exists without a request no ?
 	PMFCGI*     status = nullptr;
 	std::string html;
-	std::string mime = "text/html";
+	std::string mime = "text/html; charset=utf-8";
 	Headers     headers;
 	void        setStandardHeaders(bool addCors = true);
 	void        setCacheHeader(uint ttl);

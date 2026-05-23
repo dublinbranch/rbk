@@ -47,7 +47,7 @@ class Status : public RequestBase {
 		payload.html += "<h1>Cache Info</h1>\n";
 		payload.html += APCU::getInstance()->info();
 
-		payload.mime = "text/html";
+		payload.mime = "text/html; charset=utf-8";
 	}
 };
 

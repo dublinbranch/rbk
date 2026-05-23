@@ -85,7 +85,7 @@ string randomError() {
 	return e;
 }
 
-http::response<http::string_body> quickResponse(string&& msg, http::status status = http::status::internal_server_error, string mime = "text/html") {
+http::response<http::string_body> quickResponse(string&& msg, http::status status = http::status::internal_server_error, string mime = "text/html; charset=utf-8") {
 	http::response<http::string_body> res;
 	res.body() = msg;
 	res.content_length(res.body().size());
@@ -288,7 +288,7 @@ void handle_request(
 			router.deferred();
 
 		} catch (const exception& e) {
-			payload.mime       = "text/html";
+			payload.mime       = "text/html; charset=utf-8";
 			payload.statusCode = 500;
 
 			string msg = status.serializeMsg(e.what());
