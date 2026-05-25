@@ -30,6 +30,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <queue>
 #include <string>
 #include <thread>
 #include <vector>
@@ -57,6 +58,7 @@ namespace http  = beast::http;          // from <boost/beast/http.hpp>
 namespace net   = boost::asio;          // from <boost/asio.hpp>
 using tcp       = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
 using namespace std;
+using StringResponse = http::response<http::string_body>;
 
 void init();
 
@@ -85,51 +87,37 @@ string randomError() {
 	return e;
 }
 
-http::response<http::string_body> quickResponse(string&& msg, http::status status = http::status::internal_server_error, string mime = "text/html; charset=utf-8") {
-	http::response<http::string_body> res;
-	res.body() = msg;
-	res.content_length(res.body().size());
-	res.result(status);
+StringResponse quickResponse(string&& msg,
+                             unsigned version,
+                             bool     keepAlive,
+                             http::status status = http::status::internal_server_error,
+                             string       mime   = "text/html; charset=utf-8") {
+	StringResponse res{status, version};
+	res.body() = std::move(msg);
+	res.keep_alive(keepAlive);
 	res.set(http::field::content_type, mime);
+	res.prepare_payload();
 	return res;
 }
 
-void send(beast::tcp_stream& stream, const http::response<http::string_body>& msg) {
-	beast::error_code ec;
-	http::write(
-	    stream,
-	    std::move(msg),
-	    ec);
-}
-
-void sendResponseToClient(beast::tcp_stream& stream, Payload& payload) {
-	if (payload.alreadySent) {
-		return;
-	}
-
+StringResponse buildResponseToClient(Payload& payload, unsigned version, bool keepAlive) {
 	payload.alreadySent = true;
 	auto size           = payload.html.size();
 
-	http::response<http::string_body> res;
+	StringResponse res{static_cast<http::status>(payload.statusCode), version};
 	res.body() = payload.html;
-	res.content_length(size);
-	res.result(static_cast<http::status>(payload.statusCode));
+	res.keep_alive(keepAlive);
 	res.set(http::field::content_type, payload.mime);
 
 	for (auto& [key, value] : payload.headers) {
 		res.insert(key, value);
 	}
-	res.insert("Connection", "keep-alive");
 
-	res.keep_alive(true);
-	//res.prepare_payload();
-
-	//equivalente to fastcgi_close
-	send(stream, res);
+	res.prepare_payload();
 	auto responseTime = registerFlushTime();
 
 	if (!payload.status->conf->logRequest) {
-		return;
+		return res;
 	}
 
 	const auto conf = payload.status->conf;
@@ -186,16 +174,19 @@ void sendResponseToClient(beast::tcp_stream& stream, Payload& payload) {
 		fileName = F16("{}/access.log", payload.status->conf->logFolder);
 	}
 	fileAppendContents(logLine, fileName);
+	return res;
 }
 
 template <class Body, class Allocator>
-void handle_request(
+StringResponse handle_request(
     beast::tcp_stream&                                   stream,
     http::request<Body, http::basic_fields<Allocator>>&& req,
     const BeastConf*                                     conf) {
 
 	localThreadStatus->state = ThreadState::Immediate;
 	requestBeging();
+	const auto requestVersion   = req.version();
+	const auto requestKeepAlive = req.keep_alive();
 
 	Payload payload;
 	Router  router;
@@ -204,17 +195,15 @@ void handle_request(
 
 	//just more http protocol nonsense for CORS
 	if (req.method() == http::verb::options) {
-		http::response<http::string_body> res{http::status::ok, req.version()};
+		StringResponse res{http::status::ok, requestVersion};
+		res.keep_alive(requestKeepAlive);
 		res.set(http::field::access_control_allow_origin, "*");
 		res.set(http::field::access_control_allow_methods, "GET, POST, OPTIONS");
 		res.set(http::field::access_control_allow_headers, "Content-Type, X-Requested-With, Authorization");
 		res.set(http::field::access_control_max_age, "86400");
-		res.insert("Connection", "keep-alive");
-		res.keep_alive(true);
 		res.prepare_payload();
-		send(stream, res);
 		registerFlushTime();
-		return;
+		return res;
 	}
 
 	try {
@@ -256,14 +245,12 @@ void handle_request(
 			}
 			if (conf->loginManager) {
 				if (!conf->loginManager(status, payload)) {
-					sendResponseToClient(stream, payload);
-					return;
+					return buildResponseToClient(payload, requestVersion, requestKeepAlive);
 				}
 			}
 			if (conf->common1) {
 				if (!conf->common1(status, payload)) {
-					sendResponseToClient(stream, payload);
-					return;
+					return buildResponseToClient(payload, requestVersion, requestKeepAlive);
 				}
 			}
 
@@ -275,9 +262,9 @@ void handle_request(
 
 			/*
 			 * phase 2
-			 * send response to client
+			 * prepare response to client
 			 */
-			sendResponseToClient(stream, payload);
+			auto response = buildResponseToClient(payload, requestVersion, requestKeepAlive);
 
 			/*
 			 * phase 3
@@ -286,6 +273,7 @@ void handle_request(
 			 */
 			localThreadStatus->state = ThreadState::Deferred;
 			router.deferred();
+			return response;
 
 		} catch (const exception& e) {
 			payload.mime       = "text/html; charset=utf-8";
@@ -322,22 +310,27 @@ void handle_request(
 			}
 
 		} catch (...) {
+			payload.mime       = "text/html; charset=utf-8";
+			payload.statusCode = 500;
+			payload.html       = randomError();
 			auto msg = status.serializeMsg("unkown exception");
 			fmt::print("\n------\n{}", msg);
 			fileAppendContents("\n------\n " + msg, conf->logFolder + "/unkException.log");
 		}
 
 		//in case the exception happened before the socket close during the immediate stage
-		sendResponseToClient(stream, payload);
+		return buildResponseToClient(payload, requestVersion, requestKeepAlive);
 	}
 
 	//also the serialize is error prone in case of badly messed request
 	catch (const exception& e) {
 		auto msg = status.serializeMsg(e.what(), true);
 		fileAppendContents("\n------\n " + msg, conf->logFolder + "/stdException.log");
+		return quickResponse(randomError(), requestVersion, requestKeepAlive);
 	} catch (...) {
 		auto msg = status.serializeMsg("unkown exception", true);
 		fileAppendContents("\n------\n " + msg, conf->logFolder + "/unkException.log");
+		return quickResponse(randomError(), requestVersion, requestKeepAlive);
 	}
 }
 
@@ -350,12 +343,11 @@ void fail(beast::error_code ec, char const* what) {
 
 // Handles an HTTP server connection
 class http_session : public std::enable_shared_from_this<http_session> {
-	//We change compared to the reference implementation the http_pipelining support
-	//for our use case IS PROBABLY NEVER USED
-
 	beast::tcp_stream  stream_;
 	beast::flat_buffer buffer_;
 	const BeastConf*   conf = nullptr;
+	static constexpr std::size_t queue_limit = 8;
+	std::queue<StringResponse>   response_queue_;
 
 	// The parser is stored in an optional container so we can
 	// construct it from scratch it at the beginning of each new message.
@@ -407,6 +399,8 @@ class http_session : public std::enable_shared_from_this<http_session> {
 
 	void
 	on_read(beast::error_code ec, std::size_t bytes_transferred) {
+		unsigned requestVersion   = 11;
+		bool     requestKeepAlive = false;
 
 		try {
 			//Entry point
@@ -421,27 +415,67 @@ class http_session : public std::enable_shared_from_this<http_session> {
 				return fail(ec, "read");
 			}
 
-			handle_request(stream_, parser_->release(), conf);
+			requestVersion   = parser_->get().version();
+			requestKeepAlive = parser_->get().keep_alive();
+
+			auto response = handle_request(stream_, parser_->release(), conf);
+			queue_write(std::move(response));
+
+			if (response_queue_.size() < queue_limit) {
+				do_read();
+			}
 		} catch (...) {
-			send(stream_, quickResponse(randomError()));
+			queue_write(quickResponse(randomError(), requestVersion, requestKeepAlive));
 		}
 
 		requestEnd();
 	}
 
 	void
-	on_write(bool close, beast::error_code ec, std::size_t bytes_transferred) {
+	queue_write(StringResponse response) {
+		response_queue_.push(std::move(response));
+
+		if (response_queue_.size() == 1) {
+			do_write();
+		}
+	}
+
+	void
+	do_write() {
+		if (response_queue_.empty()) {
+			return;
+		}
+
+		const bool keepAlive = response_queue_.front().keep_alive();
+		http::async_write(
+		    stream_,
+		    response_queue_.front(),
+		    beast::bind_front_handler(
+		        &http_session::on_write,
+		        shared_from_this(),
+		        keepAlive));
+	}
+
+	void
+	on_write(bool keepAlive, beast::error_code ec, std::size_t bytes_transferred) {
 		boost::ignore_unused(bytes_transferred);
 
 		if (ec) {
 			return fail(ec, "write");
 		}
 
-		if (close) {
+		if (!keepAlive) {
 			// This means we should close the connection, usually because
 			// the response indicated the "Connection: close" semantic.
 			return do_close();
 		}
+
+		if (response_queue_.size() == queue_limit) {
+			do_read();
+		}
+
+		response_queue_.pop();
+		do_write();
 	}
 
 	void
