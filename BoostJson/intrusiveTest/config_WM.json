@@ -1,0 +1,106 @@
+{
+    "dbConf" : {
+        "host" : "127.0.0.1",
+        "pass" : "roy",
+        "user" : "roy",
+        "ssl" : false,
+        "port" : 3306,
+        "readTimeout" : 0,
+        "logSql" : false,
+        "logError" : true,
+        "defaultDB" : "PPPLC"
+    },
+    "spamConf" : {
+        "slackOpt" : {
+            "warningON" : false,
+            "warningChannel" : ""
+        },
+        "BRUTAL_INHUMAN_REPORTING" : false,
+        "warningToMail" : true,
+        "warningMailRecipients" : [
+            "admin@seisho.us"
+        ],
+        "instanceName" : "REPLACE_ME"
+    },
+    "dbMaintainance" : {
+        "checkCongruency" : false,
+        "refreshDBSchema" : false
+    },
+    "http" : {
+        "staticFile" : "static",
+        "staticFileCacheTTL" : 600,
+        "logFolder" : "httpLog",
+        "worker" : 1,
+        "address" : "0.0.0.0",
+        "port" : 8081,
+        "htmlAllException" : true,
+        "logRequest" : true,
+        "maxResponseSize" : 256,
+        "logResponse" : true,
+        "logRequestByIp" : true,
+        "logWhitelist" : [],
+        "logBlacklist": ["/gallery","/css","/js"],
+        "basePath" : "http://{{LOCAL_IP}}:{{LOCAL_PORT}}/"
+    },
+    "devel" : {
+        "cacheBusterOn" : true,
+        "sqlCache" : 0,
+        "simulateMachine" : false,
+        "setMachineCheck" : true,
+        "redirectIfPythonFail" : false,
+        "bypassLogin": true
+    },
+    "editPassword" :"7gkZjkYiSHXPOZKFEe8rhViVxD7obR3olO6CvHyZCvo",
+    "resetPassword" : "j_6EWRNLRpdazTHfE6UMUdvqzxwZp2S_FgK6fHP_yPs",
+    "machineParameter" : {
+        "carriagePositions" : {
+            "corta" : {
+                "mm" : {
+                    "min" : 0,
+                    "max" : 1500
+                },
+                "step" : {
+                    "min" : 0,
+                    "max" : 1000
+                }
+            },
+            "lunga" : {
+                "mm" : {
+                    "min" : 0,
+                    "max" : 2400
+                },
+                "step" : {
+                    "min" : 0,
+                    "max" : 1500
+                }
+            }
+        },
+        "boardPosition" : {
+            "mm" : {
+                "min" : 0,
+                "max" : 3500
+            },
+            "step" : {
+                "min" : 0,
+                "max" : 2000
+            }
+        },
+         "jetPosition" : {
+            "mm" : {
+                "min" : 0,
+                "max" : 300
+            },
+            "step" : {
+                "min" : 0,
+                "max" : 250
+            }
+        },
+        "machineSerialCode" : "REPLACE_ME",
+        "pressureIntensityLevels" : 2
+    },
+    "sessionLenght" : 86400,
+    "mType" : "WM",
+    "imageMagickVersion" : 6,
+    "language" : "en_US",
+    "svai": 1
+}

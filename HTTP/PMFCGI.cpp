@@ -78,6 +78,10 @@ void PMFCGI::decodePost() {
 }
 
 void PMFCGI::extractCookies() {
+	//do not reswap
+	if (cookies.has_value()) {
+		return;
+	}
 	cookies = bHeaders();
 	if (auto v = headers.get("cookie"); v) {
 		for (auto& ck : v.val->split(';')) {

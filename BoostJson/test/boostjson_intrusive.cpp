@@ -1,5 +1,14 @@
 // Mirrors app config flow (see config.cpp): intrusivedebug.h first, parseJson, try_value_to<T>.
 // BOOST_DESCRIBE_STRUCT drives value_to so BOOST_PATH_PUSH runs and BJIntrusive::composePath() maps failures.
+/*
+cmake --preset default -DRBK_BUILD_TESTS=ON
+cmake --build --preset default --target rbk_tests
+
+./build/test/rbk_tests --run_test=boostjson_intrusive
+
+
+*/
+
 
 #include "rbk/BoostJson/intrusivedebug.h"
 
@@ -7,7 +16,11 @@
 
 #include <boost/describe/class.hpp>
 #include <boost/json/error.hpp>
+#include <boost/json/value_from.hpp>
 #include <boost/test/unit_test.hpp>
+
+#include <fmt/core.h>
+#include <fmt/ranges.h>
 
 #include <string>
 #include <system_error>
@@ -37,6 +50,26 @@ void reset_intrusive_trace() {
 	BJIntrusive::path.clear();
 	BJIntrusive::message.clear();
 	BJIntrusive::key = {};
+}
+
+void print_intrusive_failure(std::string_view caseName, const bj::value& json, const bj::value& expectedShape,
+                             const boost::system::error_code& ec) {
+	fmt::print("\n{}\n", std::string(72, '='));
+	fmt::print("CASE: {}\n", caseName);
+	fmt::print("  try_value_to error : {} ({})\n", ec.message(), ec.value());
+	fmt::print("  composePath()       : '{}'\n", BJIntrusive::composePath());
+	if (!BJIntrusive::message.empty()) {
+		fmt::print("  BJIntrusive::message: {}\n", BJIntrusive::message);
+	}
+	fmt::print("  composeMessage()    : ");
+	try {
+		auto msg = BJIntrusive::composeMessage(const_cast<bj::value*>(&json), expectedShape);
+		fmt::print("{}\n", msg);
+		BOOST_TEST_MESSAGE("composeMessage: " << msg);
+	} catch (const std::exception& ex) {
+		fmt::print("*** THREW: {}\n", ex.what());
+	}
+	fmt::print("{}\n\n", std::string(72, '='));
 }
 
 } // namespace
@@ -69,6 +102,7 @@ BOOST_AUTO_TEST_CASE(failure_wrong_scalar_records_path_port)
 	BOOST_REQUIRE(!r.ec);
 	auto t = bj::try_value_to<IntrusiveFlat>(r.json);
 	BOOST_REQUIRE(t.has_error());
+	print_intrusive_failure("wrong scalar at /port", r.json, bj::value_from(IntrusiveFlat{}), t.error());
 	BOOST_CHECK_EQUAL(BJIntrusive::composePath(), "/port");
 	BOOST_CHECK_EQUAL(t.error(), bj::make_error_code(bj::error::not_number));
 }
@@ -80,6 +114,7 @@ BOOST_AUTO_TEST_CASE(failure_nested_leaf_records_path_leaf_value)
 	BOOST_REQUIRE(!r.ec);
 	auto t = bj::try_value_to<IntrusiveNested>(r.json);
 	BOOST_REQUIRE(t.has_error());
+	print_intrusive_failure("wrong scalar at /leaf/value", r.json, bj::value_from(IntrusiveNested{}), t.error());
 	BOOST_CHECK_EQUAL(BJIntrusive::composePath(), "/leaf/value");
 	BOOST_CHECK_EQUAL(t.error(), bj::make_error_code(bj::error::not_number));
 }
@@ -132,6 +167,28 @@ BOOST_AUTO_TEST_CASE(extra_json_field_matches_size_mismatch)
 	BOOST_REQUIRE(t.has_error());
 	// Described object with unknown keys: converter counts matched members vs object size.
 	BOOST_CHECK_EQUAL(t.error(), bj::make_error_code(bj::error::size_mismatch));
+
+	auto expected = bj::value_from(IntrusiveFlat{});
+	print_intrusive_failure("root extra field 'extra'", r.json, expected, t.error());
+
+	auto msg = BJIntrusive::composeMessage(&r.json, expected);
+	BOOST_CHECK_EQUAL(msg, "Extra JSON key: /extra");
+}
+
+BOOST_AUTO_TEST_CASE(extra_json_field_nested_message_names_the_extra_key)
+{
+	reset_intrusive_trace();
+	auto r = parseJson(std::string_view(R"({"leaf":{"value":1,"surplus":true}})"), false);
+	BOOST_REQUIRE(!r.ec);
+	auto t = bj::try_value_to<IntrusiveNested>(r.json);
+	BOOST_REQUIRE(t.has_error());
+	BOOST_CHECK_EQUAL(t.error(), bj::make_error_code(bj::error::size_mismatch));
+
+	auto expected = bj::value_from(IntrusiveNested{});
+	print_intrusive_failure("nested extra field 'surplus' under /leaf", r.json, expected, t.error());
+
+	auto msg = BJIntrusive::composeMessage(&r.json, expected);
+	BOOST_CHECK_EQUAL(msg, "Extra JSON key: /leaf/surplus");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

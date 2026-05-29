@@ -1,0 +1,94 @@
+---
+description: BoostJson intrusive debug — value_to override, path tracking, extra-key detection
+globs: BoostJson/**
+alwaysApply: false
+---
+
+# BoostJson intrusive debug
+
+## Purpose
+
+When decoding JSON into `BOOST_DESCRIBE` structs via `boost::json::try_value_to`, rbk replaces Boost’s internal `boost/json/detail/value_to.hpp` with a version-pinned copy under `BoostJson/override/`. That fork records **where** conversion failed and **why** (missing key, wrong type, extra unknown key).
+
+## Include order (required)
+
+`intrusivedebug.h` **must** be the first Boost.JSON-related include in any translation unit that needs this behavior:
+
+```cpp
+#include "rbk/BoostJson/intrusivedebug.h"  // before boost/json.hpp or extra.h
+#include "rbk/BoostJson/extra.h"
+```
+
+If `BOOST_JSON_DETAIL_VALUE_TO_HPP` is already defined, compilation fails intentionally.
+
+## Version selection
+
+`intrusivedebug.h` picks the override by `BOOST_VERSION`:
+
+| Boost | Override file |
+|-------|----------------|
+| 1.84  | `override/value_to_108400.hpp` |
+| 1.85  | `override/value_to_108500.hpp` |
+| 1.86  | `override/value_to_108600.hpp` |
+| 1.87  | `override/value_to_108700.hpp` |
+| 1.88  | `override/value_to_108800.hpp` |
+| 1.91  | `override/value_to_109100.hpp` |
+
+When upgrading Boost, diff upstream `json/detail/value_to.hpp` against the latest override and port the `BJIntrusive_*` hooks (see below). Unsupported versions fall back to stock Boost (no intrusive debug).
+
+## Injected hooks (described-class path only)
+
+In `to_described_member::operator()` inside each override:
+
+1. **Missing required member** — set `BJIntrusive::key`, `BJIntrusive_MESSAGE(...)`, fail with `size_mismatch`.
+2. **`BJIntrusive_PUSH(D::name)`** before recursive `try_value_to<M>`.
+3. **On success** — assign field, `++BJIntrusive_Count`, **`BJIntrusive_POP`**.
+4. **On member failure** — bubble error; POP is skipped (path may retain the failing segment until conversion aborts).
+
+After `mp_for_each` over all described members:
+
+```cpp
+if (member_converter.BJIntrusive_Count != obj->size()) {
+    // JSON has keys not consumed by the struct → extra/unknown field(s)
+    BOOST_JSON_FAIL(BJIntrusive::error, error::size_mismatch);
+    BJIntrusive_MESSAGE("Converted N out of M ...");
+}
+```
+
+## Runtime state (`BJIntrusive`)
+
+| Field | Role |
+|-------|------|
+| `path` | Stack of member names → `composePath()` → JSON Pointer (`""` = root, `/http/port` nested) |
+| `message` | Last diagnostic string from the override |
+| `error` | Last `boost::system::error_code` (e.g. `size_mismatch`, `not_number`) |
+| `key` | Last missing-key name |
+
+Static inline globals — **not thread-safe**; one decode at a time per process is assumed.
+
+## Composing user-facing errors
+
+After `try_value_to` fails, apps call:
+
+```cpp
+auto err = BJIntrusive::composeMessage(&originalJson, boost::json::value_from(defaultOrPartialStruct));
+```
+
+For `size_mismatch`, `composeMessage` (in `intrusivedebug.cpp`) diffs original vs expected via `subtractJson()` and returns text like `Found extra element in path (root)` plus the surplus key(s). Root path must use pointer `""`, not `"/"`.
+
+## Tests
+
+- `BoostJson/test/boostjson_intrusive.cpp` — small synthetic cases
+- `BoostJson/intrusiveTest/` — PPPLC `config_WM.json` fixture + `wm_config::*` structs mirroring `describeconfig.h`
+
+```bash
+cmake --build build --target rbk_tests
+./build/test/rbk_tests --run_test=boostjson_intrusive
+./build/test/rbk_tests --run_test=boostjson_intrusive_wm
+```
+
+## Editing overrides
+
+- Prefer **`BJIntrusive_PUSH` / `BJIntrusive_POP` / `BJIntrusive_MESSAGE`** (1.91 file). Older overrides still use `BOOST_PATH_PUSH` / `BOOST_MESSAGE`; wire those to `BJIntrusive_*` in `intrusivedebug.h` if path tracking must work on older Boost.
+- Keep each override byte-identical to upstream except the marked intrusive blocks — eases rebasing on Boost upgrades.
+- New override file → add `#elif` in `intrusivedebug.h` and document in this rule.

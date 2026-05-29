@@ -22,6 +22,7 @@ struct BJIntrusive {
 	static void                             push(const char* str);
 	static void                             pop();
 	static std::string                      composePath();
+	static std::string                      pathLabel();
 	static std::string                      composeMessage(boost::json::value* original_, boost::json::value target);
 	static inline std::string               message;
 	static inline std::vector<const char*>  path;
