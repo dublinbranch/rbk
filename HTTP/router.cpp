@@ -84,8 +84,8 @@ void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) 
 	} else if (auto v2 = conf->routingSimple.get(path); v2) {
 		(*(v2.val))(status, payload);
 		return;
-	} else if (!conf->staticFile.empty()) {
-		auto p   = conf->staticFile / path;
+	} else if (conf->staticFile.has_value() && !conf->staticFile.value().empty()) {
+		auto p   = conf->staticFile.value() / path;
 		auto res = fileGetContents2(p, true, 0);
 		if (res.exist) {
 			payload.html       = res.content.toStdString();

@@ -138,10 +138,10 @@ void sendResponseToClient(beast::tcp_stream& stream, Payload& payload) {
 	bool       logResponse = false;
 
 	if (conf->logResponse) {
-		if (payload.status->conf->logWhitelist.empty()) {
+		if (payload.status->conf->logWhitelist.value().empty()) {
 			logResponse = true;
 		} else {
-			for (auto& path : conf->logWhitelist) {
+			for (auto& path : conf->logWhitelist.value()) {
 				if (payload.status->path.find(path) != string::npos) {
 					logResponse = true;
 					break;
@@ -149,7 +149,7 @@ void sendResponseToClient(beast::tcp_stream& stream, Payload& payload) {
 			}
 		}
 
-		for (auto& path : conf->logBlacklist) {
+		for (auto& path : conf->logBlacklist.value()) {
 			if (payload.status->path.find(path) != string::npos) {
 				logResponse = false;
 				break;
