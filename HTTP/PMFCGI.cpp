@@ -182,7 +182,7 @@ void Payload::redirect(const StringAdt& location) {
 	statusCode = 302;
 }
 
-void Payload::setCookie(const std::string_view& key, const StringAdt& value, u32 cookieTTL, bool sameSite, bool secure) {
+void Payload::setCookie(const StringAdt& key, const StringAdt& value, u32 cookieTTL, bool sameSite, bool secure) {
 	headers.setCookie(key, value, cookieTTL, sameSite, secure);
 }
 

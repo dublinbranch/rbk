@@ -13,7 +13,7 @@ void Headers::setCookie(std::string_view name, std::string_view value, uint ttl,
 	insert({"Set-Cookie", row});
 }
 
-void Headers::deleteCookie(std::string_view name) {
+void Headers::deleteCookie(const StringAdt& name) {
 	auto row = fmt::format(R"({}=; Max-Age={}; path=/ ; {}; HttpOnly)", name, 0, "SameSite=Lax");
 	insert({"Set-Cookie", row});
 }
