@@ -200,7 +200,8 @@ void handle_request(
 	Payload payload;
 	Router  router;
 	PMFCGI  status;
-	payload.status = &status;
+	payload.status       = &status;
+	payload.status->conf = conf;
 
 	//just more http protocol nonsense for CORS
 	if (req.method() == http::verb::options) {
@@ -582,14 +583,14 @@ void Beast::listen() {
 		auto status = ThreadStatus::newStatus();
 
 		auto& t       = threads.emplace_back(new std::thread(
-                    [status, &IOC] {
-                            //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
-                            status->tid       = gettid();
-                            localThreadStatus = status.get();
-                            pthread_setname_np(pthread_self(), "HttpHandler");
-                            //and than launch to io handler
-                            IOC.run();
-                    }));
+		    [status, &IOC] {
+			    //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
+			    status->tid       = gettid();
+			    localThreadStatus = status.get();
+			    pthread_setname_np(pthread_self(), "HttpHandler");
+			    //and than launch to io handler
+			    IOC.run();
+		    }));
 		status->state = ThreadState::Idle;
 		status->info  = "just created";
 
