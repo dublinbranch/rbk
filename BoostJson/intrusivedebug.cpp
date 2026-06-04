@@ -10,26 +10,49 @@
 namespace bj = boost::json;
 
 std::string BJIntrusive::composePath() {
+	if (path.empty()) {
+		//This is a json pointer, is supposed to be empty in this case
+		return {};
+	}
 	return fmt::format("/{}", fmt::join(path, "/"));
 }
+
+std::string BJIntrusive::pathLabel() {
+	return path.empty() ? std::string("(root)") : composePath();
+}
+
+namespace {
+
+bj::value* valueAtPointer(bj::value& root, std::string_view ptr, boost::system::error_code& ec) {
+	if (ptr.empty()) {
+		return &root;
+	}
+	return root.find_pointer(ptr, ec);
+}
+
+} // namespace
 
 //TODO add a struct for options, one of those is if to add the original JSON in the error message
 std::string BJIntrusive::composeMessage(bj::value* original_, bj::value target) {
 	original     = original_;
 	auto pathStr = composePath();
 	if (error == bj::error::size_mismatch) {
-		//Extra element is
-		std::error_code ec;
-		auto            ptrO = original->find_pointer(pathStr, ec);
-		auto            ptrT = target.find_pointer(pathStr, ec);
+		boost::system::error_code ec;
+		auto                      ptrO = valueAtPointer(*original_, pathStr, ec);
+		auto                      ptrT = valueAtPointer(target, pathStr, ec);
 
-		if (ptrO && ptrT) {
-			auto res = pretty_print(subtractJson(ptrO->as_object(), ptrT->as_object(), pathStr));
-			return fmt::format("Found extra element in path {}\n{}", composePath(), res);
-		} else {
-			throw ExceptionV2(F("Impossible to find the JSON path {}", pathStr));
+		if (ptrO && ptrT && ptrO->is_object() && ptrT->is_object()) {
+			auto extras = extraJsonKeyPaths(ptrO->as_object(), ptrT->as_object(), pathStr);
+			if (extras.size() == 1) {
+				return fmt::format("Extra JSON key: {}", extras.front());
+			}
+			if (!extras.empty()) {
+				return fmt::format("Extra JSON keys:\n{}", fmt::join(extras, "\n"));
+			}
+			return fmt::format("Extra JSON key(s) in {} ({})\n{}", pathLabel(), message,
+			                   pretty_print(subtractJson(ptrO->as_object(), ptrT->as_object(), pathStr)));
 		}
-		return fmt::format("{}: {}", composePath(), message);
+		throw ExceptionV2(F("Impossible to find the JSON path {}", pathLabel()));
 	}
 	return message;
 }

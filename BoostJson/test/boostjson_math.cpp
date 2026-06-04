@@ -63,4 +63,16 @@ BOOST_AUTO_TEST_CASE(subtractJson_keeps_keys_absent_from_second)
 	BOOST_CHECK(!out.contains("other"));
 }
 
+BOOST_AUTO_TEST_CASE(extraJsonKeyPaths_lists_surplus_keys_as_pointers)
+{
+	bj::object first;
+	first["port"]  = 1;
+	first["extra"] = true;
+	bj::object second;
+	second["port"] = 1;
+	auto paths = extraJsonKeyPaths(first, second, {});
+	BOOST_REQUIRE_EQUAL(paths.size(), 1u);
+	BOOST_CHECK_EQUAL(paths.front(), "/extra");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
