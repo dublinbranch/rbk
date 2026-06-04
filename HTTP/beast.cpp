@@ -299,15 +299,15 @@ void handle_request(
 				fmt::print("\n------\n{}", msg);
 			}
 
-			if (conf->htmlAllException) {
-				payload.html = "<pre>\n" + msg + "\n</pre>";
+			auto HE = dynamic_cast<const HttpException*>(&e);
+			if (HE) {
+				if (!HE->httpErrMsg.empty()) {
+					payload.html = HE->httpErrMsg;
+				}
+				payload.statusCode = HE->statusCode;
 			} else {
-				auto HE = dynamic_cast<const HttpException*>(&e);
-				if (HE) {
-					if (!HE->httpErrMsg.empty()) {
-						payload.html = HE->httpErrMsg;
-					}
-					payload.statusCode = HE->statusCode;
+				if (conf->htmlAllException) {
+					payload.html = "<pre>\n" + msg + "\n</pre>";
 				} else {
 					payload.html = randomError();
 				}

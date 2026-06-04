@@ -193,7 +193,11 @@ void APCU::diskSyncP2() {
 		{
 			auto el = any_cast<std::shared_ptr<Cachable>>(&iter.value);
 			if (el) {
-				toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), iter.typeHashCode, el->get()->serialize()});
+				auto ser = el->get()->serialize();
+				if (ser.isEmpty()) {
+					continue;
+				}
+				toBeWritten.insert(iter.key, {static_cast<uint>(iter.expireAt), iter.typeHashCode, ser});
 			}
 		}
 	}

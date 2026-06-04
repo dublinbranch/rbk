@@ -111,7 +111,7 @@ template <typename D>
 std::enable_if_t<!std::is_constructible_v<D, std::string_view>>
 swapType(const std::string_view& source, D& dest) {
 	if constexpr (std::is_same<D, QString>::value) {
-		dest = QString::fromUtf8(source.data(), source.size());
+		dest = QString::fromUtf8(source.data(), (int)source.size());
 		return;
 	} else if constexpr (std::is_same<D, QByteArray>::value) {
 		dest = QByteArray::fromRawData(source.data(), source.size());
