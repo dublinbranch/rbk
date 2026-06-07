@@ -126,10 +126,10 @@ StringResponse buildResponseToClient(Payload& payload, unsigned version, bool ke
 	bool       logResponse = false;
 
 	if (conf->logResponse) {
-		if (payload.status->conf->logWhitelist.empty()) {
+		if (payload.status->conf->logWhitelist.value().empty()) {
 			logResponse = true;
 		} else {
-			for (auto& path : conf->logWhitelist) {
+			for (auto& path : conf->logWhitelist.value()) {
 				if (payload.status->path.find(path) != string::npos) {
 					logResponse = true;
 					break;
@@ -137,7 +137,7 @@ StringResponse buildResponseToClient(Payload& payload, unsigned version, bool ke
 			}
 		}
 
-		for (auto& path : conf->logBlacklist) {
+		for (auto& path : conf->logBlacklist.value()) {
 			if (payload.status->path.find(path) != string::npos) {
 				logResponse = false;
 				break;
@@ -191,7 +191,8 @@ StringResponse handle_request(
 	Payload payload;
 	Router  router;
 	PMFCGI  status;
-	payload.status = &status;
+	payload.status       = &status;
+	payload.status->conf = conf;
 
 	//just more http protocol nonsense for CORS
 	if (req.method() == http::verb::options) {
@@ -287,15 +288,15 @@ StringResponse handle_request(
 				fmt::print("\n------\n{}", msg);
 			}
 
-			if (conf->htmlAllException) {
-				payload.html = "<pre>\n" + msg + "\n</pre>";
+			auto HE = dynamic_cast<const HttpException*>(&e);
+			if (HE) {
+				if (!HE->httpErrMsg.empty()) {
+					payload.html = HE->httpErrMsg;
+				}
+				payload.statusCode = HE->statusCode;
 			} else {
-				auto HE = dynamic_cast<const HttpException*>(&e);
-				if (HE) {
-					if (!HE->httpErrMsg.empty()) {
-						payload.html = HE->httpErrMsg;
-					}
-					payload.statusCode = HE->statusCode;
+				if (conf->htmlAllException) {
+					payload.html = "<pre>\n" + msg + "\n</pre>";
 				} else {
 					payload.html = randomError();
 				}
@@ -616,14 +617,14 @@ void Beast::listen() {
 		auto status = ThreadStatus::newStatus();
 
 		auto& t       = threads.emplace_back(new std::thread(
-                    [status, &IOC] {
-                            //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
-                            status->tid       = gettid();
-                            localThreadStatus = status.get();
-                            pthread_setname_np(pthread_self(), "HttpHandler");
-                            //and than launch to io handler
-                            IOC.run();
-                    }));
+		    [status, &IOC] {
+			    //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
+			    status->tid       = gettid();
+			    localThreadStatus = status.get();
+			    pthread_setname_np(pthread_self(), "HttpHandler");
+			    //and than launch to io handler
+			    IOC.run();
+		    }));
 		status->state = ThreadState::Idle;
 		status->info  = "just created";
 

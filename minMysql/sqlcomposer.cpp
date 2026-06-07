@@ -211,3 +211,5 @@ SScol::SScol(const std::string& key_) {
 	key = key_;
 	setVal(key_);
 }
+
+SScol::SScol(const char* key_) : SScol(std::string(key_)) {}

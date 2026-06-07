@@ -78,6 +78,10 @@ void PMFCGI::decodePost() {
 }
 
 void PMFCGI::extractCookies() {
+	//do not reswap
+	if (cookies.has_value()) {
+		return;
+	}
 	cookies = bHeaders();
 	if (auto v = headers.get("cookie"); v) {
 		for (auto& ck : v.val->split(';')) {
@@ -178,7 +182,7 @@ void Payload::redirect(const StringAdt& location) {
 	statusCode = 302;
 }
 
-void Payload::setCookie(const std::string_view& key, const StringAdt& value, u32 cookieTTL, bool sameSite, bool secure) {
+void Payload::setCookie(const StringAdt& key, const StringAdt& value, u32 cookieTTL, bool sameSite, bool secure) {
 	headers.setCookie(key, value, cookieTTL, sameSite, secure);
 }
 

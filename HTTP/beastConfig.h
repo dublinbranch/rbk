@@ -32,7 +32,7 @@ class BeastConf {
 	mapV2<std::string, std::string>      defaultHeader;
 
 	//if SET in case a path IS NOT MAPPED it will be searched on DISK inside this PROGRAM RELATIVE folder
-	std::filesystem::path staticFile;
+	std::optional<std::filesystem::path> staticFile;
 	//This will set the expire tag, like in NGINX if you do location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ { expires XX;
 	uint staticFileCacheTTL = 0;
 
@@ -70,9 +70,9 @@ class BeastConf {
 	 * @brief those list are simple pattern matching NOT REGEX
 	 * white is processed first, than black can override and block
 	 */
-	std::vector<std::string> logWhitelist;
-	std::vector<std::string> logBlacklist;
-	void                     setBasePath(const std::string& newBasePath);
+	std::optional<std::vector<std::string>> logWhitelist;
+	std::optional<std::vector<std::string>> logBlacklist;
+	void                                    setBasePath(const std::string& newBasePath);
 
 	/**
 	 * @brief basePath is used to set the default path from where to read content, sometimes, in certain case we listen on multiple ip etc

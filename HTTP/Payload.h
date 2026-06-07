@@ -37,7 +37,7 @@ class Headers : public std::multimap<std::string, std::string> {
 	               uint             ttl,
 	               bool             sameSite = false,
 	               bool             secure   = true);
-	void deleteCookie(std::string_view name);
+	void deleteCookie(const StringAdt& name);
 };
 
 class PMFCGI;
@@ -56,7 +56,7 @@ class Payload {
 
 	//some quality of life functions
 	void redirect(const StringAdt& location);
-	void setCookie(const std::string_view& key, const StringAdt& value, u32 cookieTTL, bool sameSite = true, bool secure = true);
+	void setCookie(const StringAdt& key, const StringAdt& value, u32 cookieTTL, bool sameSite = true, bool secure = true);
 };
 
 #endif // PAYLOAD_H

@@ -4,6 +4,17 @@
 #include <boost/json.hpp>
 #include <fmt/format.h>
 
+namespace {
+
+std::string jsonPointerChild(std::string_view base, std::string_view key) {
+	if (base.empty()) {
+		return fmt::format("/{}", key);
+	}
+	return fmt::format("{}/{}", base, key);
+}
+
+} // namespace
+
 void mergeJson(bj::object& target, const bj::object& mixMe, bool overwrite) {
 	for (auto const& item : mixMe) {
 		auto const& key   = item.key();
@@ -29,6 +40,18 @@ void mergeJson(bj::object& target, const bj::object& mixMe, bool overwrite) {
 	}
 }
 
+std::vector<std::string> extraJsonKeyPaths(const bj::object& original, const bj::object& expected,
+                                           std::string_view basePath) {
+	std::vector<std::string> out;
+	out.reserve(original.size());
+	for (const auto& item : original) {
+		if (!expected.contains(item.key())) {
+			out.push_back(jsonPointerChild(basePath, item.key()));
+		}
+	}
+	return out;
+}
+
 boost::json::object subtractJson(const boost::json::object& first, const boost::json::object& second, std::string path) {
 	boost::json::object result;
 
@@ -44,38 +67,32 @@ boost::json::object subtractJson(const boost::json::object& first, const boost::
 			// If both values are objects, recursively subtract
 			if (value.is_object() && second_value.is_object()) {
 				std::string newPath = fmt::format("{}/{}", path, std::string_view(key));
-				result[key]         = subtractJson(value.as_object(), second_value.as_object(), newPath);
+				auto        nested  = subtractJson(value.as_object(), second_value.as_object(), newPath);
+				if (!nested.empty()) {
+					result[key] = std::move(nested);
+				}
 			}
 			// If both values are arrays, subtract elements
 			else if (value.is_array() && second_value.is_array()) {
-				boost::json::array diff_array;
-				const auto&        first_array  = value.as_array();
-				const auto&        second_array = second_value.as_array();
+				bj::array diff_array;
+				const auto& first_array  = value.as_array();
+				const auto& second_array = second_value.as_array();
 
 				for (const auto& elem : first_array) {
 					if (std::find(second_array.begin(), second_array.end(), elem) == second_array.end()) {
 						diff_array.push_back(elem);
 					}
 				}
-				result[key] = diff_array;
-			}
-			// For other types, remove if TYPE matches
-			else if (value.kind() == second_value.kind()) {
-
-			} else {
-				// For integer types, check if they are convertible, because if the value is 0 in the config, is considered an int64, even if the original type was uint64
-
-				if (second_value.kind() == boost::json::kind::uint64) {
-					std::error_code ec;
-					value.to_number<uint64_t>(ec);
-					if (!ec) {
-						continue;
-					}
+				if (!diff_array.empty()) {
+					result[key] = std::move(diff_array);
 				}
-				throw std::runtime_error(
-				    fmt::format("Types do not match for key: {} in path {}\nFound {} expected {}\nValues are: {} and: {}",
-				                std::string_view(key), path, asSWString(value.kind()), asSWString(second_value.kind()),
-				                pretty_print(value), pretty_print(second_value)));
+			}
+			// Same kind in both: not treated as extra/different for this diff.
+			else if (value.kind() == second_value.kind()) {
+			}
+			// Different kinds (e.g. string in JSON vs null from optional default): report original.
+			else {
+				result[key] = value;
 			}
 		} else {
 			// If the key is not in the second object, keep it in the result

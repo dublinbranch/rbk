@@ -8,10 +8,15 @@ add_library(rbk_boostjson_test_objs OBJECT
     boostjson_extra.cpp
     boostjson_pointer.cpp
     boostjson_intrusive.cpp
+    ../intrusiveTest/wm_config_types.cpp
+    ../intrusiveTest/intrusive_wm_config_test.cpp
 )
 
 set_target_properties(rbk_boostjson_test_objs PROPERTIES CXX_EXTENSIONS ON)
 target_compile_features(rbk_boostjson_test_objs PRIVATE cxx_std_26)
+target_include_directories(rbk_boostjson_test_objs PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../intrusiveTest"
+)
 target_link_libraries(rbk_boostjson_test_objs
     PRIVATE
         rbk::rbk
