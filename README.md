@@ -110,6 +110,51 @@ cmake -B build -S .
 cmake --build build
 ```
 
+### Installed library mode (skip recompiling RBK on clean rebuilds)
+
+Build and install RBK once per **build type** and **feature set** (`RBK_WITH_*`). Use separate install prefixes so debug and optimized builds coexist:
+
+```bash
+# Debug (-O0 -g) → /opt/rbk/debug
+cmake --preset debug
+cmake --build build-debug
+sudo cmake --install build-debug --prefix /opt/rbk/debug
+
+# Optimized with symbols (-O2 -g) → /opt/rbk/relwithdebinfo
+cmake --preset relwithdebinfo
+cmake --build build-relwithdebinfo
+sudo cmake --install build-relwithdebinfo --prefix /opt/rbk/relwithdebinfo
+```
+
+On 64-bit Linux the library is installed as `lib64/librbk.a` (openSUSE/FHS). `rbk_link.pri` checks both `lib64/` and `lib/`.
+
+Add the same `-DRBK_WITH_*=ON` flags to both configures if you use optional modules.
+
+**CMake consumer** — match your app's `CMAKE_BUILD_TYPE` to the installed prefix:
+
+```cmake
+list(APPEND CMAKE_PREFIX_PATH "/opt/rbk/debug")          # or /opt/rbk/relwithdebinfo
+find_package(rbk CONFIG REQUIRED)
+target_link_libraries(myapp PRIVATE rbk::rbk)
+```
+
+**qmake consumer** — in `config.pri`, pick the prefix that matches `CONFIG(debug)`:
+
+```qmake
+debug { RBK_LIB_PREFIX = /opt/rbk/debug }
+else  { RBK_LIB_PREFIX = /opt/rbk/relwithdebinfo }
+include(rbk/rbk_link.pri)
+```
+
+Or link straight from the build tree (no install):
+
+```qmake
+RBK_LIB_DIR = $$PWD/rbk/build-debug   # or build-relwithdebinfo
+include(rbk/rbk_link.pri)
+```
+
+Keep `add_subdirectory(rbk)` / `include(rbk/rbk.pri)` when you are actively editing RBK alongside the app.
+
 ### qmake (legacy)
 
 Create a `config.pri` from the template:
@@ -132,6 +177,8 @@ rbk/
   CMakeLists.txt       # CMake build (recommended)
   CMakePresets.json    # default preset → binary dir ./build
   rbk.pri              # qmake build (legacy, kept for compat)
+  rbk_link.pri         # qmake: link prebuilt librbk.a
+  cmake/rbkConfig.cmake.in
   configTemplate.pri   # Template for local config.pri (qmake)
   BoostJson/           # Boost.JSON extensions
   BoostMysql/          # Optional Boost.MySQL

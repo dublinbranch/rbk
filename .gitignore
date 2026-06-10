@@ -1,6 +1,9 @@
 config.pri
 gitTrick/submoduleInfo
 build/
+build-debug/
+build-relwithdebinfo/
+.install/
 CMakeUserPresets.json
 
 # CMake — use a single out-of-tree dir (e.g. `cmake -B build` from the rbk root) for lib + tests.

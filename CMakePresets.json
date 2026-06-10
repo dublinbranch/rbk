@@ -9,9 +9,29 @@
     {
       "name": "default",
       "displayName": "build/",
-      "description": "Out-of-source build directory (preferred for rbk standalone configure)",
+      "description": "Out-of-source build (CMAKE_BUILD_TYPE unset — set explicitly for install)",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
+        "RBK_QT_PREFIX": "/opt/Qt/6.8.3/gcc_64"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "build-debug/",
+      "description": "Debug build (-O0 -g). Install: cmake --install build-debug --prefix /opt/rbk/debug",
+      "binaryDir": "${sourceDir}/build-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "RBK_QT_PREFIX": "/opt/Qt/6.8.3/gcc_64"
+      }
+    },
+    {
+      "name": "relwithdebinfo",
+      "displayName": "build-relwithdebinfo/",
+      "description": "Optimized with symbols (-O2 -g). Install: cmake --install build-relwithdebinfo --prefix /opt/rbk/relwithdebinfo",
+      "binaryDir": "${sourceDir}/build-relwithdebinfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "RBK_QT_PREFIX": "/opt/Qt/6.8.3/gcc_64"
       }
     }
@@ -20,6 +40,16 @@
     {
       "name": "default",
       "configurePreset": "default",
+      "jobs": 0
+    },
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "jobs": 0
+    },
+    {
+      "name": "relwithdebinfo",
+      "configurePreset": "relwithdebinfo",
       "jobs": 0
     }
   ]

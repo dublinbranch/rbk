@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 4.2)
-project(rbk LANGUAGES CXX)
+project(rbk VERSION 1.0.0 LANGUAGES CXX)
+
+include(GNUInstallDirs)
 
 # Out-of-source builds only. Standalone workflow uses build/ next to this repo (CMakePresets.json default).
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
@@ -581,6 +583,7 @@ target_include_directories(rbk
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include;$<INSTALL_PREFIX>/include/rbk>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson
         ${CMAKE_CURRENT_SOURCE_DIR}/mustache
@@ -686,12 +689,14 @@ if(RBK_WITH_ZIPPER)
 endif()
 
 if(RBK_WITH_MAXMIND)
-    target_link_libraries(rbk PUBLIC
-        PkgConfig::MAXMINDDB
-        ${CMAKE_CURRENT_SOURCE_DIR}/GeoLite2PP/libgeolite2++.a
+    add_library(rbk_geolite2pp STATIC IMPORTED GLOBAL)
+    set_target_properties(rbk_geolite2pp PROPERTIES
+        IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/GeoLite2PP/libgeolite2++.a"
     )
+    target_link_libraries(rbk PUBLIC PkgConfig::MAXMINDDB rbk_geolite2pp)
     target_include_directories(rbk PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/GeoLite2PP>
+        $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include/rbk/GeoLite2PP>
     )
 endif()
 
@@ -715,3 +720,98 @@ if(RBK_BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
 endif()
+
+# ── Install & package config (prebuilt library mode) ─────────────────────────
+include(CMakePackageConfigHelpers)
+
+set(_rbk_cfg_deps "")
+if(RBK_WITH_QT_NETWORK)
+    string(APPEND _rbk_cfg_deps "find_dependency(Qt6 REQUIRED COMPONENTS Network)\n")
+endif()
+if(RBK_WITH_SODIUM)
+    string(APPEND _rbk_cfg_deps "pkg_check_modules(SODIUM REQUIRED IMPORTED_TARGET libsodium)\n")
+endif()
+if(RBK_WITH_SSL)
+    string(APPEND _rbk_cfg_deps "find_dependency(OpenSSL REQUIRED)\n")
+endif()
+if(RBK_WITH_MINCURL)
+    string(APPEND _rbk_cfg_deps "find_dependency(CURL REQUIRED)\n")
+endif()
+if(RBK_WITH_MAXMIND)
+    string(APPEND _rbk_cfg_deps "pkg_check_modules(MAXMINDDB REQUIRED IMPORTED_TARGET libmaxminddb)\n")
+endif()
+if(RBK_WITH_ZIPPER)
+    string(APPEND _rbk_cfg_deps "pkg_check_modules(LIBZIP REQUIRED IMPORTED_TARGET libzip)\n")
+endif()
+if(RBK_WITH_JEMALLOC)
+    string(APPEND _rbk_cfg_deps "pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET jemalloc)\n")
+endif()
+if(RBK_WITH_REPROC)
+    string(APPEND _rbk_cfg_deps "find_dependency(reproc++ REQUIRED)\n")
+endif()
+if(UNIX AND NOT APPLE)
+    string(APPEND _rbk_cfg_deps "find_library(RBK_DW_LIBRARY dw REQUIRED)\n")
+    string(APPEND _rbk_cfg_deps "find_library(RBK_DL_LIBRARY dl REQUIRED)\n")
+endif()
+
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/rbkConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/rbkConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/rbk
+)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/rbkConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(
+    TARGETS rbk
+    EXPORT rbkTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+if(RBK_WITH_MAXMIND)
+    install(
+        FILES GeoLite2PP/libgeolite2++.a
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+endif()
+
+# Headers: explicit glob (avoid install(DIRECTORY) pulling in build/.install trees)
+file(GLOB_RECURSE _rbk_install_hdrs
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
+)
+foreach(_hdr IN LISTS _rbk_install_hdrs)
+    if(_hdr MATCHES "^\\.git/" OR _hdr MATCHES "^build" OR _hdr MATCHES "^\\.install/"
+        OR _hdr MATCHES "/test/" OR _hdr MATCHES "^test/" OR _hdr MATCHES "/intrusiveTest/"
+        OR _hdr MATCHES "^\\.cursor/" OR _hdr MATCHES "^\\.vscode/")
+        continue()
+    endif()
+    get_filename_component(_hdr_dir "${_hdr}" DIRECTORY)
+    if(_hdr_dir STREQUAL "." OR _hdr_dir STREQUAL "")
+        install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/${_hdr}"
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rbk)
+    else()
+        install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/${_hdr}"
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rbk/${_hdr_dir})
+    endif()
+endforeach()
+
+install(
+    EXPORT rbkTargets
+    FILE rbkTargets.cmake
+    NAMESPACE rbk::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/rbk
+)
+
+install(
+    FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/rbkConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/rbkConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/rbk
+)
