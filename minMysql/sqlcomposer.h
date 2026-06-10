@@ -1,10 +1,8 @@
 #pragma once
 
 #include "rbk/fmtExtra/includeMe.h"
-#include "rbk/mapExtensor/vectorV2.h"
 #include "rbk/misc/intTypes.h"
 #include "rbk/number/sanitize.h"
-#include "rbk/string/util.h"
 #include <memory>
 
 class SScol {
@@ -86,7 +84,7 @@ class SScol {
 class DB;
 //is a vector to keep the order of the pushed stuff intact
 class SqlComposer : public std::vector<SScol> {
-	  private:
+      private:
 	struct PrivateTag {};
 
 	u64         longestKey = 0;
@@ -94,7 +92,7 @@ class SqlComposer : public std::vector<SScol> {
 	DB*         db         = nullptr;
 	std::string table;
 
-	  public:
+      public:
 	//for some reason it can not actually be private so we pass this tag
 	explicit SqlComposer(PrivateTag) {};
 	explicit SqlComposer(DB* db_, const std::string& separator_ = ",");
@@ -114,6 +112,14 @@ class SqlComposer : public std::vector<SScol> {
 	template <typename K, typename V>
 	SqlComposer& push(const K& key_, const V& val_, bool replaceIf = false) {
 		push(SScol{key_, val_}, replaceIf);
+		return *this;
+	}
+
+	template <typename K, typename V>
+	SqlComposer& pushNoEscape(const K& key_, const V& val_, bool replaceIf = false) {
+		SScol col{key_, val_};
+		col.val.noEscape = true;
+		push(col, replaceIf);
 		return *this;
 	}
 
