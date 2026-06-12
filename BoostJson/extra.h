@@ -207,6 +207,8 @@ void rq(const boost::json::value& v, T& target) {
 			target = F("{}", v.as_int64());
 		} else if (v.is_uint64()) {
 			target = F("{}", v.as_uint64());
+		} else if (v.is_null()) {
+			target = {};
 		} else {
 			throw ExceptionV2(F("type {} not handled", asSWString(v.kind())));
 		}
