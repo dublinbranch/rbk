@@ -342,6 +342,14 @@ StringResponse handle_request(
 
 // Report a failure
 void fail(beast::error_code ec, char const* what) {
+	if (ec == beast::error::timeout ||
+	    ec == net::error::operation_aborted ||
+	    ec == net::error::eof ||
+	    ec == net::error::connection_reset ||
+	    ec == net::error::connection_aborted ||
+	    ec == net::error::broken_pipe) {
+		return;
+	}
 	std::cerr << what << ": " << ec.message() << "\n";
 }
 
