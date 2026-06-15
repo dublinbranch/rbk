@@ -27,12 +27,13 @@ class ElapsedTimerV2 {
 	void start();
 	i64  pause();
 
-	i64 nsecsElapsed() const;
+	i64           nsecsElapsed() const;
+	QElapsedTimer timer;
 
       private:
-	bool          paused = true;
-	QElapsedTimer timer;
-	i64           total = 0;
+	bool paused = true;
+
+	i64 total = 0;
 };
 
 class ThreadStatus {

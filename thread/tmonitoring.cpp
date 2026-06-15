@@ -135,7 +135,9 @@ void requestBeging() {
 
 void requestEnd() {
 	localThreadStatus->state = ThreadState::Idle;
-	localThreadStatus->time.timer.pause();
+	if (localThreadStatus->time.timer.timer.isValid()) {
+		localThreadStatus->time.timer.pause();
+	}
 
 	m1.timing.syncFromDk_S7Db();
 	m5.timing.syncFromDk_S7Db();
@@ -144,7 +146,9 @@ void requestEnd() {
 	threadStatus.free++;
 }
 i64 registerFlushTime() {
-	localThreadStatus->time.flush = localThreadStatus->time.timer.nsecsElapsed();
+	if (localThreadStatus->time.timer.timer.isValid()) {
+		localThreadStatus->time.flush = localThreadStatus->time.timer.nsecsElapsed();
+	}
 	return localThreadStatus->time.flush;
 }
 
