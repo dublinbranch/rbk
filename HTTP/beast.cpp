@@ -24,6 +24,8 @@
 #include <boost/beast/http.hpp>
 #pragma GCC diagnostic pop
 
+#include <boost/beast/websocket.hpp>
+
 #include <QCommandLineParser>
 #include <QDebug>
 #include <fmt/color.h>
@@ -53,9 +55,10 @@
 extern ThreadStatus                       threadStatus;
 extern thread_local ThreadStatus::Status* localThreadStatus;
 
-namespace beast = boost::beast;         // from <boost/beast.hpp>
-namespace http  = beast::http;          // from <boost/beast/http.hpp>
-namespace net   = boost::asio;          // from <boost/asio.hpp>
+namespace beast     = boost::beast;         // from <boost/beast.hpp>
+namespace http      = beast::http;          // from <boost/beast/http.hpp>
+namespace websocket = beast::websocket;     // from <boost/beast/websocket.hpp>
+namespace net       = boost::asio;          // from <boost/asio.hpp>
 using tcp       = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
 using namespace std;
 using StringResponse = http::response<http::string_body>;
@@ -418,6 +421,16 @@ class http_session : public std::enable_shared_from_this<http_session> {
 
 			requestVersion   = parser_->get().version();
 			requestKeepAlive = parser_->get().keep_alive();
+
+			if (websocket::is_upgrade(parser_->get())) {
+				if (conf && conf->websocketUpgrade) {
+					auto req = parser_->release();
+					auto sock = stream_.release_socket();
+					conf->websocketUpgrade(std::move(sock), std::move(req));
+					requestEnd();
+					return;
+				}
+			}
 
 			auto response = handle_request(stream_, parser_->release(), conf);
 			queue_write(std::move(response));

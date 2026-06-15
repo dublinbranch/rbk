@@ -2,7 +2,10 @@
 #define HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_HTTP_BEASTCONFIG_H
 
 #include "rbk/mapExtensor/mapV2.h"
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/beast/http.hpp>
 #include <filesystem>
+#include <functional>
 class RequestBase;
 
 class PMFCGI;
@@ -26,6 +29,12 @@ class BeastConf {
 	std::function<std::string(const PMFCGI* status)> basePathFunctor;
 
 	using SimpleRoutedType = void (*)(PMFCGI& status, Payload& payload);
+
+	using WebSocketUpgradeFn = std::function<bool(
+	    boost::asio::ip::tcp::socket&& socket,
+	    boost::beast::http::request<boost::beast::http::string_body>&& req)>;
+
+	WebSocketUpgradeFn websocketUpgrade;
 
 	mapV2<std::string, SimpleRoutedType> routingSimple;
 	mapV2<std::string, RequestBase*>     routing;
