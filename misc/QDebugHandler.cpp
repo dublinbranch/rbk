@@ -8,6 +8,7 @@
 #include <QDateTime>
 #include <QFile>
 #include <QLoggingCategory>
+#include <cstdio>
 #include <iostream>
 #include <sys/stat.h>
 #include <thread>
@@ -140,6 +141,8 @@ void commonInitialization(const NanoSpammerConfig* _config) {
 	QLoggingCategory::setFilterRules("*.debug=true");
 
 	qInstallMessageHandler(generalMsgHandler);
+	setlinebuf(stdout);
+	setlinebuf(stderr);
 
 	config = _config;
 
@@ -293,6 +296,9 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 	}
 
 	fmt::print(stream, "{}", msgFinal);
+	if (stream) {
+		fflush(stream);
+	}
 }
 
 //QDebug send in stderr, but we want to use stdout

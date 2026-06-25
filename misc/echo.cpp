@@ -2,9 +2,11 @@
 #include "fmt/format.h"
 #include "rbk/fmtExtra/customformatter.h"
 #include <QDebug>
+#include <cstdio>
 
 void echo(const StringAdt& s) {
 	fmt::print("{}\n", s);
+	fflush(stdout);
 }
 
 void warn(const std::string& msg) {

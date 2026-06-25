@@ -4450,6 +4450,7 @@ class SignalHandling {
 		Printer printer;
 		printer.address = true;
 		printer.print(st, stderr);
+		fflush(stderr);
 
 #if (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 700) || \
 	(defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200809L)
