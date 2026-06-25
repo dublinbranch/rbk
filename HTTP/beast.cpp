@@ -624,9 +624,6 @@ void Beast::listen() {
 		    // `io_context` and all of the sockets in it.
 		    fmt::print("Stopping\n");
 		    IOC.stop();
-		    //remove the handler ?, else the next ctrl c will not terminate the program ?
-		    signals2block.remove(SIGINT);
-		    exit(0);
 	    });
 
 	fmt::print("Ready listening on http://{}:{}\n", conf.address, conf.port);
