@@ -5,7 +5,9 @@
 #include <QDebug>
 #include <QString>
 #include <boost/algorithm/string.hpp>
+#include <algorithm>
 #include <mutex>
+#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -199,8 +201,42 @@ void __attribute__((__noreturn__)) __cxa_throw(
 
 #endif
 
-//This is to handle signals, nothing to do with the exception
-backward::SignalHandling sh;
+// Backward handles fatal signals. SIGSEGV is left to libasan when ASan is active;
+// otherwise backward keeps SIGSEGV so you still get a stack trace without ASan.
+namespace {
+
+bool asanHandlesSegv() {
+/**
+ * We also have the compile time flag in case the macro defined(__SANITIZE_ADDRESS__) is not working or other weird edge case
+Just add this  in the pri or cmake file
+
+	DEFINES += WITH_ASAN
+
+ * 
+ */
+
+
+#if defined(WITH_ASAN) || defined(__SANITIZE_ADDRESS__)
+	return true;
+#elif defined(_WIN32)
+	return false;
+#else
+	void* sym = dlsym(RTLD_DEFAULT, "__asan_init");
+	return sym != nullptr;
+#endif
+}
+
+std::vector<int> backwardFatalSignals() {
+	auto sigs = backward::SignalHandling::make_default_signals();
+	if (asanHandlesSegv()) {
+		sigs.erase(std::remove(sigs.begin(), sigs.end(), SIGSEGV), sigs.end());
+	}
+	return sigs;
+}
+
+} // namespace
+
+backward::SignalHandling sh(backwardFatalSignals());
 
 QString QStacker16Light(uint skip, QStackerOpt opt) {
 	return QStacker16(skip, opt);
