@@ -260,12 +260,14 @@ defined(WITH_BOOST_BEAST,var) {
 #HTTP part that trigger boost beast stuff
 
 SOURCES += \
+    $$PWD/HTTP/authHandler.cpp \
     $$PWD/HTTP/beast.cpp \
     $$PWD/HTTP/beastConfig.cpp \
     $$PWD/HTTP/router.cpp \
     $$PWD/HTTP/select2.cpp
-	
+
 HEADERS += \
+    $$PWD/HTTP/authHandler.h \
     $$PWD/HTTP/beastConfig.h \
     $$PWD/HTTP/select2.h \
     $$PWD/HTTP/Payload.h \
