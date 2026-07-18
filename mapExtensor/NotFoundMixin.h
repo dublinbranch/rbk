@@ -2,7 +2,7 @@
 #define NOTFOUNDMIXIN_H
 
 #include "rbk/QStacker/exceptionv2.h"
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <functional>
 
 template <typename K>
