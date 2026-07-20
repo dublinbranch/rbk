@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rbk::Auth — generic session / login engine</title>
+<style>
+	:root {
+		--bg: #ffffff;
+		--fg: #1c2330;
+		--muted: #5b6472;
+		--accent: #0b6bcb;
+		--code-bg: #f4f6f9;
+		--code-border: #dde3ea;
+		--card-bg: #f9fafc;
+		--card-border: #e3e8ee;
+		--ok: #1a7f37;
+		--warn: #9a6700;
+	}
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--bg: #14181f;
+			--fg: #dfe4ea;
+			--muted: #97a1ad;
+			--accent: #5aa2e8;
+			--code-bg: #1d232c;
+			--code-border: #2c3542;
+			--card-bg: #191f28;
+			--card-border: #2c3542;
+			--ok: #4bc26b;
+			--warn: #d9a840;
+		}
+	}
+	* { box-sizing: border-box; }
+	body {
+		margin: 0 auto;
+		max-width: 60rem;
+		padding: 2rem 1.5rem 5rem;
+		background: var(--bg);
+		color: var(--fg);
+		font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	}
+	h1 { font-size: 1.9rem; margin: 0 0 .3rem; }
+	h1 code { font-size: 1.6rem; }
+	h2 { font-size: 1.35rem; margin: 2.5rem 0 .8rem; border-bottom: 1px solid var(--card-border); padding-bottom: .3rem; }
+	h3 { font-size: 1.05rem; margin: 1.6rem 0 .5rem; }
+	p.sub { color: var(--muted); margin-top: 0; }
+	a { color: var(--accent); }
+	code, pre {
+		font: 13.5px/1.55 ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+	}
+	code {
+		background: var(--code-bg);
+		border: 1px solid var(--code-border);
+		border-radius: 4px;
+		padding: .08em .35em;
+	}
+	pre {
+		background: var(--code-bg);
+		border: 1px solid var(--code-border);
+		border-radius: 8px;
+		padding: 1rem 1.2rem;
+		overflow-x: auto;
+	}
+	pre code { background: none; border: none; padding: 0; }
+	table {
+		border-collapse: collapse;
+		width: 100%;
+		margin: 1rem 0;
+		font-size: .92rem;
+	}
+	th, td {
+		text-align: left;
+		padding: .45rem .7rem;
+		border: 1px solid var(--card-border);
+		vertical-align: top;
+	}
+	th { background: var(--card-bg); }
+	td code { white-space: nowrap; }
+	.card {
+		background: var(--card-bg);
+		border: 1px solid var(--card-border);
+		border-radius: 8px;
+		padding: .9rem 1.2rem;
+		margin: 1rem 0;
+	}
+	.card.warn { border-left: 4px solid var(--warn); }
+	.card.ok   { border-left: 4px solid var(--ok); }
+	.flow {
+		white-space: pre;
+		overflow-x: auto;
+	}
+	.req { color: var(--warn); font-weight: 600; }
+	.opt { color: var(--muted); }
+	footer { margin-top: 4rem; color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<h1><code>rbk::Auth</code> — generic session / login engine</h1>
+<p class="sub">Cookie based session authentication for Boost.Beast servers built on rbk.
+Header: <code>rbk/HTTP/authHandler.h</code> · Requires <code>RBK_WITH_BOOST_BEAST</code> (CMake) or <code>WITH_BOOST_BEAST</code> (qmake).</p>
+
+<h2>Design in one paragraph</h2>
+<p>
+The engine owns the <em>mechanics</em>: whitelist matching, the session cookie lifecycle
+(read / set / delete, TTL, secure flag), the redirect-vs-JSON-401 split for API calls,
+rendering the login form and the <code>guard&lt;&gt;</code> privilege wrapper for the routing table.
+It owns <strong>no user class and stores no user pointer</strong>: every user-related operation
+goes through the callbacks you install in <code>rbk::Auth::Conf</code>. Your project keeps its own
+user type and stores the pointer wherever it likes (thread local, request context, …).
+That is what makes the engine reusable across projects with completely different user models.
+</p>
+
+<h2>Request flow</h2>
+<div class="card flow">request
+   │
+   ▼
+BeastConf::loginManager  ──►  rbk::Auth::loginManager
+   │
+   ├─ path in publicPaths / publicPrefixes? ──────────────► serve, no auth
+   │
+   ├─ session cookie present?
+   │      │
+   │      └─► resumeSession(status, sessionId)
+   │             ok        ──► continue
+   │             invalid   ──► delete cookie, redirect login?error=7  (or JSON 401 for api/)
+   │             notLogged ──► redirect login                          (or JSON 401 for api/)
+   │
+   ├─ no cookie: develLogin(status) returned true? ───────► continue (development auto login)
+   │
+   ├─ neither ────────────────────────────────────────────► redirect login (or JSON 401 for api/)
+   │
+   └─► postLogin(status, payload)   optional project checks (ACL, scoping, ...)
+          │
+          ▼
+       routing table  ──►  guard&lt;minLevel, handler&gt;
+                              ├─ !isLogged()        ──► 401 "login required"
+                              ├─ !hasLevel(minLevel) ──► 403 "insufficient privileges" (+ audit hook)
+                              └─ handler(status, payload)</div>
+
+<h2>Wiring, step by step</h2>
+
+<h3>1. Fill <code>rbk::Auth::conf()</code> at startup</h3>
+<p>Call this once, before the server starts. Complete real-world example in
+<code>digitalSpine/http/auth_handler.cpp</code> (<code>Auth::setup()</code>).</p>
+<pre><code>#include "rbk/HTTP/authHandler.h"
+
+void setupAuth() {
+	using namespace rbk::Auth;
+	auto&amp; c = rbk::Auth::conf();
+
+	//paths served WITHOUT a logged in user (leading / already stripped)
+	c.publicPaths    = {{"login", true}, {"logout", true}, {"favicon.ico", true}};
+	c.publicPrefixes = {"js/", "css/", "img/"}; //static assets, device traffic, ...
+
+	c.cookieTTL     = 3600 * 24;          //seconds
+	c.cookieSecure  = true;               //Secure flag on the cookie
+	c.loginTemplate = "html/login.html"_p; //mustache, receives BASE_PATH + ERROR_MESSAGE
+	c.successPath   = "index";             //landing page after login
+
+	//---- the hooks: this is YOUR user model, the engine never sees it ----
+
+	c.resumeSession = [](PMFCGI&amp; status, const std::string&amp; sessionId) {
+		myCtx().user = MyUser::fromSession(sessionId);
+		if (!myCtx().user)             return SessionState::invalid;   //cookie gets deleted
+		if (!myCtx().user-&gt;isLogged()) return SessionState::notLogged; //back to the login page
+		return SessionState::ok;
+	};
+
+	c.login = [](PMFCGI&amp; status, const QString&amp; email, const QString&amp; password) -&gt; LoginOutcome {
+		switch (myCtx().user-&gt;login(email, password)) {
+		case Err::ok:              return {LoginResult::ok, myCtx().user-&gt;registerSession()};
+		case Err::invalidEmail:    return {LoginResult::invalidEmail, {}};
+		case Err::invalidPassword: return {LoginResult::invalidPassword, {}};
+		default:                   return {LoginResult::error, {}};
+		}
+	};
+
+	c.logout = [](PMFCGI&amp; status, const std::string&amp; sessionId) {
+		if (auto user = MyUser::fromSession(sessionId); user) user-&gt;logout();
+	};
+
+	c.isLogged = [] { return myCtx().user &amp;&amp; myCtx().user-&gt;isLogged(); };
+	c.hasLevel = [](int minLevel) { return myCtx().user-&gt;level &gt;= minLevel; };
+}</code></pre>
+
+<h3>2. Register the engine in the beast config</h3>
+<pre><code>setupAuth();
+beast.conf.loginManager = rbk::Auth::loginManager;
+
+auto&amp; r = beast.conf.routingSimple;
+r.insert({"login",  rbk::Auth::loginPage});
+r.insert({"logout", rbk::Auth::logout});</code></pre>
+
+<h3>3. Guard the routed handlers</h3>
+<p><code>guard</code> takes the minimum level as an <code>int</code> so any project enum works;
+the comparison itself is your <code>hasLevel</code> callback. <code>routingSimple</code> stores
+plain function pointers, hence a template and not a lambda.</p>
+<pre><code>r.insert({"index",           rbk::Auth::guard&lt;MyUser::basic, indexPage&gt;});
+r.insert({"api/admin/nuke",  rbk::Auth::guard&lt;MyUser::admin, nukeApi&gt;});</code></pre>
+<p>Tip: a project-local alias keeps the routing table readable with your own enum type
+(see <code>Auth::guard</code> in digitalSpine):</p>
+<pre><code>template &lt;MyUser::Level minLevel, void (*handler)(PMFCGI&amp;, Payload&amp;)&gt;
+void guard(PMFCGI&amp; s, Payload&amp; p) {
+	rbk::Auth::guard&lt;static_cast&lt;int&gt;(minLevel), handler&gt;(s, p);
+}</code></pre>
+
+<h2><code>Conf</code> reference</h2>
+
+<h3>Settings</h3>
+<table>
+<tr><th>Field</th><th>Default</th><th>Meaning</th></tr>
+<tr><td><code>publicPaths</code></td><td>empty</td><td>Exact-match paths served without a logged in user. Compared against the url path with the leading <code>/</code> stripped.</td></tr>
+<tr><td><code>publicPrefixes</code></td><td>empty</td><td><code>startsWith</code> matches — static assets, device traffic. Websocket upgrades happen before the engine is even called, so they never need whitelisting.</td></tr>
+<tr><td><code>cookieName</code></td><td><code>"session"</code></td><td>Name of the session cookie.</td></tr>
+<tr><td><code>cookieTTL</code></td><td>1 day</td><td>Cookie lifetime in seconds.</td></tr>
+<tr><td><code>cookieSecure</code></td><td><code>true</code></td><td><code>Secure</code> flag — only turn off for plain-http development.</td></tr>
+<tr><td><code>loginTemplate</code></td><td>—</td><td>Mustache template of the login form. Receives <code>BASE_PATH</code> and, when present, <code>ERROR_MESSAGE</code>.</td></tr>
+<tr><td><code>successPath</code></td><td><code>"index"</code></td><td>Redirect target after a successful login, appended to the base path.</td></tr>
+<tr><td><code>isApiCall</code></td><td><code>startsWith("api/")</code></td><td>Paths for which a denied request gets a JSON 401 instead of a redirect to the login page.</td></tr>
+<tr><td><code>loginErrorMessage</code></td><td>built in</td><td>Override the <code>error=N</code> → message mapping of the login page (see below).</td></tr>
+</table>
+
+<h3>Hooks</h3>
+<table>
+<tr><th>Callback</th><th></th><th>Contract</th></tr>
+<tr><td><code>resumeSession</code></td><td class="req">required</td><td>Resolve the session cookie to a user <em>on your side</em> (and set IP / UA there if you track them). Return <code>ok</code>, <code>invalid</code> (unknown session — the engine deletes the cookie) or <code>notLogged</code> (session resolved but the user is not, or no longer, logged).</td></tr>
+<tr><td><code>login</code></td><td class="req">required</td><td>Check the credentials. On <code>LoginResult::ok</code> also register the session and return its id in <code>LoginOutcome::sessionId</code> — it becomes the cookie value.</td></tr>
+<tr><td><code>logout</code></td><td class="req">required</td><td>Invalidate the session server side. The engine deletes the cookie and redirects to the login page afterwards.</td></tr>
+<tr><td><code>isLogged</code></td><td class="req">required*</td><td>Used by <code>guard</code> / <code>denyRoute</code>. *Only required if you use <code>guard</code>; an unset <code>isLogged</code> makes every guarded route answer 401.</td></tr>
+<tr><td><code>hasLevel</code></td><td class="req">required*</td><td>Used by <code>guard</code>: does the current user reach <code>minLevel</code>? The int is whatever your project enum casts to.</td></tr>
+<tr><td><code>develLogin</code></td><td class="opt">optional</td><td>Auto login for development (e.g. credentials from the config file). Called only when no session cookie is present; return <code>true</code> if a user was logged in.</td></tr>
+<tr><td><code>postLogin</code></td><td class="opt">optional</td><td>Runs after a successful preflight — ACL, account scoping, tenant checks. Return <code>false</code> to short circuit the request; in that case <em>write the response yourself</em>.</td></tr>
+<tr><td><code>prepareAnonymous</code></td><td class="opt">optional</td><td>Called at the start of <code>loginPage</code>, typically to set up an anonymous user object so logging / audit works before authentication.</td></tr>
+<tr><td><code>auditBlockedRoute</code></td><td class="opt">optional</td><td>Called by <code>denyRoute</code> on a 403, before the JSON error is written.</td></tr>
+</table>
+
+<h2>Login page error codes</h2>
+<p>The engine redirects to <code>login?error=N</code> and the login form renders
+<code>ERROR_MESSAGE</code> accordingly. Defaults (override with <code>loginErrorMessage</code>):</p>
+<table>
+<tr><th><code>error=</code></th><th>When</th><th>Default message</th></tr>
+<tr><td>1</td><td><code>LoginResult::invalidEmail</code></td><td>Invalid email or username</td></tr>
+<tr><td>2</td><td><code>LoginResult::invalidPassword</code></td><td>Invalid password</td></tr>
+<tr><td>3</td><td><code>LoginResult::error</code> (anything else)</td><td>Login Error</td></tr>
+<tr><td>7</td><td>unknown / expired session cookie</td><td>Invalid session</td></tr>
+</table>
+
+<h2>Denying from inside a handler</h2>
+<p>When a check deeper than the routing-table level fails, short circuit with:</p>
+<pre><code>rbk::Auth::denyRoute(status, payload, 401); //not logged  → {"status":"error","message":"login required"}
+rbk::Auth::denyRoute(status, payload, 403); //no privilege → audit hook + "insufficient privileges"</code></pre>
+<p><code>rbk::Auth::writeJsonError(payload, code, msg)</code> is also exported for generic JSON errors.</p>
+
+<h2>Notes &amp; gotchas</h2>
+<div class="card warn">
+<ul>
+	<li><strong>Session id quality is on you.</strong> The cookie value is whatever <code>login</code> returns: use CSPRNG entropy (≥ 32 bytes, hex encoded), never <code>std::rand</code>.</li>
+	<li><strong>Call <code>conf()</code> filling before <code>listen()</code>.</strong> The engine reads the singleton on every request but installing callbacks is not thread safe — it is startup configuration, not runtime state.</li>
+	<li><strong><code>postLogin</code> returning <code>false</code> must write the response</strong> — the engine writes nothing in that case.</li>
+	<li>The exception path of <code>develLogin</code> is yours too: throwing <code>HttpException</code> for a misconfigured devel user is fine and gives a clear error page.</li>
+	<li>Websocket upgrades bypass <code>loginManager</code> entirely (they are upgraded before it runs) — authenticate them separately if needed.</li>
+</ul>
+</div>
+
+<div class="card ok">
+<strong>Reference implementation:</strong> <code>digitalSpine/http/auth_handler.cpp</code> shows the full
+wiring against a real user class (<code>SpineUser</code>): APCU-backed sessions, a thread-local request
+context (<code>dk().user</code>), development auto login from the config file, per-account scoping in
+<code>postLogin</code> and an audit trail on blocked routes.
+</div>
+
+<footer>rbk · HTTP · authHandler — generated July 2026</footer>
+
+</body>
+</html>

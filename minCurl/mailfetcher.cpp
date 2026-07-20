@@ -9,6 +9,7 @@
 #include <QDir>
 #include <QProcess>
 #include <curl/curl.h>
+#include <unistd.h> //unlink
 
 void MailFetcher::logSearchQuery() {
 	if (!config.logExecution) {
