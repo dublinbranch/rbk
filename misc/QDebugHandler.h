@@ -5,6 +5,12 @@
 void initLocaleTZ();
 void commonInitialization(const NanoSpammerConfig* _config);
 
+/** True when rbk was built with RBK_WITH_MINCURL (defines useMinCurl). */
+bool hasCurlSupport();
+
+/** Fail early if warningToMail is on but curl was not compiled into rbk. */
+void requireCurlIfWarningMailEnabled(const NanoSpammerConfig& spamConf);
+
 //use like
 //qInstallMessageHandler(generalMsgHandler);
 

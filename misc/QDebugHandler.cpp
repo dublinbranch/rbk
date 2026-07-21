@@ -1,4 +1,5 @@
 #include "QDebugHandler.h"
+#include "rbk/QStacker/exceptionv2.h"
 #include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/gitTrick/buffer.h"
@@ -24,6 +25,22 @@ static bool initLocaleTZDone = false;
 
 #define QBL(str) QByteArrayLiteral(str)
 #define QSL(str) QStringLiteral(str)
+
+bool hasCurlSupport() {
+#ifdef useMinCurl
+	return true;
+#else
+	return false;
+#endif
+}
+
+void requireCurlIfWarningMailEnabled(const NanoSpammerConfig& spamConf) {
+	if (spamConf.warningToMail && !hasCurlSupport()) {
+		throw ExceptionV2(
+		    "warningToMail is enabled, but curl support is not compiled in "
+		    "(build rbk with RBK_WITH_MINCURL / useMinCurl)!");
+	}
+}
 
 QString getHeader1() {
 	// header 1
