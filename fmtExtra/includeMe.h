@@ -4,6 +4,6 @@
 #include "customformatter.h"
 #include "dynamic.h"
 #include "rbk/fmtExtra/fromEnum.h"
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #endif // HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_FMTEXTRA_INCLUDEME_H

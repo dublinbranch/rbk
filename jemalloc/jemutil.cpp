@@ -1,5 +1,5 @@
 #include "jemutil.h"
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <jemalloc/jemalloc.h>
 
 void JEMUtil::refreshStatsCache() {

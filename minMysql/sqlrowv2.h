@@ -8,7 +8,7 @@
 #include "rbk/string/comparator.h"
 #include "rbk/string/concept.h"
 #include <QVector>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <rbk/QStacker/exceptionv2.h>
 
 class DB;

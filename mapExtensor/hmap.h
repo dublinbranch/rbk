@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fmt/core.h"
+#include "fmt/format.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include <unordered_map>
 

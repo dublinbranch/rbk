@@ -1,7 +1,7 @@
 #include "isjsonasubset.h"
 #include "to_string.h"
 #include <boost/json.hpp>
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 void isJsonASubset(const boost::json::value& outer, const boost::json::value& subset, const std::string& basePath) {
 
