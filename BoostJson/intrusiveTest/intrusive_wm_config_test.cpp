@@ -16,7 +16,7 @@
 #include <boost/json/value_from.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 namespace bj = boost::json;
 

@@ -3,7 +3,6 @@
 #include "rbk/BoostJson/math.h"
 #include "rbk/QStacker/exceptionv2.h"
 #include "rbk/fmtExtra/includeMe.h"
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 

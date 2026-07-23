@@ -12,6 +12,7 @@
 
 #include <reproc++/drain.hpp>
 #include <reproc++/reproc.hpp>
+#include <unistd.h>
 
 using namespace std;
 
@@ -126,6 +127,10 @@ Log execute(const QStringAdt& args, const ExecuteOpt& opt) {
 }
 
 Log sudo(const QStringAdt& cmd, const ExecuteOpt& opt) {
+    if (geteuid() == 0){
+        return execute(cmd, opt);
+        
+}
 	return execute("sudo " + cmd, opt);
 }
 

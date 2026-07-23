@@ -8,7 +8,7 @@
 #include "rbk/defines/stringDefine.h"
 #include <QDateTime>
 #include <atomic>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <shared_mutex>
 
 using namespace std;

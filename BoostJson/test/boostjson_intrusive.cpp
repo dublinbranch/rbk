@@ -19,7 +19,7 @@ cmake --build --preset default --target rbk_tests
 #include <boost/json/value_from.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <fmt/ranges.h>
 
 #include <string>

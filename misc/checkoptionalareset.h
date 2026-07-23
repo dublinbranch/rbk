@@ -3,7 +3,7 @@
 
 #include <boost/describe.hpp>
 #include <boost/describe/class.hpp>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <optional>
 #include <stdexcept>
 #include <string>

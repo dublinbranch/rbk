@@ -1,7 +1,7 @@
 #pragma once
 
 #include "missingkeyex.h"
-#include "fmt/core.h"
+#include "fmt/format.h"
 #include "rbk/fmtExtra/customformatter.h"
 #include <QDate>
 #include <QMap>
