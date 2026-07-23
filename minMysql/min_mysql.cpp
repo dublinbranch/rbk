@@ -212,7 +212,7 @@ thread: {}, queryDone: {}, reconnection: {}, busyConn: {}, totConn: {}, queryTim
 
 				sqlLogger.error = err;
 
-				qWarning().noquote() << QString::fromStdString(err) << QStacker16();
+				qWarning().noquote() << QString::fromStdString(err);
 			}
 
 			closeConn();
@@ -231,12 +231,10 @@ Connection Info: {})",
 			               sql, mysql_error(conn), error, getConf().getInfo());
 
 			sqlLogger.error = err;
-			// this line is needed for proper email error reporting
+			// Single stack capture via DBException/ExceptionV2 (needed for email error reporting)
 			{
-				//many times this call is very nested, so we bump the default stack trace lenght
-				ResetOnExit r(stackerMaxFrame, (uint)25);
-				qWarning().noquote() << QString::fromStdString(err) << QStacker16();
 				auto exception = DBException(err, DBException::Error::NA);
+				qWarning().noquote() << QString::fromStdString(exception.what());
 				throw exception;
 			}
 		}

@@ -1,12 +1,12 @@
 #include "rbk/QStacker/qstacker.h"
 #include "backward.hpp"
 #include "rbk/QStacker/exceptionv2.h"
-#include "rbk/string/util.h"
 #include <QDebug>
 #include <QString>
-#include <boost/algorithm/string.hpp>
 #include <algorithm>
 #include <mutex>
+#include <sstream>
+#include <string_view>
 #include <vector>
 
 #ifdef _WIN32
@@ -15,6 +15,85 @@
 #include <dlfcn.h>
 #include <execinfo.h>
 #endif
+
+namespace {
+
+constexpr size_t kMaxPrintedName = 120;
+
+bool contains(std::string_view hay, std::string_view needle) {
+	return hay.find(needle) != std::string_view::npos;
+}
+
+bool pathIsDenied(std::string_view path) {
+	if (path.empty()) {
+		return false;
+	}
+	return contains(path, "/boost/") || contains(path, "/bits/") || contains(path, "x-tools") ||
+	       contains(path, "/sysroot/") || contains(path, "libc.so") || contains(path, "libstdc++") ||
+	       contains(path, "libgcc_s") || contains(path, "ld-linux") ||
+	       contains(path, "crosstool-ng") || contains(path, "/usr/include/c++/");
+}
+
+bool pathIsApp(std::string_view path) {
+	if (path.empty() || StackerMinLevel.empty()) {
+		return false;
+	}
+	if (pathIsDenied(path)) {
+		return false;
+	}
+	return contains(path, StackerMinLevel);
+}
+
+bool functionIsRun(std::string_view fn) {
+	return fn == "run" || fn.ends_with("::run");
+}
+
+bool isBeastRunNoise(const backward::ResolvedTrace& t) {
+	auto check = [](std::string_view file, std::string_view fn) {
+		return contains(file, "rbk/HTTP/beast.cpp") && functionIsRun(fn);
+	};
+	if (check(t.source.filename, t.source.function)) {
+		return true;
+	}
+	for (const auto& in : t.inliners) {
+		if (check(in.filename, in.function)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool isAppFrame(const backward::ResolvedTrace& t) {
+	if (pathIsApp(t.source.filename)) {
+		return true;
+	}
+	for (const auto& in : t.inliners) {
+		if (pathIsApp(in.filename)) {
+			return true;
+		}
+	}
+	// No usable source path: drop known libs; do not keep ambiguous frames when filtering.
+	if (t.source.filename.empty()) {
+		return false;
+	}
+	return false;
+}
+
+void capTraceNames(backward::ResolvedTrace& t) {
+	auto cap = [](std::string& s) {
+		if (s.size() > kMaxPrintedName) {
+			s.resize(kMaxPrintedName);
+			s += "...";
+		}
+	};
+	cap(t.object_function);
+	cap(t.source.function);
+	for (auto& in : t.inliners) {
+		cap(in.function);
+	}
+}
+
+} // namespace
 
 std::string stacker(uint skip, QStackerOpt opt) {
 	/** For loading from an arbitrary position
@@ -41,41 +120,61 @@ std::string stacker(uint skip, QStackerOpt opt) {
 	p.address = opt.address;
 
 	std::ostringstream stream;
-	p.print(st, stream);
-	std::string str = "\n" + stream.str();
 
-	//Remove all the stuff before our process (if set)
-	if (!StackerMinLevel.empty()) {
-		//After we move to Qt 6 we will use QByteArrayView which is just better
-
-		auto start = str.find(StackerMinLevel);
-		if (start == std::string::npos) {
-			return str;
-		}
-		//we now have to find the line
-		auto end = str.find('\n', start);
-		//start is 1 char after the previous \n
-		start = str.rfind('\n', start);
-
-		auto row = subView(str, start, end);
-		//to remove the asio noise
-		if (row.contains("rbk/HTTP/beast.cpp:") && row.contains("operator()")) {
-			start = str.find(StackerMinLevel, end);
-			if (start == std::string::npos) { //in case of expection INSIDE the asio / beast stack
-				if (opt.prependReturn) {
-					str = str.substr(start);
-				} else {
-					str = str.substr(start + 1);
-				}
-			}
-		}
-
-		start = str.rfind('\n', start);
+	// Without an allow-root, keep the historical full resolve+print behaviour.
+	if (StackerMinLevel.empty()) {
+		p.print(st, stream);
+		std::string str = stream.str();
 		if (opt.prependReturn) {
-			str = str.substr(start);
-		} else {
-			str = str.substr(start + 1);
+			str = "\n" + str;
 		}
+		return str;
+	}
+
+	// Resolve from the throw site outward; keep contiguous app frames only.
+	// Stop before Boost/Asio/stdlib so we do not pay libdw+demangle for the noise.
+	TraceResolver resolver;
+	resolver.load_stacktrace(st);
+
+	std::vector<ResolvedTrace> kept;
+	kept.reserve(st.size());
+
+	for (size_t i = 0; i < st.size(); ++i) {
+#ifndef _WIN32
+		// Cheap reject for frames in libc/libstdc++/etc. before libdw resolve.
+		Dl_info dli{};
+		if (dladdr(st[i].addr, &dli) && dli.dli_fname && pathIsDenied(dli.dli_fname)) {
+			if (!kept.empty()) {
+				break;
+			}
+			continue;
+		}
+#endif
+		ResolvedTrace t = resolver.resolve(st[i]);
+		capTraceNames(t);
+
+		if (isBeastRunNoise(t)) {
+			break;
+		}
+		if (isAppFrame(t)) {
+			t.idx = kept.size();
+			kept.push_back(std::move(t));
+		} else if (!kept.empty()) {
+			break;
+		}
+	}
+
+	if (kept.empty()) {
+		// Fallback: nothing matched the allow-root (e.g. stripped build) — print all.
+		p.print(st, stream);
+	} else {
+		// Printer iterator path does not reverse; emit oldest-first (most recent last).
+		p.print(kept.rbegin(), kept.rend(), stream, st.thread_id());
+	}
+
+	std::string str = stream.str();
+	if (opt.prependReturn) {
+		str = "\n" + str;
 	}
 	return str;
 }

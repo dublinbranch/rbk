@@ -672,6 +672,15 @@ struct demangler_impl<system_tag::current_tag> {
 
 	std::string demangle(const char* funcname) {
 		using namespace details;
+		if (!funcname) {
+			return {};
+		}
+		// Huge Boost/Asio template manglings are expensive and useless in logs.
+		static constexpr size_t kMaxMangled = 160;
+		const size_t            len         = std::strlen(funcname);
+		if (len > kMaxMangled) {
+			return std::string(funcname, funcname + 64) + "...";
+		}
 		char* result = abi::__cxa_demangle(funcname, _demangle_buffer.get(),
 										   &_demangle_buffer_length, nullptr);
 		if (result) {
