@@ -14,32 +14,45 @@ class mi_tls_repository {
       public:
 	/**
 	 * Per-thread storage for all mi_tls<T> instances on this thread.
-	 * alive is cleared at the start of ~Repo(); map is destroyed afterward, so
-	 * load/store/remove can treat !alive as "shutting down" and avoid touching map.
-	 * (If repo is fully destroyed before ~mi_tls, accessing repo is still UB in
-	 * theory; ~DB no longer calls closeConn() to avoid that shutdown path.)
+	 *
+	 * Shutdown ordering: glibc runs __call_tls_dtors() (which destroys repo) at the
+	 * top of exit(), BEFORE the atexit handlers that destroy objects with static
+	 * storage duration. So a global DB is destroyed after its thread's repo is gone,
+	 * and ~mi_tls must not touch the map at that point.
+	 *
+	 * The "is the repo still alive" flag therefore CANNOT be a member of Repo: a store
+	 * to a member from within that object's own destructor is a dead store (nobody may
+	 * legally read it afterwards) and the optimizer removes it — which it did, silently
+	 * disabling this guard and producing a use-after-free walk of the freed bucket list.
+	 * It lives in its own trivially destructible thread_local instead: no destructor is
+	 * ever registered for it, so it stays readable for the entire lifetime of the thread.
 	 */
 	struct Repo {
 		std::unordered_map<uintptr_t, T> map;
-		bool                             alive = true;
 		~Repo() {
-			alive = false;
+			alive() = false;
 		}
 	};
 
       private:
 	static thread_local Repo repo;
 
+	// Must stay trivially destructible - see the note on Repo.
+	static bool& alive() {
+		static thread_local bool flag = true;
+		return flag;
+	}
+
       protected:
 	void store(uintptr_t instance, T value) {
-		if (!repo.alive) {
+		if (!alive()) {
 			return;
 		}
 		repo.map[instance] = std::move(value);
 	}
 
 	T& load(uintptr_t instance) {
-		if (!repo.alive) {
+		if (!alive()) {
 			thread_local T sink{};
 			return sink;
 		}
@@ -47,7 +60,7 @@ class mi_tls_repository {
 	}
 
 	void remove(uintptr_t instance) {
-		if (!repo.alive) {
+		if (!alive()) {
 			return;
 		}
 		auto it = repo.map.find(instance);
