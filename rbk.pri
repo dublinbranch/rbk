@@ -302,7 +302,6 @@ defined(withMinCurl,var){
     HEADERS += \
         $$PWD/minCurl/curlpp.h \
         $$PWD/minCurl/errorlog.h \
-        $$PWD/minCurl/mailfetcher.h \
         $$PWD/minCurl/mincurl.h \
         $$PWD/minCurl/qstringtokenizer.h \
         #$$PWD/minCurl/urlgetcontent.h
@@ -310,9 +309,13 @@ defined(withMinCurl,var){
     SOURCES += \
         $$PWD/minCurl/curlpp.cpp \
         $$PWD/minCurl/errorlog.cpp \
-        $$PWD/minCurl/mailfetcher.cpp \
         $$PWD/minCurl/mincurl.cpp \
         #$$PWD/minCurl/urlgetcontent.cpp
+
+    defined(withMailFetcher,var){
+        HEADERS += $$PWD/minCurl/mailfetcher.h
+        SOURCES += $$PWD/minCurl/mailfetcher.cpp
+    }
 
 }
 

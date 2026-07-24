@@ -1,15 +1,18 @@
- SOURCES += \
+SOURCES += \
     $$PWD/errorlog.cpp \
-	$$PWD/mailfetcher.cpp \
     $$PWD/mincurl.cpp \
     $$PWD/curlpp.cpp \
-    $$PWD/urlgetcontent.cpp 
-    
+    $$PWD/urlgetcontent.cpp
+
 HEADERS += \
-	$$PWD/errorlog.h \
-	$$PWD/mailfetcher.h \
+    $$PWD/errorlog.h \
     $$PWD/mincurl.h \
     $$PWD/curlpp.h \
-    $$PWD/urlgetcontent.h 
+    $$PWD/urlgetcontent.h
+
+defined(withMailFetcher,var){
+    SOURCES += $$PWD/mailfetcher.cpp
+    HEADERS += $$PWD/mailfetcher.h
+}
 
 LIBS += -lcurl

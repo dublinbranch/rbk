@@ -66,6 +66,7 @@ All optional features are off by default. Enable with CMake flags or qmake varia
 | `RBK_WITH_ZIPPER` | `WITH_ZIPPER` | libzip | `zypper in libzip-devel` |
 | `RBK_WITH_MAXMIND` | `WithMaxMind` | MaxMind GeoIP | `zypper in libmaxminddb-devel` |
 | `RBK_WITH_MINCURL` | `withMinCurl` | libcurl wrapper | `zypper in libcurl-devel` |
+| `RBK_WITH_MAILFETCHER` | `withMailFetcher` | IMAP mail fetcher (requires minCurl) | |
 | `RBK_WITH_CLICKHOUSE` | `withClickHouse` | ClickHouse client | |
 | `RBK_WITH_QRCODE` | `withQrCode` | QR code generation | |
 | `RBK_WITH_APCU` | `withAPCU` | In-memory caching | |

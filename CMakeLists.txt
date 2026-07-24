@@ -27,6 +27,7 @@ option(RBK_WITH_REPROC       "reproc process launcher"                OFF)
 option(RBK_WITH_ZIPPER       "libzip"                                 OFF)
 option(RBK_WITH_MAXMIND      "MaxMind GeoIP"                         OFF)
 option(RBK_WITH_MINCURL      "libcurl wrapper"                        OFF)
+option(RBK_WITH_MAILFETCHER  "IMAP mail fetcher (requires RBK_WITH_MINCURL)" OFF)
 option(RBK_WITH_CLICKHOUSE   "ClickHouse client"                      OFF)
 option(RBK_WITH_QRCODE       "QR code generation"                     OFF)
 option(RBK_WITH_APCU         "APCu-style in-memory caching"           OFF)
@@ -42,6 +43,9 @@ endif()
 # ── Mutual exclusion ────────────────────────────────────────────────────────
 if(RBK_WITH_ASAN AND RBK_WITH_JEMALLOC)
     message(FATAL_ERROR "RBK_WITH_ASAN and RBK_WITH_JEMALLOC cannot be used together -- ASan replaces malloc")
+endif()
+if(RBK_WITH_MAILFETCHER AND NOT RBK_WITH_MINCURL)
+    message(FATAL_ERROR "RBK_WITH_MAILFETCHER requires RBK_WITH_MINCURL")
 endif()
 
 # ── Qt location ─────────────────────────────────────────────────────────────
@@ -497,16 +501,18 @@ if(RBK_WITH_MINCURL)
     list(APPEND RBK_SOURCES
         minCurl/curlpp.cpp
         minCurl/errorlog.cpp
-        minCurl/mailfetcher.cpp
         minCurl/mincurl.cpp
     )
     list(APPEND RBK_HEADERS
         minCurl/curlpp.h
         minCurl/errorlog.h
-        minCurl/mailfetcher.h
         minCurl/mincurl.h
         minCurl/qstringtokenizer.h
     )
+    if(RBK_WITH_MAILFETCHER)
+        list(APPEND RBK_SOURCES minCurl/mailfetcher.cpp)
+        list(APPEND RBK_HEADERS minCurl/mailfetcher.h)
+    endif()
 endif()
 
 # ── Optional: ClickHouse ────────────────────────────────────────────────────
