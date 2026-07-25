@@ -102,7 +102,7 @@ sqlResult DB::query(const StringAdt& sql) const {
 
 	auto logger = queryInner(sql);
 
-	if (noFetch) {
+	if (state->noFetch) {
 		return {};
 	}
 	return fetchResult(&logger);
@@ -141,7 +141,7 @@ SQLLogger DB::queryInner(const std::string& sql) const {
 		st.totServerTime += sqlLogger.serverTime;
 
 		//This is a no op, basically a swap from the internal struct
-		affectedRows = mysql_affected_rows(conn);
+		st.affectedRows = mysql_affected_rows(conn);
 	}
 
 	auto error           = mysql_errno(conn);
@@ -614,7 +614,7 @@ void DB::setConf(const DBConf& value) {
 }
 
 u64 DB::getAffectedRows() const {
-	return affectedRows;
+	return state->affectedRows;
 }
 
 DBConf::DBConf() {
@@ -869,9 +869,10 @@ bool DB::isSSL() const {
 
 void DB::startQuery(const StringAdt& sql) const {
 	int  err;
-	auto conn  = getConn();
-	signalMask = mysql_real_query_start(&err, conn, sql.c_str(), sql.length());
-	if (!signalMask) {
+	auto conn = getConn();
+	auto& st  = state.get();
+	st.signalMask = mysql_real_query_start(&err, conn, sql.c_str(), sql.length());
+	if (!st.signalMask) {
 		throw QSL("Error executing ASYNC query (start):") + mysql_error(conn);
 	}
 }
@@ -1114,7 +1115,7 @@ bool DB::completedQuery() const {
 	}
 	int err;
 
-	auto event = somethingHappened(conn, signalMask);
+	auto event = somethingHappened(conn, state->signalMask);
 	if (event) {
 		event = mysql_real_query_cont(&err, conn, event);
 		if (err) {
@@ -1379,7 +1380,7 @@ SqlResultV2 DB::queryV2(const StringAdt& sql) {
 
 	auto logger = queryInner(sql);
 
-	if (noFetch) {
+	if (state->noFetch) {
 		return {};
 	}
 

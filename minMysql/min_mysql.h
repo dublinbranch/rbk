@@ -179,8 +179,6 @@ class DB {
 	DB& operator=(const DB&) = delete;
 	DB(const DB&)            = delete;
 
-	// this will require query + fetchAdvanced
-	mutable mi_tls<bool> noFetch = false;
 	// JUST For the next query the WARNING spam will be suppressed, use if you understand what you are doing
 	// Reset itself in any case after 1 query
 	mutable mi_tls<bool> skipWarning = false;
@@ -219,6 +217,13 @@ class DB {
 
 		//does not automatically reset, hand with ResetOnExit
 		bool uniqueViolationNothrow = false;
+
+		// this will require query + fetchAdvanced
+		bool noFetch = false;
+
+		u64 affectedRows = 0;
+		// used for asyncs
+		int signalMask = 0;
 	};
 	mutable mi_tls<InternalState> state;
 
@@ -226,11 +231,11 @@ class DB {
 	bool   confSet = false;
 	DBConf conf;
 	// Mutable is needed for all of them
-	mutable mi_tls<u64> affectedRows;
 	// this allow to spam the DB handler around, and do not worry of thread, each thread will create it's own connection!
+	// Deliberately NOT folded into InternalState: mi_tls::operator T() hands out a copy of
+	// the whole struct, and a copied connection shared_ptr would keep a connection alive
+	// behind your back. The connection also owns the delicate shutdown ordering (see MITLS.h).
 	mutable mi_tls<StMysqlPtr> connPool;
-	// used for asyncs
-	mutable mi_tls<int> signalMask;
 	struct SharedState {
 		std::atomic<uint> busyConnection = 0;
 	};
