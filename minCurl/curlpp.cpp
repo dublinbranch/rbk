@@ -1,6 +1,7 @@
 #include "curlpp.h"
 #include "iostream"
 #include <QByteArray>
+#include <QDateTime>
 #include <QList>
 #include <cstring>
 #include <ctime>
@@ -126,6 +127,7 @@ void CURLpp::smtp_prepare_message() {
 	smtp_payload.append("To: <" + copia->smtp_to + "> \r\n");
 	smtp_payload.append("From:" + copia->sender_name + "<" + copia->smtp_from + "> \r\n");
 	//	smtp_payload.push_back("Cc:   \r\n");
+	smtp_payload.append("Date: " + QDateTime::currentDateTimeUtc().toString(Qt::RFC2822Date).toStdString() + "\r\n");
 	smtp_payload.append("Subject: " + copia->smtp_subject + "\r\n");
 	smtp_payload.append("MIME-Version: 1.0\r\n");
 	smtp_payload.append("Content-Type: text/html; charset=UTF-8\r\n");
