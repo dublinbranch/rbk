@@ -151,6 +151,7 @@ set(RBK_SOURCES
 
     # hash
     hash/crc.cpp
+    hash/passwordHash.cpp
     hash/salt.cpp
     hash/sha.cpp
     hash/string.cpp
@@ -226,6 +227,7 @@ set(RBK_SOURCES
     # rand
     rand/clampednormaldistribution.cpp
     rand/randutil.cpp
+    rand/secureRandom.cpp
 
     # rapidjson
     rapidjson/rapidAssert.cpp
@@ -297,6 +299,7 @@ set(RBK_HEADERS
 
     # hash
     hash/crc.h
+    hash/passwordHash.h
     hash/rapidhash.h
     hash/salt.h
     hash/sha.h
@@ -411,6 +414,7 @@ set(RBK_HEADERS
     # rand
     rand/clampednormaldistribution.h
     rand/randutil.h
+    rand/secureRandom.h
 
     # rapidjson
     rapidjson/includeMe.h

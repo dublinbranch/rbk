@@ -357,6 +357,8 @@ HEADERS += \
     $$PWD/fmtExtra/fromEnum.h \
     $$PWD/hash/salt.h \
     $$PWD/hash/sha.h \
+    $$PWD/hash/passwordHash.h \
+    $$PWD/rand/secureRandom.h \
     #$$PWD/isIterable.h \
     $$PWD/locale/codes.h \
     $$PWD/minMysql/mymaria.h \
@@ -424,6 +426,8 @@ SOURCES += \
     $$PWD/dateTime/util.cpp \
     $$PWD/hash/salt.cpp \
     $$PWD/hash/sha.cpp \
+    $$PWD/hash/passwordHash.cpp \
+    $$PWD/rand/secureRandom.cpp \
     $$PWD/locale/codes.cpp \
     $$PWD/minMysql/checkschema.cpp \
     $$PWD/minMysql/runnable.cpp \

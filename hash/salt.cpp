@@ -1,19 +1,19 @@
 #include "salt.h"
 #include "rbk/QStacker/exceptionv2.h"
-#include "rbk/misc/b64.h"
-#include "rbk/rand/randutil.h"
-#include "sha.h"
-#include <QDateTime>
+#include "rbk/rand/secureRandom.h"
+
+namespace {
+constexpr std::string_view kAlphaNum =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+constexpr std::string_view kPassword =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%&*(){}[]!|,.;:<>?/";
+}
 
 std::string salt(int lenght) {
-	std::string salt;
-	//LOOKS LIKE salt is NOT base64 or whatever, but MUST BE a this subset of chars
-	static const char* chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-	static const uint  le    = (uint)strlen(chars) - 1;
-	for (int i = 0; i < lenght; i++) {
-		salt += chars[rand(0, le)];
+	if (lenght <= 0) {
+		throw ExceptionV2("salt: length must be > 0");
 	}
-	return salt;
+	return randomString(static_cast<size_t>(lenght), kAlphaNum);
 }
 
 QString saltQS(int lenght) {
@@ -21,13 +21,10 @@ QString saltQS(int lenght) {
 }
 
 std::string genPassword(int lenght) {
-	std::string        salt;
-	static const char* chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%&*(){}[]!|,.;:<>?/";
-	static const uint  le    = (uint)strlen(chars) - 1;
-	for (int i = 0; i < lenght; i++) {
-		salt += chars[rand(0, le)];
+	if (lenght <= 0) {
+		throw ExceptionV2("genPassword: length must be > 0");
 	}
-	return salt;
+	return randomString(static_cast<size_t>(lenght), kPassword);
 }
 
 QString genPasswordQS(int lenght) {
