@@ -3,10 +3,10 @@
 #include "rbk/rand/secureRandom.h"
 
 namespace {
+// Alphanumeric only — safe in shell, SQL quotes, env files, and nginx/htpasswd paths.
+// Avoid ! @ # $ & | ; < > etc. (shell/metachar breakage).
 constexpr std::string_view kAlphaNum =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-constexpr std::string_view kPassword =
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%&*(){}[]!|,.;:<>?/";
 }
 
 std::string salt(int lenght) {
@@ -24,7 +24,7 @@ std::string genPassword(int lenght) {
 	if (lenght <= 0) {
 		throw ExceptionV2("genPassword: length must be > 0");
 	}
-	return randomString(static_cast<size_t>(lenght), kPassword);
+	return randomString(static_cast<size_t>(lenght), kAlphaNum);
 }
 
 QString genPasswordQS(int lenght) {
