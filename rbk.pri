@@ -145,6 +145,7 @@ HEADERS += \
     $$PWD/hash/rapidhash.h \
     $$PWD/hash/string.h \
     $$PWD/mapExtensor/ThreadSafeMultiIndex.hpp \
+    $$PWD/mapExtensor/ThreadSafeVector.hpp \
     $$PWD/mapExtensor/ankerl_unordered_dense.h \
     $$PWD/mapExtensor/ankerv2.h \
     $$PWD/mapExtensor/missingkeyex.h \

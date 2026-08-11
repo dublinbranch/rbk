@@ -344,6 +344,7 @@ set(RBK_HEADERS
     mapExtensor/RRList.h
     mapExtensor/rwguard.h
     mapExtensor/ThreadSafeMultiIndex.hpp
+    mapExtensor/ThreadSafeVector.hpp
     mapExtensor/valueMitWarning.h
     mapExtensor/vectorV2.h
 
