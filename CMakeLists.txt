@@ -617,28 +617,34 @@ target_compile_definitions(rbk
         BasePath="${CMAKE_SOURCE_DIR}"
 )
 
-# ── Git describe ─────────────────────────────────────────────────────────────
-if(UNIX)
-    execute_process(
-        COMMAND git -C "${CMAKE_SOURCE_DIR}" describe --always --dirty --abbrev=99
-        OUTPUT_VARIABLE _git_status
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-    if(_git_status)
-        target_compile_definitions(rbk PRIVATE GIT_STATUS="${_git_status}")
-    endif()
+# ── Git describe (buffer.cpp only — do not put GIT_STATUS on the rbk target) ─
+# A target-wide -DGIT_STATUS=... lives in flags.make, so any cmake reconfigure
+# rebuilds every rbk TU. Keep the hash in a generated header that only
+# gitTrick/buffer.cpp includes / depends on.
+set(RBK_GIT_STATUS_HEADER "${CMAKE_CURRENT_BINARY_DIR}/git_status_generated.h")
+execute_process(
+    COMMAND ${CMAKE_COMMAND}
+        -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -DOUTPUT=${RBK_GIT_STATUS_HEADER}
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/write_git_status.cmake"
+)
+set_source_files_properties(gitTrick/buffer.cpp PROPERTIES
+    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR}"
+    OBJECT_DEPENDS "${RBK_GIT_STATUS_HEADER}"
+)
 
-    if(RBK_WITH_GIT_TRICK)
-        add_custom_command(
-            TARGET rbk PRE_BUILD
-            COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_SOURCE_DIR}/gitTrick/buffer.cpp"
-            COMMAND git -C "${CMAKE_SOURCE_DIR}" submodule foreach
-                    git describe --always --abbrev=99 --dirty
-                    > "${CMAKE_SOURCE_DIR}/rbk/gitTrick/submoduleInfo"
-            COMMENT "Refreshing git submodule info"
-        )
-    endif()
+if(UNIX AND RBK_WITH_GIT_TRICK)
+    add_custom_command(
+        TARGET rbk PRE_BUILD
+        COMMAND ${CMAKE_COMMAND}
+            -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+            -DOUTPUT=${RBK_GIT_STATUS_HEADER}
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/write_git_status.cmake"
+        COMMAND git -C "${CMAKE_SOURCE_DIR}" submodule foreach
+                git describe --always --abbrev=99 --dirty
+                > "${CMAKE_SOURCE_DIR}/rbk/gitTrick/submoduleInfo"
+        COMMENT "Refreshing git info"
+    )
 endif()
 
 # ── Embed source/build dirs (GCC --embed-dir) ───────────────────────────────
