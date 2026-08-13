@@ -1,7 +1,7 @@
 #ifndef PAYLOAD_H
 #define PAYLOAD_H
 
-#include "rbk/misc/intTypes.h"
+#include "rbk/number/intTypes.h"
 #include "rbk/string/stringoso.h"
 #include <map>
 #include <string>
