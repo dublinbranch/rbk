@@ -2,6 +2,7 @@
 #define SQLROWV2_H
 
 #include "mytype.h"
+#include "rbk/defines/stringDefine.h"
 #include "rbk/mapExtensor/mapV2.h"
 #include "rbk/mapExtensor/missingkeyex.h"
 #include "rbk/serialization/QDataStreamer.h"
@@ -83,7 +84,10 @@ class SqlRowV2 {
 	bool get(Key k, Value& v) const {
 		if (auto pos = fpOpt(k); pos > -1) {
 			if constexpr (std::is_same_v<Value, std::string>) {
-				v = data[pos];
+				//swapType already maps the NULL sentinel to 0 for every numeric type, string was
+				//the only one letting it through as text, so it ended up written back into the DB.
+				//Use the Founded overload of get() if you must tell NULL apart from an empty string.
+				v = (data[pos] == S_SQL_NULL) ? std::string() : data[pos];
 			} else {
 				try {
 					swapType(data[pos], v);
