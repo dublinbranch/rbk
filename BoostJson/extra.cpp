@@ -107,7 +107,16 @@ void pushCreate(boost::json::object& json, std::string_view key, const boost::js
 JsonRes parseJson(std::string_view json, bool throwOnError) {
 	JsonRes res;
 
+	//embedded devices send us the trailing NUL of their buffer. That is padding,
+	//not extra data, and write() below would refuse it.
+	while (!json.empty() && json.back() == '\0') {
+		json.remove_suffix(1);
+	}
+
 	if (json.empty()) {
+		//ec must be set here too, else the caller sees a "successful" parse holding
+		//a null value, and only finds out when as_object() throws
+		res.ec = bj::error::incomplete;
 		if (throwOnError) {
 			throw ExceptionV2("Empty JSON");
 		}
@@ -119,8 +128,12 @@ JsonRes parseJson(std::string_view json, bool throwOnError) {
 	opt.allow_trailing_commas = true; // allow an additional trailing comma in object and array element lists
 
 	//value jv = parse("[1,2,3,] // comment ", storage_ptr(), opt);
-	bj::parser  p(res.storage, opt);
-	std::size_t consumed = p.write_some(json, res.ec);
+	bj::parser p(res.storage, opt);
+	//write() and not write_some(): the buffer must hold ONE complete JSON text.
+	//write_some stops at the end of the first value, so a truncated text was only
+	//caught by release() throwing, and `{"a":1} DROP TABLE` was accepted silently.
+	//Trailing whitespace stays legal.
+	std::size_t consumed = p.write(json, res.ec);
 
 	if (res.ec) {
 		//take a copy only in case of error
@@ -155,7 +168,8 @@ string JsonRes::composeErrorMsg() const {
 		return "Empty JSON";
 	}
 	if (!position) {
-		return "Invalid JSON";
+		//failed on the first byte, there is no line/column worth showing
+		return "Invalid JSON: " + ec.message();
 	}
 
 	using Pt = string::size_type;
