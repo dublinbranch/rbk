@@ -131,6 +131,7 @@ set(RBK_SOURCES
     BoostJson/intrusivedebug.cpp
     BoostJson/isjsonasubset.cpp
     BoostJson/math.cpp
+    BoostJson/pretty_print.cpp
     BoostJson/taginvoke.cpp
     BoostJson/to_string.cpp
     BoostJson/util.cpp
@@ -263,6 +264,7 @@ set(RBK_HEADERS
     BoostJson/isjsonasubset.h
     BoostJson/JsonRes.h
     BoostJson/math.h
+    BoostJson/pretty_print.h
     BoostJson/tagInvokeCrono.h
     BoostJson/taginvoke.h
     BoostJson/to_string.h

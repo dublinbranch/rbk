@@ -2,6 +2,7 @@
 
 //This file is a disciple of the light shown in https://www.boost.org/doc/libs/1_80_0/libs/json/doc/html/json/dom/conversion.html
 #include "JsonRes.h"
+#include "pretty_print.h"
 #include "rbk/BoostJson/taginvoke.h"
 #include "rbk/BoostJson/to_string.h"
 #include "rbk/fmtExtra/dynamic.h"
@@ -47,9 +48,6 @@ std::string_view asString(const boost::json::value& value);
 std::string      asSTDtring(const boost::json::value& value);
 
 /***********************/
-void        pretty_print(std::string& res, boost::json::value const& jv, std::string* indent = nullptr);
-std::string pretty_print(boost::json::value const& jv);
-
 QString pretty_printQS(boost::json::value const& jv);
 
 QString serializeQS(boost::json::value const& jv);
