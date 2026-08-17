@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "rbk/mapExtensor/mapV2.h"
@@ -29,7 +30,8 @@ enum class LoginResult {
 	ok,
 	invalidEmail,
 	invalidPassword,
-	error
+	error,
+	rateLimited
 };
 
 enum class SessionState {
@@ -42,6 +44,8 @@ struct LoginOutcome {
 	LoginResult result = LoginResult::error;
 	//required when result == ok, becomes the session cookie value
 	std::string sessionId;
+	//used when result == rateLimited; 0 means the engine picks a default
+	unsigned retryAfterSec = 0;
 };
 
 struct Conf {
@@ -80,6 +84,11 @@ struct Conf {
 
 	//check the credentials, on ok also register the session and return its id
 	std::function<LoginOutcome(PMFCGI& status, const QString& email, const QString& password)> login;
+
+	//fail-fast IP/email/concurrency gate around POST login (slow KDF stall). Default on.
+	bool loginLimiter = true;
+	//optional: audit when the gate refuses. reason is inflight, busy, or window.
+	std::function<void(PMFCGI& status, const QString& email, std::string_view reason)> onLoginRateLimited;
 
 	//invalidate the session (the engine deletes the cookie and redirects to the login page)
 	std::function<void(PMFCGI& status, const std::string& sessionId)> logout;

@@ -1,4 +1,5 @@
 #include "authHandler.h"
+#include "loginLimiter.h"
 
 #include "rbk/BoostJson/extra.h"
 #include "rbk/HTTP/PMFCGI.h"
@@ -7,6 +8,8 @@
 #include "rbk/mustache/extra.h"
 
 #include <boost/json.hpp>
+#include <string>
+#include <utility>
 
 namespace bj = boost::json;
 
@@ -127,9 +130,36 @@ void loginPage(PMFCGI& status, Payload& payload) {
 
 	if (auto email = status.post.get("email"); email) {
 		//if email is set we assume you want to login
-		auto password = status.post.rq("password").trimmed();
+		const auto trimmedEmail = email.val->trimmed();
+		auto       password     = status.post.rq("password").trimmed();
 
-		auto outcome = c.login(status, email.val->trimmed(), password);
+		LoginLimiter::Guard inflight;
+		if (c.loginLimiter) {
+			auto slot = LoginLimiter::instance().tryBegin(status.remoteIp, trimmedEmail.toStdString());
+			if (slot.admit != LoginLimiter::Admit::ok) {
+				if (c.onLoginRateLimited) {
+					c.onLoginRateLimited(status, trimmedEmail, LoginLimiter::admitReason(slot.admit));
+				}
+				const auto retry   = slot.retryAfterSec ? slot.retryAfterSec : 10u;
+				payload.statusCode = 429;
+				payload.headers.insert({"Retry-After", std::to_string(retry)});
+				bj::object json;
+				json["BASE_PATH"]     = basePath;
+				json["ERROR_MESSAGE"] = "Too many login attempts, try again shortly.";
+				payload.html          = mustache(c.loginTemplate, json);
+				return;
+			}
+			inflight = std::move(slot.guard);
+		}
+
+		auto outcome = c.login(status, trimmedEmail, password);
+		if (c.loginLimiter && outcome.result != LoginResult::rateLimited) {
+			if (outcome.result == LoginResult::ok) {
+				LoginLimiter::instance().recordSuccess(trimmedEmail.toStdString());
+			} else {
+				LoginLimiter::instance().recordFailure(status.remoteIp, trimmedEmail.toStdString());
+			}
+		}
 		switch (outcome.result) {
 		case LoginResult::ok:
 			payload.setCookie(c.cookieName.toStdString(), outcome.sessionId, c.cookieTTL, true, c.cookieSecure);
@@ -143,6 +173,17 @@ void loginPage(PMFCGI& status, Payload& payload) {
 		case LoginResult::invalidPassword:
 			payload.redirect(F("{}login?error=2", basePath));
 			break;
+
+		case LoginResult::rateLimited: {
+			const auto retry = outcome.retryAfterSec ? outcome.retryAfterSec : 10u;
+			payload.statusCode = 429;
+			payload.headers.insert({"Retry-After", std::to_string(retry)});
+			bj::object json;
+			json["BASE_PATH"]     = basePath;
+			json["ERROR_MESSAGE"] = "Too many login attempts, try again shortly.";
+			payload.html          = mustache(c.loginTemplate, json);
+			break;
+		}
 
 		default:
 			payload.redirect(F("{}login?error=3", basePath));
