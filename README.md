@@ -192,7 +192,8 @@ rbk/
   GeoLite2PP/          # MaxMind GeoIP wrapper
   gitTrick/            # Build-time git info embedding
   hash/                # Hashing (SHA, CRC, rapid, salt)
-  HTTP/                # HTTP/FCGI, Beast server, router
+  HTTP/                # HTTP/FCGI, Beast server, router, client IP behind a proxy
+                       #   docs/clientIp.md — X-Forwarded-For handling, and why not QHostAddress
   jemalloc/            # jemalloc helpers
   JSON/                # Custom JSON reader
   locale/              # Locale/country codes

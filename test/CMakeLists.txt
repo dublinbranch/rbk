@@ -2,6 +2,7 @@
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../BoostJson/test" rbk_boostjson_tests_build)
 
 add_executable(rbk_tests
+    clientIp.cpp
     filefunction.cpp
     loginLimiter.cpp
     $<TARGET_OBJECTS:rbk_boostjson_test_objs>

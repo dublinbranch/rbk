@@ -455,6 +455,7 @@ if(RBK_WITH_BOOST_BEAST)
         HTTP/loginLimiter.cpp
         HTTP/beast.cpp
         HTTP/beastConfig.cpp
+        HTTP/clientIp.cpp
         HTTP/router.cpp
         HTTP/select2.cpp
     )
@@ -463,6 +464,7 @@ if(RBK_WITH_BOOST_BEAST)
         HTTP/loginLimiter.h
         HTTP/beast.h
         HTTP/beastConfig.h
+        HTTP/clientIp.h
         HTTP/Payload.h
         HTTP/router.h
         HTTP/select2.h
@@ -592,7 +594,8 @@ target_compile_options(rbk PRIVATE
     -Werror=return-type
     -fvisibility=hidden
     -ftrivial-auto-var-init=pattern
-    -fdiagnostics-all-candidates
+    # GCC 14+ only; clang (used for the libFuzzer tree) rejects it as an unknown argument.
+    $<$<CXX_COMPILER_ID:GNU>:-fdiagnostics-all-candidates>
 )
 
 # ── Include directories ─────────────────────────────────────────────────────

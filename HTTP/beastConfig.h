@@ -6,6 +6,9 @@
 #include <boost/beast/http.hpp>
 #include <filesystem>
 #include <functional>
+#include <optional>
+#include <string>
+#include <vector>
 class RequestBase;
 
 class PMFCGI;
@@ -87,6 +90,16 @@ class BeastConf {
 	 * @brief basePath is used to set the default path from where to read content, sometimes, in certain case we listen on multiple ip etc
 	 */
 	std::optional<std::string> basePath;
+
+	/**
+	 * @brief trustedProxies are the peers whose X-Forwarded-For / X-Real-IP we believe.
+	 * A request from anything else is taken at face value: the socket peer is the client and
+	 * the headers are ignored. Loopback is always trusted, so nginx on the same host needs no
+	 * entry here. Exact addresses only, no CIDR. Used by rbk::Http::clientIp, see
+	 * HTTP/docs/clientIp.md.
+	 * Optional so config files written before this key keep loading.
+	 */
+	std::optional<std::vector<std::string>> trustedProxies;
 
       private:
 };
