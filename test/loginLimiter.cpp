@@ -3,12 +3,28 @@
 #include "rbk/HTTP/loginLimiter.h"
 
 #include <chrono>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 
 using namespace std::chrono;
 using rbk::Auth::LoginLimiter;
 using Admit = LoginLimiter::Admit;
+
+namespace rbk::Auth {
+struct LoginLimiterTestAccess {
+	static size_t ipKeys(LoginLimiter& lim) {
+		std::lock_guard lock(lim.mu_);
+		return lim.failsByIp_.size();
+	}
+	static size_t emailKeys(LoginLimiter& lim) {
+		std::lock_guard lock(lim.mu_);
+		return lim.failsByEmail_.size();
+	}
+};
+} // namespace rbk::Auth
+
+using rbk::Auth::LoginLimiterTestAccess;
 
 BOOST_AUTO_TEST_SUITE(login_limiter)
 
@@ -93,6 +109,31 @@ BOOST_AUTO_TEST_CASE(success_clears_email_window) {
 	lim.recordSuccess("same@example.com");
 	auto after = lim.tryBegin("1.2.3.4", "same@example.com");
 	BOOST_CHECK(after.admit == Admit::ok);
+	BOOST_CHECK_EQUAL(LoginLimiterTestAccess::emailKeys(lim), 0);
+}
+
+BOOST_AUTO_TEST_CASE(try_begin_does_not_insert_fail_keys) {
+	LoginLimiter lim;
+	auto         slot = lim.tryBegin("10.0.0.1", "a@example.com");
+	BOOST_REQUIRE(slot.admit == Admit::ok);
+	BOOST_CHECK_EQUAL(LoginLimiterTestAccess::ipKeys(lim), 0);
+	BOOST_CHECK_EQUAL(LoginLimiterTestAccess::emailKeys(lim), 0);
+}
+
+BOOST_AUTO_TEST_CASE(expired_fails_are_erased) {
+	auto         now = steady_clock::now();
+	LoginLimiter lim([&now] {
+		return now;
+	});
+	lim.recordFailure("9.9.9.9", "a@example.com");
+	BOOST_CHECK_EQUAL(LoginLimiterTestAccess::ipKeys(lim), 1);
+	BOOST_CHECK_EQUAL(LoginLimiterTestAccess::emailKeys(lim), 1);
+
+	now += LoginLimiter::kEmailWindow + seconds(1);
+	auto after = lim.tryBegin("9.9.9.9", "a@example.com");
+	BOOST_CHECK(after.admit == Admit::ok);
+	BOOST_CHECK_EQUAL(LoginLimiterTestAccess::ipKeys(lim), 0);
+	BOOST_CHECK_EQUAL(LoginLimiterTestAccess::emailKeys(lim), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

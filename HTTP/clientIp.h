@@ -26,6 +26,8 @@ class BeastConf;
  *  - With nginx $proxy_add_x_forwarded_for the RIGHTMOST element is the one nginx observed,
  *    everything to the left of it came from the client (rightmostForwardedFor).
  *  - Nothing that fails a strict address parse is passed on (parseAddress).
+ *  - The value is the normalized spelling (normalizeAddress): v4-mapped IPv6 folds to
+ *    dotted IPv4, so a dual-stack peer and a proxy header for the same host share one key.
  */
 namespace rbk::Http {
 
@@ -37,15 +39,15 @@ namespace rbk::Http {
 std::optional<std::string> parseAddress(std::string_view text);
 
 /**
- * parseAddress, after dropping a leading "::ffff:" so a v4-mapped peer reads as plain IPv4.
- * Use this on anything that becomes a stored value or a lookup key, so one address has one
- * spelling.
+ * parseAddress, then fold a v4-mapped IPv6 address to dotted IPv4. Use this on anything
+ * that becomes a stored value or a lookup key, so one address has one spelling. clientIp()
+ * already returns this form.
  */
 std::optional<std::string> normalizeAddress(std::string_view text);
 
 /**
  * Rightmost comma separated element of an X-Forwarded-For style header, trimmed of spaces
- * and tabs and then validated. X-Real-IP holds a single value, so rightmost == only.
+ * and tabs and then normalized. X-Real-IP holds a single value, so rightmost == only.
  * nullopt when the header is empty or the last element is not an address.
  */
 std::optional<std::string> rightmostForwardedFor(std::string_view headerValue);
@@ -61,8 +63,9 @@ bool isTrustedProxy(const boost::asio::ip::address&       peer,
 
 /**
  * The client address of one request: the socket peer, unless the peer is trusted and handed
- * us a usable X-Forwarded-For or X-Real-IP. Always a valid address, never client controlled
- * text. Falls back to "127.0.0.1" when the socket has no peer (already closed).
+ * us a usable X-Forwarded-For or X-Real-IP. Always a valid address in the normalizeAddress
+ * spelling, never client controlled text. Falls back to "127.0.0.1" when the socket has no
+ * peer (already closed).
  */
 std::string clientIp(const boost::asio::ip::tcp::socket&                                   socket,
                      const boost::beast::http::request<boost::beast::http::string_body>&   req,
@@ -70,6 +73,21 @@ std::string clientIp(const boost::asio::ip::tcp::socket&                        
 
 /// Same, reading trustedProxies off the config.
 std::string clientIp(const boost::asio::ip::tcp::socket&                                 socket,
+                     const boost::beast::http::request<boost::beast::http::string_body>& req,
+                     const BeastConf&                                                    conf);
+
+/**
+ * Address this request was aimed at. The socket local endpoint when the peer is untrusted;
+ * X-Server-IP from a trusted peer (nginx $server_addr: the listen address the client used
+ * to reach nginx). That is what getBasePath() needs when the process is bound on more than
+ * one IP and the backend socket is only 127.0.0.1. Same parse rule as clientIp: an address
+ * or we keep the local endpoint, never raw header text.
+ */
+std::string serverIp(const boost::asio::ip::tcp::socket&                                 socket,
+                     const boost::beast::http::request<boost::beast::http::string_body>& req,
+                     const std::optional<std::vector<std::string>>&                      trustedProxies);
+
+std::string serverIp(const boost::asio::ip::tcp::socket&                                 socket,
                      const boost::beast::http::request<boost::beast::http::string_body>& req,
                      const BeastConf&                                                    conf);
 

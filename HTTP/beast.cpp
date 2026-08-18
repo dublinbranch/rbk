@@ -50,6 +50,7 @@
 #include "PMFCGI.h"
 #include "Payload.h"
 #include "beast.h"
+#include "clientIp.h"
 #include "router.h"
 
 extern ThreadStatus                       threadStatus;
@@ -214,8 +215,10 @@ StringResponse handle_request(
 		try { //Yes exception can throw exceptions!
 			status.conf = conf;
 
-			status.remoteIp = stream.socket().remote_endpoint().address().to_string();
-			status.localIp  = stream.socket().local_endpoint().address().to_string();
+			// Never the raw header: only a trusted peer may name the client / the listen
+			// address, and only with an address. See rbk/HTTP/docs/clientIp.md.
+			status.remoteIp = rbk::Http::clientIp(stream.socket(), req, *conf);
+			status.localIp  = rbk::Http::serverIp(stream.socket(), req, *conf);
 
 			status.path = req.target();
 
@@ -227,19 +230,6 @@ StringResponse handle_request(
 
 			for (auto& h : req.base()) {
 				status.headers.add(h.name_string(), h.value());
-			}
-
-			//in case we override the default IP because running under a proxy
-
-			if (auto v = status.headers.get("remote_addr"); v) {
-				status.remoteIp = v.val->toStdString();
-			}
-			if (auto v = status.headers.get("x-real-ip"); v) {
-				status.remoteIp = v.val->toStdString();
-			}
-
-			if (auto v = status.headers.get("x-server-ip"); v) {
-				status.localIp = v.val->toStdString();
 			}
 
 			status.url = Url(status.getBasePath() + status.path.substr(1));

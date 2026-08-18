@@ -43,7 +43,12 @@ handles it.
 ### Parse strictly, and pass on the canonical form
 
 `parseAddress()` rejects anything `boost::asio::ip::make_address` rejects.
-`normalizeAddress()` drops a leading `::ffff:` first, so a v4-mapped peer has one spelling.
+`normalizeAddress()` then folds a v4-mapped IPv6 address (`::ffff:a.b.c.d`, any case or
+hex form Asio accepts) to dotted IPv4. `clientIp()` returns that spelling on both paths:
+the socket peer, and a header from a trusted proxy. On a dual-stack listener the same host
+is `::ffff:203.0.113.7` direct and `203.0.113.7` via nginx `$remote_addr`; without the fold
+those are two rate-limit keys and two `{ip}_access.log` files.
+
 Callers get `std::nullopt`, never a half-checked string.
 
 ## Why Boost.Asio and not `QHostAddress`

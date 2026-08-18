@@ -48,6 +48,9 @@ BOOST_AUTO_TEST_CASE(parseAddress_rejects_the_loose_inet_aton_forms) {
 
 BOOST_AUTO_TEST_CASE(normalizeAddress_strips_the_v4_mapped_prefix) {
 	BOOST_CHECK_EQUAL(normalizeAddress("::ffff:203.0.113.7").value_or("-"), "203.0.113.7");
+	BOOST_CHECK_EQUAL(normalizeAddress("::FFFF:203.0.113.7").value_or("-"), "203.0.113.7");
+	BOOST_CHECK_EQUAL(normalizeAddress("0:0:0:0:0:ffff:203.0.113.7").value_or("-"), "203.0.113.7");
+	BOOST_CHECK_EQUAL(normalizeAddress("::ffff:cb00:7107").value_or("-"), "203.0.113.7");
 	BOOST_CHECK_EQUAL(normalizeAddress("203.0.113.7").value_or("-"), "203.0.113.7");
 	BOOST_CHECK_EQUAL(normalizeAddress("2001:db8::1").value_or("-"), "2001:db8::1");
 }
@@ -58,12 +61,20 @@ BOOST_AUTO_TEST_CASE(normalizeAddress_rejects_a_mapped_prefix_on_garbage) {
 	BOOST_CHECK(!normalizeAddress("example.com").has_value());
 }
 
+// clientIp() cannot be unit-tested without a live socket; the untrusted path is
+// addressToKey(peer), which is normalizeAddress(peer.to_string()) for this spelling.
+BOOST_AUTO_TEST_CASE(normalizeAddress_folds_a_dual_stack_peer_to_string) {
+	const auto peer = addr("::ffff:203.0.113.7");
+	BOOST_CHECK_EQUAL(normalizeAddress(peer.to_string()).value_or("-"), "203.0.113.7");
+}
+
 // nginx $proxy_add_x_forwarded_for APPENDS the peer it saw, so the last element is the only
 // one the client could not write.
 BOOST_AUTO_TEST_CASE(rightmostForwardedFor_picks_the_last_element) {
 	BOOST_CHECK_EQUAL(rightmostForwardedFor("10.0.0.9, 203.0.113.7").value_or("-"), "203.0.113.7");
 	BOOST_CHECK_EQUAL(rightmostForwardedFor("203.0.113.7").value_or("-"), "203.0.113.7");
 	BOOST_CHECK_EQUAL(rightmostForwardedFor("a, b, 203.0.113.7").value_or("-"), "203.0.113.7");
+	BOOST_CHECK_EQUAL(rightmostForwardedFor("::ffff:203.0.113.7").value_or("-"), "203.0.113.7");
 }
 
 BOOST_AUTO_TEST_CASE(rightmostForwardedFor_trims_spaces_and_tabs) {

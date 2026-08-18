@@ -61,9 +61,9 @@ class LoginLimiter {
 
 	static constexpr int      kMaxArgon2             = 2;
 	static constexpr int      kIpFailMax             = 10;
-	static constexpr int      kEmailFailMax          = 5;
+	static constexpr int      kEmailFailMax          = 10;
 	static constexpr auto     kIpWindow              = std::chrono::minutes(10);
-	static constexpr auto     kEmailWindow           = std::chrono::minutes(15);
+	static constexpr auto     kEmailWindow           = std::chrono::minutes(10);
 	static constexpr unsigned kInflightRetryAfterSec = 5;
 
 	explicit LoginLimiter(Clock clock = {});
@@ -79,10 +79,16 @@ class LoginLimiter {
 
       private:
 	friend class Guard;
+	friend struct LoginLimiterTestAccess;
+	using FailMap = std::unordered_map<std::string, std::vector<std::chrono::steady_clock::time_point>>;
+
 	void     release(const std::string& ip, const std::string& email);
 	void     pruneLocked(std::vector<std::chrono::steady_clock::time_point>& stamps,
 	                     std::chrono::steady_clock::time_point               now,
 	                     std::chrono::steady_clock::duration                 window) const;
+	const std::vector<std::chrono::steady_clock::time_point>* pruneMapLocked(
+	        FailMap& map, const std::string& key, std::chrono::steady_clock::time_point now,
+	        std::chrono::steady_clock::duration window);
 	unsigned remainingSec(const std::vector<std::chrono::steady_clock::time_point>& stamps,
 	                      std::chrono::steady_clock::time_point                     now,
 	                      std::chrono::steady_clock::duration                       window) const;
@@ -93,8 +99,8 @@ class LoginLimiter {
 	std::unordered_set<std::string> inflightIp_;
 	std::unordered_set<std::string> inflightEmail_;
 	int             argon2Live_ = 0;
-	std::unordered_map<std::string, std::vector<std::chrono::steady_clock::time_point>> failsByIp_;
-	std::unordered_map<std::string, std::vector<std::chrono::steady_clock::time_point>> failsByEmail_;
+	FailMap         failsByIp_;
+	FailMap         failsByEmail_;
 };
 
 } // namespace rbk::Auth

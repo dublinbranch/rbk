@@ -89,6 +89,21 @@ void LoginLimiter::pruneLocked(std::vector<steady_clock::time_point>& stamps,
 	             stamps.end());
 }
 
+const std::vector<steady_clock::time_point>* LoginLimiter::pruneMapLocked(
+        FailMap& map, const std::string& key, steady_clock::time_point now,
+        steady_clock::duration window) {
+	auto it = map.find(key);
+	if (it == map.end()) {
+		return nullptr;
+	}
+	pruneLocked(it->second, now, window);
+	if (it->second.empty()) {
+		map.erase(it);
+		return nullptr;
+	}
+	return &it->second;
+}
+
 unsigned LoginLimiter::remainingSec(const std::vector<steady_clock::time_point>& stamps,
                                     steady_clock::time_point                     now,
                                     steady_clock::duration                       window) const {
@@ -109,18 +124,18 @@ LoginLimiter::TryBegin LoginLimiter::tryBegin(std::string_view ip, std::string_v
 	const auto t        = now();
 
 	std::lock_guard lock(mu_);
-	pruneLocked(failsByIp_[ipKey], t, kIpWindow);
-	pruneLocked(failsByEmail_[emailKey], t, kEmailWindow);
+	const auto*     ipFails    = pruneMapLocked(failsByIp_, ipKey, t, kIpWindow);
+	const auto*     emailFails = pruneMapLocked(failsByEmail_, emailKey, t, kEmailWindow);
 
 	TryBegin out;
-	if (failsByIp_[ipKey].size() >= static_cast<size_t>(kIpFailMax)) {
+	if (ipFails && ipFails->size() >= static_cast<size_t>(kIpFailMax)) {
 		out.admit         = Admit::throttled;
-		out.retryAfterSec = remainingSec(failsByIp_[ipKey], t, kIpWindow);
+		out.retryAfterSec = remainingSec(*ipFails, t, kIpWindow);
 		return out;
 	}
-	if (failsByEmail_[emailKey].size() >= static_cast<size_t>(kEmailFailMax)) {
+	if (emailFails && emailFails->size() >= static_cast<size_t>(kEmailFailMax)) {
 		out.admit         = Admit::throttled;
-		out.retryAfterSec = remainingSec(failsByEmail_[emailKey], t, kEmailWindow);
+		out.retryAfterSec = remainingSec(*emailFails, t, kEmailWindow);
 		return out;
 	}
 	if (inflightIp_.contains(ipKey) || inflightEmail_.contains(emailKey)) {
@@ -149,13 +164,11 @@ void LoginLimiter::recordFailure(std::string_view ip, std::string_view email) {
 	const auto t        = now();
 
 	std::lock_guard lock(mu_);
-	auto&           ipFails = failsByIp_[ipKey];
-	ipFails.push_back(t);
-	pruneLocked(ipFails, t, kIpWindow);
+	failsByIp_[ipKey].push_back(t);
+	pruneMapLocked(failsByIp_, ipKey, t, kIpWindow);
 
-	auto& emailFails = failsByEmail_[emailKey];
-	emailFails.push_back(t);
-	pruneLocked(emailFails, t, kEmailWindow);
+	failsByEmail_[emailKey].push_back(t);
+	pruneMapLocked(failsByEmail_, emailKey, t, kEmailWindow);
 }
 
 void LoginLimiter::recordSuccess(std::string_view email) {
