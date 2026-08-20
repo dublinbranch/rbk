@@ -184,6 +184,7 @@ class DB {
 	mutable mi_tls<bool> skipWarning = false;
 
 	const DBConf getConf() const;
+	[[nodiscard]] bool hasConf() const;
 	void         setConf(const DBConf& value);
 	void         setConfIfNotSet(const DBConf& value);
 

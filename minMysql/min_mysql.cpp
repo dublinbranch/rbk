@@ -595,6 +595,10 @@ const DBConf DB::getConf() const {
 	return conf;
 }
 
+bool DB::hasConf() const {
+	return confSet;
+}
+
 void DB::setConfIfNotSet(const DBConf& value) {
 	if (!confSet) {
 		setConf(value);
