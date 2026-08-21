@@ -5,6 +5,7 @@
 #include "rbk/HTTP/mime.h"
 #include "rbk/HTTP/staticPath.h"
 #include "rbk/HTTP/url.h"
+#include "rbk/misc/escapeH.h"
 #include "rbk/caching/apcu2.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/fmtExtra/includeMe.h"
@@ -97,7 +98,8 @@ void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) 
 			}
 		}
 	}
-	payload.html       = fmt::format("invalid path >>> {} <<< no routing available", path);
+	payload.mime       = "text/plain; charset=utf-8";
+	payload.html       = fmt::format("invalid path >>> {} <<< no routing available", escapeH(path));
 	payload.statusCode = 400;
 }
 
