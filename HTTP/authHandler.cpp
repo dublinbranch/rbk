@@ -6,9 +6,13 @@
 #include "rbk/HTTP/Payload.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/mustache/extra.h"
+#include "rbk/string/stringoso.h"
+#include "rbk/string/util.h"
 
 #include <boost/json.hpp>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace bj = boost::json;
@@ -33,6 +37,103 @@ bool deny(const QString& path, Payload& payload, const std::string& location) {
 		payload.redirect(location);
 	}
 	return false;
+}
+
+//same-origin relative path only; empty means fall back to successPath
+std::optional<std::string> safeNextPath(std::string_view raw) {
+	if (raw.empty()) {
+		return {};
+	}
+	if (raw.find("://") != std::string_view::npos || raw.starts_with("//")) {
+		return {};
+	}
+	if (raw.find("..") != std::string_view::npos || raw.find_first_of("\\\r\n") != std::string_view::npos) {
+		return {};
+	}
+	for (unsigned char ch : raw) {
+		if (ch < 0x20 || ch == 0x7F) {
+			return {};
+		}
+	}
+	while (raw.starts_with('/')) {
+		raw.remove_prefix(1);
+	}
+	if (raw.empty() || raw.starts_with("//") || raw.find("://") != std::string_view::npos) {
+		return {};
+	}
+
+	auto pathOnly = raw.substr(0, raw.find_first_of("?#"));
+	if (pathOnly == "login" || pathOnly == "logout" || pathOnly == "app/login" || pathOnly == "app/logout"
+	    || pathOnly.starts_with("login/") || pathOnly.starts_with("logout/")) {
+		return {};
+	}
+	return std::string(raw);
+}
+
+std::string originalTarget(const PMFCGI& status) {
+	auto target = status.path;
+	if (target.starts_with('/')) {
+		target.erase(0, 1);
+	}
+	return target;
+}
+
+std::string requestedNext(const PMFCGI& status) {
+	if (auto v = status.post.get("next"); v) {
+		return v.val->toStdString();
+	}
+	if (auto v = status.get.get("next"); v) {
+		return v.val->toStdString();
+	}
+	return {};
+}
+
+std::string loginLeafFor(std::string_view nextRaw) {
+	if (auto next = safeNextPath(nextRaw); next) {
+		const auto pathOnly = std::string_view(*next).substr(0, next->find_first_of("?#"));
+		if (pathOnly == "app" || pathOnly.starts_with("app/") || pathOnly.starts_with("api/app/")) {
+			return "app/login";
+		}
+	}
+	return "login";
+}
+
+std::string loginRedirect(const std::string& basePath, std::optional<uint> error, std::string_view nextRaw,
+                          std::string_view leafOverride = {}) {
+	const auto leaf = leafOverride.empty() ? loginLeafFor(nextRaw) : std::string(leafOverride);
+	std::string loc    = F("{}{}", basePath, leaf);
+	bool        first  = true;
+	auto        append = [&](std::string_view key, std::string_view value) {
+		loc += first ? '?' : '&';
+		first = false;
+		loc += key;
+		loc += '=';
+		loc += value;
+	};
+	if (error) {
+		append("error", std::to_string(*error));
+	}
+	if (auto next = safeNextPath(nextRaw); next) {
+		append("next", percentEncoding(*next));
+	}
+	return loc;
+}
+
+std::string successRedirect(const std::string& basePath, std::string_view nextRaw, std::string_view fallback) {
+	if (auto next = safeNextPath(nextRaw); next) {
+		return F("{}{}", basePath, *next);
+	}
+	return F("{}{}", basePath, fallback);
+}
+
+void setLoginTemplateVars(bj::object& json, const std::string& basePath, std::string_view nextRaw) {
+	json["BASE_PATH"] = basePath;
+	if (auto next = safeNextPath(nextRaw); next) {
+		json["NEXT"] = *next;
+	}
+	if (auto& decorate = conf().decorateLoginJson; decorate) {
+		decorate(json);
+	}
 }
 
 std::string defaultLoginErrorMessage(uint error) {
@@ -89,6 +190,7 @@ bool loginManager(PMFCGI& status, Payload& payload) {
 	}
 
 	auto basePath = status.getBasePath();
+	auto next     = originalTarget(status);
 
 	if (auto session = status.cookies->get(c.cookieName); session) {
 		switch (c.resumeSession(status, session.val->toStdString())) {
@@ -96,14 +198,14 @@ bool loginManager(PMFCGI& status, Payload& payload) {
 			break;
 		case SessionState::invalid:
 			payload.headers.deleteCookie(c.cookieName.toStdString());
-			return deny(path, payload, F("{}login?error=7", basePath));
+			return deny(path, payload, loginRedirect(basePath, 7, next));
 		case SessionState::notLogged:
-			return deny(path, payload, F("{}login", basePath));
+			return deny(path, payload, loginRedirect(basePath, {}, next));
 		}
 	} else if (c.develLogin && c.develLogin(status)) {
 		//development auto login, nothing else to do
 	} else {
-		return deny(path, payload, F("{}login", basePath));
+		return deny(path, payload, loginRedirect(basePath, {}, next));
 	}
 
 	//project level checks (ACL, account scoping, ...)
@@ -127,6 +229,13 @@ void loginPage(PMFCGI& status, Payload& payload) {
 	payload.statusCode = 200;
 
 	auto basePath = status.getBasePath();
+	auto next     = requestedNext(status);
+	const auto path = status.url.url.path().mid(1);
+	const bool appLogin = path == "app/login";
+	const auto& tmpl = (appLogin && !c.appLoginTemplate.empty()) ? c.appLoginTemplate : c.loginTemplate;
+	const auto fallback = appLogin
+	                          ? (c.appSuccessPath.empty() ? "app/" : c.appSuccessPath)
+	                          : c.successPath;
 
 	if (auto email = status.post.get("email"); email) {
 		//if email is set we assume you want to login
@@ -144,9 +253,9 @@ void loginPage(PMFCGI& status, Payload& payload) {
 				payload.statusCode = 429;
 				payload.headers.insert({"Retry-After", std::to_string(retry)});
 				bj::object json;
-				json["BASE_PATH"]     = basePath;
+				setLoginTemplateVars(json, basePath, next);
 				json["ERROR_MESSAGE"] = "Too many login attempts, try again shortly.";
-				payload.html          = mustache(c.loginTemplate, json);
+				payload.html          = mustache(tmpl, json);
 				return;
 			}
 			inflight = std::move(slot.guard);
@@ -163,15 +272,15 @@ void loginPage(PMFCGI& status, Payload& payload) {
 		switch (outcome.result) {
 		case LoginResult::ok:
 			payload.setCookie(c.cookieName.toStdString(), outcome.sessionId, c.cookieTTL, true, c.cookieSecure);
-			payload.redirect(F("{}{}", basePath, c.successPath));
+			payload.redirect(successRedirect(basePath, next, fallback));
 			break;
 
 		case LoginResult::invalidEmail:
-			payload.redirect(F("{}login?error=1", basePath));
+			payload.redirect(loginRedirect(basePath, 1, next, appLogin ? "app/login" : "login"));
 			break;
 
 		case LoginResult::invalidPassword:
-			payload.redirect(F("{}login?error=2", basePath));
+			payload.redirect(loginRedirect(basePath, 2, next, appLogin ? "app/login" : "login"));
 			break;
 
 		case LoginResult::rateLimited: {
@@ -179,27 +288,27 @@ void loginPage(PMFCGI& status, Payload& payload) {
 			payload.statusCode = 429;
 			payload.headers.insert({"Retry-After", std::to_string(retry)});
 			bj::object json;
-			json["BASE_PATH"]     = basePath;
+			setLoginTemplateVars(json, basePath, next);
 			json["ERROR_MESSAGE"] = "Too many login attempts, try again shortly.";
-			payload.html          = mustache(c.loginTemplate, json);
+			payload.html          = mustache(tmpl, json);
 			break;
 		}
 
 		default:
-			payload.redirect(F("{}login?error=3", basePath));
+			payload.redirect(loginRedirect(basePath, 3, next, appLogin ? "app/login" : "login"));
 			break;
 		}
 		return;
 	}
 
 	bj::object json;
-	json["BASE_PATH"] = basePath;
+	setLoginTemplateVars(json, basePath, next);
 
 	if (auto error = status.get.get<uint>("error"); error) {
 		json["ERROR_MESSAGE"] = c.loginErrorMessage ? c.loginErrorMessage(error.val) : defaultLoginErrorMessage(error.val);
 	}
 
-	payload.html = mustache(c.loginTemplate, json);
+	payload.html = mustache(tmpl, json);
 }
 
 void logout(PMFCGI& status, Payload& payload) {
@@ -212,7 +321,9 @@ void logout(PMFCGI& status, Payload& payload) {
 		}
 	}
 	payload.headers.deleteCookie(c.cookieName.toStdString());
-	payload.redirect(F("{}login", status.getBasePath()));
+	const auto path = status.url.url.path().mid(1);
+	const auto leaf = (path == "app/logout") ? "app/login" : "login";
+	payload.redirect(F("{}{}", status.getBasePath(), leaf));
 }
 
 } // namespace rbk::Auth

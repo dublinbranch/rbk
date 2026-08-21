@@ -2,6 +2,7 @@
 #define RBK_HTTP_AUTHHANDLER_H
 
 #include <QString>
+#include <boost/json/object.hpp>
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -57,10 +58,14 @@ struct Conf {
 	uint    cookieTTL    = 3600 * 24;
 	bool    cookieSecure = true;
 
-	//mustache template of the login form, receives BASE_PATH and ERROR_MESSAGE
+	//mustache template of the login form, receives BASE_PATH, ERROR_MESSAGE, and NEXT
 	std::filesystem::path loginTemplate;
-	//where to land after a successful login, appended to the base path
+	//mobile /app/login template; empty falls back to loginTemplate
+	std::filesystem::path appLoginTemplate;
+	//fallback after a successful login when next is missing or unsafe, appended to the base path
 	std::string successPath = "index";
+	//fallback after a successful /app/login when next is missing or unsafe
+	std::string appSuccessPath = "app/";
 
 	//non logged api calls get a json 401 instead of a redirect to the login page, default path.startsWith("api/")
 	std::function<bool(const QString& path)> isApiCall;
@@ -81,6 +86,9 @@ struct Conf {
 
 	//optional: called at the start of loginPage, typically to set up an anonymous user for logging
 	std::function<void(PMFCGI& status)> prepareAnonymous;
+
+	//optional: extra mustache vars for login templates (TSM, theme chrome, ...)
+	std::function<void(boost::json::object& json)> decorateLoginJson;
 
 	//check the credentials, on ok also register the session and return its id
 	std::function<LoginOutcome(PMFCGI& status, const QString& email, const QString& password)> login;
@@ -106,7 +114,7 @@ Conf& conf();
 //session preflight, registered as BeastConf::loginManager so it runs before any routing
 bool loginManager(PMFCGI& status, Payload& payload);
 
-//GET renders the login form, POST (email + password) performs the login and sets the session cookie
+//GET renders the login form, POST (email + password [+ next]) performs the login and sets the session cookie
 void loginPage(PMFCGI& status, Payload& payload);
 void logout(PMFCGI& status, Payload& payload);
 

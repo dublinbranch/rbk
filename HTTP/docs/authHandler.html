@@ -124,12 +124,12 @@ BeastConf::loginManager  ──►  rbk::Auth::loginManager
    │      │
    │      └─► resumeSession(status, sessionId)
    │             ok        ──► continue
-   │             invalid   ──► delete cookie, redirect login?error=7  (or JSON 401 for api/)
-   │             notLogged ──► redirect login                          (or JSON 401 for api/)
+   │             invalid   ──► delete cookie, redirect login?error=7&amp;next=…  (or JSON 401 for api/)
+   │             notLogged ──► redirect login?next=…                         (or JSON 401 for api/)
    │
    ├─ no cookie: develLogin(status) returned true? ───────► continue (development auto login)
    │
-   ├─ neither ────────────────────────────────────────────► redirect login (or JSON 401 for api/)
+   ├─ neither ────────────────────────────────────────────► redirect login?next=… (or JSON 401 for api/)
    │
    └─► postLogin(status, payload)   optional project checks (ACL, scoping, ...)
           │
@@ -156,8 +156,8 @@ void setupAuth() {
 
 	c.cookieTTL     = 3600 * 24;          //seconds
 	c.cookieSecure  = true;               //Secure flag on the cookie
-	c.loginTemplate = "html/login.html"_p; //mustache, receives BASE_PATH + ERROR_MESSAGE
-	c.successPath   = "index";             //landing page after login
+	c.loginTemplate = "html/login.html"_p; //mustache, receives BASE_PATH + ERROR_MESSAGE + NEXT
+	c.successPath   = "index";             //fallback landing page after login
 
 	//---- the hooks: this is YOUR user model, the engine never sees it ----
 
@@ -216,8 +216,8 @@ void guard(PMFCGI&amp; s, Payload&amp; p) {
 <tr><td><code>cookieName</code></td><td><code>"session"</code></td><td>Name of the session cookie.</td></tr>
 <tr><td><code>cookieTTL</code></td><td>1 day</td><td>Cookie lifetime in seconds.</td></tr>
 <tr><td><code>cookieSecure</code></td><td><code>true</code></td><td><code>Secure</code> flag — only turn off for plain-http development.</td></tr>
-<tr><td><code>loginTemplate</code></td><td>—</td><td>Mustache template of the login form. Receives <code>BASE_PATH</code> and, when present, <code>ERROR_MESSAGE</code>.</td></tr>
-<tr><td><code>successPath</code></td><td><code>"index"</code></td><td>Redirect target after a successful login, appended to the base path.</td></tr>
+<tr><td><code>loginTemplate</code></td><td>—</td><td>Mustache template of the login form. Receives <code>BASE_PATH</code>, when present <code>ERROR_MESSAGE</code>, and when present <code>NEXT</code> (the relative path to return to after login).</td></tr>
+<tr><td><code>successPath</code></td><td><code>"index"</code></td><td>Fallback redirect after a successful login when <code>next</code> is missing or unsafe, appended to the base path.</td></tr>
 <tr><td><code>isApiCall</code></td><td><code>startsWith("api/")</code></td><td>Paths for which a denied request gets a JSON 401 instead of a redirect to the login page.</td></tr>
 <tr><td><code>loginErrorMessage</code></td><td>built in</td><td>Override the <code>error=N</code> → message mapping of the login page (see below).</td></tr>
 </table>
@@ -237,7 +237,8 @@ void guard(PMFCGI&amp; s, Payload&amp; p) {
 </table>
 
 <h2>Login page error codes</h2>
-<p>The engine redirects to <code>login?error=N</code> and the login form renders
+<p>The engine redirects to <code>login?error=N</code> (and <code>&amp;next=…</code> when returning
+to the page that forced login) and the login form renders
 <code>ERROR_MESSAGE</code> accordingly. Defaults (override with <code>loginErrorMessage</code>):</p>
 <table>
 <tr><th><code>error=</code></th><th>When</th><th>Default message</th></tr>
