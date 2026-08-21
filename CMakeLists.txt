@@ -309,6 +309,7 @@ set(RBK_HEADERS
 
     # HTTP
     HTTP/mime.h
+    HTTP/staticPath.h
     HTTP/PMFCGI.h
     HTTP/url.h
     HTTP/util.h
@@ -377,6 +378,8 @@ set(RBK_HEADERS
     misc/csv.h
     misc/decimate.h
     misc/echo.h
+    misc/escapeH.h
+    misc/safeFilename.h
     misc/intTypes.h
     misc/NanoSpammerConfigDescribe.h
     misc/ParallelForeach.h
@@ -669,6 +672,7 @@ target_link_libraries(rbk
         Boost::boost
         fmt::fmt
         PkgConfig::MARIADB
+        argon2
 )
 
 if(UNIX AND NOT APPLE)

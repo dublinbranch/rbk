@@ -3,6 +3,7 @@
 #include "beastConfig.h"
 #include "rbk/HTTP/Payload.h"
 #include "rbk/HTTP/mime.h"
+#include "rbk/HTTP/staticPath.h"
 #include "rbk/HTTP/url.h"
 #include "rbk/caching/apcu2.h"
 #include "rbk/filesystem/filefunction.h"
@@ -85,14 +86,15 @@ void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) 
 		(*(v2.val))(status, payload);
 		return;
 	} else if (conf->staticFile.has_value() && !conf->staticFile.value().empty()) {
-		auto p   = conf->staticFile.value() / path;
-		auto res = fileGetContents2(p, true, 0);
-		if (res.exist) {
-			payload.html       = res.content.toStdString();
-			payload.mime       = getMimeType(path);
-			payload.statusCode = 200;
-			payload.setCacheHeader(conf->staticFileCacheTTL);
-			return;
+		if (auto p = resolveStaticFile(conf->staticFile.value(), path)) {
+			auto res = fileGetContents2(*p, true, 0);
+			if (res.exist) {
+				payload.html       = res.content.toStdString();
+				payload.mime       = getMimeType(path);
+				payload.statusCode = 200;
+				payload.setCacheHeader(conf->staticFileCacheTTL);
+				return;
+			}
 		}
 	}
 	payload.html       = fmt::format("invalid path >>> {} <<< no routing available", path);
