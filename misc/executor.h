@@ -10,7 +10,11 @@
 
 #include "rbk/log/log.h"
 #include "rbk/string/stringoso.h"
+#include <functional>
 #include <map>
+#include <string>
+#include <string_view>
+#include <vector>
 
 class QStringAdt;
 
@@ -29,12 +33,15 @@ struct ExecuteOpt {
 	//for *REASON* some program write not on stdout but on stderr like nginx...
 	bool                               isRetarded = false;
 	std::map<std::string, std::string> custom_env;
+	/** Called with each stdout/stderr chunk while the process runs. Empty = drain only. */
+	std::function<void(std::string_view chunk, bool isStderr)> onChunk;
 };
 
 Log execute(const QStringAdt& cmd, const ExecuteOpt& opt = {});
-//Log execute(const std::vector<std::string>& args, ExecuteOpt opt = {});
+Log execute(const std::vector<std::string>& args, const ExecuteOpt& opt = {});
 
 Log sudo(const QStringAdt& cmd, const ExecuteOpt& opt = {});
+Log sudo(const std::vector<std::string>& args, const ExecuteOpt& opt = {});
 
 /**
  * @brief saveInto will execute sudo to move the file in place where we can not access

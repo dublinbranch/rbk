@@ -580,6 +580,31 @@ endif()
 qt6_add_resources(RBK_QRC gitTrick/resources.qrc)
 list(APPEND RBK_SOURCES ${RBK_QRC})
 
+# Ninja / Make start TUs in add_library() order. beast.cpp is the Beast
+# listener (~14MB .o); leaving it last means -jN idles on it.
+set(_rbk_compile_first
+    HTTP/beast.cpp
+    BoostJson/extra.cpp
+    minMysql/min_mysql.cpp
+    minMysql/checkschema.cpp
+    HTTP/router.cpp
+    HTTP/PMFCGI.cpp
+    caching/apcu2.cpp
+    filesystem/filefunction.cpp
+    minMysql/utilityfunctions.cpp
+)
+set(_rbk_front)
+foreach(_src IN LISTS _rbk_compile_first)
+    if(_src IN_LIST RBK_SOURCES)
+        list(APPEND _rbk_front "${_src}")
+        list(REMOVE_ITEM RBK_SOURCES "${_src}")
+    endif()
+endforeach()
+list(PREPEND RBK_SOURCES ${_rbk_front})
+unset(_rbk_compile_first)
+unset(_rbk_front)
+unset(_src)
+
 # ── Library target ──────────────────────────────────────────────────────────
 add_library(rbk STATIC ${RBK_SOURCES} ${RBK_HEADERS})
 add_library(rbk::rbk ALIAS rbk)
