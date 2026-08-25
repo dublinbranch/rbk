@@ -39,6 +39,11 @@ class BeastConf {
 
 	WebSocketUpgradeFn websocketUpgrade;
 
+	// Runs on each HttpHandler thread before it starts draining the io_context.
+	// digitalSpine uses this to turn CLIENT_MULTI_STATEMENTS off on the worker
+	// connection (SQLBuffering stays on its own threads).
+	std::function<void()> onWorkerStart;
+
 	mapV2<std::string, SimpleRoutedType> routingSimple;
 	mapV2<std::string, RequestBase*>     routing;
 	mapV2<std::string, std::string>      defaultHeader;

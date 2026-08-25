@@ -624,12 +624,16 @@ void Beast::listen() {
 	for (auto i = conf.worker; i > 0; --i) {
 		auto status = ThreadStatus::newStatus();
 
-		auto& t       = threads.emplace_back(new std::thread(
-		    [status, &IOC] {
+		auto onWorkerStart = conf.onWorkerStart;
+		auto& t            = threads.emplace_back(new std::thread(
+		    [status, &IOC, onWorkerStart] {
 			    //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
 			    status->tid       = gettid();
 			    localThreadStatus = status.get();
 			    pthread_setname_np(pthread_self(), "HttpHandler");
+			    if (onWorkerStart) {
+				    onWorkerStart();
+			    }
 			    //and than launch to io handler
 			    IOC.run();
 		    }));
