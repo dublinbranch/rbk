@@ -192,19 +192,29 @@ bool loginManager(PMFCGI& status, Payload& payload) {
 	auto basePath = status.getBasePath();
 	auto next     = originalTarget(status);
 
+	const auto tryDevelLogin = [&] {
+		return c.develLogin && c.develLogin(status);
+	};
+
 	if (auto session = status.cookies->get(c.cookieName); session) {
 		switch (c.resumeSession(status, session.val->toStdString())) {
 		case SessionState::ok:
 			break;
 		case SessionState::invalid:
 			payload.headers.deleteCookie(c.cookieName.toStdString());
-			return deny(path, payload, loginRedirect(basePath, 7, next));
+			//stale cookie used to skip develLogin and bounce to login?error=7, which
+			//breaks local auto-login after every restart (APCu sessions die with the process)
+			if (!tryDevelLogin()) {
+				return deny(path, payload, loginRedirect(basePath, 7, next));
+			}
+			break;
 		case SessionState::notLogged:
-			return deny(path, payload, loginRedirect(basePath, {}, next));
+			if (!tryDevelLogin()) {
+				return deny(path, payload, loginRedirect(basePath, {}, next));
+			}
+			break;
 		}
-	} else if (c.develLogin && c.develLogin(status)) {
-		//development auto login, nothing else to do
-	} else {
+	} else if (!tryDevelLogin()) {
 		return deny(path, payload, loginRedirect(basePath, {}, next));
 	}
 
@@ -215,6 +225,44 @@ bool loginManager(PMFCGI& status, Payload& payload) {
 
 	//preflight check all clear, let's GO!
 	return true;
+}
+
+UpgradeAuth checkWsUpgrade(PMFCGI& status, int minLevel) {
+	auto& c = conf();
+
+	const auto tryDevelLogin = [&] {
+		return c.develLogin && c.develLogin(status);
+	};
+
+	bool resolved = false;
+	if (status.cookies) {
+		if (auto session = status.cookies->get(c.cookieName); session) {
+			if (!c.resumeSession) {
+				return UpgradeAuth::unauthorized;
+			}
+			switch (c.resumeSession(status, session.val->toStdString())) {
+			case SessionState::ok:
+				resolved = true;
+				break;
+			case SessionState::invalid:
+			case SessionState::notLogged:
+				resolved = tryDevelLogin();
+				break;
+			}
+		} else {
+			resolved = tryDevelLogin();
+		}
+	} else {
+		resolved = tryDevelLogin();
+	}
+
+	if (!resolved || !c.isLogged || !c.isLogged()) {
+		return UpgradeAuth::unauthorized;
+	}
+	if (c.hasLevel && !c.hasLevel(minLevel)) {
+		return UpgradeAuth::forbidden;
+	}
+	return UpgradeAuth::ok;
 }
 
 void loginPage(PMFCGI& status, Payload& payload) {

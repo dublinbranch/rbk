@@ -189,6 +189,13 @@ class DB {
 	void         setConfIfNotSet(const DBConf& value);
 
 	u64 getAffectedRows() const;
+
+	// Stacked statements (SQLBuffering) vs HTTP workers. Per-thread (mi_tls).
+	// MariaDB ignores the connect-time CLIENT_MULTI_STATEMENTS flag; this uses
+	// mysql_set_server_option and reapplies it after MYSQL_OPT_RECONNECT.
+	void setMultiStatements(bool on) const;
+	[[nodiscard]] bool multiStatements() const;
+
 	//usually set / reset via
 	//	#include "rbk/RAII/resetAfterUse.h"
 	//	ResetOnExit resetMe(mainDB->state.get()
@@ -225,6 +232,9 @@ class DB {
 		u64 affectedRows = 0;
 		// used for asyncs
 		int signalMask = 0;
+
+		// Default on: SQLBuffering concatenates a batch into one query string.
+		bool multiStatements = true;
 	};
 	mutable mi_tls<InternalState> state;
 

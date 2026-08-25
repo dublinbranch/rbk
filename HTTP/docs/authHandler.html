@@ -124,8 +124,8 @@ BeastConf::loginManager  ──►  rbk::Auth::loginManager
    │      │
    │      └─► resumeSession(status, sessionId)
    │             ok        ──► continue
-   │             invalid   ──► delete cookie, redirect login?error=7&amp;next=…  (or JSON 401 for api/)
-   │             notLogged ──► redirect login?next=…                         (or JSON 401 for api/)
+   │             invalid   ──► delete cookie; develLogin? continue, else login?error=7&amp;next=…
+   │             notLogged ──► develLogin? continue, else login?next=…
    │
    ├─ no cookie: develLogin(status) returned true? ───────► continue (development auto login)
    │
@@ -230,7 +230,7 @@ void guard(PMFCGI&amp; s, Payload&amp; p) {
 <tr><td><code>logout</code></td><td class="req">required</td><td>Invalidate the session server side. The engine deletes the cookie and redirects to the login page afterwards.</td></tr>
 <tr><td><code>isLogged</code></td><td class="req">required*</td><td>Used by <code>guard</code> / <code>denyRoute</code>. *Only required if you use <code>guard</code>; an unset <code>isLogged</code> makes every guarded route answer 401.</td></tr>
 <tr><td><code>hasLevel</code></td><td class="req">required*</td><td>Used by <code>guard</code>: does the current user reach <code>minLevel</code>? The int is whatever your project enum casts to.</td></tr>
-<tr><td><code>develLogin</code></td><td class="opt">optional</td><td>Auto login for development (e.g. credentials from the config file). Called only when no session cookie is present; return <code>true</code> if a user was logged in.</td></tr>
+	<tr><td><code>develLogin</code></td><td class="opt">optional</td><td>Auto login for development (e.g. credentials from the config file). Called when there is no session cookie, and also after an invalid or not-logged session so a leftover cookie cannot block local auto-login. Return <code>true</code> if a user was logged in.</td></tr>
 <tr><td><code>postLogin</code></td><td class="opt">optional</td><td>Runs after a successful preflight — ACL, account scoping, tenant checks. Return <code>false</code> to short circuit the request; in that case <em>write the response yourself</em>.</td></tr>
 <tr><td><code>prepareAnonymous</code></td><td class="opt">optional</td><td>Called at the start of <code>loginPage</code>, typically to set up an anonymous user object so logging / audit works before authentication.</td></tr>
 <tr><td><code>auditBlockedRoute</code></td><td class="opt">optional</td><td>Called by <code>denyRoute</code> on a 403, before the JSON error is written.</td></tr>

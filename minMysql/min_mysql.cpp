@@ -73,6 +73,18 @@ DBException::Error DBException::nr2Enum(unsigned int error) {
 	}
 }
 
+// The connect-time CLIENT_MULTI_STATEMENTS flag is ignored by current MariaDB
+// Connector/C (stacked queries still run). The session option is what sticks.
+// Re-applied after MYSQL_OPT_RECONNECT, which would otherwise restore ON.
+static void applyMultiStatements(st_mysql* conn, bool on) {
+	const auto opt = on ? MYSQL_OPTION_MULTI_STATEMENTS_ON : MYSQL_OPTION_MULTI_STATEMENTS_OFF;
+	if (mysql_set_server_option(conn, opt) != 0) {
+		throw DBException(F("mysql_set_server_option({}) failed: {}",
+		                    on ? "ON" : "OFF", mysql_error(conn)),
+		                  DBException::Error::Connection);
+	}
+}
+
 static bool isRetryableLockError(DBException::Error error) {
 	switch (error) {
 	case DBException::Error::LockWaitTimeout:
@@ -469,6 +481,7 @@ void DB::pingCheck(st_mysql*& conn) const {
 		if (oldConnId != newConnId) {
 			state.get().reconnection++;
 			qDebug() << "detected mysql reconnection";
+			applyMultiStatements(conn, state.get().multiStatements);
 		}
 	});
 
@@ -686,6 +699,17 @@ void DB::closeConn() const {
 	}
 }
 
+void DB::setMultiStatements(bool on) const {
+	state.get().multiStatements = on;
+	if (auto conn = getConn(true); conn) {
+		applyMultiStatements(conn, on);
+	}
+}
+
+bool DB::multiStatements() const {
+	return state.get().multiStatements;
+}
+
 StMysqlPtr DB::connect() const {
 	auto sptr = make_shared<St_mysqlW>();
 	// Mysql connection stuff is not thread safe!
@@ -745,7 +769,10 @@ StMysqlPtr DB::connect() const {
 		// just to check we have the conf set
 		getConf();
 
-		auto flag = CLIENT_MULTI_STATEMENTS;
+		unsigned long flag = 0;
+		if (state.get().multiStatements) {
+			flag = CLIENT_MULTI_STATEMENTS;
+		}
 		if (conf.ssl) {
 			mysql_options(conn, MYSQL_OPT_SSL_ENFORCE, &trueNonSense);
 			flag |= CLIENT_SSL;
@@ -789,6 +816,8 @@ StMysqlPtr DB::connect() const {
 		connPool = sptr;
 		/***/
 	}
+
+	applyMultiStatements(*sptr, state.get().multiStatements);
 
 	if (!conf.isMariaDB8.value()) {
 		//if you are here you can use MIN instead of ANY_VALUE in mariadb

@@ -41,6 +41,14 @@ enum class SessionState {
 	notLogged  //session resolved but the user is not (or no longer) logged
 };
 
+// Websocket upgrades skip loginManager. Same cookie / develLogin / hasLevel
+// path, for the browser endpoints that must not stay anonymous.
+enum class UpgradeAuth {
+	ok,
+	unauthorized,
+	forbidden
+};
+
 struct LoginOutcome {
 	LoginResult result = LoginResult::error;
 	//required when result == ok, becomes the session cookie value
@@ -113,6 +121,9 @@ Conf& conf();
 
 //session preflight, registered as BeastConf::loginManager so it runs before any routing
 bool loginManager(PMFCGI& status, Payload& payload);
+
+// Cookie + develLogin + hasLevel for a websocket upgrade. extractCookies first.
+UpgradeAuth checkWsUpgrade(PMFCGI& status, int minLevel);
 
 //GET renders the login form, POST (email + password [+ next]) performs the login and sets the session cookie
 void loginPage(PMFCGI& status, Payload& payload);
