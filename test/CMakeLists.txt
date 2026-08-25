@@ -5,6 +5,7 @@ add_executable(rbk_tests
     clientIp.cpp
     filefunction.cpp
     loginLimiter.cpp
+    staticPath.cpp
     $<TARGET_OBJECTS:rbk_boostjson_test_objs>
 )
 
