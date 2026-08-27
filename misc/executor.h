@@ -30,12 +30,17 @@ struct ExecuteOpt {
 	static ExecuteOpt retarded();
 	/** Routine sudo (mv/chown/chmod/mkdir): skip QStacker on the Log. */
 	static ExecuteOpt noStackTrace();
+	/** noStackTrace + inherit parent env. Use for tiny privileged helpers. */
+	static ExecuteOpt routine();
 
 	float maxTimeInS = 999;
 	//for *REASON* some program write not on stdout but on stderr like nginx...
 	bool                               isRetarded = false;
 	/** When false, execute/sudo do not capture a stack walk (still gated by Execute_logStackTrace). */
 	bool                               logStackTrace = true;
+	/** When true, child inherits the parent environment (reproc extend) plus custom_env.
+	 *  Default stays empty+PATH so restic/LXC callers keep a clean env. */
+	bool                               inheritEnv = false;
 	std::map<std::string, std::string> custom_env;
 	/** Called with each stdout/stderr chunk while the process runs. Empty = drain only. */
 	std::function<void(std::string_view chunk, bool isStderr)> onChunk;
@@ -48,10 +53,9 @@ Log sudo(const QStringAdt& cmd, const ExecuteOpt& opt = {});
 Log sudo(const std::vector<std::string>& args, const ExecuteOpt& opt = {});
 
 /**
- * @brief saveInto will execute sudo to move the file in place where we can not access
- * as of course we prefer to run this code not with high priviledges!
- * @param path
- * @param content
+ * @brief saveInto writes content to path. Skips the write when bytes already match.
+ *        If the process can write the dest (or its parent), writes directly and
+ *        does not chown to root. Otherwise one `sudo install` (mode+owner).
  */
 Log saveInto(const QStringAdt& path, const QByteAdt& content, QString chown = "root:root", QString chmod = "644");
 //Similar but in case the file already exists

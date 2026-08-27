@@ -15,6 +15,7 @@
 #include <QFile>
 #include <QMap>
 #include <QRegularExpression>
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <qscopeguard.h>
@@ -43,6 +44,42 @@ extern thread_local ThreadStatus::Status* localThreadStatus;
 
 DB::SharedState DB::sharedState;
 using namespace std;
+
+namespace {
+std::atomic<qint64> mysqlLastReconnectMs{0};
+std::atomic<qint64> mysqlLastErrorMs{0};
+std::atomic<uint>   mysqlLastErrorCode{0};
+std::mutex          mysqlLastErrorMu;
+QString             mysqlLastErrorText;
+} // namespace
+
+void DB::noteReconnect() {
+	mysqlLastReconnectMs.store(QDateTime::currentMSecsSinceEpoch());
+}
+
+void DB::noteError(uint code, const QString& msg) {
+	mysqlLastErrorMs.store(QDateTime::currentMSecsSinceEpoch());
+	mysqlLastErrorCode.store(code);
+	std::lock_guard<std::mutex> g(mysqlLastErrorMu);
+	mysqlLastErrorText = msg;
+}
+
+qint64 DB::lastReconnectAtMs() {
+	return mysqlLastReconnectMs.load();
+}
+
+qint64 DB::lastErrorAtMs() {
+	return mysqlLastErrorMs.load();
+}
+
+uint DB::lastErrorCodeSnapshot() {
+	return mysqlLastErrorCode.load();
+}
+
+QString DB::lastErrorText() {
+	std::lock_guard<std::mutex> g(mysqlLastErrorMu);
+	return mysqlLastErrorText;
+}
 
 static int somethingHappened(MYSQL* mysql, int status);
 
@@ -163,6 +200,7 @@ SQLLogger DB::queryInner(const std::string& sql) const {
 		case 1062: { //unique index violation
 			if (state->uniqueViolationNothrow) {
 				state->lastError = mysql_error(conn);
+				noteError(error, state->lastError);
 				return sqlLogger;
 			} else {
 				ResetOnExit r(cxaNoStack, true);
@@ -480,6 +518,7 @@ void DB::pingCheck(st_mysql*& conn) const {
 		auto newConnId = mysql_thread_id(conn);
 		if (oldConnId != newConnId) {
 			state.get().reconnection++;
+			noteReconnect();
 			qDebug() << "detected mysql reconnection";
 			applyMultiStatements(conn, state.get().multiStatements);
 		}
@@ -790,6 +829,7 @@ StMysqlPtr DB::connect() const {
 			if (errorNo == ER_BAD_DB_ERROR) {
 				auto& msg = state.get().lastError;
 				msg       = F16("Mysql connection error (mysql_init). for {} \n Error {} \n Use a VALID default DB..!", conf.getInfo(), error);
+				noteError(errorNo, msg);
 
 				throw DBException(msg, DBException::Error::InvalidDB);
 			}
@@ -805,6 +845,7 @@ StMysqlPtr DB::connect() const {
 
 			auto& msg = state.get().lastError;
 			msg       = F16("Mysql connection error (mysql_init). for {} \n Error {} \n Did you forget to enable SSL ?", conf.getInfo(), error);
+			noteError(errorNo, msg);
 
 			mysql_close(conn);
 			messanger(msg, conf.connErrorVerbosity);

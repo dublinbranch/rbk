@@ -5,6 +5,7 @@
 #include "rbk/log/log.h"
 #include <QDateTime>
 #include <QDebug>
+#include <QFile>
 
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/filesystem/filefunction.h"
@@ -12,6 +13,8 @@
 
 #include <reproc++/drain.hpp>
 #include <reproc++/reproc.hpp>
+#include <filesystem>
+#include <sys/stat.h>
 #include <unistd.h>
 
 using namespace std;
@@ -36,6 +39,13 @@ ExecuteOpt ExecuteOpt::noStackTrace() {
 	return opt;
 }
 
+ExecuteOpt ExecuteOpt::routine() {
+	ExecuteOpt opt;
+	opt.logStackTrace = false;
+	opt.inheritEnv    = true;
+	return opt;
+}
+
 namespace {
 
 QString joinArgv(const std::vector<std::string>& args) {
@@ -52,12 +62,12 @@ QString joinArgv(const std::vector<std::string>& args) {
 Log executeImpl(const std::vector<std::string>& ar, const QString& section, const ExecuteOpt& opt) {
 	Log log;
 	log.section  = "execute: " + section;
-	log.options  = F("maxTime: {} env: {} ", opt.maxTimeInS, opt.custom_env);
+	log.options  = F("maxTime: {} env: {} inherit: {}", opt.maxTimeInS, opt.custom_env, opt.inheritEnv);
 	log.category = Log::Exception;
 
 	reproc::process process;
 	reproc::options options;
-	options.env.behavior      = reproc::env::empty;
+	options.env.behavior      = opt.inheritEnv ? reproc::env::extend : reproc::env::empty;
 	options.env.extra         = opt.custom_env;
 	options.redirect.parent   = false;
 	options.redirect.err.type = reproc::redirect::pipe;
@@ -183,6 +193,62 @@ Log execute(const std::vector<std::string>& args, const ExecuteOpt& opt) {
 	return executeImpl(args, joinArgv(args), opt);
 }
 
+namespace {
+
+bool destWritableByProcess(const QString& path) {
+	std::error_code           ec;
+	std::filesystem::path     p = path.toStdString();
+	if (std::filesystem::exists(p, ec)) {
+		return ::access(p.c_str(), W_OK) == 0;
+	}
+	auto parent = p.parent_path();
+	if (parent.empty()) {
+		parent = ".";
+	}
+	return ::access(parent.c_str(), W_OK) == 0;
+}
+
+bool contentAlreadyMatches(const QString& path, const QByteAdt& content) {
+	auto existing = fileGetContents2(path, true, 0);
+	return existing && existing.content == static_cast<const QByteArray&>(content);
+}
+
+void splitOwner(const QString& chown, QString& user, QString& group) {
+	const auto parts = chown.split(QLatin1Char(':'));
+	user             = parts.value(0);
+	group            = parts.size() > 1 ? parts.at(1) : QString();
+}
+
+std::vector<std::string> installArgv(const std::string& src, const QString& dest,
+                                     const QString& chown, const QString& chmod) {
+	QString user;
+	QString group;
+	splitOwner(chown, user, group);
+	std::vector<std::string> args{"install", "-m", chmod.toStdString()};
+	if (!user.isEmpty()) {
+		args.emplace_back("-o");
+		args.push_back(user.toStdString());
+	}
+	if (!group.isEmpty()) {
+		args.emplace_back("-g");
+		args.push_back(group.toStdString());
+	}
+	args.push_back(src);
+	args.push_back(dest.toStdString());
+	return args;
+}
+
+void applyChmod(const QString& path, const QString& chmod) {
+	bool ok = false;
+	const auto mode = chmod.toUInt(&ok, 8);
+	if (!ok) {
+		return;
+	}
+	::chmod(path.toUtf8().constData(), static_cast<mode_t>(mode));
+}
+
+} // namespace
+
 Log sudo(const QStringAdt& cmd, const ExecuteOpt& opt) {
 	if (geteuid() == 0) {
 		return execute(cmd, opt);
@@ -206,13 +272,23 @@ Log saveInto(const QStringAdt& path, const QByteAdt& content, QString chown, QSt
 	log.section  = "saveInto";
 	log.category = Log::Exception;
 
-	auto temp = getTempFile(QString{});
+	if (contentAlreadyMatches(path, content)) {
+		log.category = Log::Info;
+		return log;
+	}
 
+	if (destWritableByProcess(path)) {
+		filePutContents(content, path, true);
+		applyChmod(path, chmod);
+		log.category = Log::Info;
+		return log;
+	}
+
+	auto temp = getTempFile(QString{});
 	filePutContents(content, temp, true);
 	const auto noTrace = ExecuteOpt::noStackTrace();
-	log.push(sudo(std::vector<std::string>{"mv", QStringAdt(temp).toStdString(), QStringAdt(path).toStdString()}, noTrace));
-	log.push(sudo(std::vector<std::string>{"chown", chown.toStdString(), QStringAdt(path).toStdString()}, noTrace));
-	log.push(sudo(std::vector<std::string>{"chmod", chmod.toStdString(), QStringAdt(path).toStdString()}, noTrace));
+	log.push(sudo(installArgv(temp.toStdString(), path, chown, chmod), noTrace));
+	QFile::remove(temp);
 
 	log.category = Log::Info;
 	return log;
@@ -224,9 +300,12 @@ Log moveInto(const QString& old, const QString& neu, QString chown, QString chmo
 	log.category = Log::Exception;
 
 	const auto noTrace = ExecuteOpt::noStackTrace();
-	log.push(sudo(std::vector<std::string>{"mv", old.toStdString(), neu.toStdString()}, noTrace));
-	log.push(sudo(std::vector<std::string>{"chown", chown.toStdString(), neu.toStdString()}, noTrace));
-	log.push(sudo(std::vector<std::string>{"chmod", chmod.toStdString(), neu.toStdString()}, noTrace));
+	log.push(sudo(std::vector<std::string>{
+	                  "sh", "-c",
+	                  "mv -- \"$1\" \"$2\" && chown -- \"$3\" \"$2\" && chmod -- \"$4\" \"$2\"",
+	                  "diter-moveInto", old.toStdString(), neu.toStdString(),
+	                  chown.toStdString(), chmod.toStdString()},
+	              noTrace));
 
 	log.category = Log::Info;
 	return log;
@@ -238,9 +317,7 @@ Log copyInto(const QStringAdt& old, const QStringAdt& neu, QString chown, QStrin
 	log.category = Log::Exception;
 
 	const auto noTrace = ExecuteOpt::noStackTrace();
-	log.push(sudo(std::vector<std::string>{"cp", QStringAdt(old).toStdString(), QStringAdt(neu).toStdString()}, noTrace));
-	log.push(sudo(std::vector<std::string>{"chown", chown.toStdString(), QStringAdt(neu).toStdString()}, noTrace));
-	log.push(sudo(std::vector<std::string>{"chmod", chmod.toStdString(), QStringAdt(neu).toStdString()}, noTrace));
+	log.push(sudo(installArgv(old.toStdString(), neu, chown, chmod), noTrace));
 
 	log.category = Log::Info;
 	return log;

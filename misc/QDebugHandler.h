@@ -16,6 +16,7 @@ void requireCurlIfWarningMailEnabled(const NanoSpammerConfig& spamConf);
 
 void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg);
 void lowSpamMsgHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg);
+void shutdownQtLogging();
 void sendMail(QString subject, QString message);
 void sendSlack(const QString& msg, std::string channel="");
 void callViaTwilio();

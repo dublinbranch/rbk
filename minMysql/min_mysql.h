@@ -238,6 +238,14 @@ class DB {
 	};
 	mutable mi_tls<InternalState> state;
 
+	/** Process-wide last reconnect / last error (any thread). For the status page. */
+	static void    noteReconnect();
+	static void    noteError(uint code, const QString& msg);
+	static qint64  lastReconnectAtMs();
+	static qint64  lastErrorAtMs();
+	static uint    lastErrorCodeSnapshot();
+	static QString lastErrorText();
+
       private:
 	bool   confSet = false;
 	DBConf conf;

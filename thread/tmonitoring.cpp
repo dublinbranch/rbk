@@ -3,7 +3,19 @@
 #include "rbk/gitTrick/buffer.h"
 #include "rbk/minMysql/min_mysql.h"
 #include "threadstatush.h"
+#ifdef WITH_Jemalloc
+#include "rbk/jemalloc/jemutil.h"
+#endif
+#include <QDateTime>
+#include <QElapsedTimer>
 #include <atomic>
+#include <cctype>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <sys/resource.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -152,6 +164,113 @@ i64 registerFlushTime() {
 	return localThreadStatus->time.flush;
 }
 
+namespace {
+
+int countOpenFdsStatus() {
+	std::error_code ec;
+	int             n = 0;
+	for (const auto& e : std::filesystem::directory_iterator("/proc/self/fd", ec)) {
+		(void)e;
+		++n;
+	}
+	return ec ? -1 : n;
+}
+
+std::string formatUptime(i64 upSec) {
+	const auto h = upSec / 3600;
+	const auto m = (upSec % 3600) / 60;
+	const auto s = upSec % 60;
+	return fmt::format("{}h {:02}m {:02}s", h, m, s);
+}
+
+std::string ageAgo(qint64 atMs) {
+	if (atMs <= 0) {
+		return "never";
+	}
+	const auto sec = (QDateTime::currentMSecsSinceEpoch() - atMs) / 1000;
+	if (sec < 1) {
+		return "just now";
+	}
+	return formatUptime(sec) + " ago";
+}
+
+unsigned long meminfoKb(const char* key) {
+	std::ifstream in("/proc/meminfo");
+	std::string   line;
+	const auto    prefix = std::string(key);
+	while (std::getline(in, line)) {
+		if (line.compare(0, prefix.size(), prefix) != 0) {
+			continue;
+		}
+		std::istringstream iss(line);
+		std::string        name;
+		unsigned long      kb = 0;
+		iss >> name >> kb;
+		return kb;
+	}
+	return 0;
+}
+
+std::string oneLine(QString s, int maxLen = 140) {
+	s.replace(QLatin1Char('\n'), QLatin1Char(' '));
+	s = s.simplified();
+	if (s.size() > maxLen) {
+		s = s.left(maxLen) + QLatin1String("…");
+	}
+	return s.toStdString();
+}
+
+std::string hostMemLine() {
+	const auto avail = meminfoKb("MemAvailable");
+	const auto total = meminfoKb("MemTotal");
+	const auto swapF = meminfoKb("SwapFree");
+	const auto swapT = meminfoKb("SwapTotal");
+	const auto warn  = (avail / 1024) < 256 ? "  [warn < 256 MB]" : "";
+	return fmt::format("Host mem    : {:.0f} / {:.0f} MB available{}  swap {:.0f} / {:.0f} MB free\n",
+	                   (double)avail / 1024.0, (double)total / 1024.0, warn,
+	                   (double)swapF / 1024.0, (double)swapT / 1024.0);
+}
+
+std::string identityLine() {
+	char host[256]{};
+	if (gethostname(host, sizeof(host) - 1) != 0) {
+		std::strncpy(host, "?", sizeof(host) - 1);
+	}
+	const auto uid = ::geteuid();
+	return fmt::format("Host        : {}  euid {}{}\n",
+	                   host, uid, uid == 0 ? " (root)" : "");
+}
+
+std::string mysqlLine() {
+	if (!mainDB || !mainDB->hasConf()) {
+		return "MySQL       : not configured\n";
+	}
+	std::string ping = "unknown";
+	QElapsedTimer t;
+	t.start();
+	try {
+		auto conn = mainDB->getConn();
+		if (!conn) {
+			ping = "no connection";
+		} else if (mysql_ping(conn) != 0) {
+			ping = fmt::format("ping fail {} ({} ms)", mysql_error(conn), t.elapsed());
+		} else {
+			ping = fmt::format("ok ({} ms)", t.elapsed());
+		}
+	} catch (const std::exception& e) {
+		ping = fmt::format("ping exception: {}", oneLine(QString::fromUtf8(e.what()), 80));
+	}
+	const auto err = DB::lastErrorText();
+	const auto errLine = err.isEmpty()
+	                         ? std::string("none")
+	                         : fmt::format("[{}] {} ({})", DB::lastErrorCodeSnapshot(),
+	                                       oneLine(err), ageAgo(DB::lastErrorAtMs()));
+	return fmt::format("MySQL       : {}\nMySQL last  : reconnect {}  error {}\n",
+	                   ping, ageAgo(DB::lastReconnectAtMs()), errLine);
+}
+
+} // namespace
+
 string composeStatus() {
 	auto rqs = ((double)request / (double)(QDateTime::currentMSecsSinceEpoch() - startedAt)) * 1000.0;
 	//TODO convert to json in master so can be used by hacheck easily
@@ -193,6 +312,20 @@ string composeStatus() {
 <body>
 )";
 
+	struct rlimit nofile {};
+	getrlimit(RLIMIT_NOFILE, &nofile);
+	struct rusage ru {};
+	getrusage(RUSAGE_SELF, &ru);
+	const auto upSec = (QDateTime::currentMSecsSinceEpoch() - startedAt) / 1000;
+
+	std::string jemallocLine;
+#ifdef WITH_Jemalloc
+	JEMUtil::refreshStatsCache();
+	jemallocLine = fmt::format("Jemalloc    : {:.1f} MB allocated, {:.1f} MB resident\n",
+	                           (double)JEMUtil::readU64("stats.allocated") / 1048576.0,
+	                           (double)JEMUtil::readU64("stats.resident") / 1048576.0);
+#endif
+
 	generalStatus += fmt::format(R"(
 <pre>
 Request done: {}
@@ -201,7 +334,11 @@ Free Thread : {}
 Used Thread : {}
 Exception   : {}
 Stacker cache: {}
-Git revision: {}
+Open fds    : {} / {} (hard {})
+PID         : {}
+Uptime      : {}
+RSS max     : {:.1f} MB
+{}{}{}{}Git revision: {}
 Compiled at : {} UTC
 </pre>
 )", // conf().workerLimit - threadFree
@@ -211,6 +348,16 @@ Compiled at : {} UTC
 	                             getThreadCount(),
 	                             exceptionThrown.load(),
 	                             stackerResolveCacheInfo(),
+	                             countOpenFdsStatus(),
+	                             nofile.rlim_cur,
+	                             nofile.rlim_max,
+	                             ::getpid(),
+	                             formatUptime(upSec),
+	                             (double)ru.ru_maxrss / 1024.0,
+	                             jemallocLine,
+	                             hostMemLine(),
+	                             identityLine(),
+	                             mysqlLine(),
 	                             GIT_STATUS_buffer,
 	                             COMPILATION_TIME_buffer);
 

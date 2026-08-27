@@ -26,6 +26,10 @@ static bool initLocaleTZDone = false;
 #define QBL(str) QByteArrayLiteral(str)
 #define QSL(str) QStringLiteral(str)
 
+void shutdownQtLogging() {
+	qInstallMessageHandler(nullptr);
+}
+
 bool hasCurlSupport() {
 #ifdef useMinCurl
 	return true;
@@ -216,8 +220,17 @@ void commonInitialization(const NanoSpammerConfig* _config) {
 
 //QDebug send in stderr, but we want to use stdout
 void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg) {
-	static QFile logFile;
-	static QFile errFile;
+	// Qt static destructors run after QCoreApplication and can still emit QDebug.
+	// Opening QFile (a QObject) in that window hits a destroyed vtable (pure virtual abort).
+	if (!QCoreApplication::instance()) {
+		std::FILE* stream = (type == QtWarningMsg || type == QtCriticalMsg || type == QtFatalMsg) ? stderr : stdout;
+		fmt::print(stream, "{}\n", msg.toStdString());
+		return;
+	}
+
+	// Leaked on purpose: must not run QObject destructors during static teardown.
+	static QFile& logFile = *new QFile;
+	static QFile& errFile = *new QFile;
 	if (!logFile.isOpen()) {
 		mkdir("log");
 		auto time = QDateTime::currentDateTime().toString(mysqlDateTimeFormat);
