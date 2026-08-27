@@ -30,6 +30,12 @@ ExecuteOpt ExecuteOpt::retarded() {
 	return opt;
 }
 
+ExecuteOpt ExecuteOpt::noStackTrace() {
+	ExecuteOpt opt;
+	opt.logStackTrace = false;
+	return opt;
+}
+
 namespace {
 
 QString joinArgv(const std::vector<std::string>& args) {
@@ -125,7 +131,7 @@ Log executeImpl(const std::vector<std::string>& ar, const QString& section, cons
 
 	log.setEnd();
 
-	if (Execute_logStackTrace) {
+	if (Execute_logStackTrace && opt.logStackTrace) {
 		log.stackTrace = QStacker();
 	}
 
@@ -203,10 +209,10 @@ Log saveInto(const QStringAdt& path, const QByteAdt& content, QString chown, QSt
 	auto temp = getTempFile(QString{});
 
 	filePutContents(content, temp, true);
-	const ExecuteOpt noOpt;
-	log.push(sudo(std::vector<std::string>{"mv", QStringAdt(temp).toStdString(), QStringAdt(path).toStdString()}, noOpt));
-	log.push(sudo(std::vector<std::string>{"chown", chown.toStdString(), QStringAdt(path).toStdString()}, noOpt));
-	log.push(sudo(std::vector<std::string>{"chmod", chmod.toStdString(), QStringAdt(path).toStdString()}, noOpt));
+	const auto noTrace = ExecuteOpt::noStackTrace();
+	log.push(sudo(std::vector<std::string>{"mv", QStringAdt(temp).toStdString(), QStringAdt(path).toStdString()}, noTrace));
+	log.push(sudo(std::vector<std::string>{"chown", chown.toStdString(), QStringAdt(path).toStdString()}, noTrace));
+	log.push(sudo(std::vector<std::string>{"chmod", chmod.toStdString(), QStringAdt(path).toStdString()}, noTrace));
 
 	log.category = Log::Info;
 	return log;
@@ -217,10 +223,10 @@ Log moveInto(const QString& old, const QString& neu, QString chown, QString chmo
 	log.section  = __PRETTY_FUNCTION__;
 	log.category = Log::Exception;
 
-	const ExecuteOpt noOpt;
-	log.push(sudo(std::vector<std::string>{"mv", old.toStdString(), neu.toStdString()}, noOpt));
-	log.push(sudo(std::vector<std::string>{"chown", chown.toStdString(), neu.toStdString()}, noOpt));
-	log.push(sudo(std::vector<std::string>{"chmod", chmod.toStdString(), neu.toStdString()}, noOpt));
+	const auto noTrace = ExecuteOpt::noStackTrace();
+	log.push(sudo(std::vector<std::string>{"mv", old.toStdString(), neu.toStdString()}, noTrace));
+	log.push(sudo(std::vector<std::string>{"chown", chown.toStdString(), neu.toStdString()}, noTrace));
+	log.push(sudo(std::vector<std::string>{"chmod", chmod.toStdString(), neu.toStdString()}, noTrace));
 
 	log.category = Log::Info;
 	return log;
@@ -231,10 +237,10 @@ Log copyInto(const QStringAdt& old, const QStringAdt& neu, QString chown, QStrin
 	log.section  = __PRETTY_FUNCTION__;
 	log.category = Log::Exception;
 
-	const ExecuteOpt noOpt;
-	log.push(sudo(std::vector<std::string>{"cp", QStringAdt(old).toStdString(), QStringAdt(neu).toStdString()}, noOpt));
-	log.push(sudo(std::vector<std::string>{"chown", chown.toStdString(), QStringAdt(neu).toStdString()}, noOpt));
-	log.push(sudo(std::vector<std::string>{"chmod", chmod.toStdString(), QStringAdt(neu).toStdString()}, noOpt));
+	const auto noTrace = ExecuteOpt::noStackTrace();
+	log.push(sudo(std::vector<std::string>{"cp", QStringAdt(old).toStdString(), QStringAdt(neu).toStdString()}, noTrace));
+	log.push(sudo(std::vector<std::string>{"chown", chown.toStdString(), QStringAdt(neu).toStdString()}, noTrace));
+	log.push(sudo(std::vector<std::string>{"chmod", chmod.toStdString(), QStringAdt(neu).toStdString()}, noTrace));
 
 	log.category = Log::Info;
 	return log;
@@ -244,6 +250,7 @@ bool fileExists(const QStringAdt& path) {
 
 	auto log    = sudo(std::vector<std::string>{"test", "-f", QStringAdt(path).toStdString()}, ExecuteOpt());
 	log.section = F16("fileExists: {}", path);
+	log.used    = true;
 
 	switch (log.exit_code) {
 	case 0:

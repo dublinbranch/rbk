@@ -4,14 +4,19 @@
 #include <QDebug>
 #include <QString>
 #include <algorithm>
+#include <cstring>
+#include <memory>
 #include <mutex>
 #include <sstream>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
 #else
+#include <cstdlib>
+#include <cxxabi.h>
 #include <dlfcn.h>
 #include <execinfo.h>
 #endif
@@ -19,6 +24,7 @@
 namespace {
 
 constexpr size_t kMaxPrintedName = 120;
+constexpr size_t kMaxMangled     = 160;
 
 bool contains(std::string_view hay, std::string_view needle) {
 	return hay.find(needle) != std::string_view::npos;
@@ -31,7 +37,17 @@ bool pathIsDenied(std::string_view path) {
 	return contains(path, "/boost/") || contains(path, "/bits/") || contains(path, "x-tools") ||
 	       contains(path, "/sysroot/") || contains(path, "libc.so") || contains(path, "libstdc++") ||
 	       contains(path, "libgcc_s") || contains(path, "ld-linux") ||
-	       contains(path, "crosstool-ng") || contains(path, "/usr/include/c++/");
+	       contains(path, "crosstool-ng") || contains(path, "/usr/include/c++/") ||
+	       contains(path, "libQt") || contains(path, "/opt/Qt/");
+}
+
+bool symbolIsDenied(std::string_view sym) {
+	if (sym.empty()) {
+		return false;
+	}
+	// Header-only Boost/Asio lives in the main binary; dladdr module path is not /boost/.
+	return contains(sym, "boost::") || contains(sym, "asio::") ||
+	       contains(sym, "_ZN5boost") || contains(sym, "4asio");
 }
 
 bool pathIsApp(std::string_view path) {
@@ -93,7 +109,109 @@ void capTraceNames(backward::ResolvedTrace& t) {
 	}
 }
 
+#ifndef _WIN32
+std::string cheapDemangle(const char* name) {
+	if (!name || !*name) {
+		return {};
+	}
+	const auto len = std::strlen(name);
+	if (len > kMaxMangled) {
+		return std::string(name, name + 64) + "...";
+	}
+	int   status = 0;
+	char* dem    = abi::__cxa_demangle(name, nullptr, nullptr, &status);
+	if (!dem) {
+		return name;
+	}
+	std::unique_ptr<char, decltype(&std::free)> guard(dem, &std::free);
+	return std::string(dem);
+}
+
+backward::ResolvedTrace resolveFromDladdr(const backward::Trace& tr, const Dl_info& dli) {
+	backward::ResolvedTrace t(tr);
+	if (dli.dli_fname) {
+		t.object_filename = dli.dli_fname;
+	}
+	t.object_function = cheapDemangle(dli.dli_sname);
+	capTraceNames(t);
+	return t;
+}
+
+bool dladdrIsDenied(const Dl_info& dli) {
+	if (dli.dli_fname && pathIsDenied(dli.dli_fname)) {
+		return true;
+	}
+	if (dli.dli_sname && symbolIsDenied(dli.dli_sname)) {
+		return true;
+	}
+	return false;
+}
+#endif
+
+// Reused under stacker's try_lock mutex: one Dwfl session + IP → {fn,file,line} cache.
+struct StackerResolve {
+	backward::TraceResolver                                    resolver;
+	std::unordered_map<void*, backward::ResolvedTrace>         cache;
+
+	void remember(void* addr, const backward::ResolvedTrace& t) {
+		if (!addr || stackerResolveCacheMax == 0) {
+			return;
+		}
+		if (cache.size() >= stackerResolveCacheMax) {
+			cache.clear();
+			stackerResolveCacheClears.fetch_add(1, std::memory_order_relaxed);
+		}
+		cache.emplace(addr, t);
+		stackerResolveCacheUsed.store(static_cast<uint>(cache.size()), std::memory_order_relaxed);
+	}
+
+	backward::ResolvedTrace resolve(const backward::Trace& tr) {
+		if (tr.addr) {
+			if (auto it = cache.find(tr.addr); it != cache.end()) {
+				stackerResolveCacheHits.fetch_add(1, std::memory_order_relaxed);
+				auto t = it->second;
+				t.idx  = tr.idx;
+				return t;
+			}
+		}
+
+#ifndef _WIN32
+		Dl_info dli{};
+		if (tr.addr && dladdr(tr.addr, &dli) && dladdrIsDenied(dli)) {
+			stackerResolveCacheMisses.fetch_add(1, std::memory_order_relaxed);
+			auto t = resolveFromDladdr(tr, dli);
+			remember(tr.addr, t);
+			return t;
+		}
+#endif
+		stackerResolveCacheMisses.fetch_add(1, std::memory_order_relaxed);
+		auto t = resolver.resolve(tr);
+		capTraceNames(t);
+		remember(tr.addr, t);
+		return t;
+	}
+};
+
+void printResolved(backward::Printer& p, const std::vector<backward::ResolvedTrace>& frames,
+                   std::ostream& stream, size_t threadId) {
+	// Printer iterator path does not reverse; emit oldest-first (most recent last).
+	p.print(frames.rbegin(), frames.rend(), stream, threadId);
+}
+
+std::mutex     stackerMu;
+StackerResolve stackerState;
+
 } // namespace
+
+void stackerResolveCacheReset() {
+	// Blocking: this is explicit (tests / diagnostics), not the hot dump path.
+	std::lock_guard<std::mutex> lock(stackerMu);
+	stackerState.cache.clear();
+	stackerResolveCacheUsed.store(0, std::memory_order_relaxed);
+	stackerResolveCacheClears.store(0, std::memory_order_relaxed);
+	stackerResolveCacheHits.store(0, std::memory_order_relaxed);
+	stackerResolveCacheMisses.store(0, std::memory_order_relaxed);
+}
 
 std::string stacker(uint skip, QStackerOpt opt) {
 	/** For loading from an arbitrary position
@@ -103,11 +221,10 @@ std::string stacker(uint skip, QStackerOpt opt) {
 	st.load_from(error_addr, 32);
 	*/
 	using namespace backward;
-	static std::mutex            mu;
-	std::unique_lock<std::mutex> lock(mu, std::try_to_lock);
+	std::unique_lock<std::mutex> lock(stackerMu, std::try_to_lock);
 	if (!lock.owns_lock()) {
-		//too much concurret request to stacker ? something bad is happening!!!
-		return "stacker already in use!";
+		// Concurrent stacker: something is already very wrong; do not add more spam.
+		return {};
 	}
 
 	StackTrace st;
@@ -121,8 +238,7 @@ std::string stacker(uint skip, QStackerOpt opt) {
 
 	std::ostringstream stream;
 
-	// Without an allow-root, keep the historical full resolve+print behaviour.
-	if (StackerMinLevel.empty()) {
+	if (stackerLegacyFullPrint) {
 		p.print(st, stream);
 		std::string str = stream.str();
 		if (opt.prependReturn) {
@@ -131,45 +247,49 @@ std::string stacker(uint skip, QStackerOpt opt) {
 		return str;
 	}
 
-	// Resolve from the throw site outward; keep contiguous app frames only.
-	// Stop before Boost/Asio/stdlib so we do not pay libdw+demangle for the noise.
-	TraceResolver resolver;
-	resolver.load_stacktrace(st);
+	std::vector<ResolvedTrace> frames;
+	frames.reserve(st.size());
 
-	std::vector<ResolvedTrace> kept;
-	kept.reserve(st.size());
+	if (StackerMinLevel.empty()) {
+		// Full backtrace: every frame, but libdw only for non-denied modules.
+		for (size_t i = 0; i < st.size(); ++i) {
+			auto t = stackerState.resolve(st[i]);
+			t.idx  = i;
+			frames.push_back(std::move(t));
+		}
+		printResolved(p, frames, stream, st.thread_id());
+	} else {
+		// Contiguous app frames only; stop before Boost/Asio/stdlib.
+		for (size_t i = 0; i < st.size(); ++i) {
+			auto t = stackerState.resolve(st[i]);
 
-	for (size_t i = 0; i < st.size(); ++i) {
-#ifndef _WIN32
-		// Cheap reject for frames in libc/libstdc++/etc. before libdw resolve.
-		Dl_info dli{};
-		if (dladdr(st[i].addr, &dli) && dli.dli_fname && pathIsDenied(dli.dli_fname)) {
-			if (!kept.empty()) {
+			if (pathIsDenied(t.object_filename) || pathIsDenied(t.source.filename) ||
+			    symbolIsDenied(t.object_function)) {
+				if (!frames.empty()) {
+					break;
+				}
+				continue;
+			}
+			if (isBeastRunNoise(t)) {
 				break;
 			}
-			continue;
+			if (isAppFrame(t)) {
+				t.idx = frames.size();
+				frames.push_back(std::move(t));
+			} else if (!frames.empty()) {
+				break;
+			}
 		}
-#endif
-		ResolvedTrace t = resolver.resolve(st[i]);
-		capTraceNames(t);
 
-		if (isBeastRunNoise(t)) {
-			break;
+		if (frames.empty()) {
+			// Fallback: nothing matched the allow-root (e.g. stripped build) — hybrid full dump.
+			for (size_t i = 0; i < st.size(); ++i) {
+				auto t = stackerState.resolve(st[i]);
+				t.idx  = i;
+				frames.push_back(std::move(t));
+			}
 		}
-		if (isAppFrame(t)) {
-			t.idx = kept.size();
-			kept.push_back(std::move(t));
-		} else if (!kept.empty()) {
-			break;
-		}
-	}
-
-	if (kept.empty()) {
-		// Fallback: nothing matched the allow-root (e.g. stripped build) — print all.
-		p.print(st, stream);
-	} else {
-		// Printer iterator path does not reverse; emit oldest-first (most recent last).
-		p.print(kept.rbegin(), kept.rend(), stream, st.thread_id());
+		printResolved(p, frames, stream, st.thread_id());
 	}
 
 	std::string str = stream.str();
@@ -177,6 +297,14 @@ std::string stacker(uint skip, QStackerOpt opt) {
 		str = "\n" + str;
 	}
 	return str;
+}
+
+std::string stackerResolveCacheInfo() {
+	return std::to_string(stackerResolveCacheUsed.load()) + "/" +
+	       std::to_string(stackerResolveCacheMax) + " clears=" +
+	       std::to_string(stackerResolveCacheClears.load()) + " hits=" +
+	       std::to_string(stackerResolveCacheHits.load()) + " misses=" +
+	       std::to_string(stackerResolveCacheMisses.load());
 }
 
 QByteArray QStacker(uint skip, QStackerOpt opt) {

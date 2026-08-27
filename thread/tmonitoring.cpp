@@ -200,6 +200,7 @@ Request /s  : {:.1f}
 Free Thread : {}
 Used Thread : {}
 Exception   : {}
+Stacker cache: {}
 Git revision: {}
 Compiled at : {} UTC
 </pre>
@@ -209,6 +210,7 @@ Compiled at : {} UTC
 	                             threadStatus.free.load(),
 	                             getThreadCount(),
 	                             exceptionThrown.load(),
+	                             stackerResolveCacheInfo(),
 	                             GIT_STATUS_buffer,
 	                             COMPILATION_TIME_buffer);
 

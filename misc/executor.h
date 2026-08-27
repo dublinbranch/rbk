@@ -28,10 +28,14 @@ class QStringAdt;
 struct ExecuteOpt {
 	ExecuteOpt();
 	static ExecuteOpt retarded();
+	/** Routine sudo (mv/chown/chmod/mkdir): skip QStacker on the Log. */
+	static ExecuteOpt noStackTrace();
 
 	float maxTimeInS = 999;
 	//for *REASON* some program write not on stdout but on stderr like nginx...
 	bool                               isRetarded = false;
+	/** When false, execute/sudo do not capture a stack walk (still gated by Execute_logStackTrace). */
+	bool                               logStackTrace = true;
 	std::map<std::string, std::string> custom_env;
 	/** Called with each stdout/stderr chunk while the process runs. Empty = drain only. */
 	std::function<void(std::string_view chunk, bool isStderr)> onChunk;
