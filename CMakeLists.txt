@@ -458,6 +458,7 @@ if(RBK_WITH_BOOST_BEAST)
         HTTP/loginLimiter.cpp
         HTTP/beast.cpp
         HTTP/beastConfig.cpp
+        HTTP/canned_reply.cpp
         HTTP/clientIp.cpp
         HTTP/router.cpp
         HTTP/select2.cpp
@@ -467,6 +468,7 @@ if(RBK_WITH_BOOST_BEAST)
         HTTP/loginLimiter.h
         HTTP/beast.h
         HTTP/beastConfig.h
+        HTTP/canned_reply.h
         HTTP/clientIp.h
         HTTP/Payload.h
         HTTP/router.h

@@ -50,8 +50,12 @@
 #include "PMFCGI.h"
 #include "Payload.h"
 #include "beast.h"
+#include "canned_reply.h"
 #include "clientIp.h"
 #include "router.h"
+
+#include <boost/asio/write.hpp>
+#include <optional>
 
 extern ThreadStatus                       threadStatus;
 extern thread_local ThreadStatus::Status* localThreadStatus;
@@ -63,6 +67,20 @@ namespace net       = boost::asio;          // from <boost/asio.hpp>
 using tcp       = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
 using namespace std;
 using StringResponse = http::response<http::string_body>;
+
+// Canned 204/205/304 is a static blob (one writev). Everything else is a Beast message.
+struct ClientReply {
+	std::optional<StringResponse> message;
+	std::string_view              canned{};
+	bool                          keepAlive = true;
+};
+
+ClientReply asReply(StringResponse res) {
+	ClientReply out;
+	out.keepAlive = res.keep_alive();
+	out.message   = std::move(res);
+	return out;
+}
 
 void init();
 
@@ -104,24 +122,32 @@ StringResponse quickResponse(string&& msg,
 	return res;
 }
 
-StringResponse buildResponseToClient(Payload& payload, unsigned version, bool keepAlive) {
+ClientReply buildResponseToClient(Payload& payload, unsigned version, bool keepAlive) {
 	payload.alreadySent = true;
 	auto size           = payload.html.size();
 
-	StringResponse res{static_cast<http::status>(payload.statusCode), version};
-	res.body() = payload.html;
-	res.keep_alive(keepAlive);
-	res.set(http::field::content_type, payload.mime);
-
-	for (auto& [key, value] : payload.headers) {
-		res.insert(key, value);
+	ClientReply out;
+	out.keepAlive = keepAlive;
+	if (payload.html.empty() && payload.headers.empty()) {
+		out.canned = cannedEmptyHttp(payload.statusCode, version, keepAlive);
 	}
+	if (out.canned.empty()) {
+		StringResponse res{static_cast<http::status>(payload.statusCode), version};
+		res.body() = payload.html;
+		res.keep_alive(keepAlive);
+		res.set(http::field::content_type, payload.mime);
 
-	res.prepare_payload();
+		for (auto& [key, value] : payload.headers) {
+			res.insert(key, value);
+		}
+
+		res.prepare_payload();
+		out.message = std::move(res);
+	}
 	auto responseTime = registerFlushTime();
 
 	if (!payload.status->conf->logRequest) {
-		return res;
+		return out;
 	}
 
 	const auto conf = payload.status->conf;
@@ -178,11 +204,11 @@ StringResponse buildResponseToClient(Payload& payload, unsigned version, bool ke
 		fileName = F16("{}/access.log", payload.status->conf->logFolder);
 	}
 	fileAppendContents(logLine, fileName);
-	return res;
+	return out;
 }
 
 template <class Body, class Allocator>
-StringResponse handle_request(
+ClientReply handle_request(
     beast::tcp_stream&                                   stream,
     http::request<Body, http::basic_fields<Allocator>>&& req,
     const BeastConf*                                     conf) {
@@ -208,7 +234,7 @@ StringResponse handle_request(
 		res.set(http::field::access_control_max_age, "86400");
 		res.prepare_payload();
 		registerFlushTime();
-		return res;
+		return asReply(std::move(res));
 	}
 
 	try {
@@ -320,11 +346,11 @@ StringResponse handle_request(
 	catch (const exception& e) {
 		auto msg = status.serializeMsg(e.what(), true);
 		fileAppendContents("\n------\n " + msg, conf->logFolder + "/stdException.log");
-		return quickResponse(randomError(), requestVersion, requestKeepAlive);
+		return asReply(quickResponse(randomError(), requestVersion, requestKeepAlive));
 	} catch (...) {
 		auto msg = status.serializeMsg("unkown exception", true);
 		fileAppendContents("\n------\n " + msg, conf->logFolder + "/unkException.log");
-		return quickResponse(randomError(), requestVersion, requestKeepAlive);
+		return asReply(quickResponse(randomError(), requestVersion, requestKeepAlive));
 	}
 }
 
@@ -349,7 +375,7 @@ class http_session : public std::enable_shared_from_this<http_session> {
 	beast::flat_buffer buffer_;
 	const BeastConf*   conf = nullptr;
 	static constexpr std::size_t queue_limit = 8;
-	std::queue<StringResponse>   response_queue_;
+	std::queue<ClientReply>      response_queue_;
 
 	// The parser is stored in an optional container so we can
 	// construct it from scratch it at the beginning of each new message.
@@ -437,14 +463,14 @@ class http_session : public std::enable_shared_from_this<http_session> {
 				do_read();
 			}
 		} catch (...) {
-			queue_write(quickResponse(randomError(), requestVersion, requestKeepAlive));
+			queue_write(asReply(quickResponse(randomError(), requestVersion, requestKeepAlive)));
 		}
 
 		requestEnd();
 	}
 
 	void
-	queue_write(StringResponse response) {
+	queue_write(ClientReply response) {
 		response_queue_.push(std::move(response));
 
 		if (response_queue_.size() == 1) {
@@ -458,14 +484,17 @@ class http_session : public std::enable_shared_from_this<http_session> {
 			return;
 		}
 
-		const bool keepAlive = response_queue_.front().keep_alive();
-		http::async_write(
-		    stream_,
-		    response_queue_.front(),
-		    beast::bind_front_handler(
-		        &http_session::on_write,
-		        shared_from_this(),
-		        keepAlive));
+		auto&          item      = response_queue_.front();
+		const bool     keepAlive = item.keepAlive;
+		auto           done      = beast::bind_front_handler(
+            &http_session::on_write,
+            shared_from_this(),
+            keepAlive);
+		if (!item.canned.empty()) {
+			net::async_write(stream_, net::buffer(item.canned.data(), item.canned.size()), std::move(done));
+			return;
+		}
+		http::async_write(stream_, *item.message, std::move(done));
 	}
 
 	void
