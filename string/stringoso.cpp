@@ -71,6 +71,10 @@ StringAdt::StringAdt(const std::string& input) {
 	setRawData(input.data(), input.size());
 }
 
+StringAdt::StringAdt(std::string&& input)
+    : std::string(std::move(input)) {
+}
+
 StringAdt::StringAdt(const std::string_view& input) {
 	setRawData(input.data(), input.size());
 }

@@ -35,7 +35,7 @@ void HttpException::HttpParamErrorHandler1(const QString& key) {
 	auto          msg = ">>>" + key + "<<< is not set and is required!";
 	HttpException e(msg + "\n" + QStacker16Light());
 	e.httpErrMsg = msg.toStdString();
-	e.statusCode = 200;
+	// statusCode stays 400 (the HttpException default). Do not force 200.
 
 	throw e;
 }

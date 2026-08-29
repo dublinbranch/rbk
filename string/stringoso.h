@@ -4,6 +4,7 @@
 #include <QByteArray>
 #include <QString>
 #include <filesystem>
+#include <string>
 #include <string_view>
 
 class QByteAdt : public QByteArray {
@@ -26,6 +27,7 @@ class StringAdt : public std::string {
 	StringAdt(const QByteArray& input);
 	StringAdt(const QString& input);
 	StringAdt(const std::string& input);
+	StringAdt(std::string&& input);
 	StringAdt(const std::string_view& input);
 	StringAdt(const char* input);
 

@@ -124,6 +124,8 @@ class DB {
 
 	// This is to be used ONLY in case the query can have deadlock, and internally tries multiple times to insert data
 	[[nodiscard]] sqlResult queryDeadlockRepeater(const QByteArray& sql, uint maxTry = 5) const;
+	[[nodiscard]] sqlResult queryDeadlockRepeater(const std::string& sql, uint maxTry = 5) const;
+	[[nodiscard]] sqlResult queryDeadlockRepeater(std::string&& sql, uint maxTry = 5) const;
 
 	/* V2 */
 	[[nodiscard]] SqlResultV2 queryV2(const StringAdt& sql);

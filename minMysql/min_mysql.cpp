@@ -506,6 +506,55 @@ sqlResult DB::queryDeadlockRepeater(const QByteArray& sql, uint maxTry) const {
 	return result;
 }
 
+sqlResult DB::queryDeadlockRepeater(const std::string& sql, uint maxTry) const {
+	sqlResult result;
+	if (!sql.empty()) {
+		DBException::Error lastRetryableError = DBException::DeadLock;
+		for (uint tryNum = 0; tryNum < maxTry; ++tryNum) {
+			try {
+				return query(sql);
+			} catch (const DBException& error) {
+				if (isRetryableLockError(error.errorType)) {
+					lastRetryableError = error.errorType;
+					continue;
+				}
+				throw;
+			} catch (std::exception& e) {
+				throw;
+			}
+		}
+		qWarning().noquote() << "too many trials to resolve retryable lock error, fix your code!" + QStacker16();
+		ResetOnExit r(cxaNoStack, true);
+		throw DBException("Retryable lock error for " + sql, lastRetryableError);
+	}
+	return result;
+}
+
+sqlResult DB::queryDeadlockRepeater(std::string&& sql, uint maxTry) const {
+	sqlResult result;
+	if (sql.empty()) {
+		return result;
+	}
+	const StringAdt owned(std::move(sql));
+	DBException::Error lastRetryableError = DBException::DeadLock;
+	for (uint tryNum = 0; tryNum < maxTry; ++tryNum) {
+		try {
+			return query(owned);
+		} catch (const DBException& error) {
+			if (isRetryableLockError(error.errorType)) {
+				lastRetryableError = error.errorType;
+				continue;
+			}
+			throw;
+		} catch (std::exception& e) {
+			throw;
+		}
+	}
+	qWarning().noquote() << "too many trials to resolve retryable lock error, fix your code!" + QStacker16();
+	ResetOnExit r(cxaNoStack, true);
+	throw DBException("Retryable lock error for " + owned, lastRetryableError);
+}
+
 void DB::pingCheck(st_mysql*& conn) const {
 	// can be disabled in local host to run a bit faster on laggy connection
 	if (!conf.pingBeforeQuery.value_or(true)) {
