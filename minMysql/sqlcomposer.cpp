@@ -4,6 +4,35 @@
 
 using namespace std;
 
+namespace {
+
+void appendPaddedKey(string& out, const SScol& col, u64 longestKey) {
+	const auto contentLen = col.verbatim ? col.key.size() : col.key.size() + 2;
+	if (contentLen < longestKey) {
+		out.append(longestKey - contentLen, ' ');
+	}
+	if (col.verbatim) {
+		out.append(col.key);
+	} else {
+		out.push_back('`');
+		out.append(col.key);
+		out.push_back('`');
+	}
+}
+
+void appendValue(string& out, const SScol& col, DB* db) {
+	//no ONE in his right mind will save a string called NULL in a database
+	if (col.aritmetic || col.val.noEscape || col.val.noQuote || col.val.val == "NULL") {
+		out.append(col.val.val);
+	} else {
+		out.push_back('\'');
+		out.append(db->escape(col.val.val));
+		out.push_back('\'');
+	}
+}
+
+} // namespace
+
 SqlComposer::SqlComposer(DB* db_, const std::string& separator_) {
 	db        = db_;
 	separator = separator_;
@@ -45,43 +74,24 @@ SqlComposer& SqlComposer::pushRaw(std::string_view raw_) {
 std::string SqlComposer::compose() const {
 	//In padding we trust
 
-	string final = "\n";
+	string final;
 	final.reserve(16000);
-	//plain fmt::join is not enought here
+	final.push_back('\n');
 	bool first = true;
 	for (auto&& col : *this) {
-		string valueS1;
-		//no ONE in his right mind will save a string called NULL in a database
-		if (col.aritmetic || col.val.noEscape || col.val.noQuote || col.val.val == "NULL") {
-			valueS1 = col.val.val;
-		} else { //no longer we will abuse base64this!
-			valueS1 = "'"s + db->escape(col.val.val) + "'"s;
-		}
-
-		string keyS1;
-		if (col.verbatim) {
-			keyS1 = F("{:>{}}", col.key, longestKey);
-		} else {
-			auto t = F("`{}`", col.key);
-			keyS1  = F("{:>{}}", t, longestKey);
-		}
-
 		if (first) {
-			first               = false;
-			auto initialPadding = F("{:>{}} ", " ", separator.size());
-			if (col.verbatim) {
-				final += F("{}{}\n"s, initialPadding, keyS1);
-			} else {
-				final += F("{}{}{}{}\n"s, initialPadding, keyS1, joiner, valueS1);
-			}
-
+			first = false;
+			final.append(separator.size() + 1, ' ');
 		} else {
-			if (col.verbatim) {
-				final.append(separator) += F(" {}\n"s, keyS1);
-			} else {
-				final.append(separator) += F(" {}{}{}\n"s, keyS1, joiner, valueS1);
-			}
+			final.append(separator);
+			final.push_back(' ');
 		}
+		appendPaddedKey(final, col, longestKey);
+		if (!col.verbatim) {
+			final.append(joiner);
+			appendValue(final, col, db);
+		}
+		final.push_back('\n');
 	}
 
 	return final;
@@ -140,7 +150,16 @@ string SqlComposer::composeSelectAll() {
 
 string SqlComposer::composeUpdate() const {
 	getTable();
-	string sql = F(R"(UPDATE {} SET )", table) + compose() + composeWhere(true) + ";";
+	auto   body = compose();
+	auto   wh   = composeWhere(true);
+	string sql;
+	sql.reserve(8 + table.size() + 5 + body.size() + wh.size() + 1);
+	sql.append("UPDATE ");
+	sql.append(table);
+	sql.append(" SET ");
+	sql.append(body);
+	sql.append(wh);
+	sql.push_back(';');
 	return sql;
 }
 
@@ -158,7 +177,17 @@ string SqlComposer::composeUpsert(bool autoInc) const {
 	if (autoInc) {
 		inc = " ,id = LAST_INSERT_ID(id) ";
 	}
-	auto sql = F("INSERT INTO {} SET {} ON DUPLICATE KEY UPDATE {} {};", table, c, c, inc);
+	string sql;
+	sql.reserve(12 + table.size() + 5 + c.size() + 26 + c.size() + 1 + inc.size() + 1);
+	sql.append("INSERT INTO ");
+	sql.append(table);
+	sql.append(" SET ");
+	sql.append(c);
+	sql.append(" ON DUPLICATE KEY UPDATE ");
+	sql.append(c);
+	sql.push_back(' ');
+	sql.append(inc);
+	sql.push_back(';');
 	return sql;
 }
 
@@ -171,7 +200,16 @@ string SqlComposer::composeInsert(bool ignora) const {
 	if (ignora) {
 		ignoreS = " IGNORE ";
 	}
-	auto sql = F("INSERT {} INTO {} SET {} ;", ignoreS, table, compose());
+	auto   body = compose();
+	string sql;
+	sql.reserve(7 + ignoreS.size() + 6 + table.size() + 5 + body.size() + 2);
+	sql.append("INSERT ");
+	sql.append(ignoreS);
+	sql.append(" INTO ");
+	sql.append(table);
+	sql.append(" SET ");
+	sql.append(body);
+	sql.append(" ;");
 	return sql;
 }
 
@@ -181,7 +219,14 @@ string SqlComposer::composeDelete() const {
 		throw ExceptionV2("Refusing a delete with no where condition");
 	}
 
-	auto sql = F("DELETE FROM {} WHERE {} ;", table, where->compose());
+	auto   wh = where->compose();
+	string sql;
+	sql.reserve(12 + table.size() + 7 + wh.size() + 2);
+	sql.append("DELETE FROM ");
+	sql.append(table);
+	sql.append(" WHERE ");
+	sql.append(wh);
+	sql.append(" ;");
 	return sql;
 }
 

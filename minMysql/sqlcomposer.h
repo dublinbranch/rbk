@@ -3,7 +3,40 @@
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/misc/intTypes.h"
 #include "rbk/number/sanitize.h"
+#include <charconv>
+#include <iterator>
 #include <memory>
+#include <string>
+#include <string_view>
+#include <system_error>
+#include <type_traits>
+
+namespace sqlComposerDetail {
+
+template <typename T>
+void assignFormatted(std::string& out, const T& value) {
+	using U = std::remove_cvref_t<T>;
+	if constexpr (std::is_same_v<U, bool>) {
+		out.assign(value ? "true" : "false");
+	} else if constexpr (std::is_arithmetic_v<U> && !std::is_same_v<U, char> && !std::is_same_v<U, wchar_t> &&
+	                     !std::is_same_v<U, char8_t> && !std::is_same_v<U, char16_t> && !std::is_same_v<U, char32_t>) {
+		char buf[64];
+		const auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), value);
+		if (ec != std::errc{}) {
+			out.clear();
+			fmt::format_to(std::back_inserter(out), "{}", value);
+		} else {
+			out.assign(buf, static_cast<std::size_t>(ptr - buf));
+		}
+	} else if constexpr (std::is_convertible_v<const T&, std::string_view>) {
+		out.assign(std::string_view(value));
+	} else {
+		out.clear();
+		fmt::format_to(std::back_inserter(out), "{}", value);
+	}
+}
+
+} // namespace sqlComposerDetail
 
 class SScol {
       public:
@@ -41,7 +74,7 @@ class SScol {
 
 	template <typename T>
 	void setKey(const T& key_) {
-		key = F("{}", key_);
+		sqlComposerDetail::assignFormatted(key, key_);
 	}
 
 	template <typename T>
@@ -52,9 +85,9 @@ class SScol {
 			if constexpr (std::is_floating_point<T>::value) {
 				cheap = deNaN(value);
 			}
-			val.val = F("{}", cheap);
+			sqlComposerDetail::assignFormatted(val.val, cheap);
 		} else {
-			val.val = F("{}", value);
+			sqlComposerDetail::assignFormatted(val.val, value);
 		}
 	}
 
