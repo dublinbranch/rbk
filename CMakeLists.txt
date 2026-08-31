@@ -485,7 +485,9 @@ endif()
 # ── Optional: jemalloc ──────────────────────────────────────────────────────
 if(RBK_WITH_JEMALLOC)
     list(APPEND RBK_SOURCES jemalloc/jemutil.cpp)
-    list(APPEND RBK_HEADERS jemalloc/jemutil.h)
+    list(APPEND RBK_HEADERS jemalloc/jemutil.h jemalloc/jemalloc.html)
+    set_source_files_properties(jemalloc/jemutil.cpp PROPERTIES
+        OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/jemalloc/jemalloc.html")
 endif()
 
 # ── Optional: libsodium ─────────────────────────────────────────────────────

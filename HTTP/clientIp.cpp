@@ -82,15 +82,13 @@ bool isTrustedProxy(const boost::asio::ip::address&                peer,
 	return false;
 }
 
-std::string clientIp(const boost::asio::ip::tcp::socket&                                 socket,
+std::string clientIp(const std::optional<boost::asio::ip::tcp::endpoint>&               peer_,
                      const boost::beast::http::request<boost::beast::http::string_body>& req,
                      const std::optional<std::vector<std::string>>&                      trustedProxies) {
-	boost::system::error_code ec;
-	const auto                endpoint = socket.remote_endpoint(ec);
-	if (ec) {
+	if (!peer_) {
 		return "127.0.0.1";
 	}
-	const auto peer = endpoint.address();
+	const auto peer = peer_->address();
 
 	if (isTrustedProxy(peer, trustedProxies)) {
 		if (auto it = req.find("X-Forwarded-For"); it != req.end()) {
@@ -108,21 +106,13 @@ std::string clientIp(const boost::asio::ip::tcp::socket&                        
 	return addressToKey(peer);
 }
 
-std::string clientIp(const boost::asio::ip::tcp::socket&                                 socket,
-                     const boost::beast::http::request<boost::beast::http::string_body>& req,
-                     const BeastConf&                                                    conf) {
-	return clientIp(socket, req, conf.trustedProxies);
-}
-
-std::string serverIp(const boost::asio::ip::tcp::socket&                                 socket,
+std::string serverIp(const std::optional<boost::asio::ip::tcp::endpoint>&               local,
+                     const std::optional<boost::asio::ip::tcp::endpoint>&               peer,
                      const boost::beast::http::request<boost::beast::http::string_body>& req,
                      const std::optional<std::vector<std::string>>&                      trustedProxies) {
-	boost::system::error_code ec;
-	const auto                local = socket.local_endpoint(ec);
-	const auto                bound = ec ? std::string("127.0.0.1") : local.address().to_string();
+	const auto bound = local ? local->address().to_string() : std::string("127.0.0.1");
 
-	const auto peer = socket.remote_endpoint(ec);
-	if (ec || !isTrustedProxy(peer.address(), trustedProxies)) {
+	if (!peer || !isTrustedProxy(peer->address(), trustedProxies)) {
 		return bound;
 	}
 	if (auto it = req.find("X-Server-IP"); it != req.end()) {
@@ -133,10 +123,17 @@ std::string serverIp(const boost::asio::ip::tcp::socket&                        
 	return bound;
 }
 
-std::string serverIp(const boost::asio::ip::tcp::socket&                                 socket,
-                     const boost::beast::http::request<boost::beast::http::string_body>& req,
-                     const BeastConf&                                                    conf) {
-	return serverIp(socket, req, conf.trustedProxies);
+std::string clientIpConf(const std::optional<boost::asio::ip::tcp::endpoint>&               peer,
+                         const boost::beast::http::request<boost::beast::http::string_body>& req,
+                         const BeastConf&                                                    conf) {
+	return clientIp(peer, req, conf.trustedProxies);
+}
+
+std::string serverIpConf(const std::optional<boost::asio::ip::tcp::endpoint>&               local,
+                         const std::optional<boost::asio::ip::tcp::endpoint>&               peer,
+                         const boost::beast::http::request<boost::beast::http::string_body>& req,
+                         const BeastConf&                                                    conf) {
+	return serverIp(local, peer, req, conf.trustedProxies);
 }
 
 } // namespace rbk::Http

@@ -60,7 +60,7 @@ All optional features are off by default. Enable with CMake flags or qmake varia
 | `RBK_WITH_BOOST_MYSQL` | `WITH_BoostMysql` | Boost.MySQL | (Boost) |
 | `RBK_WITH_SODIUM` | `WITH_SODIUM` | libsodium crypto | `zypper in sodium-devel` |
 | `RBK_WITH_SSL` | `WITH_SSL` | OpenSSL + TOTP | `zypper in libopenssl-devel` |
-| `RBK_WITH_JEMALLOC` | `WITH_Jemalloc` | jemalloc allocator | `zypper in jemalloc-devel` |
+| `RBK_WITH_JEMALLOC` | `WITH_Jemalloc` | jemalloc allocator + unguessable `/jemalloc` UI | `zypper in jemalloc-devel` |
 | `RBK_WITH_ASAN` | `WITH_ASAN` | AddressSanitizer | (compiler) |
 | `RBK_WITH_REPROC` | `WITH_REPROC` | reproc process launcher | see `rbk.pri` for repo |
 | `RBK_WITH_ZIPPER` | `WITH_ZIPPER` | libzip | `zypper in libzip-devel` |
@@ -194,7 +194,7 @@ rbk/
   hash/                # Hashing (SHA, CRC, rapid, salt)
   HTTP/                # HTTP/FCGI, Beast server, router, client IP behind a proxy
                        #   docs/clientIp.md — X-Forwarded-For handling, and why not QHostAddress
-  jemalloc/            # jemalloc helpers
+  jemalloc/            # jemalloc helpers + unguessable /jemalloc stats page
   JSON/                # Custom JSON reader
   locale/              # Locale/country codes
   log/                 # Structured logging

@@ -66,6 +66,15 @@ namespace websocket = beast::websocket;     // from <boost/beast/websocket.hpp>
 namespace net       = boost::asio;          // from <boost/asio.hpp>
 using tcp       = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
 using namespace std;
+
+// The session runs on a strand of the shared io_context, and nothing else. Saying so in the
+// type, instead of taking the default any_io_executor of beast::tcp_stream, removes the
+// type erased executor that was copied, moved and destroyed on every handler dispatch.
+// That churn was ~18% of user space time in the httpSyncBench profile
+// (tools/httpSyncBench/README.md).
+using StrandEx    = net::strand<net::io_context::executor_type>;
+using StrandSocket = net::basic_stream_socket<tcp, StrandEx>;
+using TcpStream   = beast::basic_stream<tcp, StrandEx>;
 using StringResponse = http::response<http::string_body>;
 
 // Canned 204/205/304 is a static blob (one writev). Everything else is a Beast message.
@@ -209,7 +218,7 @@ ClientReply buildResponseToClient(Payload& payload, unsigned version, bool keepA
 
 template <class Body, class Allocator>
 ClientReply handle_request(
-    beast::tcp_stream&                                   stream,
+    TcpStream&                                           stream,
     http::request<Body, http::basic_fields<Allocator>>&& req,
     const BeastConf*                                     conf) {
 
@@ -371,7 +380,7 @@ void fail(beast::error_code ec, char const* what) {
 
 // Handles an HTTP server connection
 class http_session : public std::enable_shared_from_this<http_session> {
-	beast::tcp_stream  stream_;
+	TcpStream          stream_;
 	beast::flat_buffer buffer_;
 	const BeastConf*   conf = nullptr;
 	static constexpr std::size_t queue_limit = 8;
@@ -381,9 +390,11 @@ class http_session : public std::enable_shared_from_this<http_session> {
 	// construct it from scratch it at the beginning of each new message.
 	boost::optional<http::request_parser<http::string_body>> parser_;
 
+	static constexpr auto readTimeout = std::chrono::seconds(30);
+
       public:
 	// Take ownership of the socket
-	http_session(tcp::socket&& socket, const BeastConf* _conf)
+	http_session(StrandSocket&& socket, const BeastConf* _conf)
 	    : stream_(std::move(socket)), conf(_conf) {
 	}
 
@@ -412,8 +423,12 @@ class http_session : public std::enable_shared_from_this<http_session> {
 		parser_->body_limit(20000);
 		parser_->header_limit(20000);
 
-		// Set the timeout.
-		stream_.expires_after(std::chrono::seconds(30));
+		// Set the timeout. Arming it per read costs about 1.3 us, but a lazy re-arm was
+		// measured SLOWER than this (tools/httpSyncBench/README.md): leaving the timer in the
+		// io_context queue between requests costs more than arming and cancelling it. Only
+		// dropping the timeout outright is faster, and that gives up the guard against a peer
+		// that opens a socket and then says nothing. Keep it.
+		stream_.expires_after(readTimeout);
 
 		// Read a request using the parser-oriented interface
 		http::async_read(
@@ -449,7 +464,9 @@ class http_session : public std::enable_shared_from_this<http_session> {
 			if (websocket::is_upgrade(parser_->get())) {
 				if (conf && conf->websocketUpgrade) {
 					auto req = parser_->release();
-					auto sock = stream_.release_socket();
+					// The hook and the websocket sessions take a plain tcp::socket. Converting
+					// is a move: StrandEx converts to any_io_executor.
+					tcp::socket sock(stream_.release_socket());
 					conf->websocketUpgrade(std::move(sock), std::move(req));
 					requestEnd();
 					return;
@@ -602,7 +619,7 @@ class listener : public std::enable_shared_from_this<listener> {
 	}
 
 	void
-	on_accept(beast::error_code ec, tcp::socket socket) {
+	on_accept(beast::error_code ec, StrandSocket socket) {
 		if (ec) {
 			fail(ec, "accept");
 		} else {

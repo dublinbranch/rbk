@@ -40,3 +40,7 @@ class Router {
 
 mapV2<std::string, RequestBase*>     getDefaultRouting();
 mapV2<std::string, SimpleRoutedType> getDefaultSimpleRouting();
+
+// Unguessable ops URLs (same idea as the Status page). Stats is this token + "/stats".
+inline constexpr char jemallocPagePath[]  = "ziAvks8rGUyQcoMU5K3eC9QsUvYv0lnK5iv7d8wdBWb7WAoa";
+inline constexpr char jemallocStatsPath[] = "ziAvks8rGUyQcoMU5K3eC9QsUvYv0lnK5iv7d8wdBWb7WAoa/stats";

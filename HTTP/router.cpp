@@ -10,6 +10,9 @@
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/thread/tmonitoring.h"
+#ifdef WITH_Jemalloc
+#include "rbk/jemalloc/jemutil.h"
+#endif
 #include <QDebug>
 #include <QString>
 #include <QUrl>
@@ -50,6 +53,51 @@ class Status : public RequestBase {
 		payload.html += APCU::getInstance()->info();
 
 		payload.mime = "text/html; charset=utf-8";
+	}
+};
+
+#ifndef WITH_Jemalloc
+namespace {
+void jemallocNotBuilt(Payload& payload) {
+	payload.statusCode = 501;
+	payload.mime       = "text/plain; charset=utf-8";
+	payload.html       = "jemalloc is not available in this build\n";
+}
+} // namespace
+#endif
+
+class JemallocPage : public RequestBase {
+      public:
+	virtual shared_ptr<RequestBase> create() const override {
+		return make_shared<JemallocPage>();
+	}
+
+	// unguessable — 127.0.0.1:8082/ziAvks8rGUyQcoMU5K3eC9QsUvYv0lnK5iv7d8wdBWb7WAoa
+	void immediate(PMFCGI& status, Payload& payload) override {
+		(void)status;
+#ifdef WITH_Jemalloc
+		payload.html = JEMUtil::pageHtml();
+		payload.mime = "text/html; charset=utf-8";
+#else
+		jemallocNotBuilt(payload);
+#endif
+	}
+};
+
+class JemallocStats : public RequestBase {
+      public:
+	virtual shared_ptr<RequestBase> create() const override {
+		return make_shared<JemallocStats>();
+	}
+
+	void immediate(PMFCGI& status, Payload& payload) override {
+		(void)status;
+#ifdef WITH_Jemalloc
+		payload.html = JEMUtil::statsPrint();
+		payload.mime = "text/plain; charset=utf-8";
+#else
+		jemallocNotBuilt(payload);
+#endif
 	}
 };
 
@@ -122,7 +170,9 @@ mapV2<std::string, RequestBase*> getDefaultRouting() {
 	return {{
 
 	    {"echo", new Echo},
-	    {"Z4DgMzxU1gKlwhedSGeERZVeId4QRwDHDejwn3PKRQhdVLrzCg2ww", new Status}
+	    {"Z4DgMzxU1gKlwhedSGeERZVeId4QRwDHDejwn3PKRQhdVLrzCg2ww", new Status},
+	    {jemallocPagePath, new JemallocPage},
+	    {jemallocStatsPath, new JemallocStats}
 
 	}};
 }

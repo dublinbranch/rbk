@@ -67,14 +67,9 @@ bool isTrustedProxy(const boost::asio::ip::address&       peer,
  * spelling, never client controlled text. Falls back to "127.0.0.1" when the socket has no
  * peer (already closed).
  */
-std::string clientIp(const boost::asio::ip::tcp::socket&                                   socket,
-                     const boost::beast::http::request<boost::beast::http::string_body>&   req,
-                     const std::optional<std::vector<std::string>>&                        trustedProxies);
-
-/// Same, reading trustedProxies off the config.
-std::string clientIp(const boost::asio::ip::tcp::socket&                                 socket,
+std::string clientIp(const std::optional<boost::asio::ip::tcp::endpoint>&            peer,
                      const boost::beast::http::request<boost::beast::http::string_body>& req,
-                     const BeastConf&                                                    conf);
+                     const std::optional<std::vector<std::string>>&                      trustedProxies);
 
 /**
  * Address this request was aimed at. The socket local endpoint when the peer is untrusted;
@@ -83,13 +78,74 @@ std::string clientIp(const boost::asio::ip::tcp::socket&                        
  * one IP and the backend socket is only 127.0.0.1. Same parse rule as clientIp: an address
  * or we keep the local endpoint, never raw header text.
  */
-std::string serverIp(const boost::asio::ip::tcp::socket&                                 socket,
+std::string serverIp(const std::optional<boost::asio::ip::tcp::endpoint>&               local,
+                     const std::optional<boost::asio::ip::tcp::endpoint>&               peer,
                      const boost::beast::http::request<boost::beast::http::string_body>& req,
                      const std::optional<std::vector<std::string>>&                      trustedProxies);
 
-std::string serverIp(const boost::asio::ip::tcp::socket&                                 socket,
+/**
+ * Socket forms. Templates on purpose: beast.cpp runs its stream on a concrete
+ * strand executor, so the socket there is not boost::asio::ip::tcp::socket
+ * (which is fixed to any_io_executor). Only remote_endpoint / local_endpoint
+ * are used, so any socket type fits.
+ */
+template <class Socket>
+std::optional<boost::asio::ip::tcp::endpoint> remoteEndpoint(const Socket& socket) {
+	boost::system::error_code ec;
+	const auto                endpoint = socket.remote_endpoint(ec);
+	if (ec) {
+		return std::nullopt;
+	}
+	return endpoint;
+}
+
+template <class Socket>
+std::optional<boost::asio::ip::tcp::endpoint> localEndpoint(const Socket& socket) {
+	boost::system::error_code ec;
+	const auto                endpoint = socket.local_endpoint(ec);
+	if (ec) {
+		return std::nullopt;
+	}
+	return endpoint;
+}
+
+template <class Socket>
+std::string clientIp(const Socket&                                                       socket,
                      const boost::beast::http::request<boost::beast::http::string_body>& req,
-                     const BeastConf&                                                    conf);
+                     const std::optional<std::vector<std::string>>&                      trustedProxies) {
+	return clientIp(remoteEndpoint(socket), req, trustedProxies);
+}
+
+template <class Socket>
+std::string serverIp(const Socket&                                                       socket,
+                     const boost::beast::http::request<boost::beast::http::string_body>& req,
+                     const std::optional<std::vector<std::string>>&                      trustedProxies) {
+	return serverIp(localEndpoint(socket), remoteEndpoint(socket), req, trustedProxies);
+}
+
+/// Same, reading trustedProxies off the config. Defined in clientIp.cpp, where BeastConf is complete.
+std::string clientIpConf(const std::optional<boost::asio::ip::tcp::endpoint>&            peer,
+                         const boost::beast::http::request<boost::beast::http::string_body>& req,
+                         const BeastConf&                                                conf);
+
+std::string serverIpConf(const std::optional<boost::asio::ip::tcp::endpoint>&            local,
+                         const std::optional<boost::asio::ip::tcp::endpoint>&            peer,
+                         const boost::beast::http::request<boost::beast::http::string_body>& req,
+                         const BeastConf&                                                conf);
+
+template <class Socket>
+std::string clientIp(const Socket&                                                       socket,
+                     const boost::beast::http::request<boost::beast::http::string_body>& req,
+                     const BeastConf&                                                    conf) {
+	return clientIpConf(remoteEndpoint(socket), req, conf);
+}
+
+template <class Socket>
+std::string serverIp(const Socket&                                                       socket,
+                     const boost::beast::http::request<boost::beast::http::string_body>& req,
+                     const BeastConf&                                                    conf) {
+	return serverIpConf(localEndpoint(socket), remoteEndpoint(socket), req, conf);
+}
 
 } // namespace rbk::Http
 

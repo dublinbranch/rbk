@@ -1,6 +1,7 @@
 #include "jemutil.h"
 #include <fmt/format.h>
 #include <jemalloc/jemalloc.h>
+#include <string>
 
 void JEMUtil::refreshStatsCache() {
 	uint64_t epoch = 1;
@@ -35,4 +36,27 @@ std::string JEMUtil::memStatsRow(std::string_view stage, std::string_view row) {
 std::string JEMUtil::memStatsRow(std::string_view stage, const std::source_location& loc) {
 	auto row = fmt::format("@ ({}:{})", loc.file_name(), loc.line());
 	return memStatsRow(stage, row);
+}
+
+std::string JEMUtil::statsPrint() {
+	refreshStatsCache();
+	std::string out;
+	malloc_stats_print(
+	    [](void* opaque, const char* s) {
+		    static_cast<std::string*>(opaque)->append(s);
+	    },
+	    &out,
+	    "");
+	return out;
+}
+
+std::string JEMUtil::pageHtml() {
+#if __has_embed("jemalloc.html") != __STDC_EMBED_NOT_FOUND__
+	static const unsigned char data[] = {
+#embed "jemalloc.html"
+	};
+	return {reinterpret_cast<const char*>(data), sizeof(data)};
+#else
+	return "jemalloc.html missing from the rbk source tree\n";
+#endif
 }
