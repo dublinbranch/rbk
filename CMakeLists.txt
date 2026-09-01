@@ -723,11 +723,12 @@ endif()
 
 if(RBK_WITH_JEMALLOC)
     target_compile_definitions(rbk PUBLIC WITH_Jemalloc)
-    # jemalloc must be linked first to override malloc
-    target_link_libraries(rbk PUBLIC
-        $<LINK_GROUP:RESCAN,PkgConfig::JEMALLOC>
-    )
-    set_property(TARGET rbk APPEND PROPERTY LINK_LIBRARIES PkgConfig::JEMALLOC)
+    # Shared jemalloc interposes malloc as long as -ljemalloc is on the
+    # final link line (libc is implicit and comes last). Do not wrap
+    # PkgConfig::JEMALLOC in $<LINK_GROUP:RESCAN,...>: it is an INTERFACE
+    # imported target and CMake will not apply RESCAN to those (dev warning
+    # on every consumer add_executable).
+    target_link_libraries(rbk PUBLIC PkgConfig::JEMALLOC)
 endif()
 
 if(RBK_WITH_SODIUM)
