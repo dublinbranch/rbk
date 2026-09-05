@@ -59,6 +59,7 @@ All optional features are off by default. Enable with CMake flags or qmake varia
 | `RBK_WITH_BOOST_BEAST` | `WITH_BOOST_BEAST` | Boost.Beast HTTP server + router | (Boost) |
 | `RBK_WITH_BOOST_MYSQL` | `WITH_BoostMysql` | Boost.MySQL | (Boost) |
 | `RBK_WITH_SODIUM` | `WITH_SODIUM` | libsodium crypto | `zypper in sodium-devel` |
+| `RBK_WITH_ARGON2` | `WITH_ARGON2` | Argon2id + crypt_r password hashing | `zypper in libargon2-devel` |
 | `RBK_WITH_SSL` | `WITH_SSL` | OpenSSL + TOTP | `zypper in libopenssl-devel` |
 | `RBK_WITH_JEMALLOC` | `WITH_Jemalloc` | jemalloc allocator + unguessable `/jemalloc` UI | `zypper in jemalloc-devel` |
 | `RBK_WITH_ASAN` | `WITH_ASAN` | AddressSanitizer | (compiler) |

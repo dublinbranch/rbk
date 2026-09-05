@@ -8,6 +8,9 @@
 #note the different sintax, as this is only inside qmake
 #WITH_BOOST_BEAST = true
 
+#Argon2id + crypt_r password hashing (passwordHash.cpp) — off unless a project needs it
+#WITH_ARGON2 = true
+
 #In case you drop in a project who used the older folder structure, this can save some time (add in the config.pri)
 #INCLUDEPATH += $$PWD/rbk/ 
 
@@ -204,6 +207,18 @@ HEADERS += \
     
 }
     
+defined(WITH_ARGON2,var){
+#zypper in libargon2-devel
+#crypt_r lives in libxcrypt (usually already present)
+LIBS += -largon2 -lcrypt
+
+HEADERS += \
+    $$PWD/hash/passwordHash.h
+
+SOURCES += \
+    $$PWD/hash/passwordHash.cpp
+}
+
 defined(WITH_SODIUM,var){
 #zypper in sodium-devel
 LIBS += -lsodium
@@ -346,6 +361,7 @@ HEADERS += \
     $$PWD/BoostJson/override/value_to_108400.hpp \
     $$PWD/BoostJson/override/value_to_108500.hpp \
     $$PWD/BoostJson/extra.h \
+    $$PWD/BoostJson/pretty_print.h \
     $$PWD/BoostJson/fwd.h \
     $$PWD/BoostJson/depleter.h \
     #$$PWD/BoostJson/SwapperSpec.h \
@@ -360,7 +376,6 @@ HEADERS += \
     $$PWD/fmtExtra/fromEnum.h \
     $$PWD/hash/salt.h \
     $$PWD/hash/sha.h \
-    $$PWD/hash/passwordHash.h \
     $$PWD/rand/secureRandom.h \
     #$$PWD/isIterable.h \
     $$PWD/locale/codes.h \
@@ -418,6 +433,7 @@ HEADERS += \
 SOURCES += \
     $$PWD/BoostJson/depleter.cpp \
     $$PWD/BoostJson/extra.cpp \
+    $$PWD/BoostJson/pretty_print.cpp \
     $$PWD/BoostJson/intrusivedebug.cpp \
     $$PWD/BoostJson/isjsonasubset.cpp \
     $$PWD/BoostJson/to_string.cpp \
@@ -429,7 +445,6 @@ SOURCES += \
     $$PWD/dateTime/util.cpp \
     $$PWD/hash/salt.cpp \
     $$PWD/hash/sha.cpp \
-    $$PWD/hash/passwordHash.cpp \
     $$PWD/rand/secureRandom.cpp \
     $$PWD/locale/codes.cpp \
     $$PWD/minMysql/checkschema.cpp \

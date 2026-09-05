@@ -22,13 +22,14 @@ option(RBK_WITH_BOOST_MYSQL  "Boost.MySQL (separate compilation)"     OFF)
 option(RBK_WITH_ASAN         "AddressSanitizer"                       OFF)
 option(RBK_WITH_JEMALLOC     "jemalloc allocator"                     OFF)
 option(RBK_WITH_SODIUM       "libsodium crypto"                       OFF)
+option(RBK_WITH_ARGON2       "Argon2id + crypt_r password hashing"    OFF)
 option(RBK_WITH_SSL          "OpenSSL + TOTP"                         OFF)
 option(RBK_WITH_REPROC       "reproc process launcher"                OFF)
 option(RBK_WITH_ZIPPER       "libzip"                                 OFF)
-option(RBK_WITH_MAXMIND      "MaxMind GeoIP"                         OFF)
+option(RBK_WITH_MAXMIND      "MaxMind GeoIP"                          OFF)
 option(RBK_WITH_MINCURL      "libcurl wrapper"                        OFF)
 option(RBK_WITH_MAILFETCHER  "IMAP mail fetcher (requires RBK_WITH_MINCURL)" OFF)
-option(RBK_WITH_CLICKHOUSE   "ClickHouse client"                      OFF)
+option(RBK_WITH_CLICKHOUSE   "ClickHouse http client (requires RBK_WITH_MINCURL)" OFF)
 option(RBK_WITH_QRCODE       "QR code generation"                     OFF)
 option(RBK_WITH_APCU         "APCu-style in-memory caching"           OFF)
 option(RBK_WITH_QT_NETWORK   "Qt Network extras (SpaceShipOP)"        OFF)
@@ -92,6 +93,11 @@ if(RBK_WITH_SODIUM)
     pkg_check_modules(SODIUM REQUIRED IMPORTED_TARGET libsodium)
 endif()
 
+if(RBK_WITH_ARGON2)
+    pkg_check_modules(ARGON2 REQUIRED IMPORTED_TARGET libargon2)
+    pkg_check_modules(LIBCRYPT REQUIRED IMPORTED_TARGET libcrypt)
+endif()
+
 if(RBK_WITH_SSL)
     find_package(OpenSSL REQUIRED)
 endif()
@@ -152,7 +158,6 @@ set(RBK_SOURCES
 
     # hash
     hash/crc.cpp
-    hash/passwordHash.cpp
     hash/salt.cpp
     hash/sha.cpp
     hash/string.cpp
@@ -301,7 +306,6 @@ set(RBK_HEADERS
 
     # hash
     hash/crc.h
-    hash/passwordHash.h
     hash/rapidhash.h
     hash/salt.h
     hash/sha.h
@@ -494,6 +498,12 @@ endif()
 if(RBK_WITH_SODIUM)
     list(APPEND RBK_SOURCES Sodium/crypto.cpp)
     list(APPEND RBK_HEADERS Sodium/crypto.h)
+endif()
+
+# ── Optional: Argon2id + crypt_r password hashing ───────────────────────────
+if(RBK_WITH_ARGON2)
+    list(APPEND RBK_SOURCES hash/passwordHash.cpp)
+    list(APPEND RBK_HEADERS hash/passwordHash.h)
 endif()
 
 # ── Optional: OpenSSL + TOTP ────────────────────────────────────────────────
@@ -701,7 +711,6 @@ target_link_libraries(rbk
         Boost::boost
         fmt::fmt
         PkgConfig::MARIADB
-        argon2
 )
 
 if(UNIX AND NOT APPLE)
@@ -733,6 +742,10 @@ endif()
 
 if(RBK_WITH_SODIUM)
     target_link_libraries(rbk PUBLIC PkgConfig::SODIUM)
+endif()
+
+if(RBK_WITH_ARGON2)
+    target_link_libraries(rbk PUBLIC PkgConfig::ARGON2 PkgConfig::LIBCRYPT)
 endif()
 
 if(RBK_WITH_SSL)
@@ -790,6 +803,10 @@ if(RBK_WITH_QT_NETWORK)
 endif()
 if(RBK_WITH_SODIUM)
     string(APPEND _rbk_cfg_deps "pkg_check_modules(SODIUM REQUIRED IMPORTED_TARGET libsodium)\n")
+endif()
+if(RBK_WITH_ARGON2)
+    string(APPEND _rbk_cfg_deps "pkg_check_modules(ARGON2 REQUIRED IMPORTED_TARGET libargon2)\n")
+    string(APPEND _rbk_cfg_deps "pkg_check_modules(LIBCRYPT REQUIRED IMPORTED_TARGET libcrypt)\n")
 endif()
 if(RBK_WITH_SSL)
     string(APPEND _rbk_cfg_deps "find_dependency(OpenSSL REQUIRED)\n")
