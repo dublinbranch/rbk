@@ -44,6 +44,10 @@
 #include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/rand/randutil.h"
+#include <sys/socket.h>
+#include <algorithm>
+#include <cerrno>
+#include <cstring>
 #include "rbk/thread/threadstatush.h"
 #include "rbk/thread/tmonitoring.h"
 
@@ -67,14 +71,24 @@ namespace net       = boost::asio;          // from <boost/asio.hpp>
 using tcp       = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
 using namespace std;
 
-// The session runs on a strand of the shared io_context, and nothing else. Saying so in the
-// type, instead of taking the default any_io_executor of beast::tcp_stream, removes the
-// type erased executor that was copied, moved and destroyed on every handler dispatch.
-// That churn was ~18% of user space time in the httpSyncBench profile
-// (tools/httpSyncBench/README.md).
-using StrandEx    = net::strand<net::io_context::executor_type>;
-using StrandSocket = net::basic_stream_socket<tcp, StrandEx>;
-using TcpStream   = beast::basic_stream<tcp, StrandEx>;
+// Thread-per-core. Each HttpHandler thread owns a single threaded io_context and its own
+// SO_REUSEPORT acceptor, so a connection is accepted, read and written by one thread for its
+// whole life. That is an implicit strand: no explicit one is needed, and with it goes the
+// strand_executor_service mutex and the atomic refcounting on shared strand state.
+//
+// Measured on the digitalSpine leaf websocket ingest (2026-09 teardown): one shared
+// io_context with N threads scaled at 77% on two workers and 65% on four; independent
+// contexts held 96% and 93%. Ingest does no I/O, so the shared pool was buying nothing and
+// charging a mutex plus two atomics per frame for it.
+//
+// Naming the executor concretely instead of taking the default any_io_executor of
+// beast::tcp_stream also removes the type erased executor that was copied, moved and
+// destroyed on every handler dispatch - ~18% of user space time in the httpSyncBench
+// profile (tools/httpSyncBench/README.md), and 16.9 destroys per frame on the websocket
+// path before this change.
+using WorkerEx     = rbk::Http::WorkerExecutor;
+using StrandSocket = rbk::Http::WorkerSocket;
+using TcpStream    = beast::basic_stream<tcp, WorkerEx>;
 using StringResponse = http::response<http::string_body>;
 
 // Canned 204/205/304 is a static blob (one writev). Everything else is a Beast message.
@@ -401,10 +415,8 @@ class http_session : public std::enable_shared_from_this<http_session> {
 	// Start the session
 	void
 	run() {
-		// We need to be executing within a strand to perform async operations
-		// on the I/O objects in this session. Although not strictly necessary
-		// for single-threaded contexts, this example code is written to be
-		// thread-safe by default.
+		// The acceptor lives on this worker's context, which one thread drives, so this
+		// only needs to hop onto that thread.
 		net::dispatch(
 		    stream_.get_executor(),
 		    beast::bind_front_handler(
@@ -464,10 +476,11 @@ class http_session : public std::enable_shared_from_this<http_session> {
 			if (websocket::is_upgrade(parser_->get())) {
 				if (conf && conf->websocketUpgrade) {
 					auto req = parser_->release();
-					// The hook and the websocket sessions take a plain tcp::socket. Converting
-					// is a move: StrandEx converts to any_io_executor.
-					tcp::socket sock(stream_.release_socket());
-					conf->websocketUpgrade(std::move(sock), std::move(req));
+					// Handed over with its executor intact: the hook and the websocket
+					// sessions take the same WorkerSocket this session was accepted on, so
+					// the connection stays on this worker's thread and never picks up a type
+					// erased executor.
+					conf->websocketUpgrade(stream_.release_socket(), std::move(req));
 					requestEnd();
 					return;
 				}
@@ -559,7 +572,7 @@ class listener : public std::enable_shared_from_this<listener> {
 	    net::io_context& ioc,
 	    tcp::endpoint    endpoint,
 	    const BeastConf* conf_)
-	    : ioc_(ioc), acceptor_(net::make_strand(ioc)), conf(conf_) {
+	    : ioc_(ioc), acceptor_(ioc.get_executor()), conf(conf_) {
 		beast::error_code ec;
 
 		// Open the acceptor
@@ -575,6 +588,20 @@ class listener : public std::enable_shared_from_this<listener> {
 			fail(ec, "set_option");
 			return;
 		}
+
+#ifdef SO_REUSEPORT
+		// Every worker binds its own acceptor to the same port and the kernel spreads the
+		// accepts between them. Without this the second bind() fails with EADDRINUSE, since
+		// SO_REUSEADDR alone does not permit two live listeners on one port.
+		{
+			const int on = 1;
+			if (::setsockopt(acceptor_.native_handle(), SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on)) != 0) {
+				fmt::print(stderr, fmt::emphasis::bold | fg(fmt::color::red),
+				           "SO_REUSEPORT failed on {}:{} ({}), only one acceptor will take connections\n",
+				           endpoint.address().to_string(), endpoint.port(), strerror(errno));
+			}
+		}
+#endif
 
 		// Bind to the server address
 		acceptor_.bind(endpoint, ec);
@@ -609,10 +636,10 @@ class listener : public std::enable_shared_from_this<listener> {
       private:
 	void
 	do_accept() {
-		// The new connection gets its own strand
+		// The connection is created on this worker's own executor and stays there.
 		acceptor_.async_accept(
 
-		    net::make_strand(ioc_),
+		    ioc_.get_executor(),
 		    beast::bind_front_handler(
 		        &listener::on_accept,
 		        shared_from_this()));
@@ -638,41 +665,51 @@ class listener : public std::enable_shared_from_this<listener> {
 void Beast::listen() {
 	okToRun();
 	pthread_setname_np(pthread_self(), "BeastHandler");
-	// The io_context is required for all I/O
-	auto IOC = net::io_context{static_cast<int>(conf.worker)};
+	// One io_context per worker, each driven by exactly one thread, each with its own
+	// SO_REUSEPORT acceptor on the same port. See the note on WorkerEx above for why.
+	const auto workerCount = std::max<size_t>(1, conf.worker);
 
-	// Create and launch a listening port
-	auto listener_p = std::make_shared<listener>(
-	    IOC,
-	    tcp::endpoint{net::ip::make_address(conf.address), conf.port},
-	    &conf);
+	std::vector<std::unique_ptr<net::io_context>>      contexts;
+	std::vector<std::shared_ptr<listener>>             listeners;
+	contexts.reserve(workerCount);
+	listeners.reserve(workerCount);
 
-	listener_p->run();
+	const auto endpoint = tcp::endpoint{net::ip::make_address(conf.address), conf.port};
+
+	for (size_t i = 0; i < workerCount; ++i) {
+		// concurrency_hint 1: tells asio only one thread will ever run this context, which
+		// lets it skip the locking it would otherwise need inside the scheduler.
+		auto& ioc = contexts.emplace_back(std::make_unique<net::io_context>(1));
+		listeners.emplace_back(std::make_shared<listener>(*ioc, endpoint, &conf))->run();
+	}
 
 	// Capture SIGINT to perform a clean shutdown
 	//(if not already captured by other, which is quite rare so not under config)
-	auto signals2block = net::signal_set(IOC, SIGINT, SIGTERM);
+	auto signals2block = net::signal_set(*contexts.front(), SIGINT, SIGTERM);
 
 	signals2block.async_wait(
-	    [&](beast::error_code const&, int) {
-		    // Stop the `io_context`. This will cause `run()`
-		    // to return immediately, eventually destroying the
-		    // `io_context` and all of the sockets in it.
+	    [&contexts](beast::error_code const&, int) {
+		    // Stop every context. Each one owns its own sockets, so they all have to be
+		    // told; stopping only the first would leave the other workers running.
 		    fmt::print("Stopping\n");
-		    IOC.stop();
+		    for (auto& ioc : contexts) {
+			    ioc->stop();
+		    }
 	    });
 
-	fmt::print("Ready listening on http://{}:{}\n", conf.address, conf.port);
+	fmt::print("Ready listening on http://{}:{} ({} worker{}, thread-per-core)\n",
+	           conf.address, conf.port, workerCount, workerCount == 1 ? "" : "s");
 
 	vector<std::thread*> threads;
 
 	// Run the I/O service on the requested number of threads
-	for (auto i = conf.worker; i > 0; --i) {
+	for (size_t i = 0; i < workerCount; ++i) {
 		auto status = ThreadStatus::newStatus();
 
-		auto onWorkerStart = conf.onWorkerStart;
-		auto& t            = threads.emplace_back(new std::thread(
-		    [status, &IOC, onWorkerStart] {
+		auto  onWorkerStart = conf.onWorkerStart;
+		auto* ioc           = contexts[i].get();
+		auto& t             = threads.emplace_back(new std::thread(
+		    [status, ioc, onWorkerStart] {
 			    //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
 			    status->tid       = gettid();
 			    localThreadStatus = status.get();
@@ -681,7 +718,7 @@ void Beast::listen() {
 				    onWorkerStart();
 			    }
 			    //and than launch to io handler
-			    IOC.run();
+			    ioc->run();
 		    }));
 		status->state = ThreadState::Idle;
 		status->info  = "just created";
