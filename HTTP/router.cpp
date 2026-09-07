@@ -170,7 +170,7 @@ mapV2<std::string, RequestBase*> getDefaultRouting() {
 	return {{
 
 	    {"echo", new Echo},
-	    {"Z4DgMzxU1gKlwhedSGeERZVeId4QRwDHDejwn3PKRQhdVLrzCg2ww", new Status},
+	    {statusPagePath, new Status},
 	    {jemallocPagePath, new JemallocPage},
 	    {jemallocStatsPath, new JemallocStats}
 
