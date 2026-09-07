@@ -2,6 +2,7 @@
 #define HOME_ROY_PUBLIC_GOOGLEADSLISTENER_RBK_HTTP_BEASTCONFIG_H
 
 #include "rbk/mapExtensor/mapV2.h"
+#include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/http.hpp>
 #include <filesystem>
@@ -10,6 +11,20 @@
 #include <string>
 #include <vector>
 class RequestBase;
+
+/* Thread-per-core: each HttpHandler thread drives its own single threaded io_context, so a
+ * connection is only ever touched by the thread that accepted it and no strand is needed.
+ * That also lets the executor stay a concrete type instead of asio's type erased
+ * any_io_executor, which was copied, moved and destroyed on every handler dispatch.
+ *
+ * These aliases are public because the websocket upgrade hook hands the socket across, and
+ * converting it to a plain tcp::socket there would erase the executor again - which is
+ * exactly what it used to do.
+ */
+namespace rbk::Http {
+using WorkerExecutor = boost::asio::io_context::executor_type;
+using WorkerSocket   = boost::asio::basic_stream_socket<boost::asio::ip::tcp, WorkerExecutor>;
+} // namespace rbk::Http
 
 class PMFCGI;
 class Payload;
@@ -34,7 +49,7 @@ class BeastConf {
 	using SimpleRoutedType = void (*)(PMFCGI& status, Payload& payload);
 
 	using WebSocketUpgradeFn = std::function<bool(
-	    boost::asio::ip::tcp::socket&& socket,
+	    rbk::Http::WorkerSocket&& socket,
 	    boost::beast::http::request<boost::beast::http::string_body>&& req)>;
 
 	WebSocketUpgradeFn websocketUpgrade;
