@@ -3,9 +3,15 @@
 #include "rbk/fmtExtra/customformatter.h"
 #include <QDebug>
 #include <cstdio>
+#include <ctime>
 
 void echo(const StringAdt& s) {
-	fmt::print("{}\n", s);
+	timespec tp{};
+	clock_gettime(CLOCK_REALTIME, &tp);
+	fmt::print("{}.{:06} {}\n",
+	           static_cast<long long>(tp.tv_sec),
+	           static_cast<unsigned>(tp.tv_nsec / 1000),
+	           s);
 	fflush(stdout);
 }
 
