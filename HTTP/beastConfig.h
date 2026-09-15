@@ -48,6 +48,13 @@ class BeastConf {
 
 	using SimpleRoutedType = void (*)(PMFCGI& status, Payload& payload);
 
+	/* Called for every websocket upgrade request, before prePhase1 / loginManager.
+	 * Return true  = the hook took the socket (moved from it) and owns the connection.
+	 * Return false = not handled. The hook MUST NOT have moved from the socket or the request;
+	 *                both go on to normal routing, so an unknown path gets a normal 404.
+	 * Take both parameters as rvalue references (not by value), or the move happens at the
+	 * call and false can no longer be honoured.
+	 */
 	using WebSocketUpgradeFn = std::function<bool(
 	    rbk::Http::WorkerSocket&& socket,
 	    boost::beast::http::request<boost::beast::http::string_body>&& req)>;

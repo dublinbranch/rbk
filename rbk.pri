@@ -280,6 +280,8 @@ SOURCES += \
     $$PWD/HTTP/beast.cpp \
     $$PWD/HTTP/beastConfig.cpp \
     $$PWD/HTTP/canned_reply.cpp \
+    $$PWD/HTTP/clientIp.cpp \
+    $$PWD/HTTP/loginLimiter.cpp \
     $$PWD/HTTP/router.cpp \
     $$PWD/HTTP/select2.cpp
 
@@ -287,6 +289,8 @@ HEADERS += \
     $$PWD/HTTP/authHandler.h \
     $$PWD/HTTP/beastConfig.h \
     $$PWD/HTTP/canned_reply.h \
+    $$PWD/HTTP/clientIp.h \
+    $$PWD/HTTP/loginLimiter.h \
     $$PWD/HTTP/select2.h \
     $$PWD/HTTP/Payload.h \
     $$PWD/HTTP/beast.h \

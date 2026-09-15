@@ -473,20 +473,29 @@ class http_session : public std::enable_shared_from_this<http_session> {
 			requestVersion   = parser_->get().version();
 			requestKeepAlive = parser_->get().keep_alive();
 
-			if (websocket::is_upgrade(parser_->get())) {
-				if (conf && conf->websocketUpgrade) {
-					auto req = parser_->release();
-					// Handed over with its executor intact: the hook and the websocket
-					// sessions take the same WorkerSocket this session was accepted on, so
-					// the connection stays on this worker's thread and never picks up a type
-					// erased executor.
-					conf->websocketUpgrade(stream_.release_socket(), std::move(req));
+			auto req = parser_->release();
+			// Only when no response write is in flight: moving the socket out from under a
+			// pending async_write would hand that write to the websocket session. A websocket
+			// client may not pipeline before the 101 (RFC 6455 4.1), so an upgrade that arrives
+			// behind a pending response is not a real handshake and gets normal routing.
+			if (conf && conf->websocketUpgrade && response_queue_.empty() && websocket::is_upgrade(req)) {
+				// Handed over with its executor intact: the hook and the websocket
+				// sessions take the same WorkerSocket this session was accepted on, so
+				// the connection stays on this worker's thread and never picks up a type
+				// erased executor.
+				//
+				// std::move here is only a cast. The hook takes ownership only when it
+				// returns true. On false it must not have moved from either argument, and
+				// the request goes on to normal routing (404 for an unknown path) instead
+				// of the socket being dropped without a response.
+				stream_.expires_never();
+				if (conf->websocketUpgrade(std::move(stream_.socket()), std::move(req))) {
 					requestEnd();
 					return;
 				}
 			}
 
-			auto response = handle_request(stream_, parser_->release(), conf);
+			auto response = handle_request(stream_, std::move(req), conf);
 			queue_write(std::move(response));
 
 			if (response_queue_.size() < queue_limit) {

@@ -4,21 +4,16 @@
 // Heavy header: include only from TUs that set a websocket upgrade hook.
 #include "rbk/HTTP/beastConfig.h"
 
-#include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/http.hpp>
 #include <utility>
 
-inline void setWebsocketUpgrade(
-    BeastConf& conf,
-    std::function<bool(
-        boost::asio::ip::tcp::socket&&,
-        boost::beast::http::request<boost::beast::http::string_body>&&)> fn) {
-	conf.websocketUpgrade = [f = std::move(fn)](void* socket, void* request) -> bool {
-		using tcp     = boost::asio::ip::tcp;
-		using request = boost::beast::http::request<boost::beast::http::string_body>;
-		return f(std::move(*static_cast<tcp::socket*>(socket)),
-		         std::move(*static_cast<request*>(request)));
-	};
+/* Same as assigning conf.websocketUpgrade directly; kept for callers that prefer a setter.
+ * The socket keeps its worker executor (rbk::Http::WorkerSocket), see beastConfig.h.
+ * Return contract: true = the hook moved from the socket and owns it; false = the hook did
+ * not touch either argument and the request goes to normal routing.
+ */
+inline void setWebsocketUpgrade(BeastConf& conf, BeastConf::WebSocketUpgradeFn fn) {
+	conf.websocketUpgrade = std::move(fn);
 }
 
 #endif
