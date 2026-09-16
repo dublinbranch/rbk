@@ -7,6 +7,8 @@ SqlResultV2::SqlResultV2() {
 }
 
 SqlResultV2::SqlResultV2(const sqlResult& old) {
+	// Best available: v1 has no per-cell flag. A stored string "NULL" looks
+	// the same as SQL NULL. Auth / secrets must queryCacheV2 instead.
 	if (old.empty()) {
 		return;
 	}
@@ -29,6 +31,7 @@ SqlResultV2::SqlResultV2(const sqlResult& old) {
 		r.columns = columns;
 		for (const auto& col : row) {
 			r.data.push_back(col.second.toStdString());
+			r.nulls.push_back(col.second == BSQL_NULL);
 		}
 		//cross check the data are the same
 		for (auto& [name, info] : *r.columns) {
@@ -71,6 +74,8 @@ QDataStream& operator>>(QDataStream& in, SqlResultV2& result) {
 }
 
 SqlRowV2::SqlRowV2(const sqlRow& old) {
+	// Best available: v1 has no per-cell flag. A stored string "NULL" looks
+	// the same as SQL NULL. Auth / secrets must queryCacheLineV2 instead.
 	columns  = std::make_shared<SqlResV2::TypeMap>();
 	uint   i = 0;
 	MyType mt(enum_field_types::MAX_NO_FIELD_TYPES);
@@ -79,6 +84,7 @@ SqlRowV2::SqlRowV2(const sqlRow& old) {
 		columns->insert({key.toStdString(), SqlResV2::Field{mt, i}});
 		i++;
 		data.push_back(value.toStdString());
+		nulls.push_back(value == BSQL_NULL);
 	}
 }
 
@@ -89,20 +95,29 @@ bool SqlRowV2::empty() const {
 std::string SqlRowV2::prettyPrint(DB* db) const {
 	SqlComposer s(db);
 	for (auto& [key, info] : *columns) {
-		s.push(key, data[info.pos]);
+		if (info.pos < static_cast<uint>(nulls.size()) && nulls[static_cast<int>(info.pos)]) {
+			s.push(key, S_SQL_NULL);
+		} else {
+			s.push(key, data[info.pos]);
+		}
 	}
 	return s.compose();
 }
 
 QDataStream& operator<<(QDataStream& out, const SqlRowV2& row) {
 	out << row.data;
+	out << row.nulls;
 	return out;
 }
 
 QDataStream& operator>>(QDataStream& in, SqlRowV2& row) {
-	// Clear the map first to prepare for deserialization
 	row.data.clear();
+	row.nulls.clear();
 	in >> row.data;
+	in >> row.nulls;
+	if (row.nulls.size() != row.data.size()) {
+		in.setStatus(QDataStream::ReadCorruptData);
+	}
 	return in;
 }
 

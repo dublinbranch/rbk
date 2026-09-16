@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+using u128 = unsigned __int128;
+
 using u64 = uint64_t;
 using i64 = int64_t;
 

@@ -59,4 +59,32 @@ BOOST_AUTO_TEST_CASE(parse_syntax_error_without_throw_sets_error_code)
 	BOOST_CHECK(r.ec.failed());
 }
 
+BOOST_AUTO_TEST_CASE(parse_qbytearray_via_sw)
+{
+	const QByteArray raw = QByteArrayLiteral(R"({"k":7})");
+	auto             r   = parseJson(SW(raw), false);
+	BOOST_CHECK(!r.ec);
+	BOOST_REQUIRE(r.json.is_object());
+	BOOST_CHECK_EQUAL(r.json.as_object().at("k").as_int64(), 7);
+}
+
+BOOST_AUTO_TEST_CASE(parse_qbyteadt_views_bytes_without_std_string_copy)
+{
+	const QByteArray raw = QByteArrayLiteral(R"({"k":8})");
+	auto             r   = parseJson(raw, false);
+	BOOST_CHECK(!r.ec);
+	BOOST_REQUIRE(r.json.is_object());
+	BOOST_CHECK_EQUAL(r.json.as_object().at("k").as_int64(), 8);
+}
+
+BOOST_AUTO_TEST_CASE(parse_qbytearray_strips_trailing_nul)
+{
+	QByteArray raw = QByteArrayLiteral(R"({"k":9})");
+	raw.append('\0');
+	auto r = parseJson(SW(raw), false);
+	BOOST_CHECK(!r.ec);
+	BOOST_REQUIRE(r.json.is_object());
+	BOOST_CHECK_EQUAL(r.json.as_object().at("k").as_int64(), 9);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

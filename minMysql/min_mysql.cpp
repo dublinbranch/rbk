@@ -422,11 +422,13 @@ SqlResultV2 DB::queryCacheV2(const StringAdt& sql, uint ttl) {
 	SetOnExit noCache(state.get().noCacheOnEmpty, false);
 	if (ttl) {
 		// small trick to avoid calling over and over the function
-		static bool fraud = mkdir(QSL("cachedSQL_V2_%1/").arg(conf.cacheId));
+		// V3 because rows now serialize nulls[]; old cachedSQL_V2_* files would
+		// deserialize with an empty nulls vector. No migration — TTL cache.
+		static bool fraud = mkdir(QSL("cachedSQL_V3_%1/").arg(conf.cacheId));
 		(void)fraud;
 
 		//We have a lock to prevent concurrent write in this process, but nothing to protect against other, just use another folder
-		QString name = QSL("cachedSQL_V2_%1/").arg(conf.cacheId) + sha1(sql);
+		QString name = QSL("cachedSQL_V3_%1/").arg(conf.cacheId) + sha1(sql);
 
 		//We do not really care about cache stampede here... and we write the file in an atomic way so we avoid torn read. So no need for mutex,
 		//if multiple thread will write the same file is not a problem they will just overwrite the final version and not mangle each other
@@ -1166,10 +1168,12 @@ SqlResultV2 DB::fetchResultV2(SQLLogger* sqlLogger) const {
 				thisItem.columns = res.columns;
 				auto lengths     = mysql_fetch_lengths(result);
 				for (uint16_t i = 0; i < num_fields; i++) {
-					//auto& field = fields[i];
-					// this is how sql NULL is signaled, instead of having a wrapper and check ALWAYS before access, we normally just ceck on result swap if a NULL has any sense here or not.
-					// Plus if you have the string NULL in a DB you are really looking for trouble
-					if (row[i] == nullptr && lengths[i] == 0) {
+					// MYSQL_ROW nullptr is SQL NULL. data still gets S_SQL_NULL or ""
+					// (NULL_as_EMPTY) so rq / get keep their old text mapping. getIf /
+					// rqIf / isNull use nulls[i], so a real string "NULL" is a string.
+					const bool cellNull = row[i] == nullptr && lengths[i] == 0;
+					thisItem.nulls.push_back(cellNull);
+					if (cellNull) {
 						if (state.get().NULL_as_EMPTY) {
 							thisItem.data.push_back({});
 						} else {

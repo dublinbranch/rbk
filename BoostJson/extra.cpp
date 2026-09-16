@@ -154,7 +154,7 @@ JsonRes parseJson(const std::string& json, bool throwOnError) {
 }
 
 JsonRes parseJson(const QByteAdt& json, bool throwOnError) {
-	return parseJson(json.toStdString(), throwOnError);
+	return parseJson(SW(json), throwOnError);
 }
 
 void sqlEscape(boost::json::object& r, DB* db) {

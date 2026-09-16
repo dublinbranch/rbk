@@ -7,6 +7,12 @@
 #include <string>
 #include <string_view>
 
+/** View QByteArray bytes without copying. Size is QByteArray::size(), so embedded NULs stay. */
+[[nodiscard]] inline std::string_view SW(const QByteArray& b) {
+	const char* p = b.constData();
+	return {p != nullptr ? p : "", static_cast<std::size_t>(b.size())};
+}
+
 class QByteAdt : public QByteArray {
       public:
 	QByteAdt() = default;

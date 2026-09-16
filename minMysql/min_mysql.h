@@ -127,7 +127,9 @@ class DB {
 	[[nodiscard]] sqlResult queryDeadlockRepeater(const std::string& sql, uint maxTry = 5) const;
 	[[nodiscard]] sqlResult queryDeadlockRepeater(std::string&& sql, uint maxTry = 5) const;
 
-	/* V2 */
+	/* V2 — per-cell SQL NULL flags (SqlRowV2::nulls / getIf / rqIf / isNull).
+	 * Use these instead of wrapping queryCache2 / queryCacheLine2 in SqlRowV2(old).
+	 * Cache dir is cachedSQL_V3_* (V2 files have no nulls vector). */
 	[[nodiscard]] SqlResultV2 queryV2(const StringAdt& sql);
 	[[nodiscard]] SqlResultV2 queryCacheV2(const StringAdt& sql, uint ttl);
 	[[nodiscard]] SqlRowV2    queryCacheLineV2(const StringAdt& sql, uint ttl, bool required = false);
