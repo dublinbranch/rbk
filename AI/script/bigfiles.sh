@@ -26,7 +26,7 @@ while getopts "n:atw:h" opt; do
 	esac
 done
 
-cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
+cd "$(git rev-parse --show-toplevel)"
 
 # Paths from .claude/rules/diter-skip-vendor.md
 skip_re='(^|/)vendor/|^drop/'
@@ -61,7 +61,7 @@ report() {
 		while IFS=$'\t' read -r bytes lines tokens type f; do
 			printf '%-10s %-8s %-9s %-4s %s\n' \
 				"$(numfmt --to=iec "$bytes")" "$lines" "$tokens" "$type" "$f"
-		done
+		done || true # head closes the pipe early: SIGPIPE is expected
 
 	local nfiles tbytes
 	nfiles=$(grep -c . <<< "$files" || true)
