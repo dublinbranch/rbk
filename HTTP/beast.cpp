@@ -47,6 +47,7 @@
 #include <sys/socket.h>
 #include <algorithm>
 #include <cerrno>
+#include <csignal>
 #include <cstring>
 #include "rbk/thread/threadstatush.h"
 #include "rbk/thread/tmonitoring.h"
@@ -695,9 +696,14 @@ void Beast::listen() {
 	// Capture SIGINT to perform a clean shutdown
 	//(if not already captured by other, which is quite rare so not under config)
 	auto signals2block = net::signal_set(*contexts.front(), SIGINT, SIGTERM);
+	int  caughtSignal  = 0;
 
 	signals2block.async_wait(
-	    [&contexts](beast::error_code const&, int) {
+	    [&contexts, &caughtSignal](beast::error_code const& ec, int signo) {
+		    if (ec) {
+			    return;
+		    }
+		    caughtSignal = signo;
 		    // Stop every context. Each one owns its own sockets, so they all have to be
 		    // told; stopping only the first would leave the other workers running.
 		    fmt::print("Stopping\n");
@@ -739,6 +745,17 @@ void Beast::listen() {
 	// Block until all the threads exit
 	for (auto& t : threads) {
 		t->join();
+	}
+
+	// The signal was consumed above, so on its own the process would keep running: every
+	// caller runs listen() on a side thread while main sits in QCoreApplication::exec() or
+	// joins loop threads that never end. Once the workers are down, restore the default
+	// action and deliver the signal again so the process ends as if no handler were set.
+	if (caughtSignal) {
+		signals2block.clear();
+		fflush(nullptr);
+		std::signal(caughtSignal, SIG_DFL);
+		std::raise(caughtSignal);
 	}
 }
 
