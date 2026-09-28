@@ -252,6 +252,7 @@ set(RBK_SOURCES
     string/util.cpp
 
     # thread
+    thread/shutdown.cpp
     thread/threadstatush.cpp
     thread/threadvector.cpp
     thread/tmonitoring.cpp
@@ -447,6 +448,7 @@ set(RBK_HEADERS
     string/util.h
 
     # thread
+    thread/shutdown.h
     thread/threadstatush.h
     thread/threadvector.h
     thread/tmonitoring.h
@@ -792,6 +794,10 @@ endif()
 if(RBK_BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
+    # Beast needs APCU (its status route) to link.
+    if(RBK_WITH_BOOST_BEAST AND RBK_WITH_APCU)
+        add_subdirectory(demo/shutdown)
+    endif()
 endif()
 
 # ── Install & package config (prebuilt library mode) ─────────────────────────

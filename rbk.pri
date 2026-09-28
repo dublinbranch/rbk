@@ -429,6 +429,7 @@ HEADERS += \
     $$PWD/serialization/serialize.h \
     $$PWD/string/qstring.h \
     $$PWD/string/util.h \
+    $$PWD/thread/shutdown.h \
     $$PWD/thread/threadstatush.h \
     $$PWD/thread/threadvector.h \
     $$PWD/thread/tmonitoring.h \
@@ -477,6 +478,7 @@ SOURCES += \
     $$PWD/serialization/QDataStreamer.cpp \
     $$PWD/string/qstring.cpp \
     $$PWD/string/util.cpp \
+    $$PWD/thread/shutdown.cpp \
     $$PWD/thread/threadstatush.cpp \
     $$PWD/thread/threadvector.cpp \
     $$PWD/thread/tmonitoring.cpp \

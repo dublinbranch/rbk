@@ -11,6 +11,7 @@
 #include <QLoggingCategory>
 #include <cstdio>
 #include <iostream>
+#include <mutex>
 #include <sys/stat.h>
 #include <thread>
 
@@ -92,7 +93,7 @@ void sendMail(QString subject, QString message) {
 			                  .set_email_details(message.toUtf8().constData(), subject.toUtf8().constData(), recipient.data())
 			                  .set_smtp_details("spammer@seisho.us", "mjsydiTODNmDLTUqRIZY", "spammer@seisho.us", "smtp://seisho.us:25")
 			                  .build();
-			auto res = marx.perform();
+			auto   res  = marx.perform();
 			if (!res.has_value()) {
 				std::cerr << res.error();
 			}
@@ -218,6 +219,49 @@ void commonInitialization(const NanoSpammerConfig* _config) {
 	                   */
 }
 
+namespace {
+// Qt calls the message handler from many threads at once: one mutex guards the files and the
+// prints. Built on first use, not at load: a QFile is a QObject. Leaked on purpose: must stay
+// usable during static teardown.
+struct LogState {
+	std::timed_mutex m;
+	QFile            logFile;
+	QFile            errFile;
+};
+
+LogState& logState() {
+	static LogState& s = *new LogState;
+	return s;
+}
+} // namespace
+
+bool tryWriteDiskLog(std::string_view line) {
+	auto&            ls = logState();
+	std::unique_lock lock(ls.m, std::try_to_lock);
+	if (!lock.owns_lock() || !ls.errFile.isOpen()) {
+		return false;
+	}
+	return ls.errFile.write(line.data(), static_cast<qint64>(line.size())) == static_cast<qint64>(line.size());
+}
+
+bool tryLogLine(bool error, std::string_view line, std::chrono::milliseconds wait) {
+	auto&            ls = logState();
+	std::unique_lock lock(ls.m, wait);
+	if (!lock.owns_lock()) {
+		return false;
+	}
+	auto  time = QDateTime::currentDateTime().toString(Qt::ISODate).toStdString();
+	auto  msg  = F("{} {}\n----------\n", time, line);
+	auto& file = error ? ls.errFile : ls.logFile;
+	if (file.isOpen()) {
+		file.write(msg.data(), static_cast<qint64>(msg.size()));
+	}
+	std::FILE* stream = error ? stderr : stdout;
+	fmt::print(stream, "{}", msg);
+	fflush(stream);
+	return true;
+}
+
 //QDebug send in stderr, but we want to use stdout
 void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg) {
 	// Qt static destructors run after QCoreApplication and can still emit QDebug.
@@ -228,17 +272,23 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 		return;
 	}
 
-	// Leaked on purpose: must not run QObject destructors during static teardown.
-	static QFile& logFile = *new QFile;
-	static QFile& errFile = *new QFile;
+	// Held to the end: covers the lazy open, firstStdErrEvent, the disk write and the print.
+	// A message logged from inside the handler cannot deadlock: Qt sends it to stderr instead.
+	auto&           ls = logState();
+	std::lock_guard lock(ls.m);
+	auto&           logFile = ls.logFile;
+	auto&           errFile = ls.errFile;
+
+	// Unbuffered: every message reaches the kernel at once, so no exit path (graceful, forced,
+	// SIGKILL, crash) loses the tail of the log.
 	if (!logFile.isOpen()) {
 		mkdir("log");
 		auto time = QDateTime::currentDateTime().toString(mysqlDateTimeFormat);
 		logFile.setFileName(QString("log/%1.log").arg(time));
-		logFile.open(QIODevice::Append | QIODevice::Text);
+		logFile.open(QIODevice::Append | QIODevice::Text | QIODevice::Unbuffered);
 
 		errFile.setFileName(QString("log/%1.err").arg(time));
-		errFile.open(QIODevice::Append | QIODevice::Text);
+		errFile.open(QIODevice::Append | QIODevice::Text | QIODevice::Unbuffered);
 	}
 
 	//Qt 6.6 for *REASON* QsaveFile spam "Empty filename passed to function", but makes no sense

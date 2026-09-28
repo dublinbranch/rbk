@@ -49,7 +49,9 @@
 #include <cerrno>
 #include <csignal>
 #include <cstring>
+#include "rbk/thread/shutdown.h"
 #include "rbk/thread/threadstatush.h"
+#include "rbk/thread/threadvector.h"
 #include "rbk/thread/tmonitoring.h"
 
 #include "PMFCGI.h"
@@ -693,29 +695,45 @@ void Beast::listen() {
 		listeners.emplace_back(std::make_shared<listener>(*ioc, endpoint, &conf))->run();
 	}
 
-	// Capture SIGINT to perform a clean shutdown
-	//(if not already captured by other, which is quite rare so not under config)
-	auto signals2block = net::signal_set(*contexts.front(), SIGINT, SIGTERM);
-	int  caughtSignal  = 0;
+	// With rbk::Shutdown installed, its watcher owns SIGINT/SIGTERM: stop the workers from
+	// there and return normally, so the caller's cleanup runs. If shutdown already started
+	// (a signal during startup), the callback runs at once and run() below returns at once.
+	// Otherwise capture the signals here (if not already captured by other, which is quite
+	// rare so not under config), stop, and re-raise after the join.
+	std::optional<net::signal_set> signals2block;
+	rbk::Shutdown::Registration    stopAll; // declared after contexts: destroyed first
+	int                            caughtSignal = 0;
 
-	signals2block.async_wait(
-	    [&contexts, &caughtSignal](beast::error_code const& ec, int signo) {
-		    if (ec) {
-			    return;
-		    }
-		    caughtSignal = signo;
-		    // Stop every context. Each one owns its own sockets, so they all have to be
-		    // told; stopping only the first would leave the other workers running.
-		    fmt::print("Stopping\n");
-		    for (auto& ioc : contexts) {
-			    ioc->stop();
-		    }
-	    });
+	if (rbk::Shutdown::installed()) {
+		stopAll = rbk::Shutdown::onStop([&contexts] {
+			for (auto& ioc : contexts) {
+				ioc->stop();
+			}
+		});
+	} else {
+		signals2block.emplace(*contexts.front(), SIGINT, SIGTERM);
+		signals2block->async_wait(
+		    [&contexts, &caughtSignal](beast::error_code const& ec, int signo) {
+			    if (ec) {
+				    return;
+			    }
+			    caughtSignal = signo;
+			    // Stop every context. Each one owns its own sockets, so they all have to be
+			    // told; stopping only the first would leave the other workers running.
+			    fmt::print("Stopping\n");
+			    for (auto& ioc : contexts) {
+				    ioc->stop();
+			    }
+		    });
+	}
 
 	fmt::print("Ready listening on http://{}:{} ({} worker{}, thread-per-core)\n",
 	           conf.address, conf.port, workerCount, workerCount == 1 ? "" : "s");
 
-	vector<std::thread*> threads;
+	ThreadVector                 threads;
+	std::vector<std::thread::id> workerIds;
+	threads.reserve(workerCount);
+	workerIds.reserve(workerCount);
 
 	// Run the I/O service on the requested number of threads
 	for (size_t i = 0; i < workerCount; ++i) {
@@ -723,7 +741,7 @@ void Beast::listen() {
 
 		auto  onWorkerStart = conf.onWorkerStart;
 		auto* ioc           = contexts[i].get();
-		auto& t             = threads.emplace_back(new std::thread(
+		auto& t             = threads.emplace_back(std::thread(
 		    [status, ioc, onWorkerStart] {
 			    //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
 			    status->tid       = gettid();
@@ -738,21 +756,25 @@ void Beast::listen() {
 		status->state = ThreadState::Idle;
 		status->info  = "just created";
 
-		threadStatus.pool.insert({t->get_id(), status});
+		workerIds.push_back(t.get_id());
+		threadStatus.pool.insert({t.get_id(), status});
 	}
 	threadStatus.free = threadStatus.pool.size();
 
-	// Block until all the threads exit
-	for (auto& t : threads) {
-		t->join();
+	// Block until all the threads exit. listen() can return normally (rbk::Shutdown), so drop
+	// the ended workers from the thread monitor.
+	threads.wait();
+	for (const auto& id : workerIds) {
+		threadStatus.pool.erase(id);
 	}
+	threadStatus.free = threadStatus.pool.size();
 
 	// The signal was consumed above, so on its own the process would keep running: every
 	// caller runs listen() on a side thread while main sits in QCoreApplication::exec() or
 	// joins loop threads that never end. Once the workers are down, restore the default
 	// action and deliver the signal again so the process ends as if no handler were set.
 	if (caughtSignal) {
-		signals2block.clear();
+		signals2block->clear();
 		fflush(nullptr);
 		std::signal(caughtSignal, SIG_DFL);
 		std::raise(caughtSignal);
