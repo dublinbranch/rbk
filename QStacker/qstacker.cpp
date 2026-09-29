@@ -263,6 +263,11 @@ std::string stacker(uint skip, QStackerOpt opt) {
 		for (size_t i = 0; i < st.size(); ++i) {
 			auto t = stackerState.resolve(st[i]);
 
+			// Leading __cxa_throw hook frame: skip it, else the libstdc++ frame after it
+			// (std::filesystem, std::stoi, ...) ends the trace before the app caller.
+			if (frames.empty() && contains(t.source.filename, "rbk/QStacker/")) {
+				continue;
+			}
 			if (pathIsDenied(t.object_filename) || pathIsDenied(t.source.filename) ||
 			    symbolIsDenied(t.object_function)) {
 				if (!frames.empty()) {

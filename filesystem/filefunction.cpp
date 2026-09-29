@@ -117,12 +117,21 @@ FileGetRes fileGetContents3(const QByteAdt& fileName, const FGCParam param) {
 		auto cTime = QFileInfo(fileName).lastModified().toSecsSinceEpoch();
 		auto age   = QDateTime::currentSecsSinceEpoch() - cTime;
 		if (age > param.maxAge) {
+			res.err    = FileGetRes::Err::tooOld;
+			res.errMsg = F16("fileGetContents3: {} is {}s old, max age is {}s", fileName, age, param.maxAge);
 			return res;
 		}
 	}
 
 	res.content = fileGetContents(fileName, param.quiet, res.exist);
 	if (!res.exist) {
+		if (QFileInfo::exists(fileName)) {
+			res.err    = FileGetRes::Err::openFailed;
+			res.errMsg = F16("fileGetContents3: can not open {} (check permission)", fileName);
+		} else {
+			res.err    = FileGetRes::Err::notFound;
+			res.errMsg = F16("fileGetContents3: {} not found (absolute path: {})", fileName, QFileInfo(fileName).absoluteFilePath());
+		}
 		return res;
 	}
 
@@ -134,6 +143,7 @@ FileGetRes fileGetContents3(const QByteAdt& fileName, const FGCParam param) {
 		res.exist   = false;
 		res.content = {};
 		res.err     = FileGetRes::Err::missingHeaderEndMarker;
+		res.errMsg  = F16("fileGetContents3: missing __HEADER__END__ marker in {}", fileName);
 		return res;
 	}
 
@@ -148,6 +158,7 @@ FileGetRes fileGetContents3(const QByteAdt& fileName, const FGCParam param) {
 		res.exist   = false;
 		res.content = {};
 		res.err     = FileGetRes::Err::invalidJsonHeader;
+		res.errMsg  = F16("fileGetContents3: invalid JSON header in {}: {}", fileName, jr.composeErrorMsg());
 		return res;
 	}
 
@@ -160,6 +171,7 @@ FileGetRes fileGetContents3(const QByteAdt& fileName, const FGCParam param) {
 			res.exist   = false;
 			res.content = {};
 			res.err     = FileGetRes::Err::missingRevision;
+			res.errMsg  = F16("fileGetContents3: missing revision in header of {}", fileName);
 			return res;
 		}
 	}
@@ -176,6 +188,11 @@ FileGetRes fileGetContents3(const QByteAdt& fileName, const FGCParam param) {
 			res.exist   = false;
 			res.content = {};
 			res.err     = FileGetRes::Err::revisionMismatch;
+			res.errMsg  = F16("fileGetContents3: file revision {} does not satisfy {} (required {}) for {}",
+			                  fileRev,
+			                  param.mr == FGCParam::MR::exact ? "exact" : "minimum",
+			                  param.revision,
+			                  fileName);
 			return res;
 		}
 	}

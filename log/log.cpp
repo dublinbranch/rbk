@@ -126,12 +126,14 @@ boost::json::object Log::toJson4panel() const {
 }
 
 Log::Log() {
-	//stackTrace = QStacker16Light(6).toUtf8();
+	//skip 4 so frame #0 is the caller of Log::Log
+	stackTrace = QStacker(4);
 	tsStart = QDateTime::currentDateTime();
 	timer.start();
 }
 
 Log::Log(const QByteArray& _info, Category _category) {
+	stackTrace = QStacker(4);
 	tsStart = QDateTime::currentDateTime();
 	timer.start();
 	this->stdOut   = _info;
@@ -139,6 +141,7 @@ Log::Log(const QByteArray& _info, Category _category) {
 }
 
 Log::Log(const std::exception& e, const char* func) {
+	stackTrace = QStacker(4);
 	timer.start();
 	tsStart  = QDateTime::currentDateTime();
 	stdErr   = e.what();

@@ -25,6 +25,9 @@ class QSaveV2 : public QFile {
 struct FileGetRes {
 	enum class Err : quint8 {
 		none,
+		notFound,
+		openFailed,
+		tooOld,
 		missingHeaderEndMarker,
 		invalidJsonHeader,
 		missingRevision,
@@ -35,6 +38,8 @@ struct FileGetRes {
 	QByteArray content;
 	bool       exist = false;
 	Err        err   = Err::none;
+	//Human readable reason of the failure, includes the file path. Empty on success.
+	QString errMsg;
 };
 
 struct FPCRes {
