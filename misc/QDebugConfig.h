@@ -1,7 +1,10 @@
 #pragma once
 #include <QDateTime>
 #include <QString>
+#include <optional>
 #include <vector>
+
+inline constexpr int kDefaultMailCooldownSec = 8 * 3600;
 
 struct SlackOpt {
 	bool        warningON = true;
@@ -15,6 +18,9 @@ struct NanoSpammerConfig {
 	bool                     BRUTAL_INHUMAN_REPORTING = false;
 	bool                     warningToMail            = true;
 	std::vector<std::string> warningMailRecipients    = {"admin@seisho.us"};
+	// Min seconds between two warning mails from the same file:line. 0 = no limit.
+	// Optional so old config.json files without the key still load.
+	std::optional<int>       mailCooldownSec          = kDefaultMailCooldownSec;
 	QString                  instanceName             = "REPLACE ME";
 	QDateTime                startedAt;
 };

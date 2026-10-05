@@ -212,6 +212,7 @@ set(RBK_SOURCES
     misc/QCommandLineParserV2.cpp
     misc/QDebugHandler.cpp
     misc/QElapsedTimerV2.cpp
+    misc/runnableV2.cpp
     misc/sleep.cpp
     misc/snowflake.cpp
     misc/sourcelocation.cpp
@@ -392,6 +393,7 @@ set(RBK_HEADERS
     misc/QDebugConfig.h
     misc/QDebugHandler.h
     misc/QElapsedTimerV2.h
+    misc/runnableV2.h
     misc/sleep.h
     misc/snowflake.h
     misc/sourcelocation.h
@@ -663,6 +665,8 @@ endif()
 target_compile_definitions(rbk
     PUBLIC
         QT_DEPRECATED_WARNINGS
+        # file:line in QMessageLogContext also in release builds: the warning mail cooldown keys on it
+        QT_MESSAGELOGCONTEXT
     PRIVATE
         BuildDir="${CMAKE_BINARY_DIR}"
         BasePath="${CMAKE_SOURCE_DIR}"

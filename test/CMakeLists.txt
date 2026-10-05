@@ -5,6 +5,7 @@ add_executable(rbk_tests
     clientIp.cpp
     filefunction.cpp
     loginLimiter.cpp
+    runnableV2.cpp
     shutdown.cpp
     sqlrowv2.cpp
     staticPath.cpp

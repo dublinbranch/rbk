@@ -2,6 +2,7 @@
 #include "QDebugConfig.h"
 #include <QDebug>
 #include <chrono>
+#include <string>
 #include <string_view>
 
 void initLocaleTZ();
@@ -30,5 +31,9 @@ bool tryWriteDiskLog(std::string_view line);
  * watcher, which must not wait for a thread that may be stuck while it logs. */
 bool tryLogLine(bool error, std::string_view line, std::chrono::milliseconds wait = std::chrono::milliseconds(100));
 void sendMail(QString subject, QString message);
+
+/** Rate limit key for the warning mail of generalMsgHandler: file:line of the call, or the first
+ * 120 chars of the text if Qt gives no file. */
+std::string warningMailKey(const QMessageLogContext& context, const QString& msg);
 void sendSlack(const QString& msg, std::string channel = "");
 void callViaTwilio();

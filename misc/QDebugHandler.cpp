@@ -3,6 +3,7 @@
 #include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/gitTrick/buffer.h"
+#include "rbk/misc/runnableV2.h"
 //#include "slacksender.h"
 //#include "twilio.h"
 #include <QCoreApplication>
@@ -227,6 +228,8 @@ struct LogState {
 	std::timed_mutex m;
 	QFile            logFile;
 	QFile            errFile;
+	// Warning mail rate limit, key from warningMailKey().
+	rbk::RunnableV2 mailGate;
 };
 
 LogState& logState() {
@@ -260,6 +263,18 @@ bool tryLogLine(bool error, std::string_view line, std::chrono::milliseconds wai
 	fmt::print(stream, "{}", msg);
 	fflush(stream);
 	return true;
+}
+
+std::string warningMailKey(const QMessageLogContext& context, const QString& msg) {
+	// file:line, not the text: the text contains URLs and times.
+	if (context.file) {
+		return F("{}:{}", context.file, context.line);
+	}
+	// No file (Qt's own release libraries, or code built without QT_MESSAGELOGCONTEXT): use the start
+	// of the text, else all those messages share one key and block each other.
+	// This is free text, against the RunnableV2 advice (bounded keys). Accepted: each new key is also a
+	// mail, and before the cooldown each of these messages was a mail too.
+	return msg.left(120).toStdString();
 }
 
 //QDebug send in stderr, but we want to use stdout
@@ -352,11 +367,19 @@ void generalMsgHandler(QtMsgType type, const QMessageLogContext& context, const 
 		// 	sendSlack(msg2slack, config->slackOpt.warningChannel);
 		// }
 		if (config->warningToMail) {
-			// subject
-			auto subject = QSL("Error from %1 @ %2 in %3").arg(QCoreApplication::applicationName(), config->instanceName, funkz);
-			// message
-			auto warningMessage = warningHeader1 + QSL("<br/>") + warningHeader2 + QSL("<br/><br/><pre>") + msg + "</pre>";
-			sendMail(subject, warningMessage);
+			// Only the mail is limited: terminal and disk log still get every message.
+			auto gate = ls.mailGate(warningMailKey(context, msg), config->mailCooldownSec.value_or(kDefaultMailCooldownSec));
+			if (gate) {
+				// subject
+				auto subject = QSL("Error from %1 @ %2 in %3").arg(QCoreApplication::applicationName(), config->instanceName, funkz);
+				// message
+				auto warningMessage = warningHeader1 + QSL("<br/>") + warningHeader2 + QSL("<br/><br/><pre>") + msg + "</pre>";
+				if (gate.suppressed > 0) {
+					auto since = QDateTime::fromSecsSinceEpoch(gate.firstSuppressedSec).toString(Qt::ISODate);
+					warningMessage += F16("<br/>{} similar messages suppressed since {}", gate.suppressed, since);
+				}
+				sendMail(subject, warningMessage);
+			}
 		}
 
 		stream  = stderr;
