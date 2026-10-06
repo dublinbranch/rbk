@@ -2,6 +2,7 @@
 #include "rbk/defines/stringDefine.h"
 #include "rbk/mapExtensor/qmapV2.h"
 #include "rbk/misc/swapType.h"
+#include <type_traits>
 
 //TODO move to mapV2 as most of the stuff here is now duplicated
 
@@ -72,7 +73,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 
 	// To avoid conversion back and forth QBytearray of the default value and the his result
 	template <typename D>
-	bool get2(const QByteArray& key, D& dest, const D& def) const {
+	bool get2(const QByteArray& key, D& dest, const std::type_identity_t<D>& def) const {
 		if (auto v = this->fetch(key); v) {
 			swapType(*v.value, dest);
 			return true;
@@ -82,7 +83,7 @@ class sqlRow : public QMapV2<QByteArray, QByteArray> {
 	}
 
 	template <typename D>
-	bool getIfNotNull(const QByteArray& key, D& dest, const D& def) const {
+	bool getIfNotNull(const QByteArray& key, D& dest, const std::type_identity_t<D>& def) const {
 		auto iter = find(key);
 		if (iter == ParentMap::end()) {
 			dest = def;
