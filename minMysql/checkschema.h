@@ -49,8 +49,9 @@ class CheckSchema {
 	DB*         db = nullptr;
 	QStringList databases;
 
-	//Warn for each key with whitespace at the start or end, and for each other column with space or tab at the end.
-	//Returns false if two keys are the same after trim, reMap then keeps only the last of them.
+	//Returns false for a key with whitespace at the start or end, and if two keys are the same after trim
+	//(reMap then keeps only the last of them).
+	//Other columns with space or tab at the end: only a warning.
 	bool checkWhitespace(const sqlResult& raw, const TableData& table, bool fromDb) const;
 };
 QDebug&      operator<<(QDebug& d, const CheckSchema::Key& key);

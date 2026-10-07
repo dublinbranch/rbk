@@ -150,7 +150,15 @@ void CheckSchema::saveSchema() {
 void CheckSchema::saveTableData(const TableDatas& td) {
 	mkdir(basePath + "/db");
 	for (auto& row : td) {
-		auto      path = basePath + QSL("/db/") + row.name;
+		auto path = basePath + QSL("/db/") + row.name;
+		auto res  = db->query(row.sql);
+		//A bad key in the reference data goes to every machine, so do not save it.
+		//A space or tab at the end of another column is only a warning.
+		if (!checkWhitespace(res, row, true)) {
+			echo("table {} has a bad key (see above), {} is NOT saved and the old file is kept. Fix the DB and refresh again",
+			     row.name, path);
+			continue;
+		}
 		QSaveFile file(path);
 		echo("Saving table info in {} ", path);
 		if (file.open(QFile::WriteOnly | QFile::Truncate)) {
@@ -159,9 +167,6 @@ void CheckSchema::saveTableData(const TableDatas& td) {
 			QDataStream out(&stream, QIODevice::WriteOnly);
 			out.setVersion(QDataStream::Qt_5_15);
 
-			auto res = db->query(row.sql);
-			//Warn now, else a bad value goes into the reference data without a word
-			checkWhitespace(res, row, true);
 			out << res;
 
 			file.write(stream);
@@ -344,8 +349,9 @@ static auto trailingBlanks(const QByteArray& v) {
 }
 
 bool CheckSchema::checkWhitespace(const sqlResult& raw, const TableData& table, bool fromDb) const {
-	//A key with whitespace at the start or end is a data error. MariaDB (PAD SPACE) ignores trailing spaces in =,
-	//so the program still finds the row, but a byte compare (as in checkTableData) does not.
+	//A key with whitespace at the start or end is a data error, so it fails the check.
+	//MariaDB (PAD SPACE) ignores trailing spaces in =, so SQL still finds the row, but C++ code that compares
+	//the key bytes (== or a map) does not, and the value is lost without a word.
 	auto                 source = fromDb ? "DB" : "Disk";
 	std::set<QByteArray> seen;
 	bool                 ok = true;
@@ -366,6 +372,7 @@ UPDATE {} SET {} = "{}" WHERE {} = "{}";
 				         db->escape(table.primaryKey), db->escape(key));
 			}
 			echo(msg);
+			ok = false;
 		}
 		if (!seen.insert(trimmed).second) {
 			echo("table {} : {} = \"{}\" in {} is in more than one row after trim, only the last one is checked",
@@ -386,7 +393,10 @@ UPDATE {} SET {} = "{}" WHERE {} = "{}";
 table {} : {} at row {} = "{}" in {} ends with space or tab ({} char, last {} hex {})
 )",
 			             table.name, col, table.primaryKey, trimmed, source, value.size(), n, value.right(n).toHex());
-			if (fromDb) {
+			//A long value (a page body) in the UPDATE fills the log at every start
+			if (fromDb && value.size() > 255) {
+				msg += "The value is too long to print the UPDATE, fix it by hand\n";
+			} else if (fromDb) {
 				msg += F(R"(To update this should be ok
 UPDATE {} SET {} = "{}" WHERE {} = "{}";
 )",
@@ -413,6 +423,7 @@ bool CheckSchema::checkTableData(const TableDatas& td) {
 		}
 		echo("Table {} loaded from {}", table.name, file.path);
 		QDataStream in(file.content);
+		in.setVersion(QDataStream::Qt_5_15); //same as saveTableData
 
 		sqlResult diskRawData;
 		in >> diskRawData;
@@ -465,7 +476,7 @@ table {} impossible to find the row {} = {}
 			auto dbKey = dbRow.rq(table.primaryKey);
 			//now check the column if matches
 			for (auto [kDisk, vDisk] : std::as_const(diskRow)) {
-				//The rows are matched on the trimmed key, checkWhitespace already warned about the whitespace
+				//The rows are matched on the trimmed key, checkWhitespace already failed the check for the whitespace
 				if (kDisk == table.primaryKey) {
 					continue;
 				}
