@@ -338,6 +338,11 @@ CheckSchema::ReMap CheckSchema::reMap(const sqlResult& raw, const QByteArray& pk
 //Space or tab at the end of a value. Newline is out for now: in long text (pages, info) it can be correct
 static auto trailingBlanks(const QByteArray& v) {
 	decltype(v.size()) n = 0; //int in Qt5, qsizetype in Qt6
+	//Generic placeholder, the spaces are on purpose
+	static const QByteArrayList placeholders = {" - "};
+	if (placeholders.contains(v)) {
+		return n;
+	}
 	while (n < v.size()) {
 		auto c = v.at(v.size() - 1 - n);
 		if (c != ' ' && c != '\t') {
