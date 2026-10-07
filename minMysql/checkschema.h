@@ -31,6 +31,7 @@ class CheckSchema {
 	explicit CheckSchema(DB* db_, QStringList database_);
 	bool         checkDbSchema();
 	bool         checkTableData(const TableDatas& td);
+	//The key is trimmed, use checkWhitespace to warn about keys with whitespace
 	static ReMap reMap(const sqlResult& raw, const QByteArray& pk);
 
 	//This MUST be intentionally called when schema is updated
@@ -47,6 +48,10 @@ class CheckSchema {
       private:
 	DB*         db = nullptr;
 	QStringList databases;
+
+	//Warn for each key with whitespace at the start or end, and for each other column with space or tab at the end.
+	//Returns false if two keys are the same after trim, reMap then keeps only the last of them.
+	bool checkWhitespace(const sqlResult& raw, const TableData& table, bool fromDb) const;
 };
 QDebug&      operator<<(QDebug& d, const CheckSchema::Key& key);
 QDataStream& operator<<(QDataStream& out, const CheckSchema::Key& key);

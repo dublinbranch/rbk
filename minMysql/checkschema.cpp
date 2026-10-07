@@ -160,6 +160,8 @@ void CheckSchema::saveTableData(const TableDatas& td) {
 			out.setVersion(QDataStream::Qt_5_15);
 
 			auto res = db->query(row.sql);
+			//Warn now, else a bad value goes into the reference data without a word
+			checkWhitespace(res, row, true);
 			out << res;
 
 			file.write(stream);
@@ -323,9 +325,79 @@ bool CheckSchema::checkDbSchema() {
 CheckSchema::ReMap CheckSchema::reMap(const sqlResult& raw, const QByteArray& pk) {
 	ReMap reMap;
 	for (auto& row : raw) {
-		reMap[row.rq(pk)] = row;
+		reMap[row.rq(pk).trimmed()] = row;
 	}
 	return reMap;
+}
+
+//Space or tab at the end of a value. Newline is out for now: in long text (pages, info) it can be correct
+static auto trailingBlanks(const QByteArray& v) {
+	decltype(v.size()) n = 0; //int in Qt5, qsizetype in Qt6
+	while (n < v.size()) {
+		auto c = v.at(v.size() - 1 - n);
+		if (c != ' ' && c != '\t') {
+			break;
+		}
+		n++;
+	}
+	return n;
+}
+
+bool CheckSchema::checkWhitespace(const sqlResult& raw, const TableData& table, bool fromDb) const {
+	//A key with whitespace at the start or end is a data error. MariaDB (PAD SPACE) ignores trailing spaces in =,
+	//so the program still finds the row, but a byte compare (as in checkTableData) does not.
+	auto                 source = fromDb ? "DB" : "Disk";
+	std::set<QByteArray> seen;
+	bool                 ok = true;
+	for (auto& row : raw) {
+		auto key     = row.rq(table.primaryKey);
+		auto trimmed = key.trimmed();
+		if (trimmed != key) {
+			auto msg = F(R"(
+table {} : {} = "{}" in {} has whitespace at the start or end ({} char, hex {}), the check uses "{}"
+)",
+			             table.name, table.primaryKey, key, source, key.size(), key.toHex(), trimmed);
+			if (fromDb) {
+				msg += F(R"(To update this should be ok
+UPDATE {} SET {} = "{}" WHERE {} = "{}";
+)",
+				         table.name,
+				         db->escape(table.primaryKey), db->escape(trimmed),
+				         db->escape(table.primaryKey), db->escape(key));
+			}
+			echo(msg);
+		}
+		if (!seen.insert(trimmed).second) {
+			echo("table {} : {} = \"{}\" in {} is in more than one row after trim, only the last one is checked",
+			     table.name, table.primaryKey, trimmed, source);
+			ok = false;
+		}
+
+		//The other columns: a space or tab at the end is bad but not critical, so only warn
+		for (auto [col, value] : std::as_const(row)) {
+			if (col == table.primaryKey) {
+				continue;
+			}
+			auto n = trailingBlanks(value);
+			if (n == 0) {
+				continue;
+			}
+			auto msg = F(R"(
+table {} : {} at row {} = "{}" in {} ends with space or tab ({} char, last {} hex {})
+)",
+			             table.name, col, table.primaryKey, trimmed, source, value.size(), n, value.right(n).toHex());
+			if (fromDb) {
+				msg += F(R"(To update this should be ok
+UPDATE {} SET {} = "{}" WHERE {} = "{}";
+)",
+				         table.name,
+				         db->escape(col), db->escape(value.chopped(n)),
+				         db->escape(table.primaryKey), db->escape(key));
+			}
+			echo(msg);
+		}
+	}
+	return ok;
 }
 
 bool CheckSchema::checkTableData(const TableDatas& td) {
@@ -336,13 +408,37 @@ bool CheckSchema::checkTableData(const TableDatas& td) {
 		auto file    = innerOrDynamic(inner, dynamic, false);
 		if (file.type == FileResV2::missing) {
 			qCritical() << F16("impossible to load schema, tryed {} and {}", inner, dynamic);
+			ok = false;
+			continue;
 		}
 		echo("Table {} loaded from {}", table.name, file.path);
 		QDataStream in(file.content);
 
-		auto      dbRawData = db->query(table.sql);
 		sqlResult diskRawData;
 		in >> diskRawData;
+		if (auto s = in.status(); s != QDataStream::Ok) {
+			echo("table {} : the reference data in {} is corrupt (QDataStream status {}), the data check for this table is skipped",
+			     table.name, file.path, (int)s);
+			ok = false;
+			continue;
+		}
+
+		sqlResult dbRawData;
+		try {
+			dbRawData = db->query(table.sql);
+		} catch (const std::exception& e) {
+			//Most probably the schema is different (a column in the SELECT is missing), checkDbSchema printed the diff
+			echo("table {} : the query failed, the data check for this table is skipped\n{}", table.name, e.what());
+			ok = false;
+			continue;
+		}
+
+		if (!checkWhitespace(dbRawData, table, true)) {
+			ok = false;
+		}
+		if (!checkWhitespace(diskRawData, table, false)) {
+			ok = false;
+		}
 
 		auto dbData   = reMap(dbRawData, table.primaryKey);
 		auto diskData = reMap(diskRawData, table.primaryKey);
@@ -365,8 +461,14 @@ table {} impossible to find the row {} = {}
 				continue;
 			}
 			auto& dbRow = *v.val;
+			//The key as it is in the DB, so the fix SQL also matches a key with whitespace
+			auto dbKey = dbRow.rq(table.primaryKey);
 			//now check the column if matches
 			for (auto [kDisk, vDisk] : std::as_const(diskRow)) {
+				//The rows are matched on the trimmed key, checkWhitespace already warned about the whitespace
+				if (kDisk == table.primaryKey) {
+					continue;
+				}
 				auto f = dbRow.fetch(kDisk);
 				if (!f) {
 					missingCols.insert(kDisk);
@@ -375,17 +477,22 @@ table {} impossible to find the row {} = {}
 				}
 				auto& vRow = *f.value;
 				if (vRow != vDisk) {
-					auto fix = F(R"(
+					//Do not copy a bad reference value into the DB, checkWhitespace already warned about it
+					auto fix = trailingBlanks(vDisk)
+					               ? F("The Disk value ends with space or tab, so the reference data is wrong.\n"
+					                   "Fix the source DB and refresh, do not copy it into this DB")
+					               : F(R"(To update this should be ok
+
 UPDATE {}
 SET {} = "{}"
 WHERE {} = "{}"
 ;
 )",
-					             table.name,
-					             db->escape(kDisk),
-					             db->escape(vDisk),
-					             db->escape(table.primaryKey),
-					             db->escape(pk));
+					                   table.name,
+					                   db->escape(kDisk),
+					                   db->escape(vDisk),
+					                   db->escape(table.primaryKey),
+					                   db->escape(dbKey));
 
 					auto msg = F16(
 					    R"(
@@ -399,7 +506,6 @@ DB is ({} char):
 ---***---
 {}
 ---***---
-To update this should be ok
 {}
 
 ---***------***------***------***---
