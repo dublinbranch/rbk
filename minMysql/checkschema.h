@@ -38,7 +38,9 @@ class CheckSchema {
 	//Remember to also add into the QRC file
 	void saveSchema();
 
-	void saveTableData(const TableDatas& td);
+	//All or nothing: returns false and saves no file if a table has a bad key.
+	//Call it before saveSchema, so the schema and the data are refreshed together or not at all.
+	bool saveTableData(const TableDatas& td);
 
 	Schemas    getDbSchema();
 	Schemas    loadSchema();
@@ -49,10 +51,17 @@ class CheckSchema {
 	DB*         db = nullptr;
 	QStringList databases;
 
+	//Where the rows come from: it decides what checkWhitespace scans and which fix SQL it prints
+	enum class Origin {
+		MachineDb, //the DB of this machine in checkTableData: keys only, the reference decides the other columns
+		Disk,      //the reference data: keys and other columns, no fix SQL
+		RefreshDb, //the source DB in saveTableData: keys and other columns, with fix SQL
+	};
+
 	//Returns false for a key with whitespace at the start or end, and if two keys are the same after trim
 	//(reMap then keeps only the last of them).
 	//Other columns with space or tab at the end: only a warning.
-	bool checkWhitespace(const sqlResult& raw, const TableData& table, bool fromDb) const;
+	bool checkWhitespace(const sqlResult& raw, const TableData& table, Origin origin) const;
 };
 QDebug&      operator<<(QDebug& d, const CheckSchema::Key& key);
 QDataStream& operator<<(QDataStream& out, const CheckSchema::Key& key);

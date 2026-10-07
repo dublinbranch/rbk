@@ -147,18 +147,35 @@ void CheckSchema::saveSchema() {
 	}
 }
 
-void CheckSchema::saveTableData(const TableDatas& td) {
-	mkdir(basePath + "/db");
+//With a schema difference the key column can be missing, and rq would throw. All the rows of one result have the same columns.
+static bool hasKeyColumn(const sqlResult& raw, const CheckSchema::TableData& table, const char* source) {
+	if (raw.isEmpty() || raw.first().contains(table.primaryKey)) {
+		return true;
+	}
+	echo("table {} : the key column {} is not in the {} data", table.name, table.primaryKey, source);
+	return false;
+}
+
+bool CheckSchema::saveTableData(const TableDatas& td) {
+	//All or nothing: a bad key in the reference data goes to every machine, and a partial save gives a new schema with old data.
+	//A space or tab at the end of another column is only a warning.
+	std::vector<sqlResult> results;
+	bool                   ok = true;
 	for (auto& row : td) {
-		auto path = basePath + QSL("/db/") + row.name;
-		auto res  = db->query(row.sql);
-		//A bad key in the reference data goes to every machine, so do not save it.
-		//A space or tab at the end of another column is only a warning.
-		if (!checkWhitespace(res, row, true)) {
-			echo("table {} has a bad key (see above), {} is NOT saved and the old file is kept. Fix the DB and refresh again",
-			     row.name, path);
-			continue;
+		auto res = db->query(row.sql);
+		if (!hasKeyColumn(res, row, "DB") || !checkWhitespace(res, row, Origin::RefreshDb)) {
+			ok = false;
 		}
+		results.push_back(res);
+	}
+	if (!ok) {
+		echo("A table has a key problem (see above), NO table data is saved and the old files are kept. Fix the DB and refresh again");
+		return false;
+	}
+
+	mkdir(basePath + "/db");
+	for (size_t i = 0; i < td.size(); i++) {
+		auto      path = basePath + QSL("/db/") + td[i].name;
 		QSaveFile file(path);
 		echo("Saving table info in {} ", path);
 		if (file.open(QFile::WriteOnly | QFile::Truncate)) {
@@ -167,7 +184,7 @@ void CheckSchema::saveTableData(const TableDatas& td) {
 			QDataStream out(&stream, QIODevice::WriteOnly);
 			out.setVersion(QDataStream::Qt_5_15);
 
-			out << res;
+			out << results[i];
 
 			file.write(stream);
 		} else {
@@ -175,6 +192,7 @@ void CheckSchema::saveTableData(const TableDatas& td) {
 		}
 		file.commit();
 	}
+	return true;
 }
 
 QByteArray CheckSchema::loadSchemaInner() {
@@ -353,11 +371,11 @@ static auto trailingBlanks(const QByteArray& v) {
 	return n;
 }
 
-bool CheckSchema::checkWhitespace(const sqlResult& raw, const TableData& table, bool fromDb) const {
+bool CheckSchema::checkWhitespace(const sqlResult& raw, const TableData& table, Origin origin) const {
 	//A key with whitespace at the start or end is a data error, so it fails the check.
 	//MariaDB (PAD SPACE) ignores trailing spaces in =, so SQL still finds the row, but C++ code that compares
 	//the key bytes (== or a map) does not, and the value is lost without a word.
-	auto                 source = fromDb ? "DB" : "Disk";
+	auto                 source = origin == Origin::Disk ? "Disk" : "DB";
 	std::set<QByteArray> seen;
 	bool                 ok = true;
 	for (auto& row : raw) {
@@ -368,7 +386,7 @@ bool CheckSchema::checkWhitespace(const sqlResult& raw, const TableData& table, 
 table {} : {} = "{}" in {} has whitespace at the start or end ({} char, hex {}), the check uses "{}"
 )",
 			             table.name, table.primaryKey, key, source, key.size(), key.toHex(), trimmed);
-			if (fromDb) {
+			if (origin != Origin::Disk) {
 				msg += F(R"(To update this should be ok
 UPDATE {} SET {} = "{}" WHERE {} = "{}";
 )",
@@ -385,7 +403,12 @@ UPDATE {} SET {} = "{}" WHERE {} = "{}";
 			ok = false;
 		}
 
-		//The other columns: a space or tab at the end is bad but not critical, so only warn
+		//The other columns: a space or tab at the end is bad but not critical, so only warn.
+		//On a machine the reference decides: a bad DB value shows as a data mismatch, with the fix to the reference value.
+		//A fix SQL here would break the check when the reference has the same bad value.
+		if (origin == Origin::MachineDb) {
+			continue;
+		}
 		for (auto [col, value] : std::as_const(row)) {
 			if (col == table.primaryKey) {
 				continue;
@@ -399,9 +422,9 @@ table {} : {} at row {} = "{}" in {} ends with space or tab ({} char, last {} he
 )",
 			             table.name, col, table.primaryKey, trimmed, source, value.size(), n, value.right(n).toHex());
 			//A long value (a page body) in the UPDATE fills the log at every start
-			if (fromDb && value.size() > 255) {
+			if (origin == Origin::RefreshDb && value.size() > 255) {
 				msg += "The value is too long to print the UPDATE, fix it by hand\n";
-			} else if (fromDb) {
+			} else if (origin == Origin::RefreshDb) {
 				msg += F(R"(To update this should be ok
 UPDATE {} SET {} = "{}" WHERE {} = "{}";
 )",
@@ -422,8 +445,9 @@ bool CheckSchema::checkTableData(const TableDatas& td) {
 		auto dynamic = basePath + "/db/" + table.name;
 		auto file    = innerOrDynamic(inner, dynamic, false);
 		if (file.type == FileResV2::missing) {
-			qCritical() << F16("impossible to load schema, tryed {} and {}", inner, dynamic);
-			ok = false;
+			//Not fatal: the table data has no embedded copy (as db/schema has), so a binary built
+			//somewhere else does not find it, and it must still start
+			qCritical() << F16("impossible to load table data, tryed {} and {}, the data check for this table is skipped", inner, dynamic);
 			continue;
 		}
 		echo("Table {} loaded from {}", table.name, file.path);
@@ -449,10 +473,16 @@ bool CheckSchema::checkTableData(const TableDatas& td) {
 			continue;
 		}
 
-		if (!checkWhitespace(dbRawData, table, true)) {
+		if (!hasKeyColumn(dbRawData, table, "DB") || !hasKeyColumn(diskRawData, table, "Disk")) {
+			echo("table {} : the data check for this table is skipped", table.name);
+			ok = false;
+			continue;
+		}
+
+		if (!checkWhitespace(dbRawData, table, Origin::MachineDb)) {
 			ok = false;
 		}
-		if (!checkWhitespace(diskRawData, table, false)) {
+		if (!checkWhitespace(diskRawData, table, Origin::Disk)) {
 			ok = false;
 		}
 
@@ -493,7 +523,7 @@ table {} impossible to find the row {} = {}
 				}
 				auto& vRow = *f.value;
 				if (vRow != vDisk) {
-					//Do not copy a bad reference value into the DB, checkWhitespace already warned about it
+					//Do not copy a bad reference value into the DB, checkWhitespace (Disk) already warned about it
 					auto fix = trailingBlanks(vDisk)
 					               ? F("The Disk value ends with space or tab, so the reference data is wrong.\n"
 					                   "Fix the source DB and refresh, do not copy it into this DB")
