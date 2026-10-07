@@ -183,9 +183,7 @@ set(RBK_SOURCES
 
     # mapExtensor
     mapExtensor/ankerv2.cpp
-    mapExtensor/indexedvector.cpp
     mapExtensor/lockguardv2.cpp
-    mapExtensor/mapV2.cpp
     mapExtensor/missingkeyex.cpp
     mapExtensor/rwguard.cpp
 
@@ -199,7 +197,6 @@ set(RBK_SOURCES
     minMysql/sqlcomposer.cpp
     minMysql/sqlresult.cpp
     minMysql/sqlrowv2.cpp
-    minMysql/sqlrowv2swap.cpp
     minMysql/ttlcache.cpp
     minMysql/utilityfunctions.cpp
 

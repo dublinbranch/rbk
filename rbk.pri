@@ -459,7 +459,6 @@ SOURCES += \
     $$PWD/minMysql/runnable.cpp \
     $$PWD/minMysql/sqlcomposer.cpp \
     $$PWD/minMysql/sqlresult.cpp \
-    $$PWD/minMysql/sqlrowv2swap.cpp \
     $$PWD/misc/checkoptionalareset.cpp \
     $$PWD/misc/echo.cpp \
     $$PWD/misc/typeinfo.cpp \
@@ -528,9 +527,7 @@ DISTFILES += /
         $$PWD/mapExtensor/README.md
 
 SOURCES += \
-    $$PWD/mapExtensor/indexedvector.cpp \
         $$PWD/mapExtensor/lockguardv2.cpp \
-    $$PWD/mapExtensor/mapV2.cpp \
     $$PWD/mapExtensor/rwguard.cpp
     
     
