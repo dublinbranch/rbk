@@ -15,6 +15,7 @@
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <filesystem>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -314,11 +315,9 @@ bool CheckSchema::checkDbSchema() {
 		qWarning().noquote() << msg;
 		dirty = true;
 	}
-	if (dirty) {
-		abort();
-	}
 
-	return true;
+	//The caller decides what to do, so it can also run checkTableData before it stops
+	return !dirty;
 }
 
 CheckSchema::ReMap CheckSchema::reMap(const sqlResult& raw, const QByteArray& pk) {
@@ -350,6 +349,9 @@ bool CheckSchema::checkTableData(const TableDatas& td) {
 
 		//The reference, the target is of COURSE the data on disk!
 
+		//When the schema is different a column can be missing in the DB, report it once per table
+		std::set<QByteArray> missingCols;
+
 		for (auto& [pk, diskRow] : diskData) {
 			auto v = dbData.get(pk);
 			//check if the dbRow even exists
@@ -365,7 +367,13 @@ table {} impossible to find the row {} = {}
 			auto& dbRow = *v.val;
 			//now check the column if matches
 			for (auto [kDisk, vDisk] : std::as_const(diskRow)) {
-				auto vRow = dbRow.rq(kDisk);
+				auto f = dbRow.fetch(kDisk);
+				if (!f) {
+					missingCols.insert(kDisk);
+					ok = false;
+					continue;
+				}
+				auto& vRow = *f.value;
 				if (vRow != vDisk) {
 					auto fix = F(R"(
 UPDATE {}
@@ -404,6 +412,9 @@ To update this should be ok
 					ok = false;
 				}
 			}
+		}
+		for (auto& col : missingCols) {
+			echo("table {} column {} is in the reference data but not in the DB", table.name, col);
 		}
 	}
 	return ok;
