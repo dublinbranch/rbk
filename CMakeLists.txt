@@ -251,6 +251,7 @@ set(RBK_SOURCES
 
     # thread
     thread/shutdown.cpp
+    thread/statusProbes.cpp
     thread/threadstatush.cpp
     thread/threadvector.cpp
     thread/tmonitoring.cpp
@@ -448,6 +449,9 @@ set(RBK_HEADERS
 
     # thread
     thread/shutdown.h
+    thread/statusPageConf.h
+    thread/statusPageConfDescribe.h
+    thread/statusProbes.h
     thread/threadstatush.h
     thread/threadvector.h
     thread/tmonitoring.h

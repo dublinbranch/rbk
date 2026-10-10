@@ -41,7 +41,9 @@ class Router {
 mapV2<std::string, RequestBase*>     getDefaultRouting();
 mapV2<std::string, SimpleRoutedType> getDefaultSimpleRouting();
 
-// Unguessable ops URLs. Status is threads / cache. Jemalloc stats is this token + "/stats".
+// Unguessable ops URLs. Status is threads / cache / host / network, its TCP socket page is this
+// token + "/sockets". Jemalloc stats is this token + "/stats".
 inline constexpr char statusPagePath[]    = "Z4DgMzxU1gKlwhedSGeERZVeId4QRwDHDejwn3PKRQhdVLrzCg2ww";
+inline constexpr char statusSocketsPath[] = "Z4DgMzxU1gKlwhedSGeERZVeId4QRwDHDejwn3PKRQhdVLrzCg2ww/sockets";
 inline constexpr char jemallocPagePath[]  = "ziAvks8rGUyQcoMU5K3eC9QsUvYv0lnK5iv7d8wdBWb7WAoa";
 inline constexpr char jemallocStatsPath[] = "ziAvks8rGUyQcoMU5K3eC9QsUvYv0lnK5iv7d8wdBWb7WAoa/stats";

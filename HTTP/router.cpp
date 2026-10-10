@@ -49,9 +49,30 @@ class Status : public RequestBase {
 
 		payload.html = composeStatus();
 
-		payload.html += "<h1>Cache Info</h1>\n";
+		payload.html += "<section id=\"cache\"><h2>Cache</h2>\n";
 		payload.html += APCU::getInstance()->info();
+		payload.html += "</section>\n</body></html>\n";
 
+		payload.mime = "text/html; charset=utf-8";
+	}
+};
+
+// One sock_diag dump of the namespace, 10K sockets is tens of ms on this HttpHandler thread
+class StatusSockets : public RequestBase {
+      public:
+	virtual shared_ptr<RequestBase> create() const override {
+		return make_shared<StatusSockets>();
+	}
+
+	void immediate(PMFCGI& status, Payload& payload) override {
+		(void)status;
+		if (!statusPageConf().sockets.value_or(true)) {
+			payload.statusCode = 404;
+			payload.mime       = "text/plain; charset=utf-8";
+			payload.html       = "disabled by statusPage.sockets\n";
+			return;
+		}
+		payload.html = composeSocketsStatus();
 		payload.mime = "text/html; charset=utf-8";
 	}
 };
@@ -171,6 +192,7 @@ mapV2<std::string, RequestBase*> getDefaultRouting() {
 
 	    {"echo", new Echo},
 	    {statusPagePath, new Status},
+	    {statusSocketsPath, new StatusSockets},
 	    {jemallocPagePath, new JemallocPage},
 	    {jemallocStatsPath, new JemallocStats}
 
