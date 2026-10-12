@@ -549,11 +549,16 @@ string unitSlot(string_view unit) {
 	return fmt::format("<span class=\"u\">{}</span>", unit);
 }
 
-// Header row of a data table
-string headRow(std::initializer_list<string_view> cols) {
+// Header row of a data table. align has one letter per column: 'n' right aligns the header over a
+// td.n column of numbers, anything else leaves it left
+string headRow(std::initializer_list<string_view> cols, string_view align) {
 	string out = "<tr class=\"hd\">";
+	size_t i   = 0;
 	for (auto c : cols) {
-		out += fmt::format("<th>{}</th>", c);
+		out += i < align.size() && align[i] == 'n' ? "<th class=\"n\">" : "<th>";
+		out += c;
+		out += "</th>";
+		++i;
 	}
 	return out + "</tr>\n";
 }
@@ -565,7 +570,7 @@ string topTable(string_view title, std::vector<const DiagSock*> v, u32 top, Key 
 	std::partial_sort(v.begin(), v.begin() + static_cast<std::ptrdiff_t>(n), v.end(),
 	                  [&](const DiagSock* a, const DiagSock* b) { return key(*a) > key(*b); });
 	string out = fmt::format("<section><h2>{}</h2>\n<p class=\"note\">{} sockets with a non zero value</p>\n<table class=\"t\">\n", title, v.size());
-	out += headRow({"peer", "local port", "state", "Send-Q", "Recv-Q", "RTT ms", "idle rx s", "retrans"});
+	out += headRow({"peer", "local port", "state", "Send-Q", "Recv-Q", "RTT ms", "idle rx s", "retrans"}, "lnlnnnnn");
 	for (size_t i = 0; i < n; ++i) {
 		const auto& s = *v[i];
 		out += fmt::format("<tr><td>{}</td>{}<td>{}</td>{}{}{}{}{}</tr>\n", peer(s), statusProbes::td(fmt::format("{}", s.sport)),
@@ -875,7 +880,7 @@ string hostSection(const std::vector<string>& diskPaths, string_view leadRows) {
 	string     lp;
 	const auto loadRaw = slurp("/proc/loadavg");
 	if (const auto f = splitWs(loadRaw); f.size() >= 4) {
-		lp += headRow({"", "1 min", "5 min", "15 min", ""});
+		lp += headRow({"", "1 min", "5 min", "15 min", ""}, "lnnnl");
 		lp += fmt::format("<tr><th>Load</th>{}{}{}<td class=\"note\">{} cores, runnable / tasks {}</td></tr>\n",
 		                  td(nFix(toDouble(f[0]), 2)), td(nFix(toDouble(f[1]), 2)), td(nFix(toDouble(f[2]), 2)),
 		                  sysconf(_SC_NPROCESSORS_ONLN), f[3]);
@@ -889,7 +894,7 @@ string hostSection(const std::vector<string>& diskPaths, string_view leadRows) {
 				return;
 			}
 			if (!anyPsi) {
-				lp += headRow({"PSI, % of time stalled", "10 s", "60 s", "300 s", ""});
+				lp += headRow({"PSI, % of time stalled", "10 s", "60 s", "300 s", ""}, "lnnnl");
 				anyPsi = true;
 			}
 			auto val = [](string_view kv) {
@@ -931,7 +936,7 @@ string hostSection(const std::vector<string>& diskPaths, string_view leadRows) {
 	}
 	if (!disks.empty()) {
 		out += "<section><h2>Disks</h2>\n<table class=\"t\">\n" +
-		       headRow({"path", "free", "total", "free", "inodes free", ""}) + disks + "</table></section>\n";
+		       headRow({"path", "free", "total", "free", "inodes free", ""}, "lnnnnl") + disks + "</table></section>\n";
 	}
 	out += "</div>\n";
 	return out;
@@ -984,7 +989,7 @@ string networkSection(bool counters, bool unitNet, string_view socketsHref) {
 		}
 		if (!ifs.empty()) {
 			out += "<section><table class=\"t\">\n" +
-			       headRow({"interface", "rx", "rx packets", "rx err", "rx drop", "tx", "tx packets", "tx err", "tx drop"}) + ifs +
+			       headRow({"interface", "rx", "rx packets", "rx err", "rx drop", "tx", "tx packets", "tx err", "tx drop"}, "lnnnnnnnn") + ifs +
 			       "</table></section>\n";
 		}
 
@@ -1148,7 +1153,7 @@ string otherThreadsTable(const std::vector<int>& poolTids) {
 	string out = fmt::format("<section><h2>Threads outside the pool</h2>\n<p class=\"note\">{} threads, by CPU time. cpu and "
 	                         "rq wait (runnable, waiting for a core) in s since the thread started</p>\n<table class=\"t\">\n",
 	                         rows.size());
-	out += headRow({"tid", "name", "kstate", "core", "cpu s", "rq wait s"});
+	out += headRow({"tid", "name", "kstate", "core", "cpu s", "rq wait s"}, "nllnnn");
 	constexpr size_t maxRows = 100;
 	for (size_t i = 0; i < rows.size() && i < maxRows; ++i) {
 		const auto& [tid, k] = rows[i];
@@ -1274,7 +1279,7 @@ string socketsBody(u32 top) {
 	}
 
 	string out = "<div class=\"grid\">\n" + kvSection("", "Summary", sum) + kvSection("", "Own sockets by state", states);
-	out += "<section><h2>Listeners</h2>\n<table class=\"t\">\n" + headRow({"port", "accept queue", "backlog", ""}) + lst +
+	out += "<section><h2>Listeners</h2>\n<table class=\"t\">\n" + headRow({"port", "accept queue", "backlog", ""}, "nnnl") + lst +
 	       "</table></section>\n</div>\n";
 
 	Group in;
@@ -1299,7 +1304,7 @@ string socketsBody(u32 top) {
 		return fmt::format("<tr><th>{}</th>{}{}{}{}<td class=\"note\">{}</td></tr>\n", label, td(nFix(p.p50, dec)), td(nFix(p.p90, dec)),
 		                   td(nFix(p.p99, dec)), td(nFix(p.max, dec)), note);
 	};
-	string lat = headRow({"established inbound", "p50", "p90", "p99", "max", ""});
+	string lat = headRow({"established inbound", "p50", "p90", "p99", "max", ""}, "lnnnnl");
 	lat += pctRow("RTT ms", percentiles(in.rttMs), 2, "");
 	lat += pctRow("Idle rx s", percentiles(in.idleS), 1, "since the last data from the peer");
 
@@ -1316,7 +1321,7 @@ string socketsBody(u32 top) {
 	}
 	std::sort(ports.begin(), ports.end(), [](const auto& a, const auto& b) { return a.second.n > b.second.n; });
 	out += "<section><h2>Outbound by remote port</h2>\n<table class=\"t\">\n";
-	out += headRow({"port", "conn", "established", "Send-Q", "Recv-Q", "RTT p50 ms", "RTT p99 ms", "RTT max ms", "retrans", "retransmitting now"});
+	out += headRow({"port", "conn", "established", "Send-Q", "Recv-Q", "RTT p50 ms", "RTT p99 ms", "RTT max ms", "retrans", "retransmitting now"}, "nnnnnnnnnn");
 	for (size_t i = 0; i < ports.size() && i < top; ++i) {
 		const auto& [port, grp] = ports[i];
 		const auto  p           = percentiles(grp.rttMs);

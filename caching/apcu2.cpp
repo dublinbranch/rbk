@@ -1,5 +1,6 @@
 #include "apcu2.h"
 #include "unistd.h"
+#include <algorithm>
 
 #include <cstdlib>
 #include <fmt/color.h>
@@ -12,6 +13,7 @@
 #include <boost/multi_index_container.hpp>
 
 #include "rbk/caching/cachable.h"
+#include "rbk/thread/statusProbes.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/serialization/QDataStreamer.h"
 
@@ -132,22 +134,22 @@ void APCU::remove(const std::string& key) {
 std::string APCU::info() const {
 	//Poor man APCU page -.-
 	if (!cache) {
-		return "<pre>APCU disabled</pre>";
+		return "<p class=\"note\">APCU disabled</p>\n";
 	}
-	double delta = (double)(QDateTime::currentSecsSinceEpoch() - startedAt);
-	auto   msg   = fmt::format(R"(
-<pre>
-		Cache size: {:>10}
-		Hits:       {:>10} / {:>8.0f}s
-		Miss:       {:>10} / {:>8.0f}s
-		Insert:     {:>10} / {:>8.0f}s
-		Overwrite:  {:>10} / {:>8.0f}s
-		Delete:     {:>10} / {:>8.0f}s
-</pre>
-		)",
-	                           cache->size(), hits.load(), (double)hits / delta, miss.load(), (double)miss / delta, // 5
-	                           insert.load(), (double)insert / delta, overwrite.load(), (double)overwrite / delta, deleted.load(), (double)deleted / delta);
-	return msg;
+	using namespace statusProbes;
+	const double delta = std::max(1.0, (double)(QDateTime::currentSecsSinceEpoch() - startedAt));
+	auto         row   = [&](std::string_view label, u64 v) {
+		return fmt::format("<tr><th>{}</th>{}{}</tr>\n", label, td(nInt(v)), td(nFix((double)v / delta, 2)));
+	};
+	std::string out = "<p class=\"note\">per s is the average since start</p>\n<table class=\"t\">\n<tr class=\"hd\"><th></th><th class=\"n\">count</th><th class=\"n\">per s</th></tr>\n";
+	out += fmt::format("<tr><th>Cache size</th>{}<td></td></tr>\n", td(nInt(cache->size())));
+	out += row("Hits", hits.load());
+	out += row("Miss", miss.load());
+	out += row("Insert", insert.load());
+	out += row("Overwrite", overwrite.load());
+	out += row("Delete", deleted.load());
+	out += "</table>\n";
+	return out;
 }
 
 //only used internally

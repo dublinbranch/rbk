@@ -18,25 +18,49 @@ namespace statusProbes {
 inline constexpr char pageHead[] = R"(<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'>
 <style>
- body { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 16px; color: #222; background: #fff; }
- h1 { font-size: 20px; margin: 0 0 4px; }
- h2 { font-size: 15px; margin: 0 0 6px; }
- nav { margin: 0 0 16px; }
- nav a { margin-right: 14px; }
- section { margin-bottom: 22px; }
- .grid { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; margin-bottom: 22px; }
+ :root {
+  --bg: #f3f4f6; --card: #fff; --fg: #1f2328; --muted: #59636e; --faint: #8c959f;
+  --line: #e1e4e8; --head: #eef1f4; --zebra: #f7f8fa; --hover: #e8f0fb;
+  --accent: #0969da; --warn: #b42318; --warn-bg: #fdecea; --shadow: 0 1px 2px rgba(31,35,40,.06);
+ }
+ @media (prefers-color-scheme: dark) {
+  :root {
+   --bg: #0d1117; --card: #161b22; --fg: #e6edf3; --muted: #9198a1; --faint: #6e7681;
+   --line: #2d333b; --head: #1f252d; --zebra: #1a2028; --hover: #1d2a3b;
+   --accent: #58a6ff; --warn: #ff7b72; --warn-bg: #3b1d1d; --shadow: none;
+  }
+ }
+ * { box-sizing: border-box; }
+ body { font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0 20px 32px; color: var(--fg); background: var(--bg); }
+ a { color: var(--accent); text-decoration: none; }
+ a:hover { text-decoration: underline; }
+ h1 { font-size: 20px; font-weight: 600; margin: 0; padding: 18px 0 8px; }
+ nav { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 12px; margin-bottom: 12px; background: var(--bg); border-bottom: 1px solid var(--line); }
+ nav a { padding: 3px 12px; font-size: 13px; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 999px; }
+ nav a:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+ /* Every section is a card sized to its table; a section holding sections is only a heading over them */
+ section { width: fit-content; max-width: 100%; overflow-x: auto; margin-bottom: 20px; padding: 10px 14px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); scroll-margin-top: 64px; }
+ section:has(section) { width: auto; overflow: visible; padding: 0; background: none; border: 0; box-shadow: none; }
+ h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 8px; }
+ section:has(section) > h2 { font-size: 16px; text-transform: none; letter-spacing: 0; color: var(--fg); margin: 8px 0 4px; }
+ .grid { display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch; margin-bottom: 20px; }
  .grid section { margin-bottom: 0; }
+ p { margin: 0 0 8px; }
  table { border-collapse: collapse; }
- th, td { padding: 3px 10px; border-bottom: 1px solid #e4e4e4; text-align: left; vertical-align: top; }
- tr.hd th { background: #f2f2f2; border-bottom: 1px solid #c8c8c8; white-space: nowrap; }
- tr:not(.hd) th { font-weight: normal; color: #555; white-space: nowrap; }
- table.t tr:not(.hd):hover td { background: #f8f8f8; }
- td.n { text-align: right; white-space: nowrap; font: 13px ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; }
- .u { display: inline-block; width: 3ch; padding-left: 0.4ch; text-align: left; color: #777; }
+ th, td { padding: 4px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: baseline; }
+ tr:last-child > * { border-bottom: 0; }
+ tr.hd th { font-size: 12px; font-weight: 600; color: var(--muted); background: var(--head); white-space: nowrap; }
+ tr.hd th.n { text-align: right; }
+ tr:not(.hd) th { font-weight: normal; color: var(--muted); white-space: nowrap; }
+ tr:nth-child(even of :not(.hd)) > * { background: var(--zebra); }
+ tr:not(.hd):hover > * { background: var(--hover); }
+ td.n { text-align: right; white-space: nowrap; font: 13px ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+ .u { display: inline-block; width: 3ch; padding-left: 0.4ch; text-align: left; color: var(--faint); }
  .h { visibility: hidden; }
- .note { color: #666; }
- .warn { color: #b00020; font-weight: 600; }
- pre { background: #f6f6f6; padding: 8px; white-space: pre-wrap; }
+ .note { color: var(--muted); }
+ td.note { font-size: 13px; }
+ .warn { color: var(--warn); background: var(--warn-bg); font-weight: 600; padding: 0 6px; border-radius: 4px; }
+ pre { margin: 0; padding: 8px 10px; background: var(--zebra); border-radius: 6px; white-space: pre-wrap; font: 12.5px/1.4 ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; }
 </style>
 </head>
 <body>

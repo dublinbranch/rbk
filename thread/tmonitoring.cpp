@@ -347,7 +347,7 @@ string composeStatus() {
 	out += R"(<section id="requests"><h2>Requests</h2>
 <p class="note">Per time slot, times in seconds</p>
 <table class="t">
-<tr class="hd"><th>slot</th><th>requests</th><th>rps</th><th>flush s</th><th>sql fetch s</th><th>sql server s</th><th>sql done</th><th>mysql reconnects</th><th>total s</th></tr>
+<tr class="hd"><th>slot</th><th class="n">requests</th><th class="n">rps</th><th class="n">flush s</th><th class="n">sql fetch s</th><th class="n">sql server s</th><th class="n">sql done</th><th class="n">mysql reconnects</th><th class="n">total s</th></tr>
 )";
 	out += "<tr><th>1m</th>" + m1.info() + "</tr>\n";
 	out += "<tr><th>5m</th>" + m5.info() + "</tr>\n";
@@ -362,9 +362,9 @@ string composeStatus() {
 	}
 	out += R"(</p>
 <table class="t">
-<tr class="hd"><th>tid</th><th>state</th><th>total</th><th>flush</th><th>execution</th><th>IO</th><th>sql immediate</th><th>sql deferred</th><th>curl immediate</th><th>curl deferred</th><th>ClickHouse</th>)";
+<tr class="hd"><th class="n">tid</th><th>state</th><th class="n">total</th><th class="n">flush</th><th class="n">execution</th><th class="n">IO</th><th class="n">sql immediate</th><th class="n">sql deferred</th><th class="n">curl immediate</th><th class="n">curl deferred</th><th class="n">ClickHouse</th>)";
 	if (threads) {
-		out += "<th>kstate</th><th>core</th><th>cpu s</th><th>rq wait s</th>";
+		out += "<th>kstate</th><th class=\"n\">core</th><th class=\"n\">cpu s</th><th class=\"n\">rq wait s</th>";
 	}
 	out += "</tr>\n";
 
