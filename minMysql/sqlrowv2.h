@@ -45,6 +45,13 @@ using TypeMap = mapV2<std::string, Field, std::less<>>;
 // SqlRowV2(oldRow) in a loop: the converting ctor infers NULL from the text
 // and allocates a TypeMap per row. A one-off wrap of a non-secret row is OK.
 // queryCacheV2 writes cachedSQL_V3_* (V2 files have no nulls vector).
+// Outside SqlRowV2: clang refuses a nested struct with default member
+// initializers as a `= {}` default argument inside the enclosing class.
+struct SqlRowGetIf {
+	bool skip0     = false; // arithmetic 0 counts as unset (bool false too)
+	bool skipEmpty = false; // empty std::string / QString counts as unset
+};
+
 class SqlRowV2 {
 
       public:
@@ -81,10 +88,7 @@ class SqlRowV2 {
 		}
 	};
 
-	struct GetIf {
-		bool skip0     = false; // arithmetic 0 counts as unset (bool false too)
-		bool skipEmpty = false; // empty std::string / QString counts as unset
-	};
+	using GetIf = SqlRowGetIf;
 
 	// Default to rqIf: a missing key is a typo / stale SELECT. A LEFT JOIN
 	// column is present with a NULL cell, not missing. getIf is for SELECT *
