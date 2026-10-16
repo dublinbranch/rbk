@@ -592,7 +592,7 @@ FileResV2 innerOrDynamic(const QString& innerPath, const QString& dynamicPath, b
 	}
 
 	{
-		auto res = fileGetContents2(innerPath, false, 0);
+		auto res = fileGetContents2(innerPath, quiet, 0);
 		if (res.exist) {
 			final.path    = innerPath;
 			final.content = res.content;

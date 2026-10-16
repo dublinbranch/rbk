@@ -35,7 +35,7 @@ class CheckSchema {
 	static ReMap reMap(const sqlResult& raw, const QByteArray& pk);
 
 	//This MUST be intentionally called when schema is updated
-	//Remember to also add into the QRC file
+	//The binary gets db/schema with #embed, recompile after
 	void saveSchema();
 
 	//All or nothing: returns false and saves no file if a table has a bad key.
@@ -67,7 +67,8 @@ QDebug&      operator<<(QDebug& d, const CheckSchema::Key& key);
 QDataStream& operator<<(QDataStream& out, const CheckSchema::Key& key);
 QDataStream& operator>>(QDataStream& in, const CheckSchema::Key& key);
 
-void                     updateQRCFile();
+//Writes db.qrc with the table data files of td, db/schema is embedded with #embed
+void                     updateQRCFile(const CheckSchema::TableDatas& td);
 void                     generateQrcFile(const QString& qrcFilePath, const std::vector<std::string>& filePaths, const std::string& resourcePrefix);
 std::vector<std::string> getFilesInDirectory(const std::string& directoryPath);
 
