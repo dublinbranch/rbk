@@ -31,6 +31,7 @@ option(RBK_WITH_MINCURL      "libcurl wrapper"                        OFF)
 option(RBK_WITH_MAILFETCHER  "IMAP mail fetcher (requires RBK_WITH_MINCURL)" OFF)
 option(RBK_WITH_CLICKHOUSE   "ClickHouse http client (requires RBK_WITH_MINCURL)" OFF)
 option(RBK_WITH_QRCODE       "QR code generation"                     OFF)
+option(RBK_WITH_RAPIDJSON    "Deprecated: rapidjson + JSON/ (JSafe, JSONReader)" OFF)
 option(RBK_WITH_APCU         "APCu-style in-memory caching"           OFF)
 option(RBK_WITH_QT_NETWORK   "Qt Network extras (SpaceShipOP)"        OFF)
 option(RBK_WITH_GIT_TRICK    "Re-embed git info on every build"       OFF)
@@ -169,11 +170,6 @@ set(RBK_SOURCES
     HTTP/url.cpp
     HTTP/util.cpp
 
-    # JSON
-    JSON/jsonreader.cpp
-    JSON/safeGet.cpp
-    JSON/various.cpp
-
     # locale
     locale/codes.cpp
     locale/localev2.cpp
@@ -232,9 +228,6 @@ set(RBK_SOURCES
     rand/clampednormaldistribution.cpp
     rand/randutil.cpp
     rand/secureRandom.cpp
-
-    # rapidjson
-    rapidjson/rapidAssert.cpp
 
     # serialization
     serialization/QDataStreamer.cpp
@@ -317,12 +310,6 @@ set(RBK_HEADERS
     HTTP/PMFCGI.h
     HTTP/url.h
     HTTP/util.h
-
-    # JSON
-    JSON/JSONReaderConst.h
-    JSON/jsonreader.h
-    JSON/safeGet.h
-    JSON/various.h
 
     # locale
     locale/codes.h
@@ -426,9 +413,6 @@ set(RBK_HEADERS
     rand/clampednormaldistribution.h
     rand/randutil.h
     rand/secureRandom.h
-
-    # rapidjson
-    rapidjson/includeMe.h
 
     # serialization
     serialization/asstring.h
@@ -569,6 +553,23 @@ if(RBK_WITH_QRCODE)
     )
 endif()
 
+# ── Optional: rapidjson (deprecated, use BoostJson/) ───────────────────────
+if(RBK_WITH_RAPIDJSON)
+    list(APPEND RBK_SOURCES
+        JSON/jsonreader.cpp
+        JSON/safeGet.cpp
+        JSON/various.cpp
+        rapidjson/rapidAssert.cpp
+    )
+    list(APPEND RBK_HEADERS
+        JSON/JSONReaderConst.h
+        JSON/jsonreader.h
+        JSON/safeGet.h
+        JSON/various.h
+        rapidjson/includeMe.h
+    )
+endif()
+
 # ── Optional: APCU caching ──────────────────────────────────────────────────
 if(RBK_WITH_APCU)
     list(APPEND RBK_SOURCES
@@ -652,9 +653,11 @@ target_include_directories(rbk
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include;$<INSTALL_PREFIX>/include/rbk>
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson
         ${CMAKE_CURRENT_SOURCE_DIR}/mustache
 )
+if(RBK_WITH_RAPIDJSON)
+    target_include_directories(rbk PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson)
+endif()
 
 # Treat Qt headers as system headers to suppress warnings
 get_target_property(_qt_inc Qt6::Core INTERFACE_INCLUDE_DIRECTORIES)

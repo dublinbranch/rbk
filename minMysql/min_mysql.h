@@ -269,6 +269,7 @@ class DB {
 using MYSQL_ROW = char**;
 class FetchVisitor {
       public:
+	virtual ~FetchVisitor()                     = default;
 	virtual void processLine(MYSQL_ROW row)     = 0;
 	virtual bool preCheck(st_mysql_res* result) = 0;
 };

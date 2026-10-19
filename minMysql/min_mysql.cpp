@@ -265,7 +265,11 @@ thread: {}, queryDone: {}, reconnection: {}, busyConn: {}, totConn: {}, queryTim
 				qWarning().noquote() << QString::fromStdString(err);
 			}
 
-			closeConn();
+			// Only drop a lost connection. On 1205 the open transaction survives; closing here would
+			// roll it back and the repeater would retry the statement alone, in autocommit.
+			if (error == 2013) {
+				closeConn();
+			}
 
 			ResetOnExit r(cxaNoStack, true);
 			cxaLevel       = CxaLevel::none;
@@ -566,6 +570,9 @@ void DB::pingCheck(st_mysql*& conn) const {
 	auto      oldConnId = mysql_thread_id(conn);
 
 	auto guard = qScopeGuard([&] {
+		if (!conn) { // getConn() threw after closeConn()
+			return;
+		}
 		auto newConnId = mysql_thread_id(conn);
 		if (oldConnId != newConnId) {
 			state.get().reconnection++;
@@ -581,6 +588,7 @@ void DB::pingCheck(st_mysql*& conn) const {
 		if (mysql_ping(conn)) { // 1 on error, which should not even happen ... but here we are
 			// force reconnection
 			closeConn();
+			conn = nullptr; // freed by closeConn()
 			conn = getConn();
 		} else {
 			return;
@@ -783,10 +791,8 @@ DB::~DB() {
  * when the mysql server will forcefully close it
  */
 void DB::closeConn() const {
-	auto curConn = connPool.get();
-	if (curConn) {
-		curConn.reset();
-	}
+	// reset the slot itself, not a copy of the shared_ptr
+	connPool.get().reset();
 }
 
 void DB::setMultiStatements(bool on) const {

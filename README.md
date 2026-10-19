@@ -21,7 +21,7 @@ include(rbk/rbk.pri)
 |------|---------|--------------|
 | **Database** | `minMysql`, `BoostMysql` | Thin MariaDB layer (SQL composition, result mapping, schema checks, TTL cache, TLS), optional ClickHouse and Boost.MySQL |
 | **HTTP / Web** | `HTTP`, `minCurl`, `mustache` | FCGI gateway, URL/MIME utils, optional Boost.Beast server + router, libcurl wrapper, Mustache templates |
-| **JSON** | `BoostJson`, `JSON`, `rapidjson` | Boost.JSON extensions (`tag_invoke`, subset checks, math), custom JSON reader, vendored RapidJSON |
+| **JSON** | `BoostJson`, `JSON`, `rapidjson` | Boost.JSON extensions (`tag_invoke`, subset checks, math); deprecated `JSON` reader + vendored RapidJSON behind `RBK_WITH_RAPIDJSON` |
 | **Crypto & Auth** | `Sodium`, `totp`, `hash` | Optional libsodium wrapper, TOTP (OpenSSL), hashing (SHA, CRC, rapidhash, salted) |
 | **Containers** | `mapExtensor` | Extended maps/vectors with thread-safe variants, dense hash (ankerl), indexed vector, multi-index, lock guards |
 | **Strings** | `string`, `defines` | QString/QStringView utilities, comparators, converters |
@@ -70,6 +70,7 @@ All optional features are off by default. Enable with CMake flags or qmake varia
 | `RBK_WITH_MAILFETCHER` | `withMailFetcher` | IMAP mail fetcher (requires minCurl) | |
 | `RBK_WITH_CLICKHOUSE` | `withClickHouse` | ClickHouse client | |
 | `RBK_WITH_QRCODE` | `withQrCode` | QR code generation | |
+| `RBK_WITH_RAPIDJSON` | (none, qmake still builds it) | Deprecated: vendored RapidJSON + `JSON/` (`JSafe`, `JSONReader`). Use `BoostJson/` | |
 | `RBK_WITH_APCU` | `withAPCU` | In-memory caching | |
 | `RBK_WITH_QT_NETWORK` | `HAS_QT_NETWORK` | Qt Network extras (SpaceShipOP) | `QT += network` |
 

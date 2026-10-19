@@ -9,6 +9,7 @@
 #include <QDate>
 #include <QDateTime>
 #include <QString>
+#include <limits>
 
 template <typename D>
 void swapType(const QByteArray& source, D& dest) {
@@ -250,15 +251,22 @@ void swapType(const QString& source, D& dest) {
 		if constexpr (std::is_floating_point_v<D>) {
 			dest = source.toDouble(&ok);
 		} else if constexpr (std::is_signed_v<D>) {
-			dest = source.toLongLong(&ok);
+			const qlonglong v = source.toLongLong(&ok);
+			//A value that does not fit D is an error, not a silent wrap ("3000000000" into an int).
+			if constexpr (sizeof(D) < sizeof(qlonglong)) {
+				if (ok && (v < std::numeric_limits<D>::min() || v > std::numeric_limits<D>::max())) {
+					throw ExceptionV2(QSL("Value >>>%1<<< out of range for the destination type").arg(QString(source)));
+				}
+			}
+			dest = static_cast<D>(v);
 		} else if constexpr (std::is_unsigned_v<D>) {
-#pragma GCC diagnostic push
-//many false warning here
-#pragma GCC diagnostic ignored "-Wconversion"
-
-			dest = source.toULongLong(&ok);
-
-#pragma GCC diagnostic pop
+			const qulonglong v = source.toULongLong(&ok);
+			if constexpr (sizeof(D) < sizeof(qulonglong)) {
+				if (ok && v > std::numeric_limits<D>::max()) {
+					throw ExceptionV2(QSL("Value >>>%1<<< out of range for the destination type").arg(QString(source)));
+				}
+			}
+			dest = static_cast<D>(v);
 		}
 		if (!ok) {
 			// last chanche NULL is 0 in case we are numeric right ?
