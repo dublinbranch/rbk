@@ -150,7 +150,8 @@ FileGetRes fileGetContents3(const QByteAdt& fileName, const FGCParam param) {
 	QByteArray header = res.content.left(div).trimmed();
 	QByteArray body   = res.content.mid(div + kHeaderEndMarker.size()).trimmed();
 
-	auto jr = parseJson(header, false);
+	// Explicit: newer Qt converts QByteArray to std::string_view too, so the bare call is ambiguous
+	auto jr = parseJson(QByteAdt(header), false);
 	if (jr.ec) {
 		if (!param.quiet) {
 			qCritical().noquote() << F16("fileGetContents3: invalid JSON header in {}: {}\n", fileName, jr.composeErrorMsg());

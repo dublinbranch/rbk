@@ -57,7 +57,8 @@ struct BJIntrusive {
 #include "rbk/BoostJson/override/value_to_108700.hpp"
 #elif BOOST_VERSION == 108800
 #include "rbk/BoostJson/override/value_to_108800.hpp"
-#elif BOOST_VERSION == 109100
+#elif BOOST_VERSION == 109100 || BOOST_VERSION == 109200
+// 1.92 only swapped *res for res.unsafe_value() and folded throw_system_error into .value(): same behaviour
 #include "rbk/BoostJson/override/value_to_109100.hpp"
 #else
 #pragma message "Unsupported Boost version " BOOST_PP_STRINGIZE(BOOST_VERSION) " for the intrusive HTTP Json customize one from json/detail/value_to.hpp"

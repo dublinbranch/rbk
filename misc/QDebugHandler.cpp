@@ -164,8 +164,14 @@ void commonInitialization(const NanoSpammerConfig* _config) {
 	QLoggingCategory::setFilterRules("*.debug=true");
 
 	qInstallMessageHandler(generalMsgHandler);
+#ifdef _WIN32
+	// The Windows CRT treats _IOLBF as full buffering, unbuffered is the closest to line buffering
+	setvbuf(stdout, nullptr, _IONBF, 0);
+	setvbuf(stderr, nullptr, _IONBF, 0);
+#else
 	setlinebuf(stdout);
 	setlinebuf(stderr);
+#endif
 
 	config = _config;
 

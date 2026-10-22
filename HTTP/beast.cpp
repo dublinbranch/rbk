@@ -44,7 +44,9 @@
 #include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/rand/randutil.h"
+#ifndef _WIN32
 #include <sys/socket.h>
+#endif
 #include <algorithm>
 #include <cerrno>
 #include <csignal>
@@ -744,7 +746,11 @@ void Beast::listen() {
 		auto& t             = threads.emplace_back(std::thread(
 		    [status, ioc, onWorkerStart] {
 			    //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
+#ifdef _WIN32
+			    status->tid = static_cast<int>(GetCurrentThreadId());
+#else
 			    status->tid       = gettid();
+#endif
 			    localThreadStatus = status.get();
 			    pthread_setname_np(pthread_self(), "HttpHandler");
 			    if (onWorkerStart) {

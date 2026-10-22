@@ -4,13 +4,29 @@
 
 #include <cerrno>
 #include <cstdint>
+#ifdef _WIN32
+#include <windows.h>
+#include <bcrypt.h>
+#include <climits>
+#else
 #include <sys/random.h>
+#endif
 
 void secureRandomBytes(std::span<uint8_t> out) {
 	if (out.empty()) {
 		return;
 	}
 	size_t filled = 0;
+#ifdef _WIN32
+	while (filled < out.size()) {
+		const auto chunk  = static_cast<ULONG>(std::min<size_t>(out.size() - filled, ULONG_MAX));
+		const auto status = BCryptGenRandom(nullptr, out.data() + filled, chunk, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+		if (status != 0) {
+			throw ExceptionV2(F("BCryptGenRandom failed: NTSTATUS {:#x}", static_cast<unsigned long>(status)));
+		}
+		filled += chunk;
+	}
+#else
 	while (filled < out.size()) {
 		const auto n = getrandom(out.data() + filled, out.size() - filled, 0);
 		if (n < 0) {
@@ -21,6 +37,7 @@ void secureRandomBytes(std::span<uint8_t> out) {
 		}
 		filled += static_cast<size_t>(n);
 	}
+#endif
 }
 
 QByteArray secureRandomBytes(size_t n) {
