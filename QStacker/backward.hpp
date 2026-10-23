@@ -3787,6 +3787,7 @@ class TraceResolverImpl<system_tag::windows_tag>
 		sym.sym.MaxNameLen   = max_sym_len;
 
 		if (!SymFromAddr(process, (ULONG64)t.addr, &displacement, &sym.sym)) {
+#ifndef __MINGW32__ // MinGW binaries carry DWARF, not PDB: every frame fails, one stderr line each
 			// TODO:  error handling everywhere
 			char* lpMsgBuf;
 			DWORD dw = GetLastError();
@@ -3799,6 +3800,7 @@ class TraceResolverImpl<system_tag::windows_tag>
 				std::fprintf(stderr, "%s\n", lpMsgBuf);
 				LocalFree(lpMsgBuf);
 			}
+#endif
 
 			// abort();
 		}

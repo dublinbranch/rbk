@@ -728,7 +728,8 @@ if(UNIX AND NOT APPLE)
 endif()
 
 if(WIN32)
-    target_link_libraries(rbk PUBLIC dbghelp)
+    # bcrypt: secureRandom. ws2_32 + mswsock: Boost.Asio (MinGW has no auto-link)
+    target_link_libraries(rbk PUBLIC dbghelp bcrypt ws2_32 mswsock)
 endif()
 
 # ── Optional link dependencies ──────────────────────────────────────────────

@@ -16,7 +16,11 @@
 #include <cstring>
 #include <fstream>
 #include <sstream>
+#ifdef _WIN32
+#include <winsock2.h> // gethostname
+#else
 #include <sys/resource.h>
+#endif
 #include <unistd.h>
 
 using namespace std;
@@ -216,13 +220,17 @@ std::string hostRows() {
 	if (gethostname(host, sizeof(host) - 1) != 0) {
 		std::strncpy(host, "?", sizeof(host) - 1);
 	}
-	const auto uid   = ::geteuid();
 	const auto avail = meminfoKb("MemAvailable");
 	const auto total = meminfoKb("MemTotal");
 	const auto swapF = meminfoKb("SwapFree");
 	const auto swapT = meminfoKb("SwapTotal");
 	std::string r;
+#ifdef _WIN32
+	r += rowT("Hostname", escapeH(host));
+#else
+	const auto uid = ::geteuid();
 	r += rowT("Hostname", fmt::format("{} · euid {}{}", escapeH(host), uid, uid == 0 ? " (root)" : ""));
+#endif
 	r += rowN("Memory available", nBytes((u64)avail * 1024),
 	          fmt::format("of {:.0f} MB{}", (double)total / 1024.0, (avail / 1024) < 256 ? " " + warn("under 256 MB") : ""));
 	r += rowN("Swap free", nBytes((u64)swapF * 1024), fmt::format("of {:.0f} MB", (double)swapT / 1024.0));
@@ -272,10 +280,21 @@ string composeStatus() {
 	out.reserve(64000);
 	out += statusProbes::pageHead;
 
+#ifdef _WIN32
+	// No rlimit / rusage: the rows below show 0
+	struct {
+		u64 rlim_cur = 0;
+		u64 rlim_max = 0;
+	} nofile;
+	struct {
+		long ru_maxrss = 0;
+	} ru;
+#else
 	struct rlimit nofile {};
 	getrlimit(RLIMIT_NOFILE, &nofile);
 	struct rusage ru {};
 	getrusage(RUSAGE_SELF, &ru);
+#endif
 	const auto upSec = (QDateTime::currentMSecsSinceEpoch() - startedAt) / 1000;
 
 	const bool process = sc.process.value_or(true);
