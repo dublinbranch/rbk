@@ -434,8 +434,9 @@ class http_session : public std::enable_shared_from_this<http_session> {
 		parser_.emplace();
 
 		// Apply a reasonable limit to the allowed size
-		// of the body in bytes to prevent abuse.
-		parser_->body_limit(20000);
+		// of the body in bytes to prevent abuse. 64 KiB: a long text field (a note of
+		// about 10000 characters) fits as JSON.
+		parser_->body_limit(65536);
 		parser_->header_limit(20000);
 
 		// Set the timeout. Arming it per read costs about 1.3 us, but a lazy re-arm was
