@@ -10,6 +10,7 @@
 #include "rbk/QStacker/qstacker.h"
 #include "rbk/filesystem/filefunction.h"
 #include "rbk/filesystem/folder.h"
+#include "rbk/magicEnum/magic_from_string.hpp"
 
 #include <reproc++/drain.hpp>
 #include <reproc++/reproc.hpp>
@@ -147,8 +148,11 @@ Log executeImpl(const std::vector<std::string>& ar, const QString& section, cons
 
 	if (opt.isRetarded) {
 		//if they are retarded and put normal log into stderr we can not do much...
-		log.stdOut += log.stdErr;
-		log.stdErr.clear();
+		//but when they fail stderr is the reason: leave it in stdErr, or only "exit_code: N" is left there
+		if (log.exit_code == 0) {
+			log.stdOut += log.stdErr;
+			log.stdErr.clear();
+		}
 		log.category = Log::Info;
 	} else {
 		if (log.stdErr.isEmpty()) {
@@ -278,19 +282,38 @@ Log saveInto(const QStringAdt& path, const QByteAdt& content, QString chown, QSt
 	}
 
 	if (destWritableByProcess(path)) {
-		filePutContents(content, path, true);
+		if (auto res = filePutContents(content, path, true); !res) {
+			log.category  = Log::Error;
+			log.exit_code = 1;
+			log.stdErr    = F16("cannot write {}: {}", path, asSWString(res.error)).toUtf8();
+			return log;
+		}
 		applyChmod(path, chmod);
 		log.category = Log::Info;
 		return log;
 	}
 
 	auto temp = getTempFile(QString{});
-	filePutContents(content, temp, true);
+	if (auto res = filePutContents(content, temp, true); !res) {
+		QFile::remove(temp);
+		log.category  = Log::Error;
+		log.exit_code = 1;
+		log.stdErr    = F16("cannot write temp file {} for {}: {}", temp, path, asSWString(res.error)).toUtf8();
+		return log;
+	}
 	const auto noTrace = ExecuteOpt::noStackTrace();
-	log.push(sudo(installArgv(temp.toStdString(), path, chown, chmod), noTrace));
+	auto       inst    = sudo(installArgv(temp.toStdString(), path, chown, chmod), noTrace);
 	QFile::remove(temp);
 
-	log.category = Log::Info;
+	// install says why on stderr (e.g. missing folder): copy it up, or the caller sees a success
+	if (inst.exit_code != 0) {
+		log.category  = Log::Error;
+		log.exit_code = inst.exit_code;
+		log.stdErr    = inst.stdErr;
+	} else {
+		log.category = Log::Info;
+	}
+	log.push(std::move(inst));
 	return log;
 }
 
