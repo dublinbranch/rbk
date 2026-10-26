@@ -44,6 +44,9 @@ struct ExecuteOpt {
 	std::map<std::string, std::string> custom_env;
 	/** Called with each stdout/stderr chunk while the process runs. Empty = drain only. */
 	std::function<void(std::string_view chunk, bool isStderr)> onChunk;
+	/** With onChunk: false = stdout goes only to onChunk, not into Log::stdOut (a listing of 80 MB is parsed
+	 *  as it streams instead of being held twice). stderr is always kept. */
+	bool keepStdout = true;
 };
 
 Log execute(const QStringAdt& cmd, const ExecuteOpt& opt = {});

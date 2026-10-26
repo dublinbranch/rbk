@@ -112,7 +112,7 @@ Log executeImpl(const std::vector<std::string>& ar, const QString& section, cons
 	};
 
 	if (opt.onChunk) {
-		ChunkSink sinkOut{&output, &opt.onChunk, false};
+		ChunkSink sinkOut{opt.keepStdout ? &output : nullptr, &opt.onChunk, false};
 		ChunkSink sinkErr{&error, &opt.onChunk, true};
 		ec = reproc::drain(process, sinkOut, sinkErr);
 	} else {
