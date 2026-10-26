@@ -121,7 +121,17 @@ Log executeImpl(const std::vector<std::string>& ar, const QString& section, cons
 		ec = reproc::drain(process, sink, sinkErr);
 	}
 
-	{
+	// The deadline only ends drain(): the process keeps running, and with nobody reading its pipe it can block
+	// forever. Stop it (SIGTERM, then SIGKILL after 5 s) and report the run as failed, even with exit code 0.
+	const bool timedOut = ec == std::errc::timed_out;
+	if (timedOut) {
+		const reproc::stop_actions stop{{reproc::stop::terminate, reproc::milliseconds(5000)},
+		                                {reproc::stop::kill, reproc::milliseconds(2000)},
+		                                {reproc::stop::noop, reproc::milliseconds(0)}};
+		auto [exit_code, ec_wait] = process.stop(stop);
+		log.exit_code             = exit_code;
+		log.ec_wait               = ec_wait;
+	} else {
 		// Assicura che il processo sia terminato e recupera exit code
 		auto [exit_code, ec_wait] = process.wait(reproc::infinite);
 		log.exit_code             = exit_code;
@@ -169,6 +179,13 @@ Log executeImpl(const std::vector<std::string>& ar, const QString& section, cons
 
 	if (log.ec_wait) {
 		log.stdErr.append(F8("\nwait: {} {}\n", log.ec_wait.message(), log.ec_wait.value()));
+	}
+
+	if (timedOut) {
+		log.stdErr.append(F8("\ntimed out after {} s: stopped\n", opt.maxTimeInS));
+		if (log.exit_code == 0) {
+			log.exit_code = 124; // as timeout(1)
+		}
 	}
 
 	if (log.exit_code != 0) {
