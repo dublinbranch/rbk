@@ -85,8 +85,10 @@ struct Conf {
 	//resolve the session cookie and store the user on your side (also set there IP / UA if you track them)
 	std::function<SessionState(PMFCGI& status, const std::string& sessionId)> resumeSession;
 
-	//optional: auto login for development, return true if a user was logged in
-	std::function<bool(PMFCGI& status)> develLogin;
+	//optional: auto login for development, return the session id of the logged user (empty = no
+	//devel user). The engine sets the cookie, so the next requests resume the session and do not
+	//log in again
+	std::function<std::string(PMFCGI& status)> develLogin;
 
 	//optional: runs after a successful preflight (ACL, account scoping, ...)
 	//return false to short circuit the request, in that case write the response yourself
