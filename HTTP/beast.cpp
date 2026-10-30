@@ -44,7 +44,9 @@
 #include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/rand/randutil.h"
+#ifndef _WIN32
 #include <sys/socket.h>
+#endif
 #include <algorithm>
 #include <cerrno>
 #include <csignal>
@@ -434,8 +436,9 @@ class http_session : public std::enable_shared_from_this<http_session> {
 		parser_.emplace();
 
 		// Apply a reasonable limit to the allowed size
-		// of the body in bytes to prevent abuse.
-		parser_->body_limit(20000);
+		// of the body in bytes to prevent abuse. 64 KiB: a long text field (a note of
+		// about 10000 characters) fits as JSON.
+		parser_->body_limit(65536);
 		parser_->header_limit(20000);
 
 		// Set the timeout. Arming it per read costs about 1.3 us, but a lazy re-arm was
@@ -744,7 +747,11 @@ void Beast::listen() {
 		auto& t             = threads.emplace_back(std::thread(
 		    [status, ioc, onWorkerStart] {
 			    //I have no idea how to get linux TID (thread id) from the posix one -.- so I have to resort to this
+#ifdef _WIN32
+			    status->tid = static_cast<int>(GetCurrentThreadId());
+#else
 			    status->tid       = gettid();
+#endif
 			    localThreadStatus = status.get();
 			    pthread_setname_np(pthread_self(), "HttpHandler");
 			    if (onWorkerStart) {

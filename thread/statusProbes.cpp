@@ -17,6 +17,9 @@
 #include <string_view>
 #include <unordered_set>
 
+// Windows: every probe reads /proc, /sys, netlink or a POSIX call. Only the html helpers are
+// built there, the probes become "unavailable on Windows" rows (the #else blocks below).
+#ifndef _WIN32
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -35,11 +38,13 @@
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#endif
 
 using std::string;
 using std::string_view;
 
 namespace {
+#ifndef _WIN32
 
 // /proc and /sys files report size 0, so read until EOF instead of trusting stat()
 string slurp(const string& path) {
@@ -124,10 +129,13 @@ double toDouble(string_view s) {
 	std::from_chars(s.data(), s.data() + s.size(), v);
 	return v;
 }
+#endif
 
 double dbl(u64 v) {
 	return static_cast<double>(v);
 }
+
+#ifndef _WIN32
 
 // First number after `key` on the line that starts with it. Covers every flavour the kernel and
 // systemctl print: "VmRSS:  12 kB", "rchar: 12", "oom_kill 0", "IPIngressBytes=12".
@@ -531,6 +539,7 @@ struct Group {
 		}
 	}
 };
+#endif
 
 // 1234567 -> "1 234 567", narrow no-break space so it never wraps
 string grouped(u64 v) {
@@ -548,6 +557,8 @@ string grouped(u64 v) {
 string unitSlot(string_view unit) {
 	return fmt::format("<span class=\"u\">{}</span>", unit);
 }
+
+#ifndef _WIN32
 
 // Header row of a data table. align has one letter per column: 'n' right aligns the header over a
 // td.n column of numbers, anything else leaves it left
@@ -623,6 +634,7 @@ string unitNetRows() {
 	r += rowN("Out packets", kInt(v("IPEgressPackets").value_or(0)));
 	return r;
 }
+#endif
 
 } // namespace
 
@@ -683,6 +695,29 @@ string kvSection(string_view id, string_view title, string_view rows) {
 	                   id.empty() ? string() : fmt::format(" id=\"{}\"", id), title, rows);
 }
 
+#ifdef _WIN32
+static constexpr string_view noProbe = "unavailable on Windows";
+
+string processRows(double, size_t) {
+	return rowT("Process", noProbe);
+}
+
+FdCount fdCount(bool) {
+	return {};
+}
+
+string hostSection(const std::vector<string>&, string_view leadRows) {
+	return kvSection("host", "Host", string(leadRows) + rowT("Load, cgroup, disks", noProbe));
+}
+
+string networkSection(bool, bool, string_view) {
+	return kvSection("network", "Network", rowT("Network", noProbe));
+}
+
+ThreadKernel threadKernel(int) {
+	return {};
+}
+#else
 string processRows(double upSec, size_t poolSize) {
 	struct rusage ru{};
 	getrusage(RUSAGE_SELF, &ru);
@@ -1117,6 +1152,7 @@ ThreadKernel threadKernel(int tid) {
 	}
 	return k;
 }
+#endif
 
 string kernelCells(const ThreadKernel& k) {
 	if (!k.ok) {
@@ -1127,6 +1163,16 @@ string kernelCells(const ThreadKernel& k) {
 	return fmt::format("<td>{}</td>{}{}{}", state, td(fmt::format("{}", k.core)), td(nFix(k.cpuSec, 2)),
 	                   k.waitSec < 0 ? td("-") : td(nFix(k.waitSec, 2)));
 }
+
+#ifdef _WIN32
+string otherThreadsTable(const std::vector<int>&) {
+	return {};
+}
+
+string socketsBody(u32) {
+	return fmt::format("<p class=\"note\">TCP socket table {}</p>\n", noProbe);
+}
+#else
 
 string otherThreadsTable(const std::vector<int>& poolTids) {
 	DIR* d = ::opendir("/proc/self/task");
@@ -1353,5 +1399,6 @@ string socketsBody(u32 top) {
 	                   err.empty() ? string() : " · " + warn(escapeH(err)));
 	return out;
 }
+#endif
 
 } // namespace statusProbes

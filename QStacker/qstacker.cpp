@@ -437,7 +437,7 @@ void __attribute__((__noreturn__)) __cxa_throw(
 // otherwise backward keeps SIGSEGV so you still get a stack trace without ASan.
 namespace {
 
-bool asanHandlesSegv() {
+[[maybe_unused]] bool asanHandlesSegv() { // unused on Windows
 /**
  * We also have the compile time flag in case the macro defined(__SANITIZE_ADDRESS__) is not working or other weird edge case
 Just add this  in the pri or cmake file
@@ -459,16 +459,27 @@ Just add this  in the pri or cmake file
 }
 
 std::vector<int> backwardFatalSignals() {
+#ifdef _WIN32
+	// The Windows SignalHandling installs its own SEH / terminate handlers and ignores the list
+	return {};
+#else
 	auto sigs = backward::SignalHandling::make_default_signals();
 	if (asanHandlesSegv()) {
 		sigs.erase(std::remove(sigs.begin(), sigs.end(), SIGSEGV), sigs.end());
 	}
 	return sigs;
+#endif
 }
 
 } // namespace
 
+#ifdef _WIN32
+// Leaked on purpose. The Windows SignalHandling joins its reporter thread in the destructor through a
+// function-local static mutex / cv, built after it and so destroyed before it: fail-fast (0xC0000409) on exit.
+[[maybe_unused]] static auto* sh = new backward::SignalHandling(backwardFatalSignals());
+#else
 backward::SignalHandling sh(backwardFatalSignals());
+#endif
 
 QString QStacker16Light(uint skip, QStackerOpt opt) {
 	return QStacker16(skip, opt);

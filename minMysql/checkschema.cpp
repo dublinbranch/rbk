@@ -443,10 +443,9 @@ bool CheckSchema::checkTableData(const TableDatas& td) {
 	for (auto& table : td) {
 		auto inner   = QSL(":/db/") + table.name;
 		auto dynamic = basePath + "/db/" + table.name;
-		auto file    = innerOrDynamic(inner, dynamic, false);
+		auto file    = innerOrDynamic(inner, dynamic, true);
 		if (file.type == FileResV2::missing) {
-			//Not fatal: the table data has no embedded copy (as db/schema has), so a binary built
-			//somewhere else does not find it, and it must still start
+			//Not fatal: a binary built without db.qrc has no embedded copy, and it must still start
 			qCritical() << F16("impossible to load table data, tryed {} and {}, the data check for this table is skipped", inner, dynamic);
 			continue;
 		}
@@ -633,8 +632,12 @@ void generateQrcFile(const QString& qrcFilePath, const std::vector<std::string>&
 	file.write(buffer.c_str(), (qint64)buffer.size());
 }
 
-void updateQRCFile() {
-	auto qrcFilePath = basePath + "/db.qrc";
-	auto filePaths   = getFilesInDirectory(basePath.toStdString() + "/db");
+void updateQRCFile(const CheckSchema::TableDatas& td) {
+	//Only the table data: db/schema is in the binary with #embed, and other files in db/ (also not in git) must not go in the binary
+	auto                     qrcFilePath = basePath + "/db.qrc";
+	std::vector<std::string> filePaths;
+	for (auto& table : td) {
+		filePaths.push_back((basePath + "/db/" + table.name).toStdString());
+	}
 	generateQrcFile(qrcFilePath, filePaths, "");
 }
