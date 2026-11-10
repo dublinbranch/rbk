@@ -44,8 +44,13 @@
 #include "rbk/filesystem/folder.h"
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/rand/randutil.h"
+#include <fcntl.h>
+#include <sys/stat.h>
 #ifndef _WIN32
 #include <sys/socket.h>
+#include <unistd.h>
+#else
+#include <io.h>
 #endif
 #include <algorithm>
 #include <cerrno>
@@ -96,11 +101,136 @@ using StrandSocket = rbk::Http::WorkerSocket;
 using TcpStream    = beast::basic_stream<tcp, WorkerEx>;
 using StringResponse = http::response<http::string_body>;
 
+namespace {
+
+// Logs a problem of a file answer as deferredFailed does. Never throws: it also runs from ~FileSend.
+void fileAnswerFailed(const std::string& logFolder, const std::string& path, std::string_view what,
+                      std::string_view detail = {}) noexcept {
+	try {
+		auto msg = F("file answer {}: {}{}", path, what, detail);
+		fmt::print("\n------\n{}", msg);
+		fileAppendContents("\n------\n " + msg, logFolder + "/stdException.log");
+	} catch (...) {
+	}
+}
+
+// The file of a file answer: open, size, read at an offset, close. Child processes do not get the descriptor
+// (O_CLOEXEC). rbk is also built on Windows, which has no pread and no O_CLOEXEC: there the CRT calls do the same,
+// and a seek before each read is safe because the descriptor belongs to one send only.
+#ifndef _WIN32
+int fileOpen(const char* path) {
+	return ::open(path, O_RDONLY | O_CLOEXEC);
+}
+
+// false: fstat failed (errno).
+bool fileStat(int fd, uint64_t& size, bool& regular) {
+	struct stat st {};
+	if (::fstat(fd, &st) != 0) {
+		return false;
+	}
+	size    = static_cast<uint64_t>(st.st_size);
+	regular = S_ISREG(st.st_mode);
+	return true;
+}
+
+int64_t fileRead(int fd, char* buf, std::size_t n, uint64_t pos) {
+	ssize_t got = 0;
+	do {
+		got = ::pread(fd, buf, n, static_cast<off_t>(pos));
+	} while (got < 0 && errno == EINTR);
+	return got;
+}
+
+void fileClose(int fd) {
+	::close(fd);
+}
+#else
+int fileOpen(const char* path) {
+	return ::_open(path, _O_RDONLY | _O_BINARY | _O_NOINHERIT);
+}
+
+bool fileStat(int fd, uint64_t& size, bool& regular) {
+	struct _stat64 st {};
+	if (::_fstat64(fd, &st) != 0) {
+		return false;
+	}
+	size    = static_cast<uint64_t>(st.st_size);
+	regular = (st.st_mode & _S_IFMT) == _S_IFREG;
+	return true;
+}
+
+int64_t fileRead(int fd, char* buf, std::size_t n, uint64_t pos) {
+	if (::_lseeki64(fd, static_cast<long long>(pos), SEEK_SET) < 0) {
+		return -1;
+	}
+	return ::_read(fd, buf, static_cast<unsigned>(n));
+}
+
+void fileClose(int fd) {
+	::_close(fd);
+}
+#endif
+
+// The file part of a file answer (Payload::file). On the heap: the pending write points into buf.
+struct FileSend {
+	// One pread and one write per part. The time limit of the connection applies to each part.
+	static constexpr std::size_t partSize = 128 * 1024;
+
+	http::response<http::empty_body> header; // Content-Length = size; written before the file
+	std::string                      path;
+	std::string                      logFolder;
+	std::function<void(bool)>        onDone;
+	int                              fd      = -1;
+	uint64_t                         size    = 0;
+	uint64_t                         readPos = 0; // file offset of the next pread
+	std::unique_ptr<char[]>          buf;
+	std::size_t                      begin = 0; // buf[begin, end) is read from the file and not written yet
+	std::size_t                      end   = 0;
+
+	FileSend(PayloadFile&& src, std::string logFolder_)
+	    : path(std::move(src.path)), logFolder(std::move(logFolder_)), onDone(std::move(src.onDone)) {
+	}
+	FileSend(const FileSend&)            = delete;
+	FileSend& operator=(const FileSend&) = delete;
+
+	// Closes the file and runs onDone, once. The destructor calls it too: a reply that is dropped before
+	// its send (an earlier write of the connection failed) still runs onDone(false).
+	void finish(bool complete) noexcept {
+		if (fd >= 0) {
+			fileClose(fd);
+			fd = -1;
+		}
+		if (!onDone) {
+			return;
+		}
+		auto cb = std::move(onDone);
+		onDone  = nullptr;
+		try {
+			cb(complete);
+		} catch (const exception& e) {
+			fileAnswerFailed(logFolder, path, "onDone failed: ", e.what());
+		} catch (...) {
+			fileAnswerFailed(logFolder, path, "onDone failed: unknown exception");
+		}
+	}
+
+	~FileSend() {
+		finish(false);
+	}
+};
+
+} // namespace
+
 // Canned 204/205/304 is a static blob (one writev). Everything else is a Beast message.
 struct ClientReply {
 	std::optional<StringResponse> message;
 	std::string_view              canned{};
 	bool                          keepAlive = true;
+	// RequestBase route: http_session::on_write runs its deferred() once this reply is written.
+	Router      router;
+	std::string path; // for the log when deferred() throws
+	// File answer: no message; do_write writes file->header, then the file part by part.
+	std::unique_ptr<FileSend> file;
 };
 
 ClientReply asReply(StringResponse res) {
@@ -150,16 +280,67 @@ StringResponse quickResponse(string&& msg,
 	return res;
 }
 
+namespace {
+
+// Payload::file: opens the file and builds the header of the answer. When the file can not be opened: nullptr,
+// the payload holds a 500 answer instead, and onDone ran.
+std::unique_ptr<FileSend> openFileAnswer(Payload& payload, unsigned version, bool keepAlive) {
+	auto f = std::make_unique<FileSend>(std::move(*payload.file), payload.status->conf->logFolder);
+	payload.file.reset();
+
+	bool        regular = false;
+	const char* error   = nullptr;
+	f->fd               = fileOpen(f->path.c_str());
+	if (f->fd < 0 || !fileStat(f->fd, f->size, regular)) {
+		error = strerror(errno);
+	} else if (!regular) {
+		error = "not a regular file";
+	}
+	if (error) {
+		fileAnswerFailed(f->logFolder, f->path, error);
+		payload.statusCode = 500;
+		payload.mime       = "text/plain; charset=utf-8";
+		payload.html       = "The file of this answer can not be read.\n";
+		return nullptr; // ~FileSend runs onDone(false)
+	}
+	f->buf.reset(new char[std::min<uint64_t>(FileSend::partSize, std::max<uint64_t>(f->size, 1))]);
+
+	// As the string answer below, but Content-Length is the size of the file and the body goes separately.
+	f->header = http::response<http::empty_body>{static_cast<http::status>(payload.statusCode), version};
+	f->header.keep_alive(keepAlive);
+	f->header.set(http::field::content_type, payload.mime);
+	for (auto& [key, value] : payload.headers) {
+		f->header.insert(key, value);
+	}
+	f->header.content_length(f->size);
+	return f;
+}
+
+// immediate() threw after it set Payload::file: the error answer goes out instead, and onDone runs now.
+void dropFileAnswer(Payload& payload, const BeastConf* conf) {
+	if (payload.file) {
+		FileSend dropped(std::move(*payload.file), conf->logFolder);
+		payload.file.reset();
+		dropped.finish(false);
+	}
+}
+
+} // namespace
+
 ClientReply buildResponseToClient(Payload& payload, unsigned version, bool keepAlive) {
 	payload.alreadySent = true;
-	auto size           = payload.html.size();
 
 	ClientReply out;
 	out.keepAlive = keepAlive;
-	if (payload.html.empty() && payload.headers.empty()) {
+	if (payload.file) {
+		out.file = openFileAnswer(payload, version, keepAlive);
+	}
+	auto size = out.file ? out.file->size : payload.html.size();
+
+	if (!out.file && payload.html.empty() && payload.headers.empty()) {
 		out.canned = cannedEmptyHttp(payload.statusCode, version, keepAlive);
 	}
-	if (out.canned.empty()) {
+	if (!out.file && out.canned.empty()) {
 		StringResponse res{static_cast<http::status>(payload.statusCode), version};
 		res.body() = payload.html;
 		res.keep_alive(keepAlive);
@@ -183,7 +364,8 @@ ClientReply buildResponseToClient(Payload& payload, unsigned version, bool keepA
 	QByteArray logLine;
 	bool       logResponse = false;
 
-	if (conf->logResponse) {
+	// A file answer: never the body, only the short line.
+	if (conf->logResponse && !out.file) {
 		if (payload.status->conf->logWhitelist.value().empty()) {
 			logResponse = true;
 		} else {
@@ -317,10 +499,13 @@ ClientReply handle_request(
 			/*
 			 * phase 3
 			 * execute deferred
-			 * slow stuff, logging
+			 * short work after the answer (flush a few sql, logging), see RequestBase::deferred
+			 * http_session::on_write runs it once this answer is written: the client does not wait for it.
 			 */
-			localThreadStatus->state = ThreadState::Deferred;
-			router.deferred();
+			if (router.hasDeferred()) {
+				response.router = std::move(router);
+				response.path   = status.path;
+			}
 			return response;
 
 		} catch (const exception& e) {
@@ -367,15 +552,18 @@ ClientReply handle_request(
 		}
 
 		//in case the exception happened before the socket close during the immediate stage
+		dropFileAnswer(payload, conf);
 		return buildResponseToClient(payload, requestVersion, requestKeepAlive);
 	}
 
 	//also the serialize is error prone in case of badly messed request
 	catch (const exception& e) {
+		dropFileAnswer(payload, conf);
 		auto msg = status.serializeMsg(e.what(), true);
 		fileAppendContents("\n------\n " + msg, conf->logFolder + "/stdException.log");
 		return asReply(quickResponse(randomError(), requestVersion, requestKeepAlive));
 	} catch (...) {
+		dropFileAnswer(payload, conf);
 		auto msg = status.serializeMsg("unkown exception", true);
 		fileAppendContents("\n------\n " + msg, conf->logFolder + "/unkException.log");
 		return asReply(quickResponse(randomError(), requestVersion, requestKeepAlive));
@@ -404,17 +592,24 @@ class http_session : public std::enable_shared_from_this<http_session> {
 	const BeastConf*   conf = nullptr;
 	static constexpr std::size_t queue_limit = 8;
 	std::queue<ClientReply>      response_queue_;
+	// A queued reply has a deferred step or is a file answer: no read until it is written and its deferred step
+	// ran (on_write). The read timer would run out while deferred() works or while a long file send goes on, and
+	// its timeout closes the socket. A request read before the deferred step would run between immediate() and
+	// deferred().
+	bool readsPaused_ = false;
 
 	// The parser is stored in an optional container so we can
 	// construct it from scratch it at the beginning of each new message.
 	boost::optional<http::request_parser<http::string_body>> parser_;
 
-	static constexpr auto readTimeout = std::chrono::seconds(30);
+	// Limit for each read and each write of this connection (30 s; tests pass less). For a file answer: for each
+	// part, so the limit means "no progress for 30 s" and not "the whole file in 30 s".
+	const std::chrono::milliseconds timeout;
 
       public:
 	// Take ownership of the socket
-	http_session(StrandSocket&& socket, const BeastConf* _conf)
-	    : stream_(std::move(socket)), conf(_conf) {
+	http_session(StrandSocket&& socket, const BeastConf* _conf, std::chrono::milliseconds _timeout)
+	    : stream_(std::move(socket)), conf(_conf), timeout(_timeout) {
 	}
 
 	// Start the session
@@ -446,7 +641,7 @@ class http_session : public std::enable_shared_from_this<http_session> {
 		// io_context queue between requests costs more than arming and cancelling it. Only
 		// dropping the timeout outright is faster, and that gives up the guard against a peer
 		// that opens a socket and then says nothing. Keep it.
-		stream_.expires_after(readTimeout);
+		stream_.expires_after(timeout);
 
 		// Read a request using the parser-oriented interface
 		http::async_read(
@@ -501,10 +696,13 @@ class http_session : public std::enable_shared_from_this<http_session> {
 				}
 			}
 
-			auto response = handle_request(stream_, std::move(req), conf);
+			auto       response   = handle_request(stream_, std::move(req), conf);
+			const bool pauseReads = response.router.hasDeferred() || response.file;
 			queue_write(std::move(response));
 
-			if (response_queue_.size() < queue_limit) {
+			if (pauseReads) {
+				readsPaused_ = true;
+			} else if (response_queue_.size() < queue_limit) {
 				do_read();
 			}
 		} catch (...) {
@@ -535,33 +733,136 @@ class http_session : public std::enable_shared_from_this<http_session> {
             &http_session::on_write,
             shared_from_this(),
             keepAlive);
+		// do_read sets the write deadline only when no write is pending, so on a keep-alive connection it can be
+		// long past: the write then fails at once with a timeout, the client gets no answer and sends it again.
+		stream_.expires_after(timeout);
 		if (!item.canned.empty()) {
 			net::async_write(stream_, net::buffer(item.canned.data(), item.canned.size()), std::move(done));
+			return;
+		}
+		if (item.file) {
+			// File answer: the header now, then the file part by part (write_file_part), then on_write.
+			http::async_write(
+			    stream_,
+			    item.file->header,
+			    beast::bind_front_handler(
+			        &http_session::on_file_header,
+			        shared_from_this(),
+			        keepAlive));
 			return;
 		}
 		http::async_write(stream_, *item.message, std::move(done));
 	}
 
 	void
+	on_file_header(bool keepAlive, beast::error_code ec, std::size_t bytes_transferred) {
+		if (ec) {
+			return on_write(keepAlive, ec, bytes_transferred);
+		}
+		write_file_part(keepAlive);
+	}
+
+	// One part of the file per write, each with its own deadline. Not one composed async_write for a large
+	// part: its single deadline would again cover the whole part.
+	void
+	write_file_part(bool keepAlive) {
+		auto& f = *response_queue_.front().file;
+		if (f.begin == f.end) {
+			if (f.readPos == f.size) {
+				return on_write(keepAlive, {}, f.size);
+			}
+			const auto want = std::min<uint64_t>(FileSend::partSize, f.size - f.readPos);
+			const auto n    = fileRead(f.fd, f.buf.get(), want, f.readPos);
+			if (n <= 0) {
+				// The header is out: only the close tells the client that the body is short.
+				fileAnswerFailed(f.logFolder, f.path, n < 0 ? strerror(errno) : "the file is shorter than its size");
+				stream_.close();
+				return on_write(keepAlive, net::error::operation_aborted, 0);
+			}
+			f.readPos += static_cast<uint64_t>(n);
+			f.begin = 0;
+			f.end   = static_cast<std::size_t>(n);
+		}
+		stream_.expires_after(timeout);
+		stream_.async_write_some(
+		    net::buffer(f.buf.get() + f.begin, f.end - f.begin),
+		    beast::bind_front_handler(
+		        &http_session::on_file_part,
+		        shared_from_this(),
+		        keepAlive));
+	}
+
+	void
+	on_file_part(bool keepAlive, beast::error_code ec, std::size_t bytes_transferred) {
+		if (ec) {
+			return on_write(keepAlive, ec, 0);
+		}
+		response_queue_.front().file->begin += bytes_transferred;
+		write_file_part(keepAlive);
+	}
+
+	void
 	on_write(bool keepAlive, beast::error_code ec, std::size_t bytes_transferred) {
 		boost::ignore_unused(bytes_transferred);
 
+		// A file answer ends here (all written, or an error): close the file and run its onDone, before deferred().
+		if (auto& file = response_queue_.front().file) {
+			file->finish(!ec);
+		}
+
 		if (ec) {
+			// The client is gone (as fastcgi_close): the deferred step of that request still runs.
+			runDeferred(response_queue_.front());
 			return fail(ec, "write");
 		}
 
 		if (!keepAlive) {
 			// This means we should close the connection, usually because
 			// the response indicated the "Connection: close" semantic.
-			return do_close();
+			do_close();
+			runDeferred(response_queue_.front());
+			return;
 		}
 
-		if (response_queue_.size() == queue_limit) {
+		// The answer is written: now the deferred step of that request.
+		const bool hadDeferred = runDeferred(response_queue_.front());
+		if (hadDeferred || response_queue_.front().file) {
+			// Reads stopped when this reply was queued, so it was the last one: read the next request.
+			readsPaused_ = false;
+			do_read();
+		} else if (!readsPaused_ && response_queue_.size() == queue_limit) {
 			do_read();
 		}
 
 		response_queue_.pop();
 		do_write();
+	}
+
+	// Returns true when the reply had a deferred step.
+	bool
+	runDeferred(ClientReply& item) {
+		if (!item.router.hasDeferred()) {
+			return false;
+		}
+		localThreadStatus->state = ThreadState::Deferred;
+		threadStatus.free--;
+		try {
+			item.router.deferred();
+		} catch (const exception& e) {
+			deferredFailed(item.path, e.what());
+		} catch (...) {
+			deferredFailed(item.path, "unknown exception");
+		}
+		threadStatus.free++;
+		localThreadStatus->state = ThreadState::Idle;
+		return true;
+	}
+
+	void
+	deferredFailed(const std::string& path, std::string_view what) const {
+		auto msg = F("deferred step of {} failed: {}", path, what);
+		fmt::print("\n------\n{}", msg);
+		fileAppendContents("\n------\n " + msg, conf->logFolder + "/stdException.log");
 	}
 
 	void
@@ -573,6 +874,10 @@ class http_session : public std::enable_shared_from_this<http_session> {
 		// At this point the connection is closed gracefully
 	}
 };
+
+void serveHttpConnection(rbk::Http::WorkerSocket&& socket, const BeastConf* conf, std::chrono::milliseconds timeout) {
+	std::make_shared<http_session>(std::move(socket), conf, timeout)->run();
+}
 
 //------------------------------------------------------------------------------
 
@@ -666,10 +971,7 @@ class listener : public std::enable_shared_from_this<listener> {
 			fail(ec, "accept");
 		} else {
 			// Create the http session and run it
-			std::make_shared<http_session>(
-			    std::move(socket),
-			    conf)
-			    ->run();
+			serveHttpConnection(std::move(socket), conf);
 		}
 
 		// Accept another connection

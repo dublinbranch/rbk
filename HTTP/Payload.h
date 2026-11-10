@@ -3,7 +3,9 @@
 
 #include "rbk/number/intTypes.h"
 #include "rbk/string/stringoso.h"
+#include <functional>
 #include <map>
+#include <optional>
 #include <string>
 
 class Headers : public std::multimap<std::string, std::string> {
@@ -42,6 +44,23 @@ class Headers : public std::multimap<std::string, std::string> {
 
 class PMFCGI;
 
+/* A file answer (a large download): rbk sends the file from disk part by part, not from memory.
+ * Set statusCode, mime and headers as for html; html is not used. rbk opens the file after immediate(), and
+ * Content-Length is the size of the file at that time. The file stays open until the send ends, so the caller
+ * can remove it in onDone.
+ * The time limit of the connection (30 s) applies to each part: the send stops only when the client takes
+ * nothing for 30 s. Behind nginx also set the header "X-Accel-Buffering: no", or nginx keeps the file in its
+ * own buffer first.
+ */
+struct PayloadFile {
+	std::string path;
+	/* Runs once on the HTTP worker thread when the send ends, before deferred().
+	 * complete = true: all the bytes of the file are written to the socket.
+	 * complete = false: the file can not be opened (the client gets a 500), the client went away or took nothing
+	 * for the time limit, a read of the file failed, or immediate() threw after it set the file. */
+	std::function<void(bool complete)> onDone;
+};
+
 class Payload {
       public:
 	bool     alreadySent = false;
@@ -51,6 +70,8 @@ class Payload {
 	std::string html;
 	std::string mime = "text/html; charset=utf-8";
 	Headers     headers;
+	// Set: a file answer instead of html, see PayloadFile.
+	std::optional<PayloadFile> file;
 	void        setStandardHeaders(bool addCors = true);
 	void        setCacheHeader(uint ttl);
 

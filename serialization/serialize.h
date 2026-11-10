@@ -4,23 +4,32 @@
 #include <QDateTime>
 #include <QFileInfo>
 #include <QSaveFile>
+#include <QScopeGuard>
+#include <QSet>
 #include <mutex>
 #include <QDebug>
 
 template <typename T>
 qint64 fileSerialize(const QString& fileName, const T& t) {
-	static QString currentFile;
-
-	//crude and imperfect way to avoid writing a file twice at the same time
-	//Because putting a single lock will de facto make this single threaded even if we have all different files
-	if (fileName == currentFile) {
-		return 0;
+	//Names that are in write now, or that wait for the write lock: a second call for one of these names does nothing.
+	//namesLock is held only for the check, never during the disk work.
+	static std::mutex    namesLock;
+	static QSet<QString> busyNames;
+	{
+		std::lock_guard<std::mutex> scoped(namesLock);
+		if (busyNames.contains(fileName)) {
+			return 0;
+		}
+		busyNames.insert(fileName);
 	}
+	//Runs on every return path, also after an open or commit error, so the name cannot stay busy
+	auto releaseName = qScopeGuard([&] {
+		std::lock_guard<std::mutex> scoped(namesLock);
+		busyNames.remove(fileName);
+	});
 
 	static std::mutex           lock;
 	std::lock_guard<std::mutex> scoped(lock);
-
-	currentFile = fileName;
 
 	QSaveFile file;
 	file.setFileName(fileName);
@@ -38,7 +47,6 @@ qint64 fileSerialize(const QString& fileName, const T& t) {
 		return false;
 	}
 
-	currentFile.clear();
 	return file.size();
 }
 

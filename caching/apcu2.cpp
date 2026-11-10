@@ -99,6 +99,22 @@ any* APCU::fetchInner(const std::string& key) {
 	return &empty;
 }
 
+FetchPodResult APCU::fetchPodLocked(const std::string& key) {
+	if (!cache) {
+		return {{}, false};
+	}
+	auto&            byKey = cache->get<ByKey>();
+	std::shared_lock lock(innerLock);
+
+	auto iter = byKey.find(key);
+	if (iter == cache->end() || !iter->value.has_value()) {
+		miss++;
+		return {{}, false};
+	}
+	hits++;
+	return {any_cast<QByteArray>(iter->value), true};
+}
+
 void APCU::storeInner(const Row& row, bool overwrite_) {
 	//TODO if is persistent, check if a qbytearray too else the write on disk will fail and is lost!
 	if (!cache) {
@@ -210,6 +226,8 @@ void APCU::diskSyncP2() {
 	if (!file.open(QIODevice::WriteOnly)) {
 		qCritical("impossible to save apcu cache!");
 	}
+	//it can hold session ids. A new file gets the default mode, usually readable by everyone
+	file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
 	QDataStream out(&file);
 
 	out << version;
@@ -250,7 +268,12 @@ void APCU::diskLoad() {
 
 	fmt::print("APCU found {} element to reload\n", toBeWritten.size());
 
+	const auto now = QDateTime::currentSecsSinceEpoch();
 	for (auto&& [key, line] : toBeWritten) {
+		//the GC first runs a second after the start: an expired row must not be served until then
+		if (line.expireAt && static_cast<qint64>(line.expireAt) < now) {
+			continue;
+		}
 		APCU::Row row;
 		row.key          = key;
 		row.typeHashCode = line.typeHashCode;
@@ -330,17 +353,7 @@ void apcuStore(const APCU::Row& row) {
 }
 
 FetchPodResult fetchPOD(const std::string& key) {
-	auto a   = APCU::getInstance();
-	auto res = a->fetchInner(key);
-
-	// fmt::print("Debug fetchPOD - res: {}, has_value: {}, type: {}\n",
-	//            (void*)res, res->has_value(), res->type().name());
-
-	if (res->has_value()) {
-		auto q = any_cast<QByteArray>(*res);
-		return {q, true};
-	}
-	return {{}, false};
+	return APCU::getInstance()->fetchPodLocked(key);
 }
 
 FetchPodResult fetchPOD(const QString& key) {
