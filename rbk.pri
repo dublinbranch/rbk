@@ -398,6 +398,7 @@ HEADERS += \
     $$PWD/misc/checkoptionalareset.h \
     $$PWD/misc/ParallelForeach.h \
     $$PWD/misc/echo.h \
+    $$PWD/misc/hex.h \
     $$PWD/misc/intTypes.h \
     $$PWD/misc/swapType.h \
     $$PWD/misc/typeinfo.h \
@@ -466,6 +467,7 @@ SOURCES += \
     $$PWD/minMysql/sqlresult.cpp \
     $$PWD/misc/checkoptionalareset.cpp \
     $$PWD/misc/echo.cpp \
+    $$PWD/misc/hex.cpp \
     $$PWD/misc/typeinfo.cpp \
     $$PWD/number/sanitize.cpp \
     $$PWD/rand/clampednormaldistribution.cpp \

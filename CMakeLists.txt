@@ -202,6 +202,7 @@ set(RBK_SOURCES
     misc/checkoptionalareset.cpp
     misc/csv.cpp
     misc/echo.cpp
+    misc/hex.cpp
     misc/QCommandLineParserV2.cpp
     misc/QDebugHandler.cpp
     misc/QElapsedTimerV2.cpp
@@ -370,6 +371,7 @@ set(RBK_HEADERS
     misc/decimate.h
     misc/echo.h
     misc/escapeH.h
+    misc/hex.h
     misc/safeFilename.h
     misc/intTypes.h
     misc/NanoSpammerConfigDescribe.h
