@@ -192,8 +192,17 @@ bool loginManager(PMFCGI& status, Payload& payload) {
 	auto basePath = status.getBasePath();
 	auto next     = originalTarget(status);
 
+	//without the cookie every request logged in again (account SELECT, password hash, audit INSERT)
 	const auto tryDevelLogin = [&] {
-		return c.develLogin && c.develLogin(status);
+		if (!c.develLogin) {
+			return false;
+		}
+		auto sessionId = c.develLogin(status);
+		if (sessionId.empty()) {
+			return false;
+		}
+		payload.setCookie(c.cookieName.toStdString(), sessionId, c.cookieTTL, true, c.cookieSecure);
+		return true;
 	};
 
 	if (auto session = status.cookies->get(c.cookieName); session) {
@@ -201,10 +210,11 @@ bool loginManager(PMFCGI& status, Payload& payload) {
 		case SessionState::ok:
 			break;
 		case SessionState::invalid:
-			payload.headers.deleteCookie(c.cookieName.toStdString());
 			//stale cookie used to skip develLogin and bounce to login?error=7, which
-			//breaks local auto-login after every restart (APCu sessions die with the process)
+			//breaks local auto-login after every restart (APCu sessions die with the process).
+			//The devel login sets a new cookie over the stale one.
 			if (!tryDevelLogin()) {
+				payload.headers.deleteCookie(c.cookieName.toStdString());
 				return deny(path, payload, loginRedirect(basePath, 7, next));
 			}
 			break;
@@ -230,8 +240,9 @@ bool loginManager(PMFCGI& status, Payload& payload) {
 UpgradeAuth checkWsUpgrade(PMFCGI& status, int minLevel) {
 	auto& c = conf();
 
+	//no payload here, so no cookie: a browser has it from the page load before the upgrade
 	const auto tryDevelLogin = [&] {
-		return c.develLogin && c.develLogin(status);
+		return c.develLogin && !c.develLogin(status).empty();
 	};
 
 	bool resolved = false;

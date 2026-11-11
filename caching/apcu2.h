@@ -16,6 +16,7 @@
 void throwTypeError(const std::type_info* found, const std::type_info* expected);
 
 class Cachable;
+struct FetchPodResult;
 
 class APCU : private NoCopy {
       public:
@@ -108,6 +109,8 @@ class APCU : private NoCopy {
 	 * We hide the implementation as multi index will kill compile time
 	 */
 	std::any* fetchInner(const std::string& key);
+	//the copy is made while the lock is held: a row can be erased as soon as the lock is released
+	FetchPodResult fetchPodLocked(const std::string& key);
 
 	template <class T>
 	void storeInner(const std::string& _key, const T& _value, bool overwrite_ = false, u64 ttl = 60, bool persistent = false) {

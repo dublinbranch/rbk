@@ -279,6 +279,7 @@ defined(WITH_BOOST_BEAST,var) {
 
 SOURCES += \
     $$PWD/HTTP/authHandler.cpp \
+    $$PWD/HTTP/authAdv.cpp \
     $$PWD/HTTP/beast.cpp \
     $$PWD/HTTP/beastConfig.cpp \
     $$PWD/HTTP/canned_reply.cpp \
@@ -289,6 +290,7 @@ SOURCES += \
 
 HEADERS += \
     $$PWD/HTTP/authHandler.h \
+    $$PWD/HTTP/authAdv.h \
     $$PWD/HTTP/beastConfig.h \
     $$PWD/HTTP/canned_reply.h \
     $$PWD/HTTP/clientIp.h \
@@ -396,6 +398,7 @@ HEADERS += \
     $$PWD/misc/checkoptionalareset.h \
     $$PWD/misc/ParallelForeach.h \
     $$PWD/misc/echo.h \
+    $$PWD/misc/hex.h \
     $$PWD/misc/intTypes.h \
     $$PWD/misc/swapType.h \
     $$PWD/misc/typeinfo.h \
@@ -433,6 +436,9 @@ HEADERS += \
     $$PWD/string/qstring.h \
     $$PWD/string/util.h \
     $$PWD/thread/shutdown.h \
+    $$PWD/thread/statusPageConf.h \
+    $$PWD/thread/statusPageConfDescribe.h \
+    $$PWD/thread/statusProbes.h \
     $$PWD/thread/threadstatush.h \
     $$PWD/thread/threadvector.h \
     $$PWD/thread/tmonitoring.h \
@@ -461,6 +467,7 @@ SOURCES += \
     $$PWD/minMysql/sqlresult.cpp \
     $$PWD/misc/checkoptionalareset.cpp \
     $$PWD/misc/echo.cpp \
+    $$PWD/misc/hex.cpp \
     $$PWD/misc/typeinfo.cpp \
     $$PWD/number/sanitize.cpp \
     $$PWD/rand/clampednormaldistribution.cpp \
@@ -482,6 +489,7 @@ SOURCES += \
     $$PWD/string/qstring.cpp \
     $$PWD/string/util.cpp \
     $$PWD/thread/shutdown.cpp \
+    $$PWD/thread/statusProbes.cpp \
     $$PWD/thread/threadstatush.cpp \
     $$PWD/thread/threadvector.cpp \
     $$PWD/thread/tmonitoring.cpp \

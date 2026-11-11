@@ -17,6 +17,11 @@ class RequestBase {
 	//You are required to do something
 	virtual void immediate(PMFCGI& status, Payload& payload) = 0;
 	//You are not required to do something after
+	/* Runs after the answer of immediate() is written, so the client does not wait for it (flush a few sql,
+	 * logging). It runs on the same worker thread: keep it short, the other connections of this worker wait.
+	 * Long work (a backup) goes to its own thread. Other requests can run on this thread between immediate()
+	 * and deferred(): use only the members of this object, never status, payload or the thread local request
+	 * state (dk()). Not called when immediate() throws. */
 	virtual void deferred() {};
 	//https://stackoverflow.com/questions/10024796/c-virtual-functions-but-no-virtual-destructors
 	virtual ~RequestBase() = default;
@@ -33,6 +38,11 @@ class Router {
 
 	//Tutto il resto che magari può dare errori o eccezioni
 	void deferred();
+
+	// A RequestBase route (its deferred() can be empty): the HTTP session runs deferred() once the answer is written.
+	[[nodiscard]] bool hasDeferred() const {
+		return operation != nullptr;
+	}
 
       private:
 	std::shared_ptr<RequestBase> operation = nullptr;

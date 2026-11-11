@@ -202,6 +202,7 @@ set(RBK_SOURCES
     misc/checkoptionalareset.cpp
     misc/csv.cpp
     misc/echo.cpp
+    misc/hex.cpp
     misc/QCommandLineParserV2.cpp
     misc/QDebugHandler.cpp
     misc/QElapsedTimerV2.cpp
@@ -370,6 +371,7 @@ set(RBK_HEADERS
     misc/decimate.h
     misc/echo.h
     misc/escapeH.h
+    misc/hex.h
     misc/safeFilename.h
     misc/intTypes.h
     misc/NanoSpammerConfigDescribe.h
@@ -448,6 +450,7 @@ set(RBK_HEADERS
 if(RBK_WITH_BOOST_BEAST)
     list(APPEND RBK_SOURCES
         HTTP/authHandler.cpp
+        HTTP/authAdv.cpp
         HTTP/loginLimiter.cpp
         HTTP/beast.cpp
         HTTP/beastConfig.cpp
@@ -458,6 +461,7 @@ if(RBK_WITH_BOOST_BEAST)
     )
     list(APPEND RBK_HEADERS
         HTTP/authHandler.h
+        HTTP/authAdv.h
         HTTP/loginLimiter.h
         HTTP/beast.h
         HTTP/beastConfig.h
