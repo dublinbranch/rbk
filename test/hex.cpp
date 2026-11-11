@@ -64,6 +64,23 @@ BOOST_AUTO_TEST_CASE(decode_refuses) {
 	BOOST_CHECK(!rbk::Hex::decode("0a:f", out));   // no separator
 }
 
+BOOST_AUTO_TEST_CASE(decode_any_length) {
+	const auto bytes = rbk::Hex::decode("00ff5CA1");
+	BOOST_REQUIRE(bytes);
+	BOOST_CHECK((*bytes == std::vector<u8>{0x00, 0xFF, 0x5C, 0xA1}));
+	BOOST_CHECK_EQUAL(rbk::Hex::upper(*bytes), "00FF5CA1");
+	BOOST_CHECK_EQUAL(rbk::Hex::lower(*bytes), "00ff5ca1");
+
+	const auto none = rbk::Hex::decode("");
+	BOOST_REQUIRE(none);
+	BOOST_CHECK(none->empty());
+
+	BOOST_CHECK(!rbk::Hex::decode("0A1"));      // odd length
+	BOOST_CHECK(!rbk::Hex::decode("0G"));       // not hex
+	BOOST_CHECK(!rbk::Hex::decode("0x0A"));     // no prefix here
+	BOOST_CHECK(!rbk::Hex::decode("0A 1B 2C")); // no separator (even length)
+}
+
 BOOST_AUTO_TEST_CASE(round_trip) {
 	std::vector<u8> bytes(256);
 	for (unsigned v = 0; v < 256; ++v) {
@@ -74,6 +91,7 @@ BOOST_AUTO_TEST_CASE(round_trip) {
 	BOOST_CHECK(back == bytes);
 	BOOST_REQUIRE(rbk::Hex::decode(rbk::Hex::lower(bytes), back));
 	BOOST_CHECK(back == bytes);
+	BOOST_CHECK(rbk::Hex::decode(rbk::Hex::upper(bytes)) == bytes);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

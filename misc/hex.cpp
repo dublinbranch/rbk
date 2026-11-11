@@ -44,4 +44,15 @@ bool decode(std::string_view hex, std::span<u8> out) {
 	return true;
 }
 
+std::optional<std::vector<u8>> decode(std::string_view hex) {
+	if (hex.size() % 2 != 0) {
+		return std::nullopt;
+	}
+	std::vector<u8> out(hex.size() / 2);
+	if (!decode(hex, out)) {
+		return std::nullopt;
+	}
+	return out;
+}
+
 } // namespace rbk::Hex

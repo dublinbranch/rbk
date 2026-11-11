@@ -9,9 +9,11 @@
 
 #include "rbk/number/intTypes.h"
 
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace rbk::Hex {
 
@@ -42,6 +44,11 @@ namespace rbk::Hex {
  *  False when hex.size() != out.size() * 2 or a character is not a hex digit; out is then
  *  partly written, so a caller that keeps it must reset it. */
 [[nodiscard]] bool decode(std::string_view hex, std::span<u8> out);
+
+/** As many bytes as the text holds, from hex digits of either case.
+ *  nullopt on an odd length or a character that is not a hex digit; empty text gives an empty
+ *  vector. */
+[[nodiscard]] std::optional<std::vector<u8>> decode(std::string_view hex);
 
 } // namespace rbk::Hex
 
