@@ -1,0 +1,17 @@
+---
+description: Config-style JSON → C++ with intrusive value_to and try_value_to
+globs: rbk/BoostJson/**
+alwaysApply: false
+---
+
+# Conversion pattern (like `config.cpp`)
+
+1. **`#include "rbk/BoostJson/intrusivedebug.h"`** before any include that pulls in the stock `boost/json/detail/value_to.hpp` guard.
+2. Parse: **`parseJson`** → `JsonRes` with `.json` / errors.
+3. Convert: **`bj::try_value_to<MyStruct>(reader.json)`** — check `has_error()`, then `.value()`.
+
+**Described structs** (`BOOST_DESCRIBE_STRUCT` in a header) use Boost.Json’s described-class path: nested failures populate **`BJIntrusive::composePath()`** (e.g. `/leaf/value`).
+
+**Custom types** need **`tag_invoke(try_value_to_tag<T>, const value&)`** returning `boost::system::result<T>` (or throwing path — follow existing `taginvoke` / app patterns).
+
+Do not return ad-hoc `std::errc` from described conversions if you want consistent `boost::json::error` codes from the library path.

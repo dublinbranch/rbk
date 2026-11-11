@@ -1,0 +1,19 @@
+---
+description: What rbk BoostJson is and where things live
+globs: rbk/BoostJson/**
+alwaysApply: false
+---
+
+# rbk BoostJson
+
+Small **Boost.JSON** integration layer for `rbk`: parsing helpers, Qt/string conversions, optional **intrusive** `value_to` overrides, and tests.
+
+| Area | Role |
+|------|------|
+| `extra.h` / `extra.cpp` | `parseJson`, `pretty_print`, string helpers, `J()` / `value_from` usage |
+| `taginvoke.h` / `taginvoke.cpp` | `tag_invoke` for `QString`, `QByteArray`, paths, `QTime`, etc. |
+| `intrusivedebug.h` + `intrusivedebug.cpp` | Include **before** default `value_to`; wires **versioned** `override/value_to_*.hpp` and `BJIntrusive` path tracing |
+| `override/value_to_*.hpp` | Forked Boost.Json `value_to` implementation; pick file by **Boost minor** (see `intrusivedebug.h`) |
+| `test/` | Boost.Test sources; linked into `rbk_tests` via `BoostJson/test/CMakeLists.txt` |
+
+Tests that need intrusive conversion must **`#include "rbk/BoostJson/intrusivedebug.h"` first** in that `.cpp` (see `boostjson_intrusive.cpp`).

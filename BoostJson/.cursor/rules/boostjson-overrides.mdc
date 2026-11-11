@@ -1,0 +1,12 @@
+---
+description: Editing versioned value_to overrides under BoostJson/override
+globs: rbk/BoostJson/override/**
+alwaysApply: false
+---
+
+# `override/value_to_*.hpp`
+
+- One file per supported **Boost** line (e.g. `108800` → Boost **1.88**). **`intrusivedebug.h`** includes the matching file via **`BOOST_VERSION`**.
+- Treat as **upstream-derived**: keep diffs small and intentional; port fixes across versions when behavior must stay aligned.
+- Macros such as **`BOOST_JSON_FAIL`**, **`BOOST_PATH_PUSH` / `POP`**, and **`BOOST_MESSAGE`** tie into Boost.Json’s error reporting and **`BJIntrusive`** in described-class conversion.
+- If you add a new Boost version: add `value_to_XXXXX.hpp`, extend the `#elif` chain in **`intrusivedebug.h`**, and build **all** targets that include intrusive headers on that Boost.

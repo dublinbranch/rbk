@@ -7,6 +7,8 @@
 #include "rbk/mixin/NoCopy.h"
 #include <QByteArray>
 #include <QString>
+#include <string>
+#include <vector>
 
 using CURL = void;
 class QString;
@@ -177,6 +179,40 @@ CurlCallResult urlPostContent(const QByteAdt& url, const QByteAdt& post, bool qu
 //LXC vuole fare il prezzemolino e usa PUT...
 CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& post, CurlKeeper& curl, bool quiet = false);
 CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& post, bool quiet = false);
+
+/**
+ * Options for urlGetV2 / urlPostV2 / urlPutV2. A new option is a new field with a default, so callers keep
+ * compiling. Designated initializers read well: urlPostV2(url, body, {.timeoutSec = 2, .okNeeds2xx = true}).
+ *
+ * The v1 calls above keep TLS verification off (unchanged, for the callers that rely on it). The v2 calls
+ * verify by default.
+ */
+struct CurlOpt {
+	// Verify the certificate chain (VERIFYPEER) and that it names the host (VERIFYHOST = 2). For a private
+	// CA set caFile instead of turning this off.
+	bool verifyTls = true;
+	// PEM file with the CA(s) to trust. Empty = the system store. Stays set on a reused handle (opt.curl).
+	std::string caFile{};
+	// Whole transfer, seconds. 0 = no limit.
+	long timeoutSec = 60;
+	// Connect phase, seconds. 0 = curl default.
+	long connectTimeoutSec = 0;
+	// Extra request headers ("Content-Type: application/json"), sent after those already on opt.curl.
+	std::vector<std::string> headers{};
+	// false: ok = the transfer completed (v1 meaning). true: ok also needs HTTP 2xx.
+	bool okNeeds2xx = false;
+	// Do not log transport failures. HTTP status failures are never logged: the caller has httpCode.
+	bool quiet = false;
+	// Mark the thread as in cURL in localThreadStatus and add the call time to it.
+	bool LTS = true;
+	// Reuse this handle (keep-alive, cookies, its own headers). nullptr = a fresh handle for this call.
+	// Every option above is set on it on each call, and the call leaves no pointer to its own data on it.
+	CurlKeeper* curl = nullptr;
+};
+
+CurlCallResult urlGetV2(const QByteAdt& url, const CurlOpt& opt = {});
+CurlCallResult urlPostV2(const QByteAdt& url, const QByteAdt& body, const CurlOpt& opt = {});
+CurlCallResult urlPutV2(const QByteAdt& url, const QByteAdt& body, const CurlOpt& opt = {});
 
 /**
  * @brief urlGetCached

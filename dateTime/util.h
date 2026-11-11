@@ -8,7 +8,7 @@ const QTimeZone UTC        = QTimeZone("UTC");
 const QTimeZone LosAngeles = QTimeZone("America/Los_Angeles");
 
 //this should not be here!
-const QDateTime unixMidnight = QDateTime::fromSecsSinceEpoch(0, QTimeZone(QTimeZone::UTC));
+const QDateTime unixMidnight = QDateTime::fromSecsSinceEpoch(0, QTimeZone::utc()); // utc(): Qt5 and Qt6
 
 //--------------------------------------------------------------------------------------
 //This will keep the timestamp

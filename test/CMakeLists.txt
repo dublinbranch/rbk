@@ -12,6 +12,11 @@ add_executable(rbk_tests
     $<TARGET_OBJECTS:rbk_boostjson_test_objs>
 )
 
+# minCurl is optional in the library, so its test is too.
+if(RBK_WITH_MINCURL)
+    target_sources(rbk_tests PRIVATE curltls.cpp)
+endif()
+
 target_link_libraries(rbk_tests
     PRIVATE
         rbk::rbk

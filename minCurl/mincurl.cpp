@@ -7,9 +7,11 @@
 #include "rbk/thread/threadstatush.h"
 #include <QByteArray>
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QString>
 #include <boost/json.hpp>
 #include <curl/curl.h>
+#include <optional>
 
 extern thread_local ThreadStatus::Status* localThreadStatus;
 
@@ -51,7 +53,8 @@ size_t QBWriter(void* contents, size_t size, size_t nmemb, QByteArray* userp) {
 
 size_t QSWriter(void* contents, size_t size, size_t nmemb, QString* userp) {
 	size_t realsize = size * nmemb;
-	userp->append(static_cast<char*>(contents));
+	// curl does not NUL-terminate the data it passes; use its length
+	userp->append(QString::fromUtf8(static_cast<const char*>(contents), static_cast<int>(realsize)));
 	return realsize;
 }
 
@@ -205,166 +208,249 @@ CURL* CurlKeeper::get() const {
 	return header;
 }
 
-CurlCallResult urlPostContent(const QByteAdt& url, const QByteAdt& post, bool quiet, CURL* curl) {
-	CurlCallResult result;
-	char           errbuf[CURL_ERROR_SIZE] = {0};
-	CURL*          useMe                   = curl;
-	result.url                             = url;
-	if (!useMe) {
-		useMe = curl_easy_init();
-		curl_easy_setopt(useMe, CURLOPT_TIMEOUT, 60); // 1 minute, if you do not like use you own curl
-	} else {
+namespace {
+
+enum class CurlMethod {
+	get,
+	post,
+	put
+};
+
+const char* methodName(CurlMethod m) {
+	switch (m) {
+	case CurlMethod::get:
+		return "GET";
+	case CurlMethod::post:
+		return "POST";
+	case CurlMethod::put:
+		return "PUT";
 	}
-
-	if (post.isEmpty()) {
-		curl_easy_setopt(useMe, CURLOPT_CUSTOMREQUEST, "POST");
-	} else {
-		curl_easy_setopt(useMe, CURLOPT_POSTFIELDS, post.constData());
-	}
-
-	// all those are needed
-	curl_easy_setopt(useMe, CURLOPT_URL, url.constData());
-
-	curl_easy_setopt(useMe, CURLOPT_WRITEDATA, &result.result);
-	curl_easy_setopt(useMe, CURLOPT_WRITEFUNCTION, QBWriter);
-
-	curl_easy_setopt(useMe, CURLOPT_HEADERFUNCTION, QSWriter);
-	curl_easy_setopt(useMe, CURLOPT_HEADERDATA, &result.headerRaw);
-
-	curl_easy_setopt(useMe, CURLOPT_SSL_VERIFYPEER, 0);
-	curl_easy_setopt(useMe, CURLOPT_SSL_VERIFYHOST, 0);
-
-	curl_easy_setopt(useMe, CURLOPT_ERRORBUFFER, errbuf);
-
-	result.errorCode = curl_easy_perform(useMe);
-	result.errorMsg  = errbuf;
-
-	//No idea how to suppress this warning
-	if (result.errorMsg.contains("SSL certificate OpenSSL verify result: self-signed certificate in certificate chain")) {
-		result.errorMsg.clear();
-	}
-	curlTimer(result.timing, useMe);
-	curl_easy_getinfo(useMe, CURLINFO_RESPONSE_CODE, &result.httpCode);
-	if (result.errorCode == CURLE_OK) {
-		result.ok     = true;
-		result.header = parseHeader(result.headerRaw);
-	} else if (!quiet) {
-		qCritical().noquote() << "For:" << url << " code " << result.errorCode << "\n " << errbuf;
-	}
-
-	if (!curl) { // IF a local instance was used
-		curl_easy_cleanup(useMe);
-	}
-
-	return result;
+	return "?";
 }
 
-CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& put, CurlKeeper& curl, bool quiet) {
-	CurlCallResult result;
-	char           errbuf[CURL_ERROR_SIZE] = {0};
-	CURL*          useMe                   = curl;
+/**
+ * Undoes, on scope exit, what one call put on a handle that outlives it: the pointers to this call's own
+ * data (error buffer, result buffers, body) and the temporary header list. A later call or a caller's own
+ * curl_easy_perform on that handle must not write into a dead stack frame.
+ */
+class CallScope : private NoCopy {
+      public:
+	CURL*             h           = nullptr;
+	bool              borrowed    = false;
+	bool              bodySet     = false;
+	curl_slist*       tempHeaders = nullptr;
+	const curl_slist* baseHeaders = nullptr;
 
-	curl_easy_setopt(useMe, CURLOPT_CUSTOMREQUEST, "PUT");
-	curl_easy_setopt(useMe, CURLOPT_POSTFIELDS, put.constData());
-
-	// all those are needed
-	curl_easy_setopt(useMe, CURLOPT_URL, url.constData());
-
-	curl_easy_setopt(useMe, CURLOPT_WRITEDATA, &result.result);
-	curl_easy_setopt(useMe, CURLOPT_WRITEFUNCTION, QBWriter);
-
-	curl_easy_setopt(useMe, CURLOPT_HEADERFUNCTION, QSWriter);
-	curl_easy_setopt(useMe, CURLOPT_HEADERDATA, &result.headerRaw);
-
-	curl_easy_setopt(useMe, CURLOPT_SSL_VERIFYPEER, 0);
-	curl_easy_setopt(useMe, CURLOPT_SSL_VERIFYHOST, 0);
-
-	curl_easy_setopt(useMe, CURLOPT_ERRORBUFFER, errbuf);
-
-	result.errorCode = curl_easy_perform(useMe);
-	result.errorMsg  = errbuf;
-	//No idea how to suppress this warning
-	if (result.errorMsg.contains("SSL certificate OpenSSL verify result: self-signed certificate in certificate chain")) {
-		result.errorMsg.clear();
+	~CallScope() {
+		if (tempHeaders) {
+			curl_easy_setopt(h, CURLOPT_HTTPHEADER, baseHeaders);
+			curl_slist_free_all(tempHeaders);
+		}
+		if (!borrowed) {
+			return; // own handle, cleaned up right after this
+		}
+		curl_easy_setopt(h, CURLOPT_ERRORBUFFER, static_cast<char*>(nullptr));
+		curl_easy_setopt(h, CURLOPT_WRITEFUNCTION, static_cast<curl_write_callback>(nullptr));
+		curl_easy_setopt(h, CURLOPT_WRITEDATA, stdout); // curl's default
+		curl_easy_setopt(h, CURLOPT_HEADERFUNCTION, static_cast<curl_write_callback>(nullptr));
+		curl_easy_setopt(h, CURLOPT_HEADERDATA, static_cast<void*>(nullptr));
+		if (bodySet) {
+			static const char empty[] = "";
+			curl_easy_setopt(h, CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(-1));
+			curl_easy_setopt(h, CURLOPT_POSTFIELDS, empty);
+		}
 	}
-	curlTimer(result.timing, useMe);
-	if (result.errorCode == CURLE_OK) {
-		result.ok     = true;
-		result.header = parseHeader(result.headerRaw);
-	} else if (!quiet) {
-		qCritical().noquote() << "For:" << url << " code " << result.errorCode << "\n " << errbuf;
-	}
+};
 
-	return result;
-}
-
-CurlCallResult urlGetContent2(const QByteAdt& url, bool quiet, CURL* curl, bool LTS) {
-	QElapsedTimer timer;
-	if (LTS) {
-		ResetOnExit reset1(localThreadStatus->state, ThreadState::cURL);
+/**
+ * The one transfer behind urlGetV2 / urlPostV2 / urlPutV2 and the v1 calls.
+ *
+ * v1 = true keeps the v1 rules, so the v1 callers see no change:
+ * - a borrowed handle keeps its own timeouts;
+ * - GET sets no method: minMysql/clickhouse.cpp sets POSTFIELDS on its handle and posts through
+ *   urlGetContent2;
+ * - GET with an empty url keeps the url the caller set on its handle;
+ * - POST with an empty body is a bare CUSTOMREQUEST "POST"; CUSTOMREQUEST is never reset;
+ * - the log lines keep their v1 wording.
+ * Fixed for both: POSTFIELDSIZE is set (a binary body was cut at the first NUL byte), result.ip is filled,
+ * httpCode is read for PUT too, the thread status really is "cURL" during the call, and no pointer to this
+ * call's data is left on a borrowed handle.
+ *
+ * v1Handle: the raw handle a v1 call borrows. v2 borrows opt.curl.
+ */
+CurlCallResult curlPerform(CurlMethod method, const QByteAdt& url, const QByteAdt& body, const CurlOpt& opt, bool v1,
+                           CURL* v1Handle = nullptr) {
+	QElapsedTimer            timer;
+	ResetOnExit<ThreadState> threadState;
+	if (opt.LTS) {
+		threadState.set(localThreadStatus->state, ThreadState::cURL);
 		timer.start();
 	}
 
 	CurlCallResult result;
 	char           errbuf[CURL_ERROR_SIZE] = {0};
-	CURL*          useMe                   = curl;
 
-	CurlKeeper curlK;
-	if (!useMe) {
-		useMe = curlK;
-		curl_easy_setopt(useMe, CURLOPT_TIMEOUT, 60); // 1 minute, if you do not like use you own curl
+	CURL* const borrowed = v1 ? v1Handle : (opt.curl ? opt.curl->get() : nullptr);
+
+	std::optional<CurlKeeper> own;
+	CURL*                     h = borrowed;
+	if (!h) {
+		own.emplace();
+		h = own->get();
 	}
-	if (!url.isEmpty()) {
-		curl_easy_setopt(useMe, CURLOPT_URL, url.constData());
+	// Declared after `own`, so it runs before the own handle is cleaned up.
+	CallScope scope;
+	scope.h        = h;
+	scope.borrowed = borrowed != nullptr;
+
+	if (!v1 || !borrowed) {
+		curl_easy_setopt(h, CURLOPT_TIMEOUT, opt.timeoutSec);
+		curl_easy_setopt(h, CURLOPT_CONNECTTIMEOUT, opt.connectTimeoutSec);
+	}
+
+	if (!(v1 && method == CurlMethod::get && url.isEmpty())) {
+		curl_easy_setopt(h, CURLOPT_URL, url.constData());
 		result.url = url;
 	}
 
-	curl_easy_setopt(useMe, CURLOPT_WRITEDATA, &result.result);
-	curl_easy_setopt(useMe, CURLOPT_WRITEFUNCTION, QBWriter);
+	bool sendBody = method != CurlMethod::get;
+	if (v1) {
+		if (method == CurlMethod::post && body.isEmpty()) {
+			curl_easy_setopt(h, CURLOPT_CUSTOMREQUEST, "POST");
+			sendBody = false;
+		} else if (method == CurlMethod::put) {
+			curl_easy_setopt(h, CURLOPT_CUSTOMREQUEST, "PUT");
+		}
+	} else {
+		// Set the method on every call: a reused handle remembers the last one.
+		curl_easy_setopt(h, CURLOPT_NOBODY, 0L);
+		curl_easy_setopt(h, CURLOPT_CUSTOMREQUEST, method == CurlMethod::put ? "PUT" : static_cast<const char*>(nullptr));
+		if (method == CurlMethod::get) {
+			curl_easy_setopt(h, CURLOPT_HTTPGET, 1L);
+		}
+	}
+	if (sendBody) {
+		curl_easy_setopt(h, CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(body.size()));
+		curl_easy_setopt(h, CURLOPT_POSTFIELDS, body.constData());
+		scope.bodySet = true;
+	}
 
-	curl_easy_setopt(useMe, CURLOPT_HEADERFUNCTION, QSWriter);
-	curl_easy_setopt(useMe, CURLOPT_HEADERDATA, &result.headerRaw);
+	curl_easy_setopt(h, CURLOPT_WRITEDATA, &result.result);
+	curl_easy_setopt(h, CURLOPT_WRITEFUNCTION, QBWriter);
+	curl_easy_setopt(h, CURLOPT_HEADERFUNCTION, QSWriter);
+	curl_easy_setopt(h, CURLOPT_HEADERDATA, &result.headerRaw);
+	curl_easy_setopt(h, CURLOPT_ERRORBUFFER, errbuf);
 
-	curl_easy_setopt(useMe, CURLOPT_SSL_VERIFYPEER, 0);
-	curl_easy_setopt(useMe, CURLOPT_SSL_VERIFYHOST, 0);
+	curl_easy_setopt(h, CURLOPT_SSL_VERIFYPEER, opt.verifyTls ? 1L : 0L);
+	curl_easy_setopt(h, CURLOPT_SSL_VERIFYHOST, opt.verifyTls ? 2L : 0L);
+	if (!opt.caFile.empty()) {
+		curl_easy_setopt(h, CURLOPT_CAINFO, opt.caFile.c_str());
+	}
 
-	curl_easy_setopt(useMe, CURLOPT_ERRORBUFFER, errbuf);
+	if (!opt.headers.empty()) {
+		const curl_slist* base = opt.curl ? opt.curl->header.get() : nullptr;
+		curl_slist*       list = nullptr;
+		for (auto* it = base; it; it = it->next) {
+			list = curl_slist_append(list, it->data);
+		}
+		for (const auto& line : opt.headers) {
+			list = curl_slist_append(list, line.c_str());
+		}
+		scope.tempHeaders = list;
+		scope.baseHeaders = base;
+		curl_easy_setopt(h, CURLOPT_HTTPHEADER, list);
+	}
 
-	result.errorCode = curl_easy_perform(useMe);
+	result.errorCode = curl_easy_perform(h);
 	result.errorMsg  = errbuf;
-	//No idea how to suppress this warning
-	if (result.errorMsg.contains("SSL certificate OpenSSL verify result: self-signed certificate in certificate chain")) {
+	// With verification off curl still writes the verify result into errbuf. It is not an error then.
+	if (!opt.verifyTls &&
+	    result.errorMsg.contains("SSL certificate OpenSSL verify result: self-signed certificate in certificate chain")) {
 		result.errorMsg.clear();
 	}
-	curlTimer(result.timing, useMe);
-	if (result.errorCode == CURLE_OK) {
-		{
-			char* redirectUrl = nullptr;
-			curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &redirectUrl);
-			if (redirectUrl) {
-				result.redirectUrl = redirectUrl;
-			}
-		}
-		result.ok = true;
+	curlTimer(result.timing, h);
+	curl_easy_getinfo(h, CURLINFO_RESPONSE_CODE, &result.httpCode);
 
-		char* ip;
-		if (CURLcode res = curl_easy_getinfo(useMe, CURLINFO_PRIMARY_IP, &ip); res == CURLE_OK && ip) {
-			result.ip.fromLocal8Bit(ip);
+	if (result.errorCode == CURLE_OK) {
+		result.header = parseHeader(result.headerRaw);
+
+		char* effective = nullptr;
+		if (curl_easy_getinfo(h, CURLINFO_EFFECTIVE_URL, &effective) == CURLE_OK && effective) {
+			result.redirectUrl = effective;
+		}
+		char* ip = nullptr;
+		if (curl_easy_getinfo(h, CURLINFO_PRIMARY_IP, &ip) == CURLE_OK && ip) {
+			result.ip = QString::fromLocal8Bit(ip);
 		} else {
 			result.ip = "127.0.0.1";
 		}
-
-		curl_easy_getinfo(useMe, CURLINFO_RESPONSE_CODE, &result.httpCode);
-		result.header = parseHeader(result.headerRaw);
-	} else if (!quiet) {
-		qDebug().noquote() << "For:" << url << "\n " << curl_easy_strerror(result.errorCode) << "\n"
-		                   << errbuf << QStacker16Light();
+	} else if (!v1 && result.errorMsg.isEmpty()) {
+		result.errorMsg = curl_easy_strerror(result.errorCode);
 	}
 
-	if (LTS) {
+	result.ok = result.errorCode == CURLE_OK && (!opt.okNeeds2xx || (result.httpCode >= 200 && result.httpCode < 300));
+
+	if (result.errorCode != CURLE_OK && !opt.quiet) {
+		if (v1 && method == CurlMethod::get) {
+			qDebug().noquote() << "For:" << url << "\n " << curl_easy_strerror(result.errorCode) << "\n"
+			                   << errbuf << QStacker16Light();
+		} else if (v1) {
+			qCritical().noquote() << "For:" << url << " code " << result.errorCode << "\n " << errbuf;
+		} else {
+			qCritical().noquote() << methodName(method) << url << "failed:" << curl_easy_strerror(result.errorCode)
+			                      << "(" << result.errorCode << ")" << result.errorMsg;
+		}
+	}
+
+	if (opt.LTS) {
 		localThreadStatus->time.addCurlTime(timer.nsecsElapsed());
 	}
+	return result;
+}
 
+CurlOpt v1Opt(bool quiet, bool LTS) {
+	CurlOpt opt;
+	opt.verifyTls = false;
+	opt.quiet     = quiet;
+	opt.LTS       = LTS;
+	return opt;
+}
+
+} // namespace
+
+CurlCallResult urlGetV2(const QByteAdt& url, const CurlOpt& opt) {
+	return curlPerform(CurlMethod::get, url, QByteAdt{}, opt, false);
+}
+
+CurlCallResult urlPostV2(const QByteAdt& url, const QByteAdt& body, const CurlOpt& opt) {
+	return curlPerform(CurlMethod::post, url, body, opt, false);
+}
+
+CurlCallResult urlPutV2(const QByteAdt& url, const QByteAdt& body, const CurlOpt& opt) {
+	return curlPerform(CurlMethod::put, url, body, opt, false);
+}
+
+CurlCallResult urlPostContent(const QByteAdt& url, const QByteAdt& post, bool quiet, CURL* curl) {
+	auto result = curlPerform(CurlMethod::post, url, post, v1Opt(quiet, false), true, curl);
+	result.redirectUrl.clear(); // v1 POST never filled it
+	return result;
+}
+
+CurlCallResult urlPutContent(const QByteAdt& url, const QByteAdt& put, CurlKeeper& curl, bool quiet) {
+	auto result = curlPerform(CurlMethod::put, url, put, v1Opt(quiet, false), true, curl.get());
+	result.redirectUrl.clear(); // v1 PUT never filled it
+	return result;
+}
+
+CurlCallResult urlGetContent2(const QByteAdt& url, bool quiet, CURL* curl, bool LTS) {
+	auto result = curlPerform(CurlMethod::get, url, QByteAdt{}, v1Opt(quiet, LTS), true, curl);
+	// v1 read the redirect from the caller's handle only, and the response code on success only.
+	if (!curl) {
+		result.redirectUrl.clear();
+	}
+	if (!result.ok) {
+		result.httpCode = 0;
+	}
 	return result;
 }
 
