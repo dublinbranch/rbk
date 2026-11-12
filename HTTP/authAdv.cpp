@@ -129,17 +129,22 @@ Conf& conf() {
 	return c;
 }
 
-bool can(int priv, Op op) {
+rbk::Auth::CheckResult check(int priv, Op op) {
+	using R = rbk::Auth::CheckResult;
 	auto& c = conf();
 	if (c.isRoot && c.isRoot()) {
-		return true;
+		return R::root;
 	}
 	if (!c.bitsOfCurrentUser) {
-		return false;
+		return R::deny403;
 	}
 	const auto& bits  = c.bitsOfCurrentUser();
 	const auto  index = static_cast<size_t>(priv);
-	return index < bits.size() && (bits[index] & static_cast<u8>(op)) != 0;
+	return index < bits.size() && (bits[index] & static_cast<u8>(op)) != 0 ? R::pass : R::deny403;
+}
+
+bool can(int priv, Op op) {
+	return check(priv, op) != rbk::Auth::CheckResult::deny403;
 }
 
 Bits loadBits(DB& db, const std::vector<PrivDef>& privs, u32 group) {

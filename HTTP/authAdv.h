@@ -69,6 +69,8 @@ struct Conf {
 // the singleton filled by the project at startup, before the server starts
 Conf& conf();
 bool  can(int priv, Op op);
+// can(), and whether root is why: pass, root, or deny403. Does not touch lastCheck().
+rbk::Auth::CheckResult check(int priv, Op op);
 // The ticks of one group. An unknown name in the DB is ignored and logged once per name: this runs
 // on each request, and a Priv removed from the enum leaves such a row. Group 0 = no ticks, no query.
 Bits loadBits(DB& db, const std::vector<PrivDef>& privs, u32 group);
@@ -85,15 +87,18 @@ void groupDeleteApi(PMFCGI& status, Payload& payload); // POST {group}
 
 template <auto priv, Op op, void (*handler)(PMFCGI& status, Payload& payload)>
 void guardOp(PMFCGI& status, Payload& payload) {
-	auto& base = rbk::Auth::conf();
+	auto& base              = rbk::Auth::conf();
+	rbk::Auth::lastCheck() = rbk::Auth::LastCheck{.priv = static_cast<int>(priv), .op = static_cast<u8>(op)};
 	if (!base.isLogged || !base.isLogged()) {
 		rbk::Auth::denyRoute(status, payload, 401);
 		return;
 	}
-	if (!can(static_cast<int>(priv), op)) {
+	const auto result = check(static_cast<int>(priv), op);
+	if (result == rbk::Auth::CheckResult::deny403) {
 		rbk::Auth::denyRoute(status, payload, 403);
 		return;
 	}
+	rbk::Auth::lastCheck().result = result;
 	handler(status, payload);
 }
 
@@ -110,7 +115,10 @@ void canWrite(PMFCGI& status, Payload& payload) {
 // the POST branch of a mixed route; false = the 403 and its audit row are done
 template <auto priv>
 bool needWrite(PMFCGI& status, Payload& payload) {
-	if (can(static_cast<int>(priv), Op::write)) {
+	rbk::Auth::lastCheck()  = rbk::Auth::LastCheck{.priv = static_cast<int>(priv), .op = static_cast<u8>(Op::write)};
+	const auto result       = check(static_cast<int>(priv), Op::write);
+	if (result != rbk::Auth::CheckResult::deny403) {
+		rbk::Auth::lastCheck().result = result;
 		return true;
 	}
 	rbk::Auth::denyRoute(status, payload, 403);

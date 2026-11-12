@@ -46,6 +46,21 @@ class PMFCGI {
 	 * .substr(1)
 	 */
 	std::string path;
+	// The HTTP method, set by handle_request: Beast's name for a known verb ("GET", "POST", ...),
+	// "<unknown>" for any other token, so a client cannot choose the text.
+	std::string method;
+	// Set by Router::immediate: the key of the route that answered ("/" for the empty key, the
+	// site root), "<static>" for a file of staticFile, "<unknown>" for no route, "<rbk>" for a
+	// match of conf->routing while secretPath is set (the token pages; also "/echo?x=<token>").
+	// Empty when the answer came before routing (loginManager, common1), or when something before
+	// it threw (prePhase1, the URL parse) or the static file read threw.
+	std::string routeKey;
+	// The target names one of rbk's token pages, or a near miss of one (hasSecretRbkToken on the
+	// raw target, and on it percent-decoded), whatever answered it: a login refusal, a 404 of the
+	// project, a typo. Set by handle_request as soon as the target is read, before the URL parse.
+	// A request log must keep neither the path nor the answer of such a request: this flag is the
+	// test, not routeKey. rbk's own access log writes "<rbk>" for the path and no answer.
+	bool secretPath = false;
 	std::string body;
 	//remember not automatically decoded! //TODO extend and decode on request ?
 	Post                         post;

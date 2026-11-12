@@ -164,7 +164,23 @@ void writeJsonError(Payload& payload, int statusCode, const std::string& message
 	payload.html       = pretty_print(json);
 }
 
+namespace {
+thread_local LastCheck tlLastCheck;
+} // namespace
+
+LastCheck& lastCheck() {
+	return tlLastCheck;
+}
+
+void resetLastCheck() {
+	tlLastCheck = LastCheck{};
+}
+
 void denyRoute(PMFCGI& status, Payload& payload, int statusCode) {
+	if (tlLastCheck.result == CheckResult::pass || tlLastCheck.result == CheckResult::root) {
+		tlLastCheck.byHandler = true;
+	}
+	tlLastCheck.result = statusCode == 401 ? CheckResult::deny401 : CheckResult::deny403;
 	if (statusCode == 401) {
 		writeJsonError(payload, 401, "login required");
 		return;

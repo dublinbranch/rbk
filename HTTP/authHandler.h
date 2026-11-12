@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <boost/json/object.hpp>
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -131,7 +132,34 @@ UpgradeAuth checkWsUpgrade(PMFCGI& status, int minLevel);
 void loginPage(PMFCGI& status, Payload& payload);
 void logout(PMFCGI& status, Payload& payload);
 
-//short circuit a routed handler: 401 not logged, 403 insufficient level (with audit trail hook)
+/**
+ * The access check of the request running on this thread, for a request log
+ * (BeastConf::onRequestDone). handle_request resets it at the start of each request.
+ * The last check wins: a mixed route records its canRead, then its needWrite on the
+ * POST branch. Set by guard, AuthAdv::guardOp / needWrite, and denyRoute.
+ */
+enum class CheckResult : std::uint8_t {
+	none,    // no check ran (public route, static file, refused before routing)
+	pass,    // the login had the level or the bit
+	root,    // AuthAdv: passed as root, whatever the bits
+	deny401, // not logged in
+	deny403, // logged in, not allowed
+};
+struct LastCheck {
+	int          priv   = -1; // AuthAdv Priv id; -1 = no Priv (a level guard, or no check)
+	int          level  = -1; // guard<minLevel>; -1 = none
+	std::uint8_t op     = 0;  // AuthAdv::Op mask (1 read, 2 write); 0 = none
+	CheckResult  result = CheckResult::none;
+	// The guard passed (priv / level / op are its check), then the handler refused with its own
+	// denyRoute call. A project guard that is not rbk's records only its denyRoute (priv and level
+	// -1), and nothing when it passes.
+	bool byHandler = false;
+};
+[[nodiscard]] LastCheck& lastCheck(); // thread-local
+void                     resetLastCheck();
+
+//short circuit a routed handler: 401 not logged, 403 insufficient level (with audit trail hook).
+//Also sets lastCheck().result to deny401 / deny403.
 void denyRoute(PMFCGI& status, Payload& payload, int statusCode);
 
 void writeJsonError(Payload& payload, int statusCode, const std::string& message);
@@ -144,7 +172,8 @@ void writeJsonError(Payload& payload, int statusCode, const std::string& message
  */
 template <int minLevel, void (*handler)(PMFCGI& status, Payload& payload)>
 void guard(PMFCGI& status, Payload& payload) {
-	auto& c = conf();
+	auto& c  = conf();
+	lastCheck() = LastCheck{.level = minLevel};
 	//the loginManager preflight already resolved the user for every non whitelisted path
 	if (!c.isLogged || !c.isLogged()) {
 		denyRoute(status, payload, 401);
@@ -154,6 +183,7 @@ void guard(PMFCGI& status, Payload& payload) {
 		denyRoute(status, payload, 403);
 		return;
 	}
+	lastCheck().result = CheckResult::pass;
 	handler(status, payload);
 }
 

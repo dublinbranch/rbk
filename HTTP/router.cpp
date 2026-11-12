@@ -122,10 +122,19 @@ class JemallocStats : public RequestBase {
 	}
 };
 
+namespace {
+// The key of a matched route for PMFCGI::routeKey: "/" for the empty key (the site root), so it
+// never reads as "answered before routing" (empty routeKey).
+std::string routeKeyOf(const std::string& key) {
+	return key.empty() ? std::string("/") : key;
+}
+} // namespace
+
 void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) {
 	//take out initial /
 	auto path = status.url.url.path().toStdString();
 	if (path.empty()) {
+		status.routeKey    = "<unknown>";
 		payload.statusCode = 404;
 		return;
 	}
@@ -139,6 +148,7 @@ void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) 
 	//	}
 
 	if (auto v = conf->routing.get(path); v) {
+		status.routeKey = status.secretPath || hasSecretRbkToken(path) ? "<rbk>" : routeKeyOf(path);
 		//Single catch point in case of fatal excpetion
 		try {
 			//readDebugParam();
@@ -153,12 +163,14 @@ void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) 
 		}
 		//dk.processingEnd.setNow();
 	} else if (auto v2 = conf->routingSimple.get(path); v2) {
+		status.routeKey = routeKeyOf(path);
 		(*(v2.val))(status, payload);
 		return;
 	} else if (conf->staticFile.has_value() && !conf->staticFile.value().empty()) {
 		if (auto p = resolveStaticFile(conf->staticFile.value(), path)) {
 			auto res = fileGetContents2(*p, true, 0);
 			if (res.exist) {
+				status.routeKey    = "<static>";
 				payload.html       = res.content.toStdString();
 				payload.mime       = getMimeType(path);
 				payload.statusCode = 200;
@@ -167,6 +179,7 @@ void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) 
 			}
 		}
 	}
+	status.routeKey    = "<unknown>";
 	payload.mime       = "text/plain; charset=utf-8";
 	payload.html       = fmt::format("invalid path >>> {} <<< no routing available", escapeH(path));
 	payload.statusCode = 400;

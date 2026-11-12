@@ -1,7 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <rbk/mapExtensor/mapV2.h>
+#include <string_view>
 
 class PMFCGI;
 class Payload;
@@ -57,3 +59,23 @@ inline constexpr char statusPagePath[]    = "Z4DgMzxU1gKlwhedSGeERZVeId4QRwDHDej
 inline constexpr char statusSocketsPath[] = "Z4DgMzxU1gKlwhedSGeERZVeId4QRwDHDejwn3PKRQhdVLrzCg2ww/sockets";
 inline constexpr char jemallocPagePath[]  = "ziAvks8rGUyQcoMU5K3eC9QsUvYv0lnK5iv7d8wdBWb7WAoa";
 inline constexpr char jemallocStatsPath[] = "ziAvks8rGUyQcoMU5K3eC9QsUvYv0lnK5iv7d8wdBWb7WAoa/stats";
+
+// The text holds one of the two tokens above, or a near miss of one: anywhere (a raw target, a
+// query, "/Z4Dg…/sockets/", a doubled slash), in any case, cut short, or with a typo. The first or
+// the last 16 characters of a token are enough (about 95 bits each: no real path matches by chance).
+// Their path is the secret: a log must not keep it, nor the 400 answer that repeats it.
+[[nodiscard]] inline bool hasSecretRbkToken(std::string_view text) {
+	constexpr size_t kPart = 16;
+	auto icontains         = [text](std::string_view part) {
+        auto lower = [](char c) { return c >= 'A' && c <= 'Z' ? static_cast<char>(c - 'A' + 'a') : c; };
+        auto it    = std::search(text.begin(), text.end(), part.begin(), part.end(),
+                                 [&](char a, char b) { return lower(a) == lower(b); });
+        return it != text.end();
+	};
+	for (const std::string_view token : {std::string_view(statusPagePath), std::string_view(jemallocPagePath)}) {
+		if (icontains(token.substr(0, kPart)) || icontains(token.substr(token.size() - kPart))) {
+			return true;
+		}
+	}
+	return false;
+}

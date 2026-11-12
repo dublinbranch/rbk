@@ -6,6 +6,7 @@ add_executable(rbk_tests
     filefunction.cpp
     hex.cpp
     loginLimiter.cpp
+    requestHooks.cpp
     runnableV2.cpp
     shutdown.cpp
     sqlrowv2.cpp

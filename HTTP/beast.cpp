@@ -63,6 +63,7 @@
 
 #include "PMFCGI.h"
 #include "Payload.h"
+#include "authHandler.h"
 #include "beast.h"
 #include "canned_reply.h"
 #include "clientIp.h"
@@ -327,6 +328,18 @@ void dropFileAnswer(Payload& payload, const BeastConf* conf) {
 
 } // namespace
 
+// A request hook threw. Into stdException.log like the other failures here, not one console line
+// per request while a hook stays broken (fileAppendContents warns only when it cannot open the
+// file). Never throws itself.
+static void requestHookFailed(const BeastConf* conf, std::string_view hook, std::string_view what) noexcept {
+	try {
+		std::string msg(hook);
+		msg.append(" failed: ").append(what);
+		fileAppendContents("\n------\n " + msg, conf->logFolder + "/stdException.log");
+	} catch (...) {
+	}
+}
+
 ClientReply buildResponseToClient(Payload& payload, unsigned version, bool keepAlive) {
 	payload.alreadySent = true;
 
@@ -355,6 +368,26 @@ ClientReply buildResponseToClient(Payload& payload, unsigned version, bool keepA
 	}
 	auto responseTime = registerFlushTime();
 
+	if (const auto* c = payload.status->conf; c && c->onRequestDone && !payload.skipRequestDone) {
+		payload.skipRequestDone = true;
+		const auto& t = localThreadStatus->time;
+		RequestDone done;
+		done.totalNs   = responseTime;
+		done.sqlNs     = t.sqlImmediate;
+		done.chNs      = t.clickHouse.nsecsElapsed();
+		done.ioNs      = t.IO.nsecsElapsed();
+		done.curlNs    = t.curlImmediate;
+		done.respBytes = size;
+		done.file      = out.file != nullptr;
+		try {
+			c->onRequestDone(*payload.status, payload, done);
+		} catch (const exception& e) {
+			requestHookFailed(c, "onRequestDone", e.what());
+		} catch (...) {
+			requestHookFailed(c, "onRequestDone", "unknown exception");
+		}
+	}
+
 	if (!payload.status->conf->logRequest) {
 		return out;
 	}
@@ -364,12 +397,14 @@ ClientReply buildResponseToClient(Payload& payload, unsigned version, bool keepA
 	QByteArray logLine;
 	bool       logResponse = false;
 
-	// A file answer: never the body, only the short line.
-	if (conf->logResponse && !out.file) {
-		if (payload.status->conf->logWhitelist.value().empty()) {
+	// A file answer: never the body, only the short line. A rbk token page: neither its path nor
+	// its answer (PMFCGI::secretPath).
+	// A missing list is an empty one: .value() threw here, after onRequestDone had seen the answer.
+	if (conf->logResponse && !out.file && !payload.status->secretPath) {
+		if (!conf->logWhitelist || conf->logWhitelist->empty()) {
 			logResponse = true;
 		} else {
-			for (auto& path : conf->logWhitelist.value()) {
+			for (auto& path : *conf->logWhitelist) {
 				if (payload.status->path.find(path) != string::npos) {
 					logResponse = true;
 					break;
@@ -377,13 +412,16 @@ ClientReply buildResponseToClient(Payload& payload, unsigned version, bool keepA
 			}
 		}
 
-		for (auto& path : conf->logBlacklist.value()) {
-			if (payload.status->path.find(path) != string::npos) {
-				logResponse = false;
-				break;
+		if (conf->logBlacklist) {
+			for (auto& path : *conf->logBlacklist) {
+				if (payload.status->path.find(path) != string::npos) {
+					logResponse = false;
+					break;
+				}
 			}
 		}
 	}
+	const std::string_view logPath = payload.status->secretPath ? "<rbk>" : std::string_view(payload.status->path);
 
 	auto dateTime = QDateTime::currentDateTime();
 	auto ts       = dateTime.toSecsSinceEpoch();
@@ -399,11 +437,11 @@ ClientReply buildResponseToClient(Payload& payload, unsigned version, bool keepA
 		}
 
 		//unix ts ip path status size responseTime response
-		logLine = F8("{} {} {} {} {} {}\n-------\n{}\n-------"s, time, payload.status->remoteIp, payload.status->path, payload.statusCode,
+		logLine = F8("{} {} {} {} {} {}\n-------\n{}\n-------"s, time, payload.status->remoteIp, logPath, payload.statusCode,
 		             size, responseTime, response);
 	} else {
 		//unix ts	ip	path	status	size	responseTime
-		logLine = F8("{} {} {} {} {} {}"s, time, payload.status->remoteIp, payload.status->path, payload.statusCode,
+		logLine = F8("{} {} {} {} {} {}"s, time, payload.status->remoteIp, logPath, payload.statusCode,
 		             size, responseTime);
 	}
 
@@ -447,6 +485,20 @@ ClientReply handle_request(
 		return asReply(std::move(res));
 	}
 
+	rbk::Auth::resetLastCheck();
+	if (conf->onRequestStart) {
+		// A failed reset leaves the last request's thread-locals: onRequestDone must not read them.
+		try {
+			conf->onRequestStart();
+		} catch (const exception& e) {
+			payload.skipRequestDone = true;
+			requestHookFailed(conf, "onRequestStart", e.what());
+		} catch (...) {
+			payload.skipRequestDone = true;
+			requestHookFailed(conf, "onRequestStart", "unknown exception");
+		}
+	}
+
 	try {
 		try { //Yes exception can throw exceptions!
 			status.conf = conf;
@@ -457,6 +509,12 @@ ClientReply handle_request(
 			status.localIp  = rbk::Http::serverIp(stream.socket(), req, *conf);
 
 			status.path = req.target();
+			// Raw, and percent-decoded when it has a '%' (also the query): before the URL parse,
+			// which can throw.
+			status.secretPath = hasSecretRbkToken(status.path) ||
+			                    (status.path.find('%') != std::string::npos &&
+			                     hasSecretRbkToken(QByteArray::fromPercentEncoding(QByteArray::fromStdString(status.path)).toStdString()));
+			status.method = std::string(http::to_string(req.method()));
 
 			// if (!isValidUTF8(status.path)) {
 			// 	throw ExceptionV2(QSL("Invalid utf8 in the PATH %1").arg(base64this(status.path)));

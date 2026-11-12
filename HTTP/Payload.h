@@ -64,6 +64,10 @@ struct PayloadFile {
 class Payload {
       public:
 	bool     alreadySent = false;
+	// beast.cpp request hooks: set once onRequestDone ran, or when onRequestStart failed. So the hook
+	// runs at most once per request (an exception after it, in the log block, builds the answer a
+	// second time), and never on the thread-locals of a request whose reset failed.
+	bool skipRequestDone = false;
 	unsigned statusCode  = 200;
 	//a response can not exists without a request no ?
 	PMFCGI*     status = nullptr;

@@ -29,6 +29,22 @@ using WorkerSocket   = boost::asio::basic_stream_socket<boost::asio::ip::tcp, Wo
 class PMFCGI;
 class Payload;
 
+/**
+ * Passed to BeastConf::onRequestDone, from the thread status of the request (rbk/thread/
+ * threadstatush.h). All times in ns, from the start of the request to the answer built, before it
+ * is sent. sqlNs is the SQL run before the answer (sqlImmediate). chNs counts rbk's own curl
+ * ClickHouse client only (time.clickHouse): a project that reads ClickHouse another way sees 0.
+ */
+struct RequestDone {
+	long long totalNs   = 0;
+	long long sqlNs     = 0;
+	long long chNs      = 0;
+	long long ioNs      = 0;
+	long long curlNs    = 0;
+	size_t    respBytes = 0;     // body, or file size for a file answer
+	bool      file      = false; // Payload::file answer
+};
+
 class BeastConf {
       public:
 	friend class PMFCGI;
@@ -65,6 +81,21 @@ class BeastConf {
 	// digitalSpine uses this to turn CLIENT_MULTI_STATEMENTS off on the worker
 	// connection (SQLBuffering stays on its own threads).
 	std::function<void()> onWorkerStart;
+
+	/* Request hooks, for a request log. Both optional: empty = not called. Run on the worker
+	 * thread of the request, inside a catch-all: an exception there goes to stdException.log and is
+	 * otherwise ignored, the answer does not change.
+	 * onRequestStart: first thing of each request (after an OPTIONS preflight, which is answered
+	 *   before it and never reaches onRequestDone), before the URL is parsed: reset the project's
+	 *   per-request thread-locals here. A bad URL throws before prePhase1, and the answer still
+	 *   goes through onRequestDone.
+	 * onRequestDone: at most once per request, when the answer is built and before it is sent: a
+	 *   login refusal, a normal answer, or a handler exception (its 500). Not called when
+	 *   onRequestStart threw (the thread-locals are not reset), nor for an exception thrown while
+	 *   handling an exception (answered with a canned 500), nor for a websocket upgrade.
+	 *   PMFCGI::method, routeKey, secretPath and rbk::Auth::lastCheck() describe the request. */
+	std::function<void()>                                                   onRequestStart;
+	std::function<void(const PMFCGI&, const Payload&, const RequestDone&)> onRequestDone;
 
 	mapV2<std::string, SimpleRoutedType> routingSimple;
 	mapV2<std::string, RequestBase*>     routing;
