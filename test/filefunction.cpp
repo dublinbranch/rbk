@@ -4,6 +4,9 @@
 
 #include <QTemporaryDir>
 
+#include <csignal>
+#include <sys/resource.h>
+
 namespace {
 
 QByteAdt writeTempFile(QTemporaryDir& dir, const char* name, const QByteArray& bytes) {
@@ -179,6 +182,71 @@ BOOST_AUTO_TEST_CASE(missing_file)
 
 	BOOST_CHECK(!res.exist);
 	BOOST_CHECK(res.err == FileGetRes::Err::none);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(file_put_contents)
+
+namespace {
+
+// A file size limit for the whole process, with SIGXFSZ ignored: a write past the limit then fails
+// with EFBIG. The destructor restores the limit and the signal, also on an exception.
+class FileSizeLimit {
+      public:
+	explicit FileSizeLimit(rlim_t bytes) {
+		if (getrlimit(RLIMIT_FSIZE, &before) != 0) {
+			return;
+		}
+		haveBefore = true;
+		oldSignal  = std::signal(SIGXFSZ, SIG_IGN);
+		rlimit tiny   = before;
+		tiny.rlim_cur = bytes;
+		ok            = setrlimit(RLIMIT_FSIZE, &tiny) == 0;
+	}
+	~FileSizeLimit() {
+		if (haveBefore) {
+			setrlimit(RLIMIT_FSIZE, &before);
+			std::signal(SIGXFSZ, oldSignal);
+		}
+	}
+	FileSizeLimit(const FileSizeLimit&)            = delete;
+	FileSizeLimit& operator=(const FileSizeLimit&) = delete;
+
+	bool ok = false;
+
+      private:
+	rlimit before{};
+	bool   haveBefore = false;
+	void (*oldSignal)(int) = SIG_DFL;
+};
+
+} // namespace
+
+// A file size limit makes the write to disk fail inside QSaveFile::commit() (the bytes wait in the
+// write buffer until then). The caller must see the failure, and the old file must stay.
+BOOST_AUTO_TEST_CASE(a_commit_that_fails_is_reported_and_keeps_the_old_file)
+{
+	QTemporaryDir dir;
+	BOOST_REQUIRE(dir.isValid());
+	const QString path = dir.path() + QStringLiteral("/conf.json");
+	BOOST_REQUIRE(filePutContents(QByteArray("old"), path, false).ok);
+
+	// No Boost check while the limit is on: a Boost log to a file could fail in that time.
+	FPCRes res{};
+	bool   limitSet = false;
+	{
+		FileSizeLimit limit(10);
+		limitSet = limit.ok;
+		if (limitSet) {
+			res = filePutContents(QByteArray(100, 'n'), path, false);
+		}
+	}
+
+	BOOST_REQUIRE(limitSet);
+	BOOST_CHECK(!res.ok);
+	BOOST_CHECK(res.error != QFileDevice::NoError);
+	BOOST_CHECK(fileGetContents(path, true) == QByteArray("old"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

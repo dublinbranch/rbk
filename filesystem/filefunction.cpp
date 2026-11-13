@@ -75,7 +75,14 @@ FPCRes filePutContents(const QByteAdt& pay, const QStringAdt& fileName, bool ver
 		}
 		return {false, file.error()};
 	}
-	file.commit();
+	// commit() moves the temp file over the target: a failure (full disk, rename refused) leaves the
+	// old file, so the caller must know.
+	if (!file.commit()) {
+		if (verbose) {
+			qCritical().noquote() << F16("Impossbile to commit {} due to {} in {}\n", fileName, asSWString(file.error()), QStacker16Light());
+		}
+		return {false, file.error()};
+	}
 	return {true};
 }
 
