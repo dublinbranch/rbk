@@ -152,6 +152,20 @@ class LiveTable {
 		return erased;
 	}
 
+	/** One row, now: after a write this process made (a panel save). Upsert it, or erase it when it
+	 *  is gone or !alive(). Returns the erased row. writeGate is held across the SELECT and the apply,
+	 *  so a refresh running at the same time cannot put an older copy over it. */
+	Ptr reload(DB& db, u64 id) {
+		std::lock_guard gate(writeGate);
+		auto            fresh = fetch(db, F(" WHERE id = {}", id));
+		auto            lk    = map.uniqueLock();
+		if (fresh.empty() || !fresh.front()->alive()) {
+			return eraseLocked(id);
+		}
+		upsertLocked(std::move(fresh.front()));
+		return nullptr;
+	}
+
 	[[nodiscard]] Ptr get(u64 id) const {
 		return find<ById>(id);
 	}

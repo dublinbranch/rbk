@@ -280,6 +280,8 @@ defined(WITH_BOOST_BEAST,var) {
 SOURCES += \
     $$PWD/HTTP/authHandler.cpp \
     $$PWD/HTTP/authAdv.cpp \
+    $$PWD/session/sessionStore.cpp \
+    $$PWD/session/sessionAdmin.cpp \
     $$PWD/HTTP/beast.cpp \
     $$PWD/HTTP/beastConfig.cpp \
     $$PWD/HTTP/canned_reply.cpp \
@@ -291,6 +293,9 @@ SOURCES += \
 HEADERS += \
     $$PWD/HTTP/authHandler.h \
     $$PWD/HTTP/authAdv.h \
+    $$PWD/session/sessionStore.h \
+    $$PWD/session/sessionAdmin.h \
+    $$PWD/liveTable/liveTable.h \
     $$PWD/HTTP/beastConfig.h \
     $$PWD/HTTP/canned_reply.h \
     $$PWD/HTTP/clientIp.h \

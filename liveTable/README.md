@@ -25,6 +25,7 @@ The table needs `updatedAt TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON
 |---|---|
 | `loadAll(db)` | boot: `SELECT NOW(3)` → cursor, then full `SELECT … WHERE aliveWhere` |
 | `refresh(db)` | delta `WHERE updatedAt >= cursor - overlapSeconds`; upsert, erase `!alive()`; returns erased rows |
+| `reload(db, id)` | one row now, after a write of this process (a panel save); upsert, or erase when gone or `!alive()`; returns the erased row |
 | `reconcile(db)` | full `SELECT`; upsert; erase ids not in the result; returns erased rows |
 | `get(id)`, `find<Tag>(key)`, `findAll<Tag>(key)`, `all()` | `sharedLock` only; return `shared_ptr` copies |
 | `admitNew` | optional `bool(Row&)` for a row not yet in the map: `false` skips it; may fill live state |

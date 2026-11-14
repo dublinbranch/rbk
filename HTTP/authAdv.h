@@ -4,10 +4,14 @@
 #include "rbk/HTTP/authHandler.h"
 #include "rbk/misc/intTypes.h"
 
+#include <atomic>
 #include <boost/json/array.hpp>
 #include <functional>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 class DB;
@@ -74,6 +78,36 @@ rbk::Auth::CheckResult check(int priv, Op op);
 // The ticks of one group. An unknown name in the DB is ignored and logged once per name: this runs
 // on each request, and a Priv removed from the enum leaves such a row. Group 0 = no ticks, no query.
 Bits loadBits(DB& db, const std::vector<PrivDef>& privs, u32 group);
+
+// One group with its ticks, as Groups keeps it.
+struct Group {
+	u32         id = 0;
+	std::string name;
+	Bits        bits;
+};
+using GroupPtr = std::shared_ptr<const Group>;
+
+/**
+ * The groups and their ticks in memory, for a project that must not read the DB on each request.
+ * reload() reads aclGroup and aclGroupPriv whole (a few dozen rows) and swaps one snapshot: call it
+ * from a timer for an edit made in the DB by hand. The handlers of the matrix below call it after
+ * each change, once it was loaded, so a change made on the page acts at the next request.
+ */
+class Groups {
+      public:
+	// Serialized: an older read never replaces a newer one. Throws on a DB error, the old
+	// snapshot stays.
+	void reload(DB& db, const std::vector<PrivDef>& privs);
+	// null: no such group, or never loaded
+	[[nodiscard]] GroupPtr get(u32 id) const;
+	[[nodiscard]] bool     loaded() const;
+
+      private:
+	using Map = std::unordered_map<u32, GroupPtr>;
+	std::mutex                              reloadLock;
+	std::atomic<std::shared_ptr<const Map>> snapshot;
+};
+Groups& groups();
 
 // The handlers of the matrix. They do not check who calls: route them behind root only, because
 // whoever edits the ticks can give themselves everything. JSON answers. Each change writes one

@@ -176,6 +176,85 @@ Bits loadBits(DB& db, const std::vector<PrivDef>& privs, u32 group) {
 	return bits;
 }
 
+void Groups::reload(DB& db, const std::vector<PrivDef>& privs) {
+	std::lock_guard guard(reloadLock);
+	size_t          size = 0;
+	for (const auto& def : privs) {
+		size = std::max(size, static_cast<size_t>(def.id) + 1);
+	}
+	std::unordered_map<u32, std::shared_ptr<Group>> fresh;
+	for (const auto& row : db.query("SELECT id, name FROM aclGroup")) {
+		auto g  = std::make_shared<Group>();
+		g->id   = row.rq<u32>("id");
+		g->name = row.rq<std::string>("name");
+		g->bits.assign(size, 0);
+		fresh.emplace(g->id, std::move(g));
+	}
+	for (const auto& row : db.query("SELECT groupId, priv, canRead, canWrite FROM aclGroupPriv")) {
+		auto it = fresh.find(row.rq<u32>("groupId"));
+		if (it == fresh.end()) {
+			continue; // ticks of a group that is gone
+		}
+		const auto  name = row.rq<std::string>("priv");
+		const auto* def  = findPriv(privs, name);
+		if (!def) {
+			warnUnknownOnce(name);
+			continue;
+		}
+		u8 mask = 0;
+		if (row.rq<u32>("canRead")) {
+			mask |= static_cast<u8>(Op::read);
+		}
+		if (row.rq<u32>("canWrite")) {
+			mask |= static_cast<u8>(Op::write);
+		}
+		it->second->bits[static_cast<size_t>(def->id)] = mask;
+	}
+	auto map = std::make_shared<Map>();
+	map->reserve(fresh.size());
+	for (auto& [id, g] : fresh) {
+		map->emplace(id, std::move(g));
+	}
+	snapshot.store(std::move(map));
+}
+
+GroupPtr Groups::get(u32 id) const {
+	auto map = snapshot.load();
+	if (!map) {
+		return nullptr;
+	}
+	auto it = map->find(id);
+	return it == map->end() ? nullptr : it->second;
+}
+
+bool Groups::loaded() const {
+	return snapshot.load() != nullptr;
+}
+
+Groups& groups() {
+	static Groups g;
+	return g;
+}
+
+namespace {
+// After a change on the page: the cache acts at the next request. Only once a project loaded it.
+void reloadGroups() {
+	auto& c = conf();
+	if (!groups().loaded() || !c.db) {
+		return;
+	}
+	// The change is committed: a failed reload must not hide it (the audit row comes next). The
+	// old snapshot stays until the next reload of the project's timer.
+	try {
+		groups().reload(*c.db, c.privs);
+	} catch (const std::exception& e) {
+		qCritical().noquote() << F("acl: the change is saved, the reload of the groups in memory failed: {}", e.what());
+	} catch (...) {
+		qCritical().noquote() << "acl: the change is saved, the reload of the groups in memory failed";
+	}
+}
+} // namespace
+
 void matrixApi(PMFCGI& status, Payload& payload) {
 	(void)status;
 	auto& c = conf();
@@ -256,6 +335,7 @@ void setBitApi(PMFCGI& status, Payload& payload) {
 	              "ON DUPLICATE KEY UPDATE {0} = {3}",
 	              column, group->first, priv, value));
 
+	reloadGroups();
 	audit(F("acl: group {} ({}) priv {} {}: {} -> {}", group->first, group->second, priv, op, had ? 1 : 0, value));
 	writeOk(payload);
 }
@@ -282,6 +362,7 @@ void groupCreateApi(PMFCGI& status, Payload& payload) {
 	db.query(F("INSERT INTO aclGroup (name, note) VALUES ('{}', '{}')", db.escape(name), db.escape(note)));
 	const auto id = db.lastId();
 
+	reloadGroups();
 	audit(F("acl: group {} ({}) created", id, name));
 	bj::object json;
 	json["id"] = id;
@@ -312,6 +393,7 @@ void groupCloneApi(PMFCGI& status, Payload& payload) {
 	           "SELECT {}, priv, canRead, canWrite FROM aclGroupPriv WHERE groupId = {}",
 	           id, from->first));
 
+	reloadGroups();
 	audit(F("acl: group {} ({}) cloned from {} ({})", id, name, from->first, from->second));
 	bj::object json;
 	json["id"] = id;
@@ -342,6 +424,7 @@ void groupRenameApi(PMFCGI& status, Payload& payload) {
 	auto& db = *conf().db;
 	db.query(F("UPDATE aclGroup SET name = '{}' WHERE id = {}", db.escape(name), group->first));
 
+	reloadGroups();
 	audit(F("acl: group {} renamed: {} -> {}", group->first, group->second, name));
 	writeOk(payload);
 }
@@ -367,6 +450,7 @@ void groupDeleteApi(PMFCGI& status, Payload& payload) {
 	c.db->query(F("DELETE FROM aclGroupPriv WHERE groupId = {}", group->first));
 	c.db->query(F("DELETE FROM aclGroup WHERE id = {}", group->first));
 
+	reloadGroups();
 	audit(F("acl: group {} ({}) deleted", group->first, group->second));
 	writeOk(payload);
 }

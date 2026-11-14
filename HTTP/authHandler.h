@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -86,6 +87,13 @@ struct Conf {
 	//resolve the session cookie and store the user on your side (also set there IP / UA if you track them)
 	std::function<SessionState(PMFCGI& status, const std::string& sessionId)> resumeSession;
 
+	//optional: a machine login, "Authorization: Bearer <token>". Runs before the cookie and wins over
+	//it. ok = the request goes on as that login (postLogin still runs); anything else = 401 JSON
+	//"invalid token", never the login page and never the devel login: a machine reads the answer.
+	//The answer sets no cookie. Another scheme (Basic from nginx) falls through to the cookie.
+	//Websocket upgrades do not pass here (checkWsUpgrade has no token branch).
+	std::function<SessionState(PMFCGI& status, std::string_view token)> resumeToken;
+
 	//optional: auto login for development, return the session id of the logged user (empty = no
 	//devel user). The engine sets the cookie, so the next requests resume the session and do not
 	//log in again
@@ -124,6 +132,10 @@ Conf& conf();
 
 //session preflight, registered as BeastConf::loginManager so it runs before any routing
 bool loginManager(PMFCGI& status, Payload& payload);
+
+//"Authorization: Bearer <token>": the token, trimmed, maybe empty. The scheme word is case
+//insensitive. nullopt = no header, or another scheme.
+[[nodiscard]] std::optional<std::string> bearerToken(const PMFCGI& status);
 
 // Cookie + develLogin + hasLevel for a websocket upgrade. extractCookies first.
 UpgradeAuth checkWsUpgrade(PMFCGI& status, int minLevel);

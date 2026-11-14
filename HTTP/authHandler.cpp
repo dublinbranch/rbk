@@ -156,6 +156,24 @@ Conf& conf() {
 	return c;
 }
 
+std::optional<std::string> bearerToken(const PMFCGI& status) {
+	//headers are stored lower case (PMFCGI.cpp)
+	auto header = status.headers.get("authorization");
+	if (!header) {
+		return std::nullopt;
+	}
+	const auto value = header.val->trimmed();
+	static const QString scheme = QStringLiteral("bearer");
+	if (value.size() < scheme.size() || value.left(scheme.size()).compare(scheme, Qt::CaseInsensitive) != 0) {
+		return std::nullopt;
+	}
+	//"Bearer" alone is a token header with no token; "BearerX" is another scheme
+	if (value.size() > scheme.size() && !value.at(scheme.size()).isSpace()) {
+		return std::nullopt;
+	}
+	return value.mid(scheme.size()).trimmed().toStdString();
+}
+
 void writeJsonError(Payload& payload, int statusCode, const std::string& message) {
 	bj::object json;
 	json["status"]     = "error";
@@ -202,6 +220,17 @@ bool loginManager(PMFCGI& status, Payload& payload) {
 	for (auto& prefix : c.publicPrefixes) {
 		if (path.startsWith(prefix)) {
 			return true;
+		}
+	}
+
+	//a machine login: no cookie, no login page, no devel login
+	if (c.resumeToken) {
+		if (auto token = bearerToken(status); token) {
+			if (c.resumeToken(status, *token) != SessionState::ok) {
+				writeJsonError(payload, 401, "invalid token");
+				return false;
+			}
+			return !c.postLogin || c.postLogin(status, payload);
 		}
 	}
 

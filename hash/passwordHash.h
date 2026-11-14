@@ -18,10 +18,18 @@ enum class PasswordScheme {
 	Argon2id,
 	Sha256Crypt,
 	Sha512Crypt,
+	Token, // $token$…: an API token of a machine login, never a password (verifyPasswordAuto: false)
 	Unknown
 };
 
 PasswordScheme detectPasswordScheme(std::string_view stored);
+
+// --- API token (a machine login): the hash of a token, in the column of a password hash ---
+// The prefix is needed: a value with no $ prefix reads as a legacy DiTeR password.
+inline constexpr std::string_view kApiTokenPrefix = "$token$";
+/** kApiTokenPrefix + lower hex SHA-256 of the token. The token is random (32 bytes from
+ *  secureRandom), so SHA-256 is enough: no KDF on each request. */
+std::string hashApiToken(std::string_view token);
 
 // --- Legacy DiTeR (verify / optional re-hash of old rows only) ---
 bool       verifyLegacyDiterSha256(const QString& email, const QString& password,

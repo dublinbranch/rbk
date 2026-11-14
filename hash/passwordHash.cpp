@@ -3,8 +3,10 @@
 #include "rbk/fmtExtra/includeMe.h"
 #include "rbk/hash/salt.h"
 #include "rbk/hash/sha.h"
+#include "rbk/misc/hex.h"
 #include "rbk/rand/secureRandom.h"
 
+#include <QCryptographicHash>
 #include <argon2.h>
 #include <crypt.h>
 #include <cstring>
@@ -33,6 +35,9 @@ std::string_view stripDovecotPrefix(std::string_view stored) {
 PasswordScheme detectPasswordScheme(std::string_view stored) {
 	if (stored.empty()) {
 		return PasswordScheme::Unknown;
+	}
+	if (startsWith(stored, kApiTokenPrefix)) {
+		return PasswordScheme::Token;
 	}
 	if (startsWith(stored, "$argon2")) {
 		return PasswordScheme::Argon2id;
@@ -165,9 +170,16 @@ PasswordVerifyResult verifyPasswordAuto(const QString& email, const QString& pas
 		r.needsRehash = r.ok;
 		break;
 	}
+	case PasswordScheme::Token: // a machine login: POST login never logs it in
 	case PasswordScheme::Unknown:
 		r.ok = false;
 		break;
 	}
 	return r;
+}
+
+std::string hashApiToken(std::string_view token) {
+	const auto digest = QCryptographicHash::hash(QByteArrayView(token.data(), static_cast<qsizetype>(token.size())),
+	                                             QCryptographicHash::Algorithm::Sha256);
+	return std::string(kApiTokenPrefix) + rbk::Hex::lower(std::string_view(digest.constData(), static_cast<size_t>(digest.size())));
 }
