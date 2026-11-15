@@ -13,6 +13,7 @@
 #include <mutex>
 #include <optional>
 #include <set>
+#include <tuple>
 
 namespace bj = boost::json;
 
@@ -183,10 +184,14 @@ void Groups::reload(DB& db, const std::vector<PrivDef>& privs) {
 		size = std::max(size, static_cast<size_t>(def.id) + 1);
 	}
 	std::unordered_map<u32, std::shared_ptr<Group>> fresh;
-	for (const auto& row : db.query("SELECT id, name FROM aclGroup")) {
-		auto g  = std::make_shared<Group>();
-		g->id   = row.rq<u32>("id");
-		g->name = row.rq<std::string>("name");
+	for (const auto& row : db.query("SELECT id, name, reqPerMin, reqBurst, busyMsPerMin, inFlight FROM aclGroup")) {
+		auto g                 = std::make_shared<Group>();
+		g->id                  = row.rq<u32>("id");
+		g->name                = row.rq<std::string>("name");
+		g->limits.reqPerMin    = row.rq<u32>("reqPerMin");
+		g->limits.reqBurst     = row.rq<u32>("reqBurst");
+		g->limits.busyMsPerMin = row.rq<u32>("busyMsPerMin");
+		g->limits.inFlight     = row.rq<u32>("inFlight");
 		g->bits.assign(size, 0);
 		fresh.emplace(g->id, std::move(g));
 	}
@@ -281,9 +286,15 @@ void matrixApi(PMFCGI& status, Payload& payload) {
 	}
 
 	bj::array groups;
-	for (const auto& row : c.db->query("SELECT id, name, note FROM aclGroup ORDER BY id")) {
+	for (const auto& row : c.db->query("SELECT id, name, note, reqPerMin, reqBurst, busyMsPerMin, inFlight FROM aclGroup ORDER BY id")) {
 		const auto id = row.rq<u32>("id");
+		bj::object limits;
+		limits["reqPerMin"]    = row.rq<u32>("reqPerMin");
+		limits["reqBurst"]     = row.rq<u32>("reqBurst");
+		limits["busyMsPerMin"] = row.rq<u32>("busyMsPerMin");
+		limits["inFlight"]     = row.rq<u32>("inFlight");
 		bj::object g;
+		g["limits"]    = std::move(limits);
 		g["id"]        = id;
 		g["name"]      = row.rq<std::string>("name");
 		g["note"]      = row.rq<std::string>("note");
@@ -387,7 +398,10 @@ void groupCloneApi(PMFCGI& status, Payload& payload) {
 		return;
 	}
 	auto& db = *conf().db;
-	db.query(F("INSERT INTO aclGroup (name, note) VALUES ('{}', '')", db.escape(name)));
+	// the rate limits of the source too
+	db.query(F("INSERT INTO aclGroup (name, note, reqPerMin, reqBurst, busyMsPerMin, inFlight) "
+	           "SELECT '{}', '', reqPerMin, reqBurst, busyMsPerMin, inFlight FROM aclGroup WHERE id = {}",
+	           db.escape(name), from->first));
 	const auto id = db.lastId();
 	db.query(F("INSERT INTO aclGroupPriv (groupId, priv, canRead, canWrite) "
 	           "SELECT {}, priv, canRead, canWrite FROM aclGroupPriv WHERE groupId = {}",
@@ -452,6 +466,53 @@ void groupDeleteApi(PMFCGI& status, Payload& payload) {
 
 	reloadGroups();
 	audit(F("acl: group {} ({}) deleted", group->first, group->second));
+	writeOk(payload);
+}
+
+void groupLimitsApi(PMFCGI& status, Payload& payload) {
+	bj::object j;
+	if (!readBody(status, payload, j)) {
+		return;
+	}
+	const auto group = readExistingGroup(j, "group", payload);
+	if (!group) {
+		return;
+	}
+	// each one present, a whole number in its range
+	const auto readLimit = [&](const char* key, u32 max) -> std::optional<u32> {
+		const auto* it = j.if_contains(key);
+		if (!it || !it->is_int64() || it->as_int64() < 0 || it->as_int64() > max) {
+			writeError(payload, 400, F("{} must be a whole number from 0 to {}", key, max));
+			return std::nullopt;
+		}
+		return static_cast<u32>(it->as_int64());
+	};
+	Limits l;
+	for (const auto& [key, max, out] : {std::tuple{"reqPerMin", kMaxLimitValue, &l.reqPerMin},
+	                                    std::tuple{"reqBurst", kMaxLimitValue, &l.reqBurst},
+	                                    std::tuple{"busyMsPerMin", kMaxLimitValue, &l.busyMsPerMin},
+	                                    std::tuple{"inFlight", kMaxInFlight, &l.inFlight}}) {
+		const auto v = readLimit(key, max);
+		if (!v) {
+			return;
+		}
+		*out = *v;
+	}
+	if (l.reqPerMin > 0 && l.reqBurst == 0) {
+		writeError(payload, 400, "reqBurst must be at least 1 when reqPerMin is set");
+		return;
+	}
+	auto&      db  = *conf().db;
+	const auto old = db.queryLine(F("SELECT reqPerMin, reqBurst, busyMsPerMin, inFlight FROM aclGroup WHERE id = {}", group->first));
+	db.query(F("UPDATE aclGroup SET reqPerMin = {}, reqBurst = {}, busyMsPerMin = {}, inFlight = {} WHERE id = {}",
+	           l.reqPerMin, l.reqBurst, l.busyMsPerMin, l.inFlight, group->first));
+
+	reloadGroups();
+	const auto was = old.empty() ? std::string("?")
+	                             : F("{}/{}/{}/{}", old.rq<u32>("reqPerMin"), old.rq<u32>("reqBurst"),
+	                                 old.rq<u32>("busyMsPerMin"), old.rq<u32>("inFlight"));
+	audit(F("acl: group {} ({}) limits req/min, burst, busy ms/min, in flight: {} -> {}/{}/{}/{}", group->first,
+	        group->second, was, l.reqPerMin, l.reqBurst, l.busyMsPerMin, l.inFlight));
 	writeOk(payload);
 }
 

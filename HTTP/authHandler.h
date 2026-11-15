@@ -143,6 +143,10 @@ UpgradeAuth checkWsUpgrade(PMFCGI& status, int minLevel);
 //GET renders the login form, POST (email + password [+ next]) performs the login and sets the session cookie
 void loginPage(PMFCGI& status, Payload& payload);
 void logout(PMFCGI& status, Payload& payload);
+//The login form (app/login: the app one) with an error and a status code, as loginPage answers a
+//refusal of LoginLimiter: for a project that refuses a login request before loginPage runs (a rate
+//limit). Sets no header but the standard ones; the caller adds Retry-After.
+void writeLoginRefusal(PMFCGI& status, Payload& payload, unsigned statusCode, const std::string& message);
 
 /**
  * The access check of the request running on this thread, for a request log

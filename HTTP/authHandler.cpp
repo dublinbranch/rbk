@@ -321,6 +321,20 @@ UpgradeAuth checkWsUpgrade(PMFCGI& status, int minLevel) {
 	return UpgradeAuth::ok;
 }
 
+void writeLoginRefusal(PMFCGI& status, Payload& payload, unsigned statusCode, const std::string& message) {
+	auto& c = conf();
+	status.decodePost();
+	payload.setStandardHeaders();
+	payload.statusCode  = statusCode;
+	const auto  path    = status.url.url.path().mid(1);
+	const bool  appLogin = path == "app/login";
+	const auto& tmpl    = (appLogin && !c.appLoginTemplate.empty()) ? c.appLoginTemplate : c.loginTemplate;
+	bj::object  json;
+	setLoginTemplateVars(json, status.getBasePath(), requestedNext(status));
+	json["ERROR_MESSAGE"] = message;
+	payload.html          = mustache(tmpl, json);
+}
+
 void loginPage(PMFCGI& status, Payload& payload) {
 	auto& c = conf();
 	status.decodePost();

@@ -5,8 +5,10 @@
 #include "rbk/string/stringoso.h"
 #include <functional>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 
 class Headers : public std::multimap<std::string, std::string> {
       public:
@@ -76,6 +78,26 @@ class Payload {
 	Headers     headers;
 	// Set: a file answer instead of html, see PayloadFile.
 	std::optional<PayloadFile> file;
+
+	/* A project object that lives exactly as long as this request: Beast's handle_request owns the
+	 * Payload, so the object is destroyed once when it returns, on every path (a normal answer, a
+	 * refusal of loginManager or common1, the 500 of a handler exception, the canned 500). That is on
+	 * the worker thread, after onRequestDone, before the answer is sent and before deferred(). Not
+	 * for an OPTIONS preflight or a websocket upgrade (no hooks run). The destructor must touch
+	 * nothing of the request: PMFCGI is destroyed before the Payload. It must not throw. */
+	using Scope = std::unique_ptr<void, void (*)(void*)>;
+	Scope scope{nullptr, nullptr};
+	template <class T, class... Args>
+	T& setScope(Args&&... args) {
+		auto* p = new T(std::forward<Args>(args)...);
+		scope   = Scope(p, [](void* v) { delete static_cast<T*>(v); });
+		return *p;
+	}
+	// null when no scope, or one of another type set it (the caller knows its type)
+	template <class T>
+	[[nodiscard]] T* scopeAs() const {
+		return static_cast<T*>(scope.get());
+	}
 	void        setStandardHeaders(bool addCors = true);
 	void        setCacheHeader(uint ttl);
 

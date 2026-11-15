@@ -453,6 +453,7 @@ if(RBK_WITH_BOOST_BEAST)
         HTTP/authAdv.cpp
         session/sessionStore.cpp
         session/sessionAdmin.cpp
+        rateLimit/rateLimit.cpp
         HTTP/loginLimiter.cpp
         HTTP/beast.cpp
         HTTP/beastConfig.cpp
@@ -466,6 +467,7 @@ if(RBK_WITH_BOOST_BEAST)
         HTTP/authAdv.h
         session/sessionStore.h
         session/sessionAdmin.h
+        rateLimit/rateLimit.h
         liveTable/liveTable.h
         HTTP/loginLimiter.h
         HTTP/beast.h

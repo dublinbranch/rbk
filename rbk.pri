@@ -282,6 +282,7 @@ SOURCES += \
     $$PWD/HTTP/authAdv.cpp \
     $$PWD/session/sessionStore.cpp \
     $$PWD/session/sessionAdmin.cpp \
+    $$PWD/rateLimit/rateLimit.cpp \
     $$PWD/HTTP/beast.cpp \
     $$PWD/HTTP/beastConfig.cpp \
     $$PWD/HTTP/canned_reply.cpp \
@@ -295,6 +296,7 @@ HEADERS += \
     $$PWD/HTTP/authAdv.h \
     $$PWD/session/sessionStore.h \
     $$PWD/session/sessionAdmin.h \
+    $$PWD/rateLimit/rateLimit.h \
     $$PWD/liveTable/liveTable.h \
     $$PWD/HTTP/beastConfig.h \
     $$PWD/HTTP/canned_reply.h \

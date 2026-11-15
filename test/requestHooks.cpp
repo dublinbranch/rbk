@@ -477,6 +477,70 @@ BOOST_AUTO_TEST_CASE(throwing_handler_is_seen_once_with_its_500) {
 	BOOST_CHECK_EQUAL(seen[0].routeKey, "boom");
 }
 
+// Payload::scope: a project object that lives exactly as long as the request. Destroyed once on every
+// path, after onRequestDone, before the client reads the answer; never made for an OPTIONS preflight.
+BOOST_AUTO_TEST_CASE(payload_scope_ends_once_on_every_path) {
+	struct Probe {
+		explicit Probe(std::function<void()> f) : atEnd(std::move(f)) {
+		}
+		~Probe() {
+			atEnd();
+		}
+		std::function<void()> atEnd;
+	};
+	std::atomic<int>    made{0};
+	std::atomic<bool>   refuseLogin{false};
+	std::atomic<bool>   refuseCommon{false};
+	std::mutex          endsMu;
+	std::vector<size_t> doneAtEnd; // how many done hooks had run when each scope ended
+	Loopback*           self = nullptr;
+	Loopback            lb([&](BeastConf& c) {
+		c.prePhase1 = [&](PMFCGI&, Payload& payload) {
+			++made;
+			payload.setScope<Probe>([&] {
+				const auto      n = self->doneSeen().size();
+				std::lock_guard lock(endsMu);
+				doneAtEnd.push_back(n);
+			});
+		};
+		c.loginManager = [&](PMFCGI&, Payload& payload) {
+			if (refuseLogin) {
+				payload.statusCode = 401;
+				payload.html       = "login";
+				return false;
+			}
+			return true;
+		};
+		c.common1 = [&](PMFCGI&, Payload& payload) {
+			if (refuseCommon) {
+				payload.statusCode = 429;
+				payload.html       = "slow";
+				return false;
+			}
+			return true;
+		};
+	});
+	self            = &lb;
+	const auto ends = [&] {
+		std::lock_guard lock(endsMu);
+		return doneAtEnd;
+	};
+
+	BOOST_CHECK_EQUAL(lb.ask("GET", "/plain").result_int(), 200U);
+	refuseLogin = true;
+	BOOST_CHECK_EQUAL(lb.ask("GET", "/plain").result_int(), 401U);
+	refuseLogin  = false;
+	refuseCommon = true;
+	BOOST_CHECK_EQUAL(lb.ask("GET", "/plain").result_int(), 429U);
+	refuseCommon = false;
+	BOOST_CHECK_EQUAL(lb.ask("GET", "/boom").result_int(), 500U);
+	BOOST_CHECK_EQUAL(lb.ask("OPTIONS", "/plain").result_int(), 200U);
+
+	BOOST_CHECK_EQUAL(made.load(), 4);
+	// once each, and each after its own done hook
+	BOOST_CHECK(ends() == (std::vector<size_t>{1, 2, 3, 4}));
+}
+
 BOOST_AUTO_TEST_CASE(site_root_has_its_own_route_key) {
 	Loopback lb;
 	lb.ask("GET", "/");

@@ -3,6 +3,7 @@
 
 #include "rbk/HTTP/authHandler.h"
 #include "rbk/misc/intTypes.h"
+#include "rbk/rateLimit/rateLimit.h"
 
 #include <atomic>
 #include <boost/json/array.hpp>
@@ -28,7 +29,11 @@ class DB;
  *
  *   CREATE TABLE aclGroup (
  *     id int unsigned NOT NULL AUTO_INCREMENT, name varchar(64) NOT NULL,
- *     note varchar(255) NOT NULL DEFAULT '', PRIMARY KEY (id), UNIQUE KEY name (name));
+ *     note varchar(255) NOT NULL DEFAULT '',
+ *     reqPerMin int unsigned NOT NULL DEFAULT 3000, reqBurst int unsigned NOT NULL DEFAULT 500,
+ *     busyMsPerMin int unsigned NOT NULL DEFAULT 120000, inFlight int unsigned NOT NULL DEFAULT 8,
+ *     PRIMARY KEY (id), UNIQUE KEY name (name));
+ *   -- the rate limits of the logins of the group (rbk::Limits, rbk/rateLimit/): 0 = no limit
  *   CREATE TABLE aclGroupPriv (
  *     groupId int unsigned NOT NULL, priv varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
  *     canRead tinyint unsigned NOT NULL DEFAULT 0, canWrite tinyint unsigned NOT NULL DEFAULT 0,
@@ -79,12 +84,16 @@ rbk::Auth::CheckResult check(int priv, Op op);
 // on each request, and a Priv removed from the enum leaves such a row. Group 0 = no ticks, no query.
 Bits loadBits(DB& db, const std::vector<PrivDef>& privs, u32 group);
 
-// One group with its ticks, as Groups keeps it.
+// One group with its ticks and its rate limits, as Groups keeps it.
 struct Group {
 	u32         id = 0;
 	std::string name;
 	Bits        bits;
+	Limits      limits;
 };
+// The bounds groupLimitsApi accepts.
+constexpr u32 kMaxLimitValue = 10'000'000;
+constexpr u32 kMaxInFlight   = 1000;
 using GroupPtr = std::shared_ptr<const Group>;
 
 /**
@@ -118,6 +127,9 @@ void groupCreateApi(PMFCGI& status, Payload& payload); // POST {name, note?}
 void groupCloneApi(PMFCGI& status, Payload& payload);  // POST {from, name}
 void groupRenameApi(PMFCGI& status, Payload& payload); // POST {group, name}
 void groupDeleteApi(PMFCGI& status, Payload& payload); // POST {group}
+// POST {group, reqPerMin, reqBurst, busyMsPerMin, inFlight}: the rate limits of the group. Each
+// 0..kMaxLimitValue, inFlight 0..kMaxInFlight, reqBurst at least 1 when reqPerMin > 0.
+void groupLimitsApi(PMFCGI& status, Payload& payload);
 
 template <auto priv, Op op, void (*handler)(PMFCGI& status, Payload& payload)>
 void guardOp(PMFCGI& status, Payload& payload) {
