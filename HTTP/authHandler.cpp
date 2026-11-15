@@ -179,6 +179,7 @@ void writeJsonError(Payload& payload, int statusCode, const std::string& message
 	json["status"]     = "error";
 	json["message"]    = message;
 	payload.statusCode = statusCode;
+	payload.mime       = "application/json";
 	payload.html       = pretty_print(json);
 }
 

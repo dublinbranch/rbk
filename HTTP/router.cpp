@@ -183,6 +183,7 @@ void Router::immediate(PMFCGI& status, const BeastConf* conf, Payload& payload) 
 	payload.mime       = "text/plain; charset=utf-8";
 	payload.html       = fmt::format("invalid path >>> {} <<< no routing available", escapeH(path));
 	payload.statusCode = 400;
+	applyErrorAnswer(conf, status, payload, ErrorKind::noRoute, 404, "no such route");
 }
 
 //bool Router::isUserAgentBlacklisted(const Url& url) {

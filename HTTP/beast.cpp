@@ -599,6 +599,9 @@ ClientReply handle_request(
 				}
 				fileAppendContents("\n------\n " + msg, file);
 			}
+			// the project's answer, if it has one (an API wants JSON): after rbk's logs
+			applyErrorAnswer(conf, status, payload, HE ? ErrorKind::httpException : ErrorKind::exception, payload.statusCode,
+			                 HE ? HE->httpErrMsg : std::string());
 
 		} catch (...) {
 			payload.mime       = "text/html; charset=utf-8";
@@ -607,6 +610,7 @@ ClientReply handle_request(
 			auto msg = status.serializeMsg("unkown exception");
 			fmt::print("\n------\n{}", msg);
 			fileAppendContents("\n------\n " + msg, conf->logFolder + "/unkException.log");
+			applyErrorAnswer(conf, status, payload, ErrorKind::exception, 500, std::string());
 		}
 
 		//in case the exception happened before the socket close during the immediate stage
@@ -1135,6 +1139,15 @@ void Beast::listen() {
 		threadStatus.pool.erase(id);
 	}
 	threadStatus.free = threadStatus.pool.size();
+
+	// With rbk::Shutdown the process goes on to the caller's cleanup and ends in finish (_exit).
+	// Detached threads of the app may still hold a session and post a send to its executor, so
+	// the contexts must outlive this function: leak them on purpose. Nothing runs them again.
+	if (rbk::Shutdown::installed()) {
+		for (auto& ioc : contexts) {
+			(void)ioc.release(); // NOLINT(bugprone-unused-return-value)
+		}
+	}
 
 	// The signal was consumed above, so on its own the process would keep running: every
 	// caller runs listen() on a side thread while main sits in QCoreApplication::exec() or

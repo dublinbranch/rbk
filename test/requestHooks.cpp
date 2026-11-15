@@ -58,6 +58,16 @@ void refusingHandler(PMFCGI& status, Payload& payload) {
 void throwingHandler(PMFCGI&, Payload&) {
 	throw std::runtime_error("handler test");
 }
+// A required parameter that is not there: the HttpException of PMFCGI, 400 with its text. decodeGet
+// sets the callback that throws it (a project calls it in prePhase1); without it the miss is a 500.
+void needsParamHandler(PMFCGI& status, Payload&) {
+	status.decodeGet();
+	(void)status.get.takeRq<int>("need");
+}
+// Not a std::exception: the catch (...) of handle_request.
+void throwsAnIntHandler(PMFCGI&, Payload&) {
+	throw 42;
+}
 
 enum TestPriv : int { Alpha = 0, Beta = 1 };
 
@@ -539,6 +549,122 @@ BOOST_AUTO_TEST_CASE(payload_scope_ends_once_on_every_path) {
 	BOOST_CHECK_EQUAL(made.load(), 4);
 	// once each, and each after its own done hook
 	BOOST_CHECK(ends() == (std::vector<size_t>{1, 2, 3, 4}));
+}
+
+// BeastConf::errorAnswer: the project's answer for a caught exception (with the HttpException's status
+// and text, never e.what()) and for a path with no route (404). A hook that throws keeps rbk's answer.
+BOOST_AUTO_TEST_CASE(error_answer_hook_replaces_the_error_answers) {
+	struct Call {
+		ErrorKind   kind = ErrorKind::exception;
+		unsigned    code = 0;
+		std::string message;
+	};
+	std::mutex        mu;
+	std::vector<Call> calls;
+	std::atomic<bool> throwIt{false};
+	Loopback          lb([&](BeastConf& c) {
+		c.routingSimple.insert({"need", needsParamHandler});
+		c.routingSimple.insert({"int", throwsAnIntHandler});
+		c.errorAnswer = [&](const PMFCGI&, ErrorKind kind, unsigned code, const std::string& message) -> std::optional<ErrorAnswer> {
+			{
+				std::lock_guard lock(mu);
+				calls.push_back({kind, code, message});
+			}
+			if (throwIt) {
+				throw std::runtime_error("hook test");
+			}
+			return ErrorAnswer{code, "application/json", "{\"message\":\"" + message + "\"}"};
+		};
+	});
+	const auto lastCall = [&] {
+		std::lock_guard lock(mu);
+		BOOST_REQUIRE(!calls.empty());
+		return calls.back();
+	};
+
+	auto res = lb.ask("GET", "/need");
+	BOOST_CHECK_EQUAL(res.result_int(), 400U);
+	BOOST_CHECK_EQUAL(res[http::field::content_type], "application/json");
+	// the httpErrMsg exactly: e.what() holds the same words and a stack
+	BOOST_CHECK_EQUAL(lastCall().message, ">>>need<<< is not set and is required!");
+	BOOST_CHECK(lastCall().kind == ErrorKind::httpException);
+	BOOST_CHECK_EQUAL(lastCall().code, 400U);
+
+	res = lb.ask("GET", "/boom");
+	BOOST_CHECK_EQUAL(res.result_int(), 500U);
+	BOOST_CHECK_EQUAL(res[http::field::content_type], "application/json");
+	BOOST_CHECK(lastCall().message.empty()); // not "handler test"
+	BOOST_CHECK(lastCall().kind == ErrorKind::exception);
+	BOOST_CHECK(res.body().find("handler test") == std::string::npos);
+
+	res = lb.ask("GET", "/nowhere");
+	BOOST_CHECK_EQUAL(res.result_int(), 404U);
+	BOOST_CHECK_EQUAL(lastCall().message, "no such route");
+	BOOST_CHECK(lastCall().kind == ErrorKind::noRoute);
+
+	//a throw that is not a std::exception: the catch (...), a 500 with no message
+	res = lb.ask("GET", "/int");
+	BOOST_CHECK_EQUAL(res.result_int(), 500U);
+	BOOST_CHECK_EQUAL(res[http::field::content_type], "application/json");
+	BOOST_CHECK(lastCall().kind == ErrorKind::exception);
+	BOOST_CHECK(lastCall().message.empty());
+
+	//a normal answer never asks the hook
+	const auto before = [&] {
+		std::lock_guard lock(mu);
+		return calls.size();
+	}();
+	res = lb.ask("GET", "/plain");
+	BOOST_CHECK_EQUAL(res.result_int(), 200U);
+	{
+		std::lock_guard lock(mu);
+		BOOST_CHECK_EQUAL(calls.size(), before);
+	}
+
+	throwIt = true;
+	res     = lb.ask("GET", "/boom");
+	BOOST_CHECK_EQUAL(res.result_int(), 500U);
+	BOOST_CHECK(res[http::field::content_type].starts_with("text/html")); // rbk's own
+	const auto seen = lb.doneSeen();
+	BOOST_REQUIRE(!seen.empty());
+	BOOST_CHECK_EQUAL(seen.back().statusCode, 500U);
+	// each throw of the hook leaves its own line; also on a path with no route, where rbk's 400 stays
+	const auto failedLines = [&] {
+		const auto  log = lb.exceptionLog();
+		std::size_t n   = 0;
+		for (auto at = log.find("errorAnswer failed: hook test"); at != std::string::npos; at = log.find("errorAnswer failed: hook test", at + 1)) {
+			++n;
+		}
+		return n;
+	};
+	const auto afterBoom = failedLines();
+	BOOST_CHECK_EQUAL(afterBoom, 1U);
+	res = lb.ask("GET", "/nowhere");
+	BOOST_CHECK_EQUAL(res.result_int(), 400U);
+	BOOST_CHECK(res[http::field::content_type].starts_with("text/plain"));
+	BOOST_CHECK_EQUAL(failedLines(), afterBoom + 1);
+}
+
+// Unset (every project that does not ask): the answers stay as they were.
+BOOST_AUTO_TEST_CASE(error_answer_unset_keeps_rbk_answers) {
+	Loopback lb([](BeastConf& c) { c.routingSimple.insert({"need", needsParamHandler}); });
+	auto     res = lb.ask("GET", "/nowhere");
+	BOOST_CHECK_EQUAL(res.result_int(), 400U);
+	BOOST_CHECK(res[http::field::content_type].starts_with("text/plain"));
+	res = lb.ask("GET", "/boom");
+	BOOST_CHECK_EQUAL(res.result_int(), 500U);
+	BOOST_CHECK(res[http::field::content_type].starts_with("text/html"));
+	res = lb.ask("GET", "/need");
+	BOOST_CHECK_EQUAL(res.result_int(), 400U);
+	BOOST_CHECK(res[http::field::content_type].starts_with("text/html"));
+}
+
+// The 401 and 403 of the login check are JSON, and say so in their type.
+BOOST_AUTO_TEST_CASE(json_error_has_the_json_type) {
+	Payload payload;
+	rbk::Auth::writeJsonError(payload, 403, "insufficient privileges");
+	BOOST_CHECK_EQUAL(payload.statusCode, 403U);
+	BOOST_CHECK_EQUAL(payload.mime, "application/json");
 }
 
 BOOST_AUTO_TEST_CASE(site_root_has_its_own_route_key) {

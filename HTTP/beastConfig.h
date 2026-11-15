@@ -45,6 +45,26 @@ struct RequestDone {
 	bool      file      = false; // Payload::file answer
 };
 
+/** What failed, for BeastConf::errorAnswer. */
+enum class ErrorKind {
+	httpException, // an HttpException: its status, its httpErrMsg (meant for the client)
+	exception,     // any other exception: 500, no message (never show e.what() to a client)
+	noRoute,       // a path with no route: 404 to the hook, rbk's own answer is a 400
+};
+
+/** The answer a project gives in place of rbk's own error answer (BeastConf::errorAnswer). */
+struct ErrorAnswer {
+	unsigned    statusCode = 500;
+	std::string mime;
+	std::string body;
+};
+
+class BeastConf;
+/** Ask conf->errorAnswer and put its answer in payload. False, payload untouched, when the hook is
+ *  unset, says nullopt or throws. */
+bool applyErrorAnswer(const BeastConf* conf, const PMFCGI& status, Payload& payload, ErrorKind kind,
+                      unsigned statusCode, const std::string& message) noexcept;
+
 class BeastConf {
       public:
 	friend class PMFCGI;
@@ -96,6 +116,18 @@ class BeastConf {
 	 *   PMFCGI::method, routeKey, secretPath and rbk::Auth::lastCheck() describe the request. */
 	std::function<void()>                                                   onRequestStart;
 	std::function<void(const PMFCGI&, const Payload&, const RequestDone&)> onRequestDone;
+
+	/** Optional. The answer of a request that failed before a handler answered (ErrorKind):
+	 *   - an exception caught by handle_request: statusCode is the HttpException's (else 500),
+	 *     message its httpErrMsg (empty for any other exception: never show e.what() to a client);
+	 *   - a path with no route: statusCode 404, message "no such route" (rbk's own answer is a 400).
+	 * rbk builds its own answer and writes its logs first; an answer returned here then replaces
+	 * the status, the type and the body. nullopt keeps rbk's answer; so does a throw (caught, and
+	 * a line in stdException.log).
+	 * status may be partly filled: an exception can come before the URL is parsed (status.url
+	 * empty, status.path the raw target). Not called for the canned 500 of an exception thrown
+	 * while handling one, nor for a refusal of loginManager or common1 (they write their own). */
+	std::function<std::optional<ErrorAnswer>(const PMFCGI& status, ErrorKind kind, unsigned statusCode, const std::string& message)> errorAnswer;
 
 	mapV2<std::string, SimpleRoutedType> routingSimple;
 	mapV2<std::string, RequestBase*>     routing;
