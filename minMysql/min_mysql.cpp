@@ -568,6 +568,16 @@ void DB::pingCheck(st_mysql*& conn) const {
 	}
 	SQLLogger sqlLogger("PING", conf.logError.value(), this);
 	auto      oldConnId = mysql_thread_id(conn);
+	// The server rolls back an open transaction when its connection drops. A new connection would
+	// run the rest of it alone, in autocommit, with no error: throw instead. Read the flag before
+	// the ping, because a failed ping clears it.
+	const bool inTransaction       = conn->server_status & SERVER_STATUS_IN_TRANS;
+	const auto refuseInTransaction = [&] {
+		closeConn();
+		conn = nullptr; // the guard below then counts nothing
+		throw DBException("Mysql connection lost inside a transaction: the server rolled it back, nothing of it is saved",
+		                  DBException::Connection);
+	};
 
 	auto guard = qScopeGuard([&] {
 		if (!conn) { // getConn() threw after closeConn()
@@ -586,11 +596,17 @@ void DB::pingCheck(st_mysql*& conn) const {
 	// Those will not emit an error, only the last one
 	for (; connRetry < 5; connRetry++) {
 		if (mysql_ping(conn)) { // 1 on error, which should not even happen ... but here we are
+			if (inTransaction) {
+				refuseInTransaction();
+			}
 			// force reconnection
 			closeConn();
 			conn = nullptr; // freed by closeConn()
 			conn = getConn();
 		} else {
+			if (inTransaction && mysql_thread_id(conn) != oldConnId) {
+				refuseInTransaction(); // the client library reconnected inside the ping (MYSQL_OPT_RECONNECT)
+			}
 			return;
 		}
 	}
@@ -874,6 +890,20 @@ StMysqlPtr DB::connect() const {
 			flag |= CLIENT_SSL;
 		}
 
+		// Session setup as init commands, not queries after the connect: the client library runs them
+		// again when it reconnects by itself (MYSQL_OPT_RECONNECT, e.g. after wait_timeout), which
+		// never comes back here. A command that fails makes the connect fail.
+		if (!conf.isMariaDB8.value()) {
+			//if you are here you can use MIN instead of ANY_VALUE in mariadb
+			mysql_options(conn, MYSQL_INIT_COMMAND, "SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY'");
+		}
+		mysql_options(conn, MYSQL_INIT_COMMAND, "SET time_zone = 'UTC'");
+		if (!conf.writeBinlog) {
+			mysql_options(conn, MYSQL_INIT_COMMAND, "SET sql_log_bin = 0");
+		}
+		//this is the normal character, enforced to avoid weird conversion in table
+		mysql_options(conn, MYSQL_INIT_COMMAND, "SET collation_server = 'utf8mb4_general_ci'");
+
 		// For some reason mysql is now complaining of not having a DB selected... just select one and gg
 		auto sock      = conf.sock.has_value() ? conf.sock.value().constData() : nullptr;
 		auto connected = mysql_real_connect(conn, conf.host, conf.user.constData(), conf.pass.constData(),
@@ -889,6 +919,23 @@ StMysqlPtr DB::connect() const {
 				noteError(errorNo, msg);
 
 				throw DBException(msg, DBException::Error::InvalidDB);
+			}
+
+			if (errorNo == ER_UNKNOWN_TIME_ZONE) { // the SET time_zone init command
+				auto& msg = state.get().lastError;
+				msg       = F16(R"(Mysql connection error for {}
+Error {}
+# You are missing the Timezone in the db install the packet with
+zypper in mariadb-tools
+
+# be sure the execute the next command as a root user
+mariadb_tzinfo_to_sql /usr/share/zoneinfo | mariadb -u root mysql
+)",
+				                conf.getInfo(), error);
+				noteError(errorNo, msg);
+				mysql_close(conn);
+				qCritical().noquote() << msg;
+				throw DBException(msg, DBException::Error::Connection);
 			}
 
 			// Whoever conceived those api need to search for help -.-
@@ -916,34 +963,6 @@ StMysqlPtr DB::connect() const {
 	}
 
 	applyMultiStatements(*sptr, state.get().multiStatements);
-
-	if (!conf.isMariaDB8.value()) {
-		//if you are here you can use MIN instead of ANY_VALUE in mariadb
-
-		query("SET @@SQL_MODE = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY';");
-	}
-
-	try {
-		query(QBL("SET time_zone='UTC'"));
-	} catch (...) {
-		qCritical() << R"(
-# You are missing the Timezone in the db install the packet with
-zypper in mariadb-tools
-
-# be sure the execute the next command as a root user
-mariadb_tzinfo_to_sql /usr/share/zoneinfo | mariadb -u root mysql
-)";
-		throw;
-	}
-
-	if (!conf.writeBinlog) {
-		query("SET sql_log_bin = 0");
-	}
-
-	{
-		//this is the normal character, enforced to avoid weird conversion in table
-		query("SET collation_server = 'utf8mb4_general_ci';");
-	}
 
 	return sptr;
 }
